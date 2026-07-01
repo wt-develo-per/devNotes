@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Refresh Token Rotation</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #8e44ad; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f4ecf7; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #8e44ad; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #8e44ad; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #8e44ad; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #9b59b6; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Access_vs_Refresh_Tokens.html" class="nav-btn">&larr; Previous: Access vs Refresh Tokens</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_RBAC_Role_Based_Access_Control.html" class="nav-btn">Next: RBAC &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Access_vs_Refresh_Tokens.html" class="nav-btn">&larr; Previous: Access vs Refresh Tokens</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_RBAC_Role_Based_Access_Control.html" class="nav-btn">Next: RBAC &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Auth Masterclass 2: Refresh Token Rotation & Logic
+
+In the last file, we learned that a 7-day Refresh Token lives safely inside an HTTPOnly Cookie. 
+But what happens when the 15-minute Access Token expires? The frontend must call the `/api/refresh` endpoint to get a new one!
+
+Let's dive into the absolute highest level of backend security: **Refresh Token Rotation**.
+
+---
+
+#### 1. The `/api/refresh` Logic
+
+Here is exactly what your Node.js server must do when the `/api/refresh` route is hit:
+
+1. **Read the Cookie:** Get the refresh token from `req.cookies.refreshToken`.
+2. **Verify mathematically:** Use `jwt.verify()` to ensure it hasn't expired (7 days).
+3. **Check the Database (Stateful):** You MUST query your Postgres database (`SELECT * FROM tokens WHERE token = x`). If the token is not in the database, it means you previously revoked it. **Reject the request.**
+4. **Issue new tokens:** Create a brand new 15-minute Access Token, and a brand new 7-day Refresh Token!
+
+---
+
+#### 2. Refresh Token Rotation (The Ultimate Defense)
+
+Did you notice Step 4 above? We didn't just give them a new Access Token. We also gave them a **BRAND NEW Refresh Token!** This is called Token Rotation.
+
+Why do we do this? 
+* <span class="hinglish">Maan lo ek bhayankar (advanced) hacker ne kisi tarah se user ki `HTTPOnly` cookie chura li. Ab hacker ke paas master key (Refresh Token A) hai!</span>
+* <span class="hinglish">Jaise hi user apna phone kholta hai, uska app `/api/refresh` bulata hai "Refresh Token A" bhej kar. Server use ek naya "Refresh Token B" de deta hai, aur purane wale (A) ko database se delete kar deta hai. </span>
+* <span class="hinglish">Ab thodi der baad, hacker wo chori kiya hua "Refresh Token A" use karke ghusne ki koshish karta hai!</span>
+
+**The Magic Trap:**
+The server sees "Refresh Token A". But wait, the server knows that "Token A" was already used and destroyed an hour ago! The server realizes: *"Oh my god, someone is trying to use an old, stolen token! This account has been compromised!"*
+The server instantly **deletes ALL tokens** belonging to that user from the database. Both the Hacker AND the Real User are instantly logged out and forced to type their password again. The hacker is completely defeated!
+
+```mermaid
+graph TD
+    User["Real User (Has Token A)"]
+    Hacker["Hacker (Stole Token A)"]
+    Server["Node.js Backend"]
+    DB[("Postgres DB (Stores active tokens)")]
+    
+    User -->|"Uses Token A to Refresh"| Server
+    Server -->|"Validates A, Deletes A, Issues B"| DB
+    Server -->|"Returns Token B"| User
+    
+    Hacker -.->|"LATER: Tries to use stolen Token A"| Server
+    Server -->|"Sees A is already used! THREAT DETECTED!"| DB
+    DB -->|"Deletes Token B (Bans User & Hacker)"| Server
+    Server -.->|"403 Forbidden! Please Login Again."| Hacker
+    
+    style User fill:#d5f5e3,stroke:#27ae60
+    style Hacker fill:#fad7a1,stroke:#c0392b
+    style Server fill:#a9cce3,stroke:#2980b9
+    style DB fill:#fcf3cf,stroke:#f39c12
+```
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+How do Senior Developers handle the craziest Auth edge cases in production?
+
+##### Example 1: The Race Condition (Double Refresh)
+**Problem:** The React app loads 3 API requests at the exact same millisecond (`/profile`, `/settings`, `/cart`). All 3 fail because the Access Token is expired. The Axios interceptor fires `/api/refresh` **three times simultaneously**. Because of Token Rotation, the first request succeeds and destroys the token. The 2nd and 3rd requests fail and log the user out!
+**Solution:** The Frontend must use a "Queue" or "Mutex Lock". When the first request triggers a refresh, Axios must PAUSE the 2nd and 3rd requests until the new token arrives, then retry them all together.
+
+##### Example 2: Handling Password Changes
+**Problem:** A user suspects they are hacked, so they change their password. But the hacker still has a valid 7-day Refresh Token!
+**Solution:** Whenever a password is changed, the backend must instantly delete ALL Refresh Tokens associated with that `user_id` from the database. This instantly logs out every device except the current one.
+
+##### Example 3: Tracking Token Families
+**Problem:** How does the server know that Token A and Token B belong to the same sequence (so it can detect hacker theft)?
+**Solution:** Include a `family_id` (a random UUID) inside the JWT payload. When you rotate Token A into Token B, keep the same `family_id`. If someone re-uses an old token, you tell the database: "Delete ALL tokens that have this `family_id`!"
+
+##### Example 4: Role Changes (Promoting to Admin)
+**Problem:** You change a user's role to "Admin" in the database. But their current Access Token still says "Role: User", so they can't access the Admin panel for another 15 minutes!
+**Solution:** The frontend can manually trigger a call to `/api/refresh`. The backend reads the *fresh* role from the database and bakes "Role: Admin" into the brand new 15-minute Access Token!
+
+##### Example 5: Redis vs Postgres for Refresh Tokens
+**Problem:** Checking Postgres on every `/api/refresh` call is a bit slow.
+**Solution:** Store valid Refresh Tokens in Redis as keys! `SET refresh_token:12345 "valid" EX 604800`. Redis will automatically delete it after 7 days, and checking Redis takes 0.001 seconds!
+
+##### Example 6: Multi-Tab Logout
+**Problem:** A user has your website open in 5 tabs. They click "Logout" in Tab 1. Tab 2 doesn't know they logged out, and if they click a button there, it crashes.
+**Solution:** Use the browser's `BroadcastChannel` API or listen to the `storage` event. When Tab 1 logs out, it broadcasts a message. Tabs 2, 3, 4, and 5 hear it and instantly redirect to the Login screen!
+
+##### Example 7: Sliding Window Expiration
+**Problem:** A user is actively working on your site for 8 straight days. Suddenly, they get logged out because the 7-day Refresh Token died.
+**Solution:** Implement a Sliding Window! If a user uses a Refresh Token that has less than 2 days remaining, extend the new Refresh Token's life back up to 7 days. If they don't visit for 7 days, they stay logged out.
+
+##### Example 8: Fingerprinting Devices
+**Problem:** A hacker steals the HTTPOnly cookie and tries to use it from Russia. 
+**Solution:** When issuing the token, generate a random "Device Fingerprint" and store it in LocalStorage AND hash it inside the Token. If the hacker steals the cookie but doesn't steal the LocalStorage fingerprint, the server will notice the mismatch and block the request!
+
+##### Example 9: The "Ghost" Access Token
+**Problem:** A user deletes their account. But their 15-minute Access Token is still valid for another 12 minutes! They can still delete company data!
+**Solution:** For ultra-sensitive routes (like `DELETE /company`), do not rely purely on the stateless JWT. Do a quick Postgres check to ensure the user still exists!
+
+##### Example 10: Limiting Active Sessions
+**Problem:** A user shares their Netflix password with 50 people.
+**Solution:** In the database, count how many active Refresh Tokens exist for that `user_id`. If the count goes above 4, block the login attempt or automatically delete the oldest Refresh Token!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

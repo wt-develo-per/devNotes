@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Interview Practice (Beginner to Advanced)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f8f9fa; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        strong { color: #2c3e50; }
+        .schema-box { background: #eef2f5; padding: 20px; border-radius: 8px; border-left: 5px solid #2980b9; margin-bottom: 40px; }
+        .answer-box { background: #f4fdf8; padding: 1px 20px; border-radius: 8px; border: 1px solid #d0f0c0; margin-top: 10px; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #8e44ad; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #8e44ad; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02_Databases_and_Data_Modeling.html" class="nav-btn">&larr; Previous: Databases</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Authentication_and_Security.html" class="nav-btn">Next: Authentication & Security &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02_Databases_and_Data_Modeling.html" class="nav-btn">&larr; Previous: Databases</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Authentication_and_Security.html" class="nav-btn">Next: Authentication & Security &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### SQL Interview Practice (The 30 Question Gauntlet)
+
+Welcome to your SQL interview preparation! This file contains exactly 30 questions divided into Beginner, Intermediate, and Advanced tiers. 
+
+<div class="schema-box">
+<h5>The Database Schema</h5>
+Assume you are working with the following 4 tables for all of these questions:
+
+1. **`employees`**: `id`, `name`, `department_id`, `salary`, `manager_id`, `hire_date`
+2. **`departments`**: `id`, `name`
+3. **`customers`**: `id`, `name`, `city`
+4. **`orders`**: `id`, `customer_id`, `total_amount`, `order_date`
+</div>
+
+---
+
+#### Section 1: Beginner (Questions 1 - 10)
+*These questions test your basic understanding of CRUD operations, filtering, and sorting.*
+
+##### Q1: Select All Columns
+**Question:** Write a query to retrieve all information about all employees.
+<div class="answer-box">
+
+```sql
+SELECT * FROM employees;
+```
+**Explanation:** The `*` symbol is a wildcard that means "all columns". This returns every row and every column in the table.
+</div>
+
+##### Q2: Select Specific Columns
+**Question:** Write a query to retrieve only the `name` and `salary` of all employees.
+<div class="answer-box">
+
+```sql
+SELECT name, salary FROM employees;
+```
+**Explanation:** It is a best practice to only `SELECT` the columns you actually need to save database memory and network bandwidth.
+</div>
+
+##### Q3: Filter with WHERE
+**Question:** Find all employees who earn a salary strictly greater than 50,000.
+<div class="answer-box">
+
+```sql
+SELECT * FROM employees 
+WHERE salary > 50000;
+```
+**Explanation:** The `WHERE` clause filters rows before they are returned.
+</div>
+
+##### Q4: Filter with Multiple Conditions
+**Question:** Find all employees who work in department `3` AND earn more than 60,000.
+<div class="answer-box">
+
+```sql
+SELECT * FROM employees 
+WHERE department_id = 3 AND salary > 60000;
+```
+**Explanation:** You can chain conditions using `AND` or `OR`.
+</div>
+
+##### Q5: Sorting Results
+**Question:** Retrieve a list of all employees, sorted by their salary from highest to lowest.
+<div class="answer-box">
+
+```sql
+SELECT * FROM employees 
+ORDER BY salary DESC;
+```
+**Explanation:** `ORDER BY` sorts the results. `DESC` means descending (highest first), and `ASC` means ascending (default).
+</div>
+
+##### Q6: Limiting Results
+**Question:** Find the names of the top 3 highest-paid employees.
+<div class="answer-box">
+
+```sql
+SELECT name FROM employees 
+ORDER BY salary DESC 
+LIMIT 3;
+```
+**Explanation:** `LIMIT` (or `TOP` in SQL Server) restricts the number of rows returned. Great for "Top 10" lists.
+</div>
+
+##### Q7: Pattern Matching (LIKE)
+**Question:** Find all customers whose name starts with the letter "A".
+<div class="answer-box">
+
+```sql
+SELECT * FROM customers 
+WHERE name LIKE 'A%';
+```
+**Explanation:** The `%` is a wildcard matching any number of characters. `A%` means "A followed by anything". `%A` would mean "ends with A".
+</div>
+
+##### Q8: Checking for NULL
+**Question:** Find all employees who do not have a manager (meaning their `manager_id` is blank).
+<div class="answer-box">
+
+```sql
+SELECT * FROM employees 
+WHERE manager_id IS NULL;
+```
+**Explanation:** You cannot use `= NULL` because NULL is not a value; it is the *absence* of a value. You must use `IS NULL`.
+</div>
+
+##### Q9: Updating Data
+**Question:** Give the employee with `id = 5` a salary of 80,000.
+<div class="answer-box">
+
+```sql
+UPDATE employees 
+SET salary = 80000 
+WHERE id = 5;
+```
+**Explanation:** Always remember the `WHERE` clause in an `UPDATE` statement! If you forget it, you will change the salary of *every* employee.
+</div>
+
+##### Q10: Deleting Data
+**Question:** Delete all orders where the `total_amount` is less than 10.
+<div class="answer-box">
+
+```sql
+DELETE FROM orders 
+WHERE total_amount < 10;
+```
+**Explanation:** Just like `UPDATE`, forgetting the `WHERE` clause on a `DELETE` statement will wipe the entire table.
+</div>
+
+---
+
+#### Section 2: Intermediate (Questions 11 - 20)
+*These questions test your ability to combine tables, group data, and use aggregate functions.*
+
+##### Q11: INNER JOIN
+**Question:** Write a query to get a list of employee names and the name of the department they work in.
+<div class="answer-box">
+
+```sql
+SELECT employees.name, departments.name AS department_name
+FROM employees
+INNER JOIN departments ON employees.department_id = departments.id;
+```
+**Explanation:** `INNER JOIN` only returns rows where the `department_id` matches an `id` in the departments table. We use `AS` to rename the column in the result so we don't have two columns simply called "name".
+</div>
+
+##### Q12: LEFT JOIN
+**Question:** Write a query to get all departments, and the names of the employees in them. If a department has no employees, the department should still show up in the results.
+<div class="answer-box">
+
+```sql
+SELECT departments.name, employees.name 
+FROM departments
+LEFT JOIN employees ON departments.id = employees.department_id;
+```
+**Explanation:** A `LEFT JOIN` guarantees that everything in the "Left" table (`departments`) is returned, even if there is no match on the right. The employee name will just be `NULL`.
+</div>
+
+##### Q13: Basic Aggregation
+**Question:** Find the total number of orders that have been placed.
+<div class="answer-box">
+
+```sql
+SELECT COUNT(*) FROM orders;
+```
+**Explanation:** Aggregate functions perform a calculation on a set of values. `COUNT(*)` counts total rows.
+</div>
+
+##### Q14: GROUP BY
+**Question:** Find the total amount of money spent by each customer. Show the `customer_id` and the total sum.
+<div class="answer-box">
+
+```sql
+SELECT customer_id, SUM(total_amount) AS total_spent
+FROM orders
+GROUP BY customer_id;
+```
+**Explanation:** `GROUP BY` collapses all rows with the same `customer_id` into a single row, and then applies the `SUM()` function to their combined amounts.
+</div>
+
+##### Q15: GROUP BY with HAVING
+**Question:** Find the `customer_id` of customers who have spent a total of more than $1,000 across all their orders.
+<div class="answer-box">
+
+```sql
+SELECT customer_id, SUM(total_amount) AS total_spent
+FROM orders
+GROUP BY customer_id
+HAVING SUM(total_amount) > 1000;
+```
+**Explanation:** You cannot use `WHERE` on aggregated data (because `WHERE` happens *before* the grouping). To filter *after* grouping, you must use `HAVING`.
+</div>
+
+##### Q16: DISTINCT
+**Question:** Write a query to find a list of all the unique cities where our customers live.
+<div class="answer-box">
+
+```sql
+SELECT DISTINCT city FROM customers;
+```
+**Explanation:** `DISTINCT` removes duplicates from the result set. If 500 customers live in "New York", "New York" will only print once.
+</div>
+
+##### Q17: Date Functions
+**Question:** Find all orders placed in the year 2023.
+<div class="answer-box">
+
+```sql
+SELECT * FROM orders 
+WHERE EXTRACT(YEAR FROM order_date) = 2023;
+
+-- Or in SQL Server:
+-- WHERE YEAR(order_date) = 2023
+```
+**Explanation:** SQL provides built-in functions to rip parts of dates out without needing complex string manipulation.
+</div>
+
+##### Q18: Conditional Logic (CASE WHEN)
+**Question:** Retrieve all employees. Add a new column called `salary_tier`. If they earn > 100k, it should say 'High'. If > 50k, it should say 'Medium'. Otherwise, 'Low'.
+<div class="answer-box">
+
+```sql
+SELECT name, salary,
+  CASE 
+    WHEN salary > 100000 THEN 'High'
+    WHEN salary > 50000 THEN 'Medium'
+    ELSE 'Low'
+  END AS salary_tier
+FROM employees;
+```
+**Explanation:** `CASE WHEN` is the SQL equivalent of `if / else if / else` statements.
+</div>
+
+##### Q19: Multiple JOINs
+**Question:** Write a query to get the Customer's Name, the Order Date, and the Total Amount for all orders.
+<div class="answer-box">
+
+```sql
+SELECT customers.name, orders.order_date, orders.total_amount
+FROM customers
+INNER JOIN orders ON customers.id = orders.customer_id;
+```
+**Explanation:** You can chain as many `JOIN` statements as you need to connect the data graph together.
+</div>
+
+##### Q20: IN Clause
+**Question:** Find all employees who work in department 1, 3, or 5.
+<div class="answer-box">
+
+```sql
+SELECT * FROM employees 
+WHERE department_id IN (1, 3, 5);
+```
+**Explanation:** The `IN` clause replaces having to write `department_id = 1 OR department_id = 3 OR department_id = 5`.
+</div>
+
+---
+
+#### Section 3: Advanced (Questions 21 - 30)
+*These questions are typical of Senior Backend/Data Engineering interviews. They test Subqueries, CTEs, and Window Functions.*
+
+##### Q21: Standard Subquery
+**Question:** Find the names of employees who earn MORE than the company's average salary.
+<div class="answer-box">
+
+```sql
+SELECT name, salary FROM employees 
+WHERE salary > (SELECT AVG(salary) FROM employees);
+```
+**Explanation:** The database runs the inner query first (calculating the single average number), and then uses that number to filter the outer query.
+</div>
+
+##### Q22: Correlated Subquery
+**Question:** Find the names of employees who earn more than the average salary *of their specific department*.
+<div class="answer-box">
+
+```sql
+SELECT e1.name, e1.salary, e1.department_id
+FROM employees e1
+WHERE e1.salary > (
+    SELECT AVG(salary) 
+    FROM employees e2 
+    WHERE e1.department_id = e2.department_id
+);
+```
+**Explanation:** A "Correlated" subquery relies on data from the outer query. For *every single employee* (e1), the subquery runs again to calculate the average of *their specific* department (e2).
+</div>
+
+##### Q23: Common Table Expressions (CTEs)
+**Question:** Using a CTE, find the department ID that has the highest total combined salary.
+<div class="answer-box">
+
+```sql
+WITH DepartmentTotals AS (
+    SELECT department_id, SUM(salary) as total_salary
+    FROM employees
+    GROUP BY department_id
+)
+SELECT department_id, total_salary 
+FROM DepartmentTotals 
+ORDER BY total_salary DESC 
+LIMIT 1;
+```
+**Explanation:** `WITH` creates a virtual table (`DepartmentTotals`) that only exists for this query. It makes complex logic incredibly easy to read.
+</div>
+
+##### Q24: Window Functions (ROW_NUMBER)
+**Question:** Write a query to list all employees and assign them a ranking number based on their salary (1 being the highest paid).
+<div class="answer-box">
+
+```sql
+SELECT name, salary, 
+       ROW_NUMBER() OVER (ORDER BY salary DESC) as rank
+FROM employees;
+```
+**Explanation:** A Window Function performs a calculation across a set of table rows that are somehow related to the current row, *without* collapsing the rows into one (like GROUP BY does).
+</div>
+
+##### Q25: Window Functions (PARTITION BY)
+**Question:** List all employees, and assign them a salary ranking *within their specific department*.
+<div class="answer-box">
+
+```sql
+SELECT name, department_id, salary, 
+       RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) as dept_rank
+FROM employees;
+```
+**Explanation:** `PARTITION BY` is like `GROUP BY` for window functions. It resets the ranking counter back to 1 every time the `department_id` changes.
+</div>
+
+##### Q26: Window Functions (LAG)
+**Question:** Write a query to show each employee's salary, and the salary of the person who earns immediately less than them.
+<div class="answer-box">
+
+```sql
+SELECT name, salary, 
+       LAG(salary, 1) OVER (ORDER BY salary DESC) as next_lowest_salary
+FROM employees;
+```
+**Explanation:** `LAG()` lets you "look backwards" at previous rows in the result set. `LEAD()` lets you look forwards. This is incredibly useful for calculating day-over-day growth.
+</div>
+
+##### Q27: Self Join
+**Question:** Write a query to retrieve a list of employees alongside the name of their Manager. (Remember, managers are also just employees in the same table).
+<div class="answer-box">
+
+```sql
+SELECT e.name AS Employee_Name, m.name AS Manager_Name
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;
+```
+**Explanation:** You can join a table to itself! You just have to give the table two different "aliases" (`e` and `m`) so the database knows which one you are talking about. We use a LEFT JOIN just in case the CEO doesn't have a manager.
+</div>
+
+##### Q28: Dealing with Duplicates
+**Question:** Write a query to find out if there are any duplicate customers (customers with the exact same name and city).
+<div class="answer-box">
+
+```sql
+SELECT name, city, COUNT(*) as occurrence_count
+FROM customers
+GROUP BY name, city
+HAVING COUNT(*) > 1;
+```
+**Explanation:** Grouping by the unique fields and checking for a count greater than 1 is the standard way to hunt down duplicate data.
+</div>
+
+##### Q29: Cumulative Sum (Running Total)
+**Question:** Calculate a running total of the money the company has made from orders, ordered by date.
+<div class="answer-box">
+
+```sql
+SELECT order_date, total_amount,
+       SUM(total_amount) OVER (ORDER BY order_date ASC) as running_total
+FROM orders;
+```
+**Explanation:** By using `SUM()` as a Window Function (with `OVER`), it calculates a cumulative sum row by row!
+</div>
+
+##### Q30: The Subquery Deletion
+**Question:** You have a table of users, and you realize some users signed up twice (same email). Write a query to delete the duplicate rows, keeping only the row with the lowest `id`.
+<div class="answer-box">
+
+```sql
+DELETE FROM users 
+WHERE id NOT IN (
+    SELECT MIN(id) 
+    FROM users 
+    GROUP BY email
+);
+```
+**Explanation:** This is a classic, brutal interview question. You group by the email to find the lowest `MIN(id)` for each person. Then, you delete anyone whose ID is *not* in that safe list! *(Note: MySQL sometimes requires a nested subquery to delete from a table you are currently selecting from).*
+</div>
+
+---
+
+#### Section 4: Top 10 SQL Theory Interview Questions
+*These are the most common theoretical questions asked in interviews, focusing on the concepts behind SQL rather than writing queries.*
+
+##### Q31: What is the difference between TRUNCATE and DELETE?
+<div class="answer-box">
+**Answer:** `DELETE` is a DML (Data Manipulation Language) command that removes rows one by one and records each deletion in the transaction log, meaning it can be rolled back. `TRUNCATE` is a DDL (Data Definition Language) command that drops and re-creates the table, making it much faster but it cannot be rolled back in most databases.
+</div>
+
+##### Q32: What is the difference between WHERE and HAVING?
+<div class="answer-box">
+**Answer:** Both are used to filter records, but `WHERE` filters rows *before* aggregation (GROUP BY) takes place, while `HAVING` filters rows *after* the aggregation. You cannot use aggregate functions like `SUM()` in a `WHERE` clause.
+</div>
+
+##### Q33: What is the difference between a Primary Key and a Unique Key?
+<div class="answer-box">
+**Answer:** Both guarantee uniqueness for a column. However, a table can only have **one** Primary Key, and it absolutely cannot contain `NULL` values. A table can have **multiple** Unique Keys, and in most SQL databases, a Unique Key can accept one `NULL` value.
+</div>
+
+##### Q34: What are the different types of JOINs?
+<div class="answer-box">
+**Answer:**
+1. **INNER JOIN:** Returns records that have matching values in both tables.
+2. **LEFT (OUTER) JOIN:** Returns all records from the left table, and the matched records from the right table.
+3. **RIGHT (OUTER) JOIN:** Returns all records from the right table, and the matched records from the left.
+4. **FULL (OUTER) JOIN:** Returns all records when there is a match in either left or right table.
+5. **CROSS JOIN:** Returns the Cartesian product (every row in table A matched with every row in table B).
+</div>
+
+##### Q35: What is an Index, and how does it improve performance?
+<div class="answer-box">
+**Answer:** An index is a data structure (usually a B-Tree) created on a database column that drastically speeds up data retrieval operations (SELECTs). It works like the index at the back of a book. The tradeoff is that it takes up extra disk space and slows down write operations (INSERT, UPDATE, DELETE) because the index must be updated every time the data changes.
+</div>
+
+##### Q36: What is a View?
+<div class="answer-box">
+**Answer:** A View is a virtual table based on the result-set of an SQL statement. It contains rows and columns just like a real table, but the data is pulled dynamically from one or more real tables when the View is queried. It is used for security (hiding certain columns from users) and to simplify complex queries.
+</div>
+
+##### Q37: What is the difference between UNION and UNION ALL?
+<div class="answer-box">
+**Answer:** Both combine the result sets of two or more SELECT statements. However, `UNION` removes duplicate rows from the final result set, which requires extra processing. `UNION ALL` includes duplicates and is therefore much faster.
+</div>
+
+##### Q38: What are Constraints?
+<div class="answer-box">
+**Answer:** Constraints are rules enforced on data columns to ensure data accuracy and reliability. Common constraints include `NOT NULL`, `UNIQUE`, `PRIMARY KEY`, `FOREIGN KEY`, `CHECK` (ensures values meet a specific condition), and `DEFAULT` (provides a default value if none is specified).
+</div>
+
+##### Q39: What is a Stored Procedure?
+<div class="answer-box">
+**Answer:** A stored procedure is a prepared SQL code that you can save and reuse over and over again. Instead of sending a massive, complex query over the network every time, the backend can just call `EXEC GetEmployeeData`, executing the pre-compiled code directly on the database server.
+</div>
+
+##### Q40: What is a Trigger?
+<div class="answer-box">
+**Answer:** A trigger is a special type of stored procedure that automatically runs (fires) when an event occurs in the database server, such as an `INSERT`, `UPDATE`, or `DELETE` on a specific table. It is often used for maintaining audit logs (e.g., saving the old value to a history table before updating).
+</div>
+
+---
+
+#### Section 5: Top 10 Database Architecture Interview Questions
+*These questions test your system design knowledge and understanding of how databases operate at scale.*
+
+##### Q41: What are the ACID properties?
+<div class="answer-box">
+**Answer:** ACID guarantees that database transactions are processed reliably:
+1. **Atomicity:** All parts of a transaction succeed, or the entire transaction fails and rolls back.
+2. **Consistency:** Data must always adhere to the database schema and constraints.
+3. **Isolation:** Concurrent transactions execute as if they were running sequentially, preventing them from interfering with each other.
+4. **Durability:** Once committed, the transaction is permanently saved, even if the power fails immediately after.
+</div>
+
+##### Q42: What is the difference between SQL and NoSQL?
+<div class="answer-box">
+**Answer:** SQL (Relational) databases use rigid tables, enforce strict schemas, and are highly suitable for complex queries and ACID transactions. They scale vertically. NoSQL (Non-Relational) databases store data in flexible formats (like JSON documents, key-value pairs, or graphs), have dynamic schemas, and are designed to scale horizontally across many servers easily.
+</div>
+
+##### Q43: What is the CAP Theorem?
+<div class="answer-box">
+**Answer:** The CAP theorem states that a distributed database system can only guarantee two out of three characteristics: Consistency (C), Availability (A), and Partition Tolerance (P). Because network partitions (P) are inevitable on the internet, architects must choose between prioritizing Consistency (CP) or Availability (AP) during a failure.
+</div>
+
+##### Q44: What is Normalization vs Denormalization?
+<div class="answer-box">
+**Answer:** **Normalization** is the process of splitting data into multiple related tables to eliminate redundancy and ensure data integrity (standard in SQL). **Denormalization** is the process of intentionally duplicating data by grouping it together into a single table or document to drastically speed up read performance (standard in NoSQL).
+</div>
+
+##### Q45: Explain Database Sharding (Horizontal Partitioning).
+<div class="answer-box">
+**Answer:** Sharding is a horizontal scaling technique where a massive database is broken up into smaller, more manageable pieces called "shards," and spread across multiple independent servers. For example, users with last names A-M live on Server 1, and N-Z live on Server 2. It allows a database to scale almost infinitely.
+</div>
+
+##### Q46: What is a Primary-Replica (Master-Slave) Architecture?
+<div class="answer-box">
+**Answer:** It is a scaling strategy where one server (the Primary) handles all WRITE operations (INSERT, UPDATE). The Primary continuously copies its data to multiple other servers (the Replicas). The backend then points all READ queries (SELECT) to the Replicas, distributing the load and drastically improving read performance.
+</div>
+
+##### Q47: What is the N+1 Query Problem?
+<div class="answer-box">
+**Answer:** It is a severe performance issue (often caused by ORMs) where the application executes 1 database query to fetch a list of N items, and then executes N additional queries in a loop to fetch related data for each item. It results in N+1 total queries. The solution is to use SQL `JOIN`s or Eager Loading to fetch all required data in exactly 1 query.
+</div>
+
+##### Q48: What is Database Connection Pooling?
+<div class="answer-box">
+**Answer:** Opening and closing a network connection to a database for every single user request is extremely slow and CPU-intensive. A Connection Pool maintains a cache of open, reusable database connections. When the backend needs to query the database, it borrows an active connection from the pool and returns it when finished.
+</div>
+
+##### Q49: What is the difference between OLTP and OLAP?
+<div class="answer-box">
+**Answer:** **OLTP** (Online Transaction Processing) databases are optimized for handling thousands of small, fast, real-time inserts/updates (e.g., an eCommerce checkout). **OLAP** (Online Analytical Processing) databases are optimized for executing complex, slow, heavy read queries across millions of rows for data mining and business intelligence reporting.
+</div>
+
+##### Q50: How do you handle deadlocks in a database?
+<div class="answer-box">
+**Answer:** A deadlock occurs when Transaction A locks Row 1 and waits for Row 2, while Transaction B locks Row 2 and waits for Row 1. They are stuck forever. The database engine usually detects this and automatically kills one of the transactions (the victim) and rolls it back so the other can proceed. As developers, we prevent deadlocks by ensuring our code always accesses tables and rows in the exact same order.
+</div>
+
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

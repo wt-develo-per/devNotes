@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node.js Streams</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #3498db; margin: 0; padding-left: 20px; background: #eaf6fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="Buffers.html" class="nav-btn">&larr; Previous: Buffers</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="06_Node_Core_Modules_Part1.html" class="nav-btn">Next: Core Modules (Part 1) &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="Buffers.html" class="nav-btn">&larr; Previous: Buffers</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="06_Node_Core_Modules_Part1.html" class="nav-btn">Next: Core Modules (Part 1) &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Topic 2: Streams
+
+In Node.js, **Streams** are the ultimate weapon for handling massive amounts of data. They give you a way to read/write files or network communications in a continuous, piece-by-piece manner.
+
+Instead of reading a massive 10GB file completely into your server's memory (RAM) before sending it to a user, Streams allow you to read a tiny 64kb "chunk" of the file, send it, and then grab the next chunk!
+
+---
+
+#### 1. The Netflix Analogy
+
+When you watch a movie on Netflix, you don't download the entire 2-hour video to your phone before you hit play. That would take forever and use all your storage!
+
+Instead, you *stream* it. Netflix sends you the first few seconds of video, your phone plays it, and while you are watching, Netflix is sending the next few seconds in the background.
+
+* <span class="hinglish">Streams bilkul paani ki pipe ki tarah hote hain. Agar aapko 10,000 litre ki tanki bharni hai, toh aap pura 10,000 litre paani ek sath utha kar nahi le jaate (warna kamar toot jayegi). Aap ek pipe lagate ho, aur paani thoda-thoda karke continuous behta rehta hai jab tak tanki na bhar jaye. Node.js server bhi RAM ki 'kamar tootne' se bachane ke liye data ko thoda-thoda karke bhejta hai.</span>
+
+---
+
+#### 2. The Memory Problem (Visualized)
+
+If we don't use streams, our Node.js server memory gets crushed under heavy loads. Notice what happens when you try to send a 10GB file to a user without streams!
+
+```mermaid
+graph TD
+    subgraph BadWay ["❌ The Bad Way - Without Streams"]
+        A1["💾 Hard Drive (10GB File)"] -->|"Reads ENTIRE file"| B1["🧠 Server RAM (10GB) - CRASH!"]
+        B1 -->|"Attempts to send 10GB"| C1["💻 User Client"]
+    end
+    
+    subgraph GoodWay ["✅ The Good Way - With Streams"]
+        A2["💾 Hard Drive (10GB File)"] -->|"Reads 64kb Chunk"| B2["🛡️ Server RAM (64kb) - SAFE"]
+        B2 -->|"Sends 64kb Chunk"| C2["💻 User Client"]
+    end
+    
+    style B1 fill:#f2d7d5,stroke:#c0392b,stroke-width:2px
+    style B2 fill:#d5f5e3,stroke:#27ae60,stroke-width:2px
+```
+
+---
+
+#### 3. The Four Types of Streams
+
+Node.js has four fundamental stream types:
+
+1. **Readable Streams:** Used for reading data (e.g., `fs.createReadStream()`).
+2. **Writable Streams:** Used for writing data (e.g., `fs.createWriteStream()`).
+3. **Duplex Streams:** Can be both read from and written to simultaneously (e.g., a TCP network socket connection).
+4. **Transform Streams:** A Duplex stream that can modify or transform the data as it passes through (e.g., `zlib.createGzip()` to zip and compress a file on the fly!).
+
+---
+
+#### 4. Connecting Streams: The `.pipe()` method
+
+When you have a **Readable Stream** (data coming in) and you want to send that data directly to a **Writable Stream** (data going out), you connect them like plumbing a house: using a **pipe**.
+
+If water is flowing out of a tap (Readable) and needs to go into a bucket (Writable), you connect a hose (`.pipe()`) between them. Node.js handles the flow of data automatically, ensuring the bucket doesn't overflow if the tap is running too fast!
+
+##### Real-World Code Example
+Let's look at how to serve a massive video file over a web server without crashing it.
+
+```javascript
+import fs from 'fs';
+import http from 'http';
+
+const server = http.createServer();
+
+// ❌ THE BAD WAY (Do NOT do this for large files)
+/*
+server.on('request', (req, res) => {
+  // fs.readFile loads the ENTIRE file into memory first!
+  fs.readFile('./massive-movie.mp4', (err, data) => {
+    if (err) throw err;
+    res.end(data); // Then sends it all at once. Server crashes if file is > 2GB!
+  });
+});
+*/
+
+// ✅ THE GOOD WAY (Using Streams)
+server.on('request', (req, res) => {
+  // 1. Create a "tap" reading from the file on the hard drive
+  const readableStream = fs.createReadStream('./massive-movie.mp4');
+  
+  // 2. The user's response object (res) is naturally a Writable Stream. 
+  // We simply pipe the readable stream into the writable response!
+  readableStream.pipe(res);
+});
+
+server.listen(3000, () => console.log("Stream Server listening..."));
+```
+
+> [!TIP]
+> **Stream Events:** Under the hood, Streams are event emitters! If you don't want to use `.pipe()`, you can actually listen to exactly what is happening manually by attaching event listeners like `.on('data', chunk => ...)`, `.on('end')`, or `.on('error')` on your stream objects.
+    </script>
+</body>
+</html>

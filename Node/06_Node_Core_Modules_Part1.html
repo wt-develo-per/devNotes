@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node Core Modules (Part 1)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #1e1e1e; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #a6e22e; }
+        blockquote { border-left: 5px solid #2ecc71; margin: 0; padding-left: 20px; background: #eafaf1; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        strong { color: #27ae60; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #27ae60; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #2ecc71; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #2ecc71; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="Streams.html" class="nav-btn">&larr; Previous: Streams</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="07_Node_Core_Modules_Part2.html" class="nav-btn">Next: Core Modules (Part 2) &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="Streams.html" class="nav-btn">&larr; Previous: Streams</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="07_Node_Core_Modules_Part2.html" class="nav-btn">Next: Core Modules (Part 2) &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Built-in Core Modules (Part 1)
+
+Node.js is extremely powerful right out of the box. Junior developers often make the mistake of using `npm install` for everything. Senior developers know how to use the built-in Core Modules.
+
+You do not need to install these. You simply `import` them.
+We will cover 4 critical modules: **`fs`**, **`path`**, **`os`**, and **`crypto`**, with exactly 5 real-world scenarios for each!
+
+---
+
+#### 1. The `fs` Module (File System)
+
+The `fs` module allows Node.js to read, write, and delete files on your hard drive. 
+* <span class="hinglish">Jab bhi database ke bina local server par text file, images, ya logs save karne ho, tab `fs` module ka use hota hai. Dhyan rakhna, Node.js mein har `fs` function ke 2 versions hote hain: Sync (jo server block karta hai) aur Promises (jo server block nahi karta). Hamesha `fs/promises` use karna chahiye!</span>
+
+##### Scenario 1: Reading a Config File on Server Startup
+**Problem:** Your app needs to load API Keys from a `.json` file before starting.
+```javascript
+import fs from 'fs/promises';
+
+async function loadConfig() {
+    const data = await fs.readFile('./config.json', 'utf-8');
+    const config = JSON.parse(data);
+    console.log("Database Password loaded:", config.db_pass);
+}
+```
+
+##### Scenario 2: Appending Logs to a Server File
+**Problem:** Whenever a user gets an error, you want to record it in an `error.log` file without overwriting the old errors.
+```javascript
+import fs from 'fs/promises';
+
+async function logError(errorMsg) {
+    const log = `[${new Date().toISOString()}] ERROR: ${errorMsg}\n`;
+    await fs.appendFile('./server-errors.log', log);
+}
+```
+
+##### Scenario 3: Checking if an Uploaded File Exists
+**Problem:** A user tries to delete their profile picture. You must check if the picture actually exists on the hard drive first.
+```javascript
+import fs from 'fs/promises';
+
+async function deleteAvatar(filename) {
+    try {
+        await fs.access(`./uploads/${filename}`);
+        await fs.unlink(`./uploads/${filename}`); // unlinks = deletes
+        console.log("Avatar deleted!");
+    } catch (err) {
+        console.log("File does not exist!");
+    }
+}
+```
+
+##### Scenario 4: Creating a Directory dynamically
+**Problem:** You want to organize user uploads by Year and Month (e.g. `/uploads/2024/05/`).
+```javascript
+import fs from 'fs/promises';
+
+async function createUserFolder() {
+    // recursive: true means it will create parent folders if they don't exist
+    await fs.mkdir('./uploads/2024/05', { recursive: true });
+}
+```
+
+##### Scenario 5: Renaming / Moving a File
+**Problem:** A user uploads a temporary file. After virus scanning, you need to move it to the official "safe" folder.
+```javascript
+import fs from 'fs/promises';
+
+async function moveFile() {
+    await fs.rename('./temp/user_upload.pdf', './safe_docs/invoice.pdf');
+}
+```
+
+---
+
+#### 2. The `path` Module (Navigating Folders safely)
+
+Windows uses backslashes `\` for folders (e.g., `C:\Users\`). Linux/Mac use forward slashes `/` (e.g., `/var/www/`). 
+* <span class="hinglish">Agar aap manual string concatenation karoge (`folder + "/" + filename`), toh aapka code Windows laptop par chalega, par jab aap AWS Linux server par deploy karoge toh crash ho jayega! `path` module is crash se bachata hai by understanding the OS.</span>
+
+##### Scenario 1: Joining Paths Safely (`path.join`)
+**Problem:** Constructing a file path that works on ANY operating system.
+```javascript
+import path from 'path';
+
+// Node will automatically use '\' on Windows and '/' on Linux!
+const safePath = path.join('var', 'www', 'uploads', 'image.png');
+// Linux output: 'var/www/uploads/image.png'
+```
+
+##### Scenario 2: Getting the Absolute Path (`path.resolve`)
+**Problem:** Your script is running from a random folder, and you need the full exact path starting from `C:\`.
+```javascript
+import path from 'path';
+
+const fullPath = path.resolve('data.json');
+// Output: 'C:\Users\Admin3\Desktop\MyProject\data.json'
+```
+
+##### Scenario 3: Extracting the File Extension
+**Problem:** A user uploads `vacation_photo.jpeg`. You need to check if it is actually an image before saving it.
+```javascript
+import path from 'path';
+
+const ext = path.extname('vacation_photo.jpeg');
+if (ext === '.jpeg' || ext === '.png') {
+    console.log("Valid image!");
+}
+```
+
+##### Scenario 4: Getting the File Name without Extension
+**Problem:** You are processing a file named `report_2024.csv` and want to save the name in the database without the `.csv` part.
+```javascript
+import path from 'path';
+
+const base = path.basename('report_2024.csv', '.csv');
+console.log(base); // Output: 'report_2024'
+```
+
+##### Scenario 5: Parsing a messy file path
+**Problem:** You need to extract the folder name, the file name, and the extension all at once.
+```javascript
+import path from 'path';
+
+const parsed = path.parse('/home/user/dir/file.txt');
+console.log(parsed.dir);  // '/home/user/dir'
+console.log(parsed.name); // 'file'
+console.log(parsed.ext);  // '.txt'
+```
+
+---
+
+#### 3. The `os` Module (Operating System Info)
+
+Node.js can talk directly to the machine's hardware!
+* <span class="hinglish">Kabhi socha hai jab server overload hota hai toh wo automatically restart kaise hota hai? Hum `os` module se RAM aur CPU check karte rehte hain. Jaise hi RAM 95% full hui, hum warning trigger kar sakte hain!</span>
+
+##### Scenario 1: Checking Free RAM
+**Problem:** You are about to process a massive 2GB video file, but you need to check if the server has enough RAM first.
+```javascript
+import os from 'os';
+
+const freeMemoryMB = os.freemem() / 1024 / 1024;
+console.log(`Free RAM: ${Math.round(freeMemoryMB)} MB`);
+if (freeMemoryMB < 2000) {
+    console.log("ABORT! Server will crash!");
+}
+```
+
+##### Scenario 2: Finding out how many CPU Cores you have
+**Problem:** You want to run a multi-threaded cluster (Node by default only uses 1 core). You need to know how many cores the CPU has.
+```javascript
+import os from 'os';
+
+const cores = os.cpus().length;
+console.log(`This server has ${cores} CPU cores!`);
+```
+
+##### Scenario 3: Getting the Server Uptime
+**Problem:** You are building an Admin Dashboard and want to show how long the server has been running without a crash.
+```javascript
+import os from 'os';
+
+const uptimeDays = os.uptime() / 60 / 60 / 24;
+console.log(`Server running for ${uptimeDays.toFixed(2)} days`);
+```
+
+##### Scenario 4: Finding the User's Temp Directory
+**Problem:** You need to download a file from the internet temporarily, and then delete it. Where should you save it?
+```javascript
+import os from 'os';
+import path from 'path';
+
+// Every OS has a dedicated 'trash/temp' folder
+const tempFilePath = path.join(os.tmpdir(), 'temp_download.zip');
+console.log("Saving temp file to:", tempFilePath);
+```
+
+##### Scenario 5: Getting the Server's IP Address
+**Problem:** You want to log the internal IP address of the machine running the code (useful in Microservices).
+```javascript
+import os from 'os';
+
+const networkInterfaces = os.networkInterfaces();
+console.log(networkInterfaces); // Shows all IP addresses, MAC addresses, etc.
+```
+
+---
+
+#### 4. The `crypto` Module (Security & Hashing)
+
+If you are dealing with Passwords, API Keys, or Security, NEVER write your own math. Always use `crypto`.
+* <span class="hinglish">Database mein password ko raw text (`"password123"`) ki tarah save karna sabse bada paap (sin) hai! Agar database hack ho gaya toh sab users ke accounts hack ho jayenge. Hum `crypto` se password ko ek aisi jalebi (hash) bana dete hain jise koi wapas normal text nahi bana sakta!</span>
+
+##### Scenario 1: Hashing a Password (PBKDF2)
+**Problem:** A user registers. You must encrypt their password before saving it.
+```javascript
+import crypto from 'crypto';
+
+// pbkdf2 runs an algorithm 100,000 times to make it uncrackable by hackers!
+crypto.pbkdf2('mysecretpassword', 'randomSalt', 100000, 64, 'sha512', (err, derivedKey) => {
+    if (err) throw err;
+    console.log("Hashed DB Password:", derivedKey.toString('hex'));
+});
+```
+
+##### Scenario 2: Generating a random API Key
+**Problem:** A user signs up for your SaaS API. You need to generate a 32-character completely random API key.
+```javascript
+import crypto from 'crypto';
+
+// randomBytes is cryptographically secure (unlike Math.random)
+const apiKey = crypto.randomBytes(32).toString('hex');
+console.log("Your New API Key:", apiKey);
+```
+
+##### Scenario 3: Generating a random UUID (v4)
+**Problem:** You need a guaranteed unique ID for a new database row.
+```javascript
+import crypto from 'crypto';
+
+const userId = crypto.randomUUID();
+console.log("New User ID:", userId); // e.g., '36b8f84d-df4e-4d49-b662-bcde71a8764f'
+```
+
+##### Scenario 4: Creating a Webhook Signature (HMAC)
+**Problem:** Stripe sends you a webhook saying "Payment Successful". How do you know it was actually Stripe, and not a hacker faking the request?
+```javascript
+import crypto from 'crypto';
+
+const payload = '{"amount": 100}';
+const stripeSecret = 'whsec_secret123';
+
+const signature = crypto.createHmac('sha256', stripeSecret)
+                        .update(payload)
+                        .digest('hex');
+console.log("Stripe Signature:", signature);
+```
+
+##### Scenario 5: Simple SHA256 Hash
+**Problem:** You want to generate a short hash of a user's email to use for their Gravatar profile picture URL.
+```javascript
+import crypto from 'crypto';
+
+const email = 'test@gmail.com';
+const hash = crypto.createHash('sha256').update(email).digest('hex');
+console.log("Gravatar Hash:", hash);
+```
+
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

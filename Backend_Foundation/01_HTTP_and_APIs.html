@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>01 - HTTP and APIs (Deep Dive)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #3498db; margin: 0; padding-left: 20px; background: #f8f9fa; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #34495e; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #2980b9; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #2980b9; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Databases_and_Data_Modeling.html" class="nav-btn">Next: Databases & Data Modeling &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Databases_and_Data_Modeling.html" class="nav-btn">Next: Databases & Data Modeling &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 1: HTTP and APIs (Deep Dive)
+
+Before you write a single line of backend logic, you must deeply understand the language that computers use to talk to each other across the internet. That language is **HTTP (Hypertext Transfer Protocol)**.
+
+---
+
+#### 1. The Journey of a Web Request: A Microscopic View
+
+When you type `https://api.github.com/users` and hit enter, a massive sequence of events happens in a fraction of a second.
+
+##### Step 1: DNS Resolution (The Internet's Phonebook)
+Computers route traffic using IP Addresses (like `140.82.113.3`), not domain names. 
+Your browser first checks its local cache. If it doesn't know the IP for `github.com`, it asks a **DNS Resolver** (usually provided by your Internet Service Provider). The resolver queries the "Root Server", which directs it to the ".com" TLD Server, which finally returns the exact IP address.
+
+##### Step 2: TCP Handshake (Ensuring Reliability)
+Once the browser has the IP address, it doesn't just throw data at the server. It uses **TCP (Transmission Control Protocol)**.
+TCP guarantees that no data is lost or corrupted in transit. To establish a TCP connection, a 3-way handshake occurs:
+1. **SYN:** Client says "I want to connect."
+2. **SYN-ACK:** Server says "I acknowledge your request, and I also want to connect."
+3. **ACK:** Client says "Acknowledged, let's start sending data."
+
+##### Step 3: TLS Handshake (Security)
+Because we are using HTTP**S**, an additional cryptographic handshake occurs immediately after TCP. The client and server agree on an encryption key so hackers sniffing the network can only see scrambled garbage.
+
+```mermaid
+sequenceDiagram
+    participant B as Your Browser
+    participant DNS as DNS Server
+    participant S as GitHub API Server
+
+    B->>DNS: 1. Deep DNS Lookup (api.github.com)
+    DNS-->>B: IP: 140.82.113.3
+    
+    Note over B, S: 2. TCP 3-Way Handshake
+    B->>S: SYN
+    S-->>B: SYN-ACK
+    B->>S: ACK
+    
+    Note over B, S: 3. TLS Cryptographic Handshake
+    B->>S: ClientHello (Encryption negotiation)
+    S-->>B: ServerHello & Certificate
+    
+    Note over B, S: 4. Actual HTTP Communication
+    B->>S: HTTP GET /users
+    S-->>B: HTTP 200 OK + JSON Payload
+```
+
+---
+
+#### 2. The Anatomy of HTTP
+
+##### The Critical Concept of "Statelessness"
+HTTP is **Stateless**. The server *has no memory* of past requests. 
+If you add an item to your shopping cart, and then click "Checkout", the server treats the second click as coming from a complete stranger. 
+**How do we fix this?** We force the client (the browser) to send a unique ID ticket (a Cookie or a Token) with *every single request*. The backend reads the ticket, looks it up in the database, and says, "Ah, this is User 123's cart!"
+
+##### Deconstructing the HTTP Request
+Every request is plain text formatted in a very specific way.
+
+```http
+POST /api/v1/users HTTP/1.1
+Host: api.github.com
+User-Agent: Mozilla/5.0
+Authorization: Bearer my_secret_jwt_token
+Accept: application/json
+Content-Type: application/json
+Content-Length: 42
+
+{
+  "username": "johndoe",
+  "age": 25
+}
+```
+
+**Deep Dive into Headers:**
+* `Host`: The domain being requested (required because one server IP might host 100 different websites).
+* `Authorization`: Proves who the user is (vital for security).
+* `Accept`: Tells the backend what format the frontend wants back (e.g., "Please only send me JSON").
+* `Content-Type`: Tells the backend what format the body is in right now (e.g., "The body below is JSON format").
+
+---
+
+#### 3. HTTP Methods and "Idempotency"
+
+Senior engineers categorize HTTP methods using a concept called **Idempotency**.
+An operation is **idempotent** if doing it 1 time has the *exact same result* on the server as doing it 10,000 times.
+
+| Method | Purpose | Idempotent? | Explanation |
+| :--- | :--- | :--- | :--- |
+| **GET** | Read data | ✅ **YES** | Getting a user 100 times doesn't change the database. |
+| **POST** | Create data | ❌ **NO** | Sending a POST 100 times creates 100 duplicate users. |
+| **PUT** | Replace data | ✅ **YES** | Updating user to "Name: Bob". Doing it 100 times means the name is still just "Bob". |
+| **DELETE**| Remove data | ✅ **YES** | Deleting User 123. Doing it again changes nothing; the user is already gone. |
+| **PATCH** | Partial update | ❌/✅ Depends | Generally considered non-idempotent depending on implementation (e.g., "increase age by 1" done 100 times is not idempotent). |
+
+---
+
+#### 4. Advanced RESTful API Architecture
+
+REST (Representational State Transfer) is a set of rules for making APIs predictable.
+
+##### Rule 1: Resources are Nouns
+Never use verbs in URLs. The verb is handled by the HTTP Method.
+* ❌ `POST /updateUser?id=5`
+* ✅ `PUT /users/5`
+
+##### Rule 2: Sub-Resources
+How do you access data that belongs to other data? You nest them logically.
+If you want to get all the comments on Post ID 45:
+* ✅ `GET /posts/45/comments`
+If you want to delete a specific comment (ID 99) on Post 45:
+* ✅ `DELETE /posts/45/comments/99`
+
+##### Rule 3: Query Parameters for Filtering & Pagination
+If you have 1,000,000 users, `GET /users` will crash your server. You must implement pagination, sorting, and filtering using the `?` symbol in the URL.
+* ✅ `GET /users?role=admin&sort=created_at_desc&limit=50&page=2`
+The backend parses everything after the `?` to construct an optimized SQL database query.
+
+##### Rule 4: Versioning
+What happens if you change how your API works, but a mobile app is still using the old version? The app will crash! You must version your APIs from Day 1.
+* ✅ `https://api.myapp.com/v1/users`
+* ✅ `https://api.myapp.com/v2/users`
+
+---
+
+#### 5. Beyond REST: GraphQL and gRPC
+
+##### The Problem with REST: Over-fetching and Under-fetching
+Imagine building a profile page. You need the user's name, their last 3 posts, and their follower count.
+In REST, you might have to make 3 separate network requests:
+1. `GET /users/1` (Returns 50 fields, wasting bandwidth - **Over-fetching**)
+2. `GET /users/1/posts`
+3. `GET /users/1/followers`
+
+##### The Solution: GraphQL (Created by Facebook)
+GraphQL has exactly ONE endpoint: `POST /graphql`.
+Instead of the backend deciding what data to send, the frontend sends a "Query" asking for exactly the fields it wants.
+
+**The Frontend Request:**
+```graphql
+query {
+  user(id: "1") {
+    name
+    posts(last: 3) { title }
+    followerCount
+  }
+}
+```
+The backend processes this single query, fetches data from multiple database tables, and returns exactly what was asked for in a single response.
+
+##### The Solution for Microservices: gRPC (Created by Google)
+REST and GraphQL use JSON. JSON is just text. Parsing text is very slow for computers.
+When Backend Server A needs to talk to Backend Server B incredibly fast, they use **gRPC**.
+* It uses **Protocol Buffers** instead of JSON (compiling data into tiny, unreadable binary code).
+* It uses **HTTP/2 Multiplexing** (allowing thousands of parallel requests over a single TCP connection without waiting).
+* You define strict "contracts" (.proto files), making it physically impossible for Server A to send the wrong data type to Server B.
+    </script>
+</body>
+</html>

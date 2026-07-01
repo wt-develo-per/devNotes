@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>S.O.L.I.D Principles Deep Dive</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1100px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #a9b7c6; background-color: #1e1e1e; font-size: 14px; }
+        pre { background: #2b2b2b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #6a8759; margin-bottom: 30px; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2b2b2b; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; color: #cc7832; }
+        blockquote { border-left: 5px solid #6a8759; margin: 0 0 30px 0; padding-left: 20px; background: #2b2b2b; padding-top: 15px; padding-bottom: 15px; border-radius: 0 8px 8px 0; font-style: italic; }
+        
+        
+        strong { color: #ffc66d; }
+        .hinglish { color: #629755; font-size: 1.0em; }
+        .danger { color: #e74c3c; font-weight: bold; }
+        .success { color: #2ecc71; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em; }
+        th, td { border: 1px solid #555; padding: 12px; text-align: left; }
+        th { background-color: #9876aa; color: #1e1e1e; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #513865; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #9876aa; }
+        .nav-btn:hover { background-color: #6d4b87; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #513865; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #ffc66d; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9876aa; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9876aa; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_OOPs_and_Clean_Code.html" class="nav-btn">&larr; Previous: OOPs & Clean Code</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Creational_Design_Patterns.html" class="nav-btn">Next: Creational Patterns &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_OOPs_and_Clean_Code.html" class="nav-btn">&larr; Previous: OOPs & Clean Code</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Creational_Design_Patterns.html" class="nav-btn">Next: Creational Patterns &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+#### Low-Level Design (LLD) Masterclass 2: S.O.L.I.D Principles
+
+<span class="hinglish">Jab aap Google ya Amazon jaisi company ka code dekhte ho, toh wo code padhne me ek kahani (story) ki tarah lagta hai. Wo aisa isliye hota hai kyunki wo blindly code nahi likhte, wo **S.O.L.I.D Principles** follow karte hain. 
+
+Robert C. Martin ("Uncle Bob") ne ye 5 golden rules banaye the, jo kharab aur messy code ko scalable aur bug-free banate hain. Chaliye in 5 rules ko Node.js/TypeScript ke real-world project examples ke sath break down karte hain!</span>
+
+---
+
+#### 1. S - Single Responsibility Principle (SRP)
+
+<span class="hinglish">**Rule:** "A class should have one, and only one, reason to change." <br>
+**Hinglish Meaning:** Ek Class ya function ka sirf EK HI KAAM (job) hona chahiye. Agar ek class User ko validate bhi kar rahi hai, database me save bhi kar rahi hai, aur Email bhi bhej rahi hai, toh aapne SRP tod diya.</span>
+
+##### <span class="danger">❌ The Bad Way (The All-Rounder Class)</span>
+```typescript
+class UserService {
+    // ❌ DANGER: Ye class Database se bhi baat karti hai, aur Email library se bhi. 
+    // Iske paas change hone ke 2 reason hain (Agar DB badla, ya Email library badli).
+    public async registerUser(user: any) {
+        if (!user.email.includes('@')) throw new Error("Invalid Email"); // Validation
+
+        await db.query('INSERT INTO users...', [user]); // Database Logic
+
+        const mailer = new NodeMailer();
+        mailer.send(user.email, "Welcome!"); // Email Logic
+    }
+}
+```
+
+##### <span class="success">✅ The Clean Way (SRP Applied)</span>
+<span class="hinglish">Hum is class ko 3 chhoti classes me tod denge. Har class ka apna ek alag department hoga!</span>
+
+```typescript
+class UserValidator {
+    public validate(user: any) {
+        if (!user.email.includes('@')) throw new Error("Invalid Email");
+    }
+}
+
+class UserRepository {
+    public async save(user: any) {
+        await db.query('INSERT INTO users...', [user]);
+    }
+}
+
+class EmailService {
+    public sendWelcome(email: string) {
+        const mailer = new NodeMailer();
+        mailer.send(email, "Welcome!");
+    }
+}
+
+// Ab UserService ka ek hi kaam hai: In teeno ko bulana (Orchestrate karna).
+class UserService {
+    constructor(
+        private validator: UserValidator, 
+        private repo: UserRepository, 
+        private email: EmailService
+    ) {}
+
+    public async register(user: any) {
+        this.validator.validate(user);
+        await this.repo.save(user);
+        this.email.sendWelcome(user.email);
+    }
+}
+```
+
+---
+
+#### 2. O - Open/Closed Principle (OCP)
+
+<span class="hinglish">**Rule:** "Software entities should be open for extension, but closed for modification." <br>
+**Hinglish Meaning:** Naye features daalne ke liye purane code ko modify mat karo! Purane code ko chherne se usme naye bugs aa sakte hain. Naya feature hamesha ek nayi file ya class me aana chahiye.</span>
+
+##### <span class="danger">❌ The Bad Way (Modifying existing code)</span>
+<span class="hinglish">Agar CEO bole "Hume VIP customers ko 20% discount dena hai", toh junior dev chalte hue code me `if-else` daal dega:</span>
+```typescript
+class DiscountCalculator {
+    public calculateDiscount(customerType: string, price: number): number {
+        if (customerType === "Regular") return price * 0.10; // Old Code
+        else if (customerType === "VIP") return price * 0.20; // ❌ New code injected here!
+        return 0;
+    }
+}
+```
+
+##### <span class="success">✅ The Clean Way (Extending, not Modifying)</span>
+<span class="hinglish">Polymorphism aur Interfaces ka use karke naye discounts ki nayi class banao.</span>
+```typescript
+interface IDiscountStrategy { calculate(price: number): number; }
+
+class RegularDiscount implements IDiscountStrategy {
+    calculate(price: number): number { return price * 0.10; }
+}
+
+// ✅ Naya feature? Sirf ek Nayi Class banao! Purani class chhune ki zaroorat nahi!
+class VIPDiscount implements IDiscountStrategy {
+    calculate(price: number): number { return price * 0.20; }
+}
+
+class DiscountCalculator {
+    public applyDiscount(strategy: IDiscountStrategy, price: number): number {
+        return strategy.calculate(price); // Closed for modification!
+    }
+}
+```
+
+---
+
+#### 3. L - Liskov Substitution Principle (LSP)
+
+<span class="hinglish">**Rule:** "Subtypes must be substitutable for their base types without altering correctness." <br>
+**Hinglish Meaning:** Agar Child Class wahi same Parent Class ka interface use kar rahi hai, toh wo parent ke rules tod nahi sakti. (Maa-Baap ka promise baccha poora karna chahiye).</span>
+
+##### <span class="danger">❌ The Bad Way (Breaking the promise)</span>
+<span class="hinglish">E-commerce me "Payment" naam ki Parent class hai jisme `deductFromBank()` function hai. `CreditCard` toh bank se deduct karta hai. Par `CashOnDelivery` (COD) me bank se paise nahi katte! Agar COD `deductFromBank()` pe ERROR fek de, toh LSP toot gaya!</span>
+
+```typescript
+class Payment {
+    public deductFromBank(): void { /* common logic */ }
+}
+
+class CreditCardPayment extends Payment {
+    public deductFromBank(): void { console.log("Charging card via Stripe"); }
+}
+
+class CashOnDelivery extends Payment {
+    // ❌ DANGER: LSP violation. Ye class Parent ka promise tod rahi hai!
+    public deductFromBank(): void {
+        throw new Error("COD transactions do not deduct from bank!"); 
+    }
+}
+```
+
+##### <span class="success">✅ The Clean Way (Fixing the Hierarchy)</span>
+<span class="hinglish">Agar COD bank se paise nahi katata, toh usko `Payment` class me daalna hi galat hai! Hierarchy badlo.</span>
+
+```typescript
+// Nayi Base class
+class OrderProcessor {
+    public completeOrder(): void { console.log("Order complete"); }
+}
+
+class DigitalPaymentProcessor extends OrderProcessor {
+    public deductFromBank(): void { console.log("Charging card"); }
+}
+
+class OfflinePaymentProcessor extends OrderProcessor {
+    public collectCash(): void { console.log("Delivery boy collects cash"); }
+}
+```
+
+---
+
+#### 4. I - Interface Segregation Principle (ISP)
+
+<span class="hinglish">**Rule:** "Clients should not be forced to depend upon interfaces that they do not use." <br>
+**Hinglish Meaning:** Ek bohot badi interface (fat interface) mat banao jisko implement karna doosri classes ke liye bojh ban jaye. Interfaces choti aur specific honi chahiye.</span>
+
+##### <span class="danger">❌ The Bad Way (The Fat Interface)</span>
+<span class="hinglish">Maan lo ek Cloud Provider ki interface hai. AWS ye teeno deta hai, par agar hum LocalFileStorage banaye, toh usme `createServer` ka koi kaam nahi hai, par use zabardasti function banana padega kyunki usne `ICloudProvider` implement kiya hai!</span>
+
+```typescript
+interface ICloudProvider {
+    uploadFile(): void;
+    createServer(): void;
+    sendEmail(): void;
+}
+
+class LocalFileStorage implements ICloudProvider {
+    uploadFile(): void { console.log("Saving to local disk"); }
+    
+    // ❌ ZABARDASTI INHE IMPLEMENT KARNA PADA
+    createServer(): void { throw new Error("Not supported"); }
+    sendEmail(): void { throw new Error("Not supported"); }
+}
+```
+
+##### <span class="success">✅ The Clean Way (Segregating Interfaces)</span>
+<span class="hinglish">Badi interface ko 3 choti specific interfaces me tod do!</span>
+
+```typescript
+interface IFileStorage { uploadFile(): void; }
+interface ICompute { createServer(): void; }
+interface IEmailService { sendEmail(): void; }
+
+// Ab AWS teeno ko implement kar lega
+class AWSProvider implements IFileStorage, ICompute, IEmailService { ... }
+
+// ✅ Aur LocalStorage sirf apne kaam (IFileStorage) se matlab rakhega!
+class LocalFileStorage implements IFileStorage {
+    uploadFile(): void { console.log("Saving to local disk"); }
+}
+```
+
+---
+
+#### 5. D - Dependency Inversion Principle (DIP)
+
+<span class="hinglish">**Rule:** "High-level modules should not depend on low-level modules. Both should depend on abstractions." <br>
+**Hinglish Meaning:** Aapki Main Logic class kabhi bhi kisi 3rd-party library (jaise Stripe ya Nodemailer) par directly depend nahi karni chahiye. Beech me ek "Interface" (Contract) hona chahiye!</span>
+
+##### <span class="danger">❌ The Bad Way (Tightly Coupled to Stripe)</span>
+<span class="hinglish">Aapki website Stripe pe chal rahi thi. Stripe ne achanak fees badha di. CEO ne bola: "Turant Stripe hata kar PayPal lagao!". Lekin aapka code tightly coupled tha, aapko app me har jagah jaa kar `StripeAPI` search karke hatana padega.</span>
+
+```typescript
+import { StripeAPI } from 'stripe-sdk';
+
+class CheckoutService {
+    private stripe = new StripeAPI("secret_key");
+
+    public processPayment(amount: number) {
+        // ❌ TIGHTLY COUPLED
+        this.stripe.chargeCreditCard(amount);
+    }
+}
+```
+
+##### <span class="success">✅ The Clean Way (Dependency Inversion using Interfaces)</span>
+<span class="hinglish">Hum `CheckoutService` ko Stripe ke baare me nahi batayenge! Hum use sirf ek Interface denge.</span>
+
+```typescript
+// 1. Create the Abstraction
+interface IPaymentProcessor {
+    pay(amount: number): void;
+}
+
+// 2. Wrap Stripe in our interface
+class StripeProcessor implements IPaymentProcessor {
+    pay(amount: number): void { console.log(`Charging $${amount} via STRIPE...`); }
+}
+
+// 3. Wrap PayPal in our interface
+class PayPalProcessor implements IPaymentProcessor {
+    pay(amount: number): void { console.log(`Charging $${amount} via PAYPAL...`); }
+}
+
+// 4. The High-Level Module
+class CheckoutService {
+    // 💉 Dependency INJECTION!
+    constructor(private processor: IPaymentProcessor) {}
+
+    public processPayment(amount: number) {
+        this.processor.pay(amount); // Yeh nahi janta peeche Stripe hai ya PayPal!
+    }
+}
+
+// ============================================
+// CHANGING FROM STRIPE TO PAYPAL IN 1 LINE!
+// ============================================
+
+// Old Code:
+const checkoutWithStripe = new CheckoutService(new StripeProcessor());
+
+// 💥 THE MAGIC (Changing just 1 line):
+const checkoutWithPayPal = new CheckoutService(new PayPalProcessor()); 
+checkoutWithPayPal.processPayment(500); 
+```
+<span class="hinglish">**Fayda:** Is principle ka jaadu dekh rahe hain? Aapne bina backend ki kisi bhi core functionality ko tode, poora ka poora payment gateway badal diya sirf 1 line change karke! Ise kehte hain loosely-coupled, Senior-Level Architecture!</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

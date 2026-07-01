@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node.js Error Handling</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #e74c3c; margin: 0; padding-left: 20px; background: #fdf5f5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #e74c3c; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #c0392b; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #c0392b; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="Memory.html" class="nav-btn">&larr; Previous: Memory & GC</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Middlewares.html" class="nav-btn">Next: Middlewares &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="Memory.html" class="nav-btn">&larr; Previous: Memory & GC</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Middlewares.html" class="nav-btn">Next: Middlewares &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Topic 5: Error Handling
+
+In frontend React development, if a JavaScript error happens, usually just one button stops working or one component fails to load. The rest of the page stays completely alive for that user.
+
+In Node.js, an unhandled error is catastrophic. Because Node.js processes JavaScript on a **single thread**, if an error breaks that one thread, **the entire server crashes for EVERY user currently connected to it**. 
+
+---
+
+#### 1. The Tightrope Walker Analogy
+
+Imagine a circus tightrope walker performing high above the ground. If they slip and there is no safety net, the show is completely over. 
+In Node.js, if your code throws an error and you don't catch it in a "safety net", the server dies instantly.
+
+```mermaid
+graph TD
+    subgraph DangerZone ["The Danger Zone"]
+        A["User 1 Uploads Big File"]
+        B["User 2 Logging In"]
+        C["User 3 Browsing"]
+    end
+    
+    A -->|"Throws Error! (File Too Large)"| Crash{"Did you write<br/>a try/catch?"}
+    
+    Crash -->|"NO"| Dead["💥 ENTIRE SERVER CRASHES!"]
+    Crash -->|"YES"| Safe["🛡️ Caught by Safety Net"]
+    
+    Dead -.->|"User 2 Connection Dropped"| B
+    Dead -.->|"User 3 Screen Freezes"| C
+    
+    Safe -->|"Send nice error message to User 1"| A
+    Safe -.->|"User 2 & 3 completely unaffected!"| B
+    
+    style Dead fill:#ffcccc,stroke:#ff0000,stroke-width:3px
+    style Safe fill:#d5f5e3,stroke:#27ae60,stroke-width:2px
+```
+
+* <span class="hinglish">Agar User 1 koi aisi file upload karta hai jo aapka code handle nahi kar sakta, aur aapne error nahi pakda (catch), toh server turant crash ho jayega. User 2 aur User 3 jo apna kaam kar rahe the, unka connection bhi toot jayega! Ek galti, aur sabka nuksan!</span>
+
+---
+
+#### 2. Types of Errors in Node.js
+
+There are two main categories of errors you will encounter:
+
+1. **Operational Errors:** Expected problems that happen during the normal life of a server. For example: A user tries to upload a 10GB file, the database goes offline for a second, or a file isn't found on the hard drive. You must build logic to *handle* these gracefully.
+2. **Programmer Errors:** Actual bugs in your code. For example: Trying to read `user.name` when `user` is `undefined`, or writing a syntax error. You cannot "handle" these; you must open your code editor and *fix* the bug.
+
+---
+
+#### 3. The Safety Nets (How to Catch Errors)
+
+Depending on the style of code you are writing, you must use different safety nets to prevent server crashes.
+
+##### Safety Net 1: Synchronous Code (try / catch)
+For standard, line-by-line blocking code, wrap the dangerous part in a `try...catch` block.
+
+```javascript
+try {
+  // Try to do something dangerous
+  const data = JSON.parse("This is clearly not valid JSON format");
+} catch (error) {
+  // If it fails, the code jumps into this block instead of crashing!
+  console.log("Caught an error:", error.message);
+}
+```
+
+##### Safety Net 2: Asynchronous Promises (`.catch`)
+If you are using Promises, a normal `try...catch` block will NOT work because the code moves on before the error happens in the background. You must attach a `.catch()` function to the end.
+
+```javascript
+// A database call that returns a Promise
+fetchDataFromDatabase()
+  .then(data => {
+    console.log("Got the data:", data);
+  })
+  .catch(error => {
+    // The safety net for Promises
+    console.log("Database failed, but the server is still alive!", error.message);
+  });
+```
+
+##### Safety Net 3: Async / Await (`try / catch`)
+When using the modern `async` / `await` syntax, Node.js pauses execution, which allows you to go back to using the traditional `try...catch` block! This is the most popular way to write safe code today.
+
+```javascript
+async function getUserProfile() {
+  try {
+    // We 'await' the result, so try/catch works perfectly here
+    const user = await database.findUser({ id: 1 });
+    console.log(user);
+  } catch (error) {
+    console.log("Oops! Could not find user.", error.message);
+  }
+}
+```
+
+---
+
+#### 4. The Ultimate Failsafe: `uncaughtException`
+
+What happens if you completely forget to put a `try...catch` somewhere, and an error slips through? 
+
+Node.js emits a global system event right before the server is about to crash. You can listen to this event to log the error to a file so you know what happened.
+
+```javascript
+// Catches normal synchronous errors that slipped through
+process.on('uncaughtException', (error) => {
+  console.log("CRITICAL: We forgot a try/catch!", error.message);
+  process.exit(1); // Force the server to shut down safely
+});
+
+// Catches Promise errors (like a missing .catch())
+process.on('unhandledRejection', (reason, promise) => {
+  console.log("CRITICAL: Unhandled Promise Rejection!", reason);
+  process.exit(1); 
+});
+```
+
+> [!WARNING]
+> **Never use `uncaughtException` to keep the server running.**
+> Some developers try to use this event to ignore the error and force the server to stay online. This is a terrible idea! If an uncaught exception happens, your server is in an unpredictable, unstable state and might start corrupting user data or leaking memory. 
+> 
+> **Always let it crash.** Use an external tool (like PM2, Docker, or Kubernetes) to automatically restart a fresh, healthy copy of the server the moment it dies!
+    </script>
+</body>
+</html>

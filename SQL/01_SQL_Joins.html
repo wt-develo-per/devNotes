@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Joins</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #34495e; margin: 0; padding-left: 20px; background: #f2f4f4; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2980b9; }
+        .hinglish { color: #c0392b; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #34495e; color: white; font-weight: bold; }
+        .success { color: #27ae60; font-weight: bold; }
+        .fail { color: #e74c3c; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #34495e; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #34495e; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_SQL_GroupBy_and_Aggregations.html" class="nav-btn">Next: Group By & Aggregations &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_SQL_GroupBy_and_Aggregations.html" class="nav-btn">Next: Group By & Aggregations &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### SQL Masterclass 1: Mastering JOINS
+
+In a Relational Database (like PostgreSQL or MySQL), data is split into multiple tables to avoid duplication. 
+
+If you want to show a User's Profile along with their recent Orders, you cannot get this from one table. You must **JOIN** the `users` table and the `orders` table together.
+
+---
+
+#### 1. The Setup (Our Example Tables)
+
+To understand Joins, you must memorize these two tables. 
+* Notice that **Alice** has made two orders. 
+* **Bob** has made zero orders.
+* Order `#104` belongs to `user_id 99` (who doesn't exist in the users table! Maybe they were deleted).
+
+##### Table A: `users`
+| id | name | email |
+|---|---|---|
+| 1 | Alice | alice@gmail.com |
+| 2 | Bob | bob@gmail.com |
+| 3 | Charlie | charlie@gmail.com |
+
+##### Table B: `orders`
+| order_id | product | amount | user_id |
+|---|---|---|---|
+| 101 | Laptop | $1000 | 1 |
+| 102 | Mouse | $50 | 1 |
+| 103 | Keyboard | $100 | 3 |
+| 104 | Monitor | $300 | 99 |
+
+* <span class="hinglish">Joins bilkul do Excel sheets ko VLOOKUP lagane jaisa hai. Hum database ko bolte hain: "Table A ka `id` aur Table B ka `user_id` jahan match ho jaye, un dono rows ko chipka (stitch) kar ek nayi row bana do!"</span>
+
+---
+
+#### 2. INNER JOIN (The Exact Match)
+
+An `INNER JOIN` is the most common join. It only returns rows where there is an **exact match in both tables**. 
+
+If a user has no orders (Bob), they are thrown away. If an order has no valid user (Order 104), it is thrown away.
+
+> [!TIP]
+> **Syntax Shortcut:** If you write the word `JOIN` by itself without specifying a type, the database automatically assumes you mean `INNER JOIN`. In production code, you will often see developers just write `JOIN` to save time!
+
+```sql
+SELECT users.name, orders.product, orders.amount
+FROM users
+INNER JOIN orders 
+ON users.id = orders.user_id;
+```
+
+**Result:**
+| name | product | amount |
+|---|---|---|
+| Alice | Laptop | $1000 |
+| Alice | Mouse | $50 |
+| Charlie | Keyboard | $100 |
+
+*Notice: Bob is missing (no orders). Order 104 is missing (invalid user_id 99).*
+
+---
+
+#### 3. LEFT JOIN (Keep all Left, ignore missing Right)
+
+A `LEFT JOIN` grabs **EVERYTHING from the Left Table (`users`)**, even if they have no match in the Right Table (`orders`). If there is no match, the database just fills the blanks with `NULL`.
+
+This is incredibly useful when you want a list of ALL users, regardless of whether they have purchased anything!
+
+```sql
+SELECT users.name, orders.product, orders.amount
+FROM users
+LEFT JOIN orders 
+ON users.id = orders.user_id;
+```
+
+**Result:**
+| name | product | amount |
+|---|---|---|
+| Alice | Laptop | $1000 |
+| Alice | Mouse | $50 |
+| Charlie | Keyboard | $100 |
+| Bob | <span class="fail">NULL</span> | <span class="fail">NULL</span> |
+
+*Notice: Bob is finally here! Because Bob has no orders, his product and amount columns are perfectly blank (`NULL`). Order 104 is still missing because it's not in the Left Table.*
+
+---
+
+#### 4. RIGHT JOIN (Keep all Right, ignore missing Left)
+
+A `RIGHT JOIN` is the exact opposite of a Left Join. It grabs **EVERYTHING from the Right Table (`orders`)**, even if there is no matching user.
+
+```sql
+SELECT users.name, orders.product, orders.amount
+FROM users
+RIGHT JOIN orders 
+ON users.id = orders.user_id;
+```
+
+**Result:**
+| name | product | amount |
+|---|---|---|
+| Alice | Laptop | $1000 |
+| Alice | Mouse | $50 |
+| Charlie | Keyboard | $100 |
+| <span class="fail">NULL</span> | Monitor | $300 |
+
+*Notice: Bob is gone again. But Order 104 (Monitor) is finally here! Because `user_id 99` doesn't exist in the users table, the name column is `NULL`.*
+
+---
+
+#### 5. FULL OUTER JOIN (Give me absolutely everything)
+
+A `FULL OUTER JOIN` combines the Left Join and the Right Join. It returns **EVERYTHING**. It matches what it can, and fills all the broken links with `NULL`s.
+
+```sql
+SELECT users.name, orders.product, orders.amount
+FROM users
+FULL OUTER JOIN orders 
+ON users.id = orders.user_id;
+```
+
+**Result:**
+| name | product | amount |
+|---|---|---|
+| Alice | Laptop | $1000 |
+| Alice | Mouse | $50 |
+| Charlie | Keyboard | $100 |
+| Bob | <span class="fail">NULL</span> | <span class="fail">NULL</span> |
+| <span class="fail">NULL</span> | Monitor | $300 |
+
+*Notice: We have absolutely every user (including Bob) and absolutely every order (including the orphan Monitor).*
+
+---
+
+#### 6. Visualizing the Joins (Venn Diagrams)
+
+To memorize Joins, Backend Engineers use Venn Diagrams.
+
+```mermaid
+graph TD
+    subgraph INNER_JOIN ["INNER JOIN"]
+        A1(("Table A")) --- B1(("Table B"))
+        style A1 fill:#fff,stroke:#34495e
+        style B1 fill:#fff,stroke:#34495e
+    end
+
+    subgraph LEFT_JOIN ["LEFT JOIN"]
+        A2(("Table A")) --- B2(("Table B"))
+        style A2 fill:#85c1e9,stroke:#34495e
+        style B2 fill:#fff,stroke:#34495e
+    end
+    
+    subgraph FULL_OUTER ["FULL OUTER"]
+        A3(("Table A")) --- B3(("Table B"))
+        style A3 fill:#85c1e9,stroke:#34495e
+        style B3 fill:#85c1e9,stroke:#34495e
+    end
+```
+
+> [!IMPORTANT]
+> **Senior Developer Tip:** In the real world, you will use `INNER JOIN` 70% of the time, and `LEFT JOIN` 29% of the time. `RIGHT JOIN` is almost never used (because you can just flip the order of your tables and use a `LEFT JOIN` instead).
+
+---
+
+#### 7. Real-World Scenarios (10 Practical Examples)
+
+To truly master `JOIN`s, you need to see how they are used in production databases. Here are 10 common scenarios you will face as a Backend Developer.
+
+##### Example 1: E-Commerce (User Orders)
+**Problem:** You need a list of users and the products they bought.
+```sql
+-- INNER JOIN ensures we only see users who actually bought something.
+SELECT users.name, orders.product_name 
+FROM users 
+INNER JOIN orders ON users.id = orders.user_id;
+```
+
+##### Example 2: Marketing (Finding Inactive Users)
+**Problem:** The marketing team wants a list of users who signed up but NEVER bought anything so they can send them a discount email.
+```sql
+-- LEFT JOIN gives us all users. We then filter for where the order ID is NULL!
+SELECT users.name, users.email 
+FROM users 
+LEFT JOIN orders ON users.id = orders.user_id 
+WHERE orders.id IS NULL;
+```
+
+##### Example 3: HR System (Employee Departments)
+**Problem:** You have an `employees` table and a `departments` table. You want to see everyone's department name.
+```sql
+SELECT e.first_name, d.department_name 
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.id;
+```
+
+##### Example 4: Social Media (Posts and Comments)
+**Problem:** You want to show all posts on the feed, along with their comments. But if a post has NO comments, it should still show up on the feed!
+```sql
+-- LEFT JOIN ensures the post doesn't disappear just because nobody commented on it.
+SELECT posts.title, comments.text 
+FROM posts 
+LEFT JOIN comments ON posts.id = comments.post_id;
+```
+
+##### Example 5: EdTech (Many-to-Many Relationships)
+**Problem:** A student can take many courses, and a course has many students. You need to join 3 tables using an intermediate `enrollments` table!
+```sql
+SELECT students.name, courses.title 
+FROM students
+INNER JOIN enrollments ON students.id = enrollments.student_id
+INNER JOIN courses ON enrollments.course_id = courses.id;
+```
+
+##### Example 6: Admin Dashboard (Role Verification)
+**Problem:** You need to get the emails of all users who have the role of "Admin".
+```sql
+SELECT users.email, roles.role_name 
+FROM users 
+INNER JOIN roles ON users.role_id = roles.id 
+WHERE roles.role_name = 'Admin';
+```
+
+##### Example 7: SaaS Billing (Expired Subscriptions)
+**Problem:** You need to find companies whose subscription has expired.
+```sql
+SELECT companies.name, subscriptions.expires_at 
+FROM companies
+INNER JOIN subscriptions ON companies.id = subscriptions.company_id
+WHERE subscriptions.expires_at < CURRENT_DATE;
+```
+
+##### Example 8: The Self-Join (Manager and Employee)
+**Problem:** You have an `employees` table. Some employees are managers of other employees. You want to see "Employee Name -> Manager Name".
+```sql
+-- You join the exact same table to itself!
+SELECT e1.name AS employee, e2.name AS manager
+FROM employees e1
+LEFT JOIN employees e2 ON e1.manager_id = e2.id;
+```
+
+##### Example 9: Logistics (Lazy Couriers)
+**Problem:** You want a list of all Couriers, and the deliveries they made. Even if a courier was lazy and delivered 0 packages, you want them on the list.
+```sql
+SELECT couriers.name, deliveries.address
+FROM couriers
+LEFT JOIN deliveries ON couriers.id = deliveries.courier_id;
+```
+
+##### Example 10: The Cross Join (Product Combinations)
+**Problem:** You have a table of `sizes` (S, M, L) and a table of `colors` (Red, Blue). You want to generate every possible combination to insert into your inventory.
+```sql
+-- CROSS JOIN matches every row in Table A with every row in Table B (Cartesian Product).
+SELECT sizes.size_name, colors.color_name 
+FROM sizes 
+CROSS JOIN colors;
+```
+    </script>
+</body>
+</html>

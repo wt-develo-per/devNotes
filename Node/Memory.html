@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node.js Memory</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #2980b9; margin: 0; padding-left: 20px; background: #f4f9fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="07_Node_Core_Modules_Part2.html" class="nav-btn">&larr; Previous: Core Modules (Part 2)</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Errors.html" class="nav-btn">Next: Error Handling &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="07_Node_Core_Modules_Part2.html" class="nav-btn">&larr; Previous: Core Modules (Part 2)</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Errors.html" class="nav-btn">Next: Error Handling &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Topic 4: Memory & Garbage Collection
+
+Every time you create a variable, array, object, or function in your Node.js application, it takes up physical space in your server's RAM. 
+
+Because Node.js is powered by Google's V8 Engine, V8 handles all memory management for you. It decides when to give out memory (allocation) and when to clean it up (de-allocation). 
+
+However, if you don't understand how V8 does this, you can easily crash your entire server by causing a Memory Leak!
+
+---
+
+#### 1. The Memory Structure (Stack vs Heap)
+
+V8 splits your server's memory into two distinct areas: **The Stack** and **The Heap**.
+
+##### The Stack (Fast & Organized)
+The Stack is incredibly fast, very organized, but limited in size. It stores **static data** (data where the computer knows exactly how much physical space it will take up). 
+* Primitive types (`numbers`, `booleans`).
+* **Pointers** (invisible arrows) that point to complex objects living over in the Heap.
+* The execution context (the Call Stack we saw in the Event Loop).
+
+##### The Heap (Large & Messy)
+The Heap is massive, messy, and completely unorganized. It stores **dynamic data** (data that might grow, shrink, or change size over time).
+* Objects (e.g., `{ name: "John", age: 30 }`)
+* Arrays (e.g., `[1, 2, 3, 4, ...1000]`)
+* Functions and massive string blocks
+
+```mermaid
+graph LR
+    subgraph V8 ["V8 Memory Space"]
+        subgraph StackArea ["THE STACK (Organized)"]
+            S1["Number: 42"]
+            S2["Boolean: true"]
+            S3["Pointer: (ref1)"]
+        end
+        
+        subgraph HeapArea ["THE HEAP (Messy)"]
+            H1["Object: { name: 'Alice' }"]
+            H2["Array: [1,2,3,4]"]
+        end
+        
+        S3 -->|"Pointer looks here"| H1
+    end
+    
+    style StackArea fill:#d4e6f1,stroke:#2980b9
+    style HeapArea fill:#fad7a1,stroke:#d35400
+```
+
+---
+
+#### 2. The Garbage Collector (The Automatic Janitor)
+
+In older languages like C or C++, the developer has to manually write code to say "Give me memory" and "Delete this memory". If you forget to write the delete code, your application eventually crashes.
+
+In Node.js, V8 has a built-in **Garbage Collector (GC)**. 
+Think of the GC as an automatic janitor that occasionally pauses your application for a fraction of a millisecond to sweep through the Heap. If it finds an object that is no longer being used (meaning no pointer in your Stack is pointing to it anymore), the GC automatically deletes it and frees up the RAM!
+
+##### Visualizing Garbage Collection
+
+```mermaid
+graph TD
+    subgraph Before ["Memory Before"]
+        A["Stack: let user"] -->|"Points to"| B["Heap: {name: 'Alice'}"]
+    end
+    
+    subgraph After ["Memory After (user = null)"]
+        C["Stack: user = null"]
+        D["Heap: {name: 'Alice'}"]
+        C -.->|"Broken Link"| D
+        
+        Trash["Janitor sweeps Alice<br/>into the trash!"]
+        D -.->|"Trash"| Trash
+    end
+    
+    style D fill:#f2d7d5,stroke:#c0392b,stroke-width:2px
+    style Trash fill:#fff,stroke:#c0392b,stroke-width:1px,stroke-dasharray: 5 5
+```
+
+* <span class="hinglish">Jab tak aapke variables (pointers) object se jude hain, wo safe hai. Par jaise hi aapne variable ko `null` kiya, pointer toot jata hai. V8 ka Janitor (Garbage Collector) dekhta hai ki "Arre, is object ko koi use nahi kar raha", aur wo usko turant kachre mein daal kar memory free kar deta hai!</span>
+
+---
+
+#### 3. What is a Memory Leak?
+
+A memory leak happens when the Garbage Collector *wants* to clean up memory, but it *cannot*, because your code is accidentally still holding onto a reference (pointer) to it!
+
+**The Garage Analogy:** You put a box of old files in your garage. You never intend to look at them again, but because you accidentally left a sticky note on the box labeled *"Important, Do Not Throw Away"*, the janitor refuses to touch them. Eventually, your garage gets completely full of old boxes, and you can't park your car anymore. 
+
+##### Common Causes of Memory Leaks in Node.js:
+1. **Global Variables:** Variables attached to the `global` object are never garbage collected because the application assumes you might need them at any time.
+2. **Forgotten Timers:** If you set a `setInterval` that references large objects, but you never call `clearInterval()`, that interval will run forever, keeping those objects alive in memory forever.
+3. **Event Listeners:** If you add an event listener (e.g., `emitter.on('data', myFunc)`) but never remove it (`emitter.removeListener`), the function and everything it touches will stay locked in memory!
+
+> [!WARNING]
+> By default, a Node.js process has a strict memory limit (usually around **1.5 GB** on a 64-bit system). If you leak memory and cross this limit, your entire application will instantly crash with the dreaded error: 
+> `FATAL ERROR: CALL_AND_RETRY_LAST Allocation failed - JavaScript heap out of memory`.
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node Core Modules (Part 2)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #1e1e1e; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #a6e22e; }
+        blockquote { border-left: 5px solid #2ecc71; margin: 0; padding-left: 20px; background: #eafaf1; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        strong { color: #27ae60; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #27ae60; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #2ecc71; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #2ecc71; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="06_Node_Core_Modules_Part1.html" class="nav-btn">&larr; Previous: Core Modules (Part 1)</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Memory.html" class="nav-btn">Next: Memory & GC &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="06_Node_Core_Modules_Part1.html" class="nav-btn">&larr; Previous: Core Modules (Part 1)</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Memory.html" class="nav-btn">Next: Memory & GC &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Built-in Core Modules (Part 2)
+
+Welcome to the Advanced execution modules of Node.js. In this section, we break outside of the normal Javascript environment. We will learn how to run Python scripts, use 100% of the server's CPU, and build Event-Driven architectures.
+
+We will cover **`child_process`**, **`cluster`**, **`events`**, and **`util`** with 5 real-world scenarios each.
+
+---
+
+#### 1. The `child_process` Module (The Shell Commander)
+
+Node.js is great at web servers, but it sucks at heavy math (like Video Editing or AI). `child_process` allows Node.js to open a terminal/shell in the background and run ANY command (like a Python script, or a Linux command), and get the result back into Javascript!
+
+* <span class="hinglish">Jab Node.js se koi bhari kaam nahi ho pata (jaise AI model chalana ya Video compress karna), toh Node ek "Child" paida karta hai. Ye Child background mein terminal kholta hai, Python script chalata hai, aur answer laakar Node ko de deta hai. Isse humara main Node server kabhi hang nahi hota!</span>
+
+##### Scenario 1: Executing a Python Script
+**Problem:** Your backend is Node.js, but your Machine Learning AI model is written in Python.
+```javascript
+import { exec } from 'child_process';
+
+exec('python3 analyze_image.py ./uploads/pic.jpg', (error, stdout, stderr) => {
+    if (error) {
+        console.error("Python crashed:", error);
+        return;
+    }
+    console.log("AI Result:", stdout); // Output from Python!
+});
+```
+
+##### Scenario 2: Running a System Command (e.g., Git)
+**Problem:** You are building an Admin panel and want to see the latest Git commit hash on your server.
+```javascript
+import { exec } from 'child_process';
+
+exec('git log -1 --oneline', (err, stdout) => {
+    console.log("Latest Commit:", stdout); 
+});
+```
+
+##### Scenario 3: Heavy Video Compression (using `spawn`)
+**Problem:** You need to run `ffmpeg` to compress a 2GB video. `exec` will crash if the output is too large, so you must use `spawn` (which uses Streams).
+```javascript
+import { spawn } from 'child_process';
+
+const ffmpeg = spawn('ffmpeg', ['-i', 'raw.mp4', 'compressed.mp4']);
+
+ffmpeg.stdout.on('data', (data) => {
+    console.log(`Processing: ${data}`); // Streams the progress live!
+});
+
+ffmpeg.on('close', (code) => {
+    console.log("Video compression finished!");
+});
+```
+
+##### Scenario 4: Triggering a Database Backup
+**Problem:** You want to run a shell script to backup your database at midnight.
+```javascript
+import { execFile } from 'child_process';
+
+execFile('./scripts/backup_db.sh', (error, stdout) => {
+    console.log("Database Backup Complete!");
+});
+```
+
+##### Scenario 5: Opening a URL in the browser
+**Problem:** You are writing a CLI tool for developers (like `create-react-app`) and want to automatically open `localhost:3000` in their Chrome browser when it finishes compiling.
+```javascript
+import { exec } from 'child_process';
+import os from 'os';
+
+const command = os.platform() === 'win32' ? 'start' : 'open';
+exec(`${command} http://localhost:3000`);
+```
+
+---
+
+#### 2. The `cluster` Module (Multi-Threading)
+
+Node.js is **Single-Threaded**. If you buy a massive AWS Server with 32 CPU Cores, Node.js will only use 1 core, and the other 31 cores will do absolutely nothing! 
+`cluster` allows you to clone your Node.js app 32 times so it uses every single CPU core.
+
+* <span class="hinglish">Maan lo ek restaurant mein 8 kitchen hain (8 CPU cores). Lekin Node.js sirf 1 Chef ko hire karta hai jo ek hi kitchen mein kaam karta hai. `cluster` module hume 7 aur Chefs (Workers) clone karne deta hai, taaki athon kitchens ek sath chal sake aur restaurant 8x fast ho jaye!</span>
+
+##### Scenario 1: Spawning Workers for every CPU Core
+**Problem:** You want your Express API to handle 10,000 requests per second instead of 1,000.
+```javascript
+import cluster from 'cluster';
+import os from 'os';
+
+if (cluster.isPrimary) {
+    // I am the Manager Chef (Primary)
+    const numCPUs = os.cpus().length;
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork(); // Hire a new Worker Chef!
+    }
+} else {
+    // I am a Worker Chef. I handle the actual HTTP requests.
+    // app.listen(3000); 
+    console.log(`Worker ${process.pid} started and listening on port 3000`);
+}
+```
+
+##### Scenario 2: Resurrecting Dead Workers (Auto-Heal)
+**Problem:** If a Worker crashes due to a bug, it dies. If all 8 workers crash, the website goes down!
+```javascript
+import cluster from 'cluster';
+
+if (cluster.isPrimary) {
+    cluster.fork(); // Hire a worker
+    
+    // If a worker dies, instantly hire a replacement!
+    cluster.on('exit', (worker, code, signal) => {
+        console.log(`Worker ${worker.process.pid} died! Restarting...`);
+        cluster.fork(); 
+    });
+}
+```
+
+##### Scenario 3: IPC (Messaging between Master and Worker)
+**Problem:** The Manager (Primary) needs to send a secret configuration token to all the Workers.
+```javascript
+// Inside Primary
+const worker = cluster.fork();
+worker.send({ secretToken: '12345ABC' }); // Send message to worker
+
+// Inside Worker
+process.on('message', (msg) => {
+    console.log("Received from Master:", msg.secretToken);
+});
+```
+
+##### Scenario 4: Worker reporting its ID
+**Problem:** You want your API response to tell the client WHICH cpu core handled their request.
+```javascript
+// Inside Express route (Worker)
+app.get('/ping', (req, res) => {
+    res.json({ message: 'Pong', handledByWorker: process.pid });
+});
+```
+
+##### Scenario 5: Zero-Downtime Reloads
+**Problem:** You push new code to production. You want to restart the server, but you don't want the users to experience 5 seconds of downtime.
+*(Using Cluster, you kill Worker 1, replace it with new code. Then kill Worker 2, replace it. The users never notice the server restarted! This is how PM2 works under the hood).*
+
+---
+
+#### 3. The `events` Module (Event-Driven Architecture)
+
+This is the beating heart of Node.js. An `EventEmitter` allows you to shout *"Hey, something happened!"*, and anywhere else in your code, you can listen for that shout and react to it.
+
+* <span class="hinglish">Events bilkul ek Radio Station jaisa hai. Jab user signup karta hai, toh humara code as a Radio RJ broadcast karta hai: "Dhyan se suno, Naya User Aaya Hai!". Phir Email service, Logging service, aur Analytics service us radio channel ko "Listen" kar rahi hoti hain, aur apna apna kaam automatically shuru kar deti hain.</span>
+
+##### Scenario 1: The Basic Broadcaster
+**Problem:** You want to decouple your code. When a user registers, you want to trigger 5 different things without writing all 5 inside the registration function.
+```javascript
+import { EventEmitter } from 'events';
+const myEmitter = new EventEmitter();
+
+// 1. The Listeners (Radio Listeners)
+myEmitter.on('userRegistered', (email) => {
+    console.log(`Sending Welcome Email to ${email}`);
+});
+
+myEmitter.on('userRegistered', (email) => {
+    console.log(`Adding ${email} to Marketing Database`);
+});
+
+// 2. The Broadcaster (The Radio RJ)
+myEmitter.emit('userRegistered', 'john@gmail.com');
+```
+
+##### Scenario 2: Listening exactly ONE time (`.once`)
+**Problem:** You want to trigger a Database Connection Success log, but only the *very first time* it connects, not if it reconnects later.
+```javascript
+myEmitter.once('dbConnected', () => {
+    console.log("Database initialized for the first time!");
+});
+```
+
+##### Scenario 3: The Fatal `error` Event
+**Problem:** In Node.js, if you emit an event called exactly `'error'` and nobody is listening to it, Node.js will intentionally crash your entire server!
+```javascript
+// Always have a global error listener to prevent catastrophic crashes!
+myEmitter.on('error', (err) => {
+    console.error("Caught a rogue error:", err.message);
+});
+
+myEmitter.emit('error', new Error("Database disconnected!"));
+```
+
+##### Scenario 4: Removing Listeners (Memory Leaks)
+**Problem:** If you keep adding listeners inside a `setInterval`, you will run out of RAM (a Memory Leak). You must clean them up!
+```javascript
+function sendEmail() { /* ... */ }
+
+myEmitter.on('signup', sendEmail);
+// Later... I don't want to send emails anymore
+myEmitter.removeListener('signup', sendEmail);
+```
+
+##### Scenario 5: Getting Event Stats
+**Problem:** You want to know how many different services are currently listening to the 'userRegistered' event.
+```javascript
+const count = myEmitter.listenerCount('userRegistered');
+console.log(`There are ${count} services reacting to new signups.`);
+```
+
+---
+
+#### 4. The `util` Module (The Swiss Army Knife)
+
+The `util` module provides random helper functions that make a developer's life easier, especially when dealing with legacy code or debugging.
+
+##### Scenario 1: `util.promisify` (The Callback Killer)
+**Problem:** You are using an old NPM library from 2014 that uses Callbacks `(err, result) => {}`. You want to use modern `async/await` instead.
+```javascript
+import util from 'util';
+import fs from 'fs';
+
+// Turn the old callback function into a modern Promise!
+const readFileAsync = util.promisify(fs.readFile);
+
+async function load() {
+    const data = await readFileAsync('./data.txt', 'utf-8');
+    console.log(data);
+}
+```
+
+##### Scenario 2: `util.inspect` (Deep Logging)
+**Problem:** You try to `console.log()` a massive nested JSON object, but Node.js prints `[Object]` and hides the data. You want to see everything!
+```javascript
+import util from 'util';
+
+const massiveObject = { level1: { level2: { level3: { secret: "hidden" } } } };
+
+// Tell Node to print up to 5 levels deep, with colors!
+console.log(util.inspect(massiveObject, { depth: 5, colors: true }));
+```
+
+##### Scenario 3: `util.format` (C-style formatting)
+**Problem:** You want to quickly format a string using placeholders (like `%s` for strings, `%d` for numbers).
+```javascript
+import util from 'util';
+
+const log = util.format('User %s logged in at %d', 'Alice', Date.now());
+console.log(log); // "User Alice logged in at 1684..."
+```
+
+##### Scenario 4: `util.deprecate` (Warning Junior Developers)
+**Problem:** You wrote a function 3 years ago called `hashPassword()`. You wrote a new one, but you don't want to break the app by deleting the old one yet. You just want to warn other developers not to use it.
+```javascript
+import util from 'util';
+
+const oldHash = util.deprecate(() => {
+    return "hashed_password";
+}, "Warning: oldHash() is deprecated. Please use newHash() instead.");
+
+oldHash(); // Works, but prints a massive yellow Warning in the terminal!
+```
+
+##### Scenario 5: `util.types` (Advanced Type Checking)
+**Problem:** You need to check if a variable is specifically a built-in Javascript `Date` object, because `typeof new Date()` just returns "object".
+```javascript
+import util from 'util';
+
+const myVar = new Date();
+if (util.types.isDate(myVar)) {
+    console.log("This is definitively a Date object!");
+}
+```
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

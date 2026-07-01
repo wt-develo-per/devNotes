@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logging Fundamentals</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #ecf0f1; background-color: #2c3e50; }
+        pre { background: #1a252f; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #34495e; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #1a252f; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #2ecc71; }
+        blockquote { border-left: 5px solid #27ae60; margin: 0; padding-left: 20px; background: #34495e; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; color: #ecf0f1; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2ecc71; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #27ae60; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #34495e; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #f1c40f; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #2ecc71; }
+        .hinglish { color: #f39c12; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; color: #ecf0f1; }
+        th, td { border: 1px solid #34495e; padding: 12px; text-align: left; }
+        th { background-color: #1a252f; color: #2ecc71; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #1a252f; border: 1px solid #34495e; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #27ae60; color: #fff !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #2ecc71; }
+        .nav-btn:hover { background-color: #2ecc71; color: #1a252f !important; }
+        .nav-btn.disabled { background-color: #34495e; color: #7f8c8d !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #4a6278; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Centralized_Logging_and_Tracing.html" class="nav-btn">Next: Centralized Logging & Tracing &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Centralized_Logging_and_Tracing.html" class="nav-btn">Next: Centralized Logging & Tracing &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Logging Masterclass 1: Fundamentals
+
+When your code is running on your local laptop, if it crashes, you can see the red text in your terminal. 
+But when your code is deployed to a Linux server on AWS, and it crashes at 3:00 AM while you are sleeping... how will you ever know what went wrong?
+
+**Logs are the black box of your airplane.** If the plane crashes, the logs tell you why.
+
+---
+
+#### 1. The Death of `console.log()`
+
+Every Junior Developer uses `console.log("User logged in")`. Here is why Senior Developers NEVER use it in production:
+
+1. **It is slow:** `console.log` is a synchronous, blocking operation. Writing plain text to a terminal slows down your Node.js event loop.
+2. **It is unstructured:** It just spits out raw text. You cannot search, filter, or analyze raw text easily when you have 10 million lines of logs.
+3. **It lacks severity:** Is this a fatal error? Or just a random info message? `console.log` doesn't care.
+
+* <span class="hinglish">Jab aap `console.log` use karte ho, toh Node.js ko rukna padta hai text print karne ke liye. Production me humein ek aisi cheez chahiye jo background me chup-chap logs likhti rahe bina server ko slow kiye. Isliye hum **Winston** ya **Pino** jaisi libraries use karte hain.</span>
+
+---
+
+#### 2. Structured Logging (The JSON Format)
+
+In modern backend engineering, **every single log must be a JSON object.**
+
+If your log is a string: `"User 123 failed to login from IP 192.168.1.1"`
+You can't write a query to find all failed logins from that IP!
+
+If your log is JSON:
+```json
+{
+  "level": "error",
+  "message": "User failed to login",
+  "userId": 123,
+  "ipAddress": "192.168.1.1",
+  "timestamp": "2026-06-30T10:00:00Z"
+}
+```
+Now you can write a database query: `SELECT * FROM logs WHERE ipAddress = '192.168.1.1' AND level = 'error'`.
+
+---
+
+#### 3. Log Levels (Severity)
+
+You must categorize your logs into "Levels". Winston and Pino use these standard levels:
+
+1. **ERROR (0):** The system crashed. The database is down. (Wakes you up at 3 AM).
+2. **WARN (1):** Something weird happened, but the system survived. (e.g., An API took 5 seconds to respond).
+3. **INFO (2):** Normal system behavior. (e.g., "User John signed up").
+4. **DEBUG (3):** Deep developer details. (e.g., "SQL Query: SELECT * FROM users"). Never turned on in Production!
+
+```javascript
+import winston from 'winston';
+
+const logger = winston.createLogger({
+    level: 'info', // Only log INFO, WARN, and ERROR. Ignore DEBUG.
+    format: winston.format.json(), // Structured JSON!
+    transports: [
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'combined.log' })
+    ]
+});
+
+// Instead of console.log...
+logger.info("New user registered", { userId: 55, email: "john@doe.com" });
+logger.error("Database connection failed!", { errorCode: 500 });
+```
+
+---
+
+#### 4. Real-World Scenarios (10 Practical Examples)
+
+How do massive companies handle logging in Node.js?
+
+##### Example 1: Environment-Based Filtering
+**Problem:** You want to see massive amounts of `DEBUG` logs while coding on your laptop, but you don't want to fill up your AWS server's hard drive with useless debug logs.
+**Solution:** Dynamically set the log level based on `.env`. `level: process.env.NODE_ENV === 'production' ? 'info' : 'debug'`.
+
+##### Example 2: Masking Sensitive Data (PII)
+**Problem:** A junior dev writes `logger.info("Payment success", { requestBody: req.body })`. The user's Credit Card number and Password just got saved into a plain text file on your server! This is illegal.
+**Solution:** Configure a "Redactor" in your logger (like `pino-noir`). It automatically intercepts words like `password`, `credit_card`, or `token` and replaces them with `******` before writing to the file!
+
+##### Example 3: Automatic Log Rotation
+**Problem:** You save all logs to `app.log`. After 6 months, the file becomes 50 GB. The server runs out of disk space and completely crashes!
+**Solution:** Use `winston-daily-rotate-file`. It automatically creates a new file every midnight (e.g., `app-2026-06-30.log`). If a file gets older than 14 days, it automatically deletes it!
+
+##### Example 4: Uncaught Exception Catchers
+**Problem:** Your Node.js app crashes because of an unhandled Promise rejection. The server dies silently, and you have no idea why.
+**Solution:** Tell Winston to catch fatal errors. `winston.exceptions.handle(new winston.transports.File({ filename: 'exceptions.log' }));`. It will capture the exact line of code that killed the server right before it dies.
+
+##### Example 5: Splitting Error Logs
+**Problem:** You have a 1GB file full of `INFO` logs, and you are trying to find the one `ERROR` that happened yesterday.
+**Solution:** Notice the Winston code above! We created *two* transports. One saves EVERYTHING to `combined.log`, and the other saves ONLY errors to `error.log`. Finding bugs becomes 10x faster.
+
+##### Example 6: Adding Meta-Data via Middleware
+**Problem:** You want every single log to include the user's IP Address, but writing `{ ip: req.ip }` in 500 different `logger.info()` calls is annoying.
+**Solution:** Use Express Middleware! Attach a custom logger to the request object: `req.logger = logger.child({ ip: req.ip, method: req.method })`. Now every log in that route automatically includes the IP!
+
+##### Example 7: The "Slow Query" Logger
+**Problem:** Your API is slow, but you don't know which specific database query is causing the bottleneck.
+**Solution:** Write a wrapper around your Postgres query function. If the query takes more than 500ms, trigger a `logger.warn("Slow Query Detected", { sql, duration: 600 })`.
+
+##### Example 8: Pino for Extreme Performance
+**Problem:** Winston is great, but creating JSON strings is CPU-heavy. In a system handling 50,000 requests per second, Winston slows you down.
+**Solution:** Switch to `Pino`. Pino is widely considered the fastest logger in Node.js because it minimizes JSON stringification overhead and uses worker threads to write to the disk asynchronously!
+
+##### Example 9: Logging Third-Party Failures
+**Problem:** Your user tries to pay, but the Stripe API is down. You throw a generic 500 error to the user, but you have no idea Stripe was the culprit.
+**Solution:** Always wrap Axios calls in `try/catch`. `catch(err) { logger.error("Stripe API Failed", { stripeError: err.response.data }) }`. You need proof it was Stripe's fault, not yours!
+
+##### Example 10: The "Heartbeat" Log
+**Problem:** Your background worker server crashes silently. Since it has no web traffic, nobody notices it's dead for 3 days.
+**Solution:** Write a `setInterval` that fires every 60 seconds: `logger.info("Worker Heartbeat: I am alive", { activeJobs: 5 })`. If your monitoring system stops seeing heartbeats, it pages you immediately!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

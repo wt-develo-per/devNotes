@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Transactions</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #e74c3c; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #c0392b; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e67e22; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e67e22; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="03_SQL_Indexes.html" class="nav-btn">&larr; Previous: Indexes</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05_SQL_Query_Optimization.html" class="nav-btn">Next: Query Optimization &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="03_SQL_Indexes.html" class="nav-btn">&larr; Previous: Indexes</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05_SQL_Query_Optimization.html" class="nav-btn">Next: Query Optimization &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### SQL Masterclass 4: Transactions & Data Safety
+
+Imagine you are building a banking app. Alice wants to transfer $100 to Bob. 
+
+Your Node.js backend must run TWO SQL queries:
+1. `UPDATE accounts SET balance = balance - 100 WHERE name = 'Alice';`
+2. `UPDATE accounts SET balance = balance + 100 WHERE name = 'Bob';`
+
+**The Nightmare Scenario:** What happens if the database successfully deducts $100 from Alice, but then the server suddenly crashes *before* it can add the money to Bob's account? 
+**$100 has literally vanished from the universe.** Alice will sue you, and your company is finished.
+
+This is exactly why **Transactions** exist.
+
+---
+
+#### 1. The Power of "All or Nothing"
+
+A Database Transaction groups multiple SQL queries together into a single, unbreakable block. It tells the database: **"Either do ALL of these queries, or do NONE of them."**
+
+```mermaid
+graph TD
+    A["BEGIN TRANSACTION"] --> B["Deduct $100 from Alice"]
+    B --> C{"Did Server Crash?"}
+    
+    C -->|YES - Error!| D["ROLLBACK (Undo Alice's deduction!)"]
+    C -->|NO - Success!| E["Add $100 to Bob"]
+    
+    E --> F["COMMIT (Save changes permanently)"]
+    
+    style D fill:#f2d7d5,stroke:#c0392b,stroke-width:2px
+    style F fill:#d5f5e3,stroke:#27ae60,stroke-width:2px
+```
+
+* <span class="hinglish">Transaction ek seatbelt ki tarah hai. Jab aap `BEGIN` likhte ho, database ek temporary memory space bana leta hai. Aap usme 100 changes karo, par actual data change nahi hoga! Jab aap pakka sure ho jao ki sab kuch sahi chal gaya, tab aap `COMMIT` likhte ho aur saare changes ek sath save hote hain. Agar beech mein koi error aa jaye, toh aap `ROLLBACK` likhte ho, aur database jaise ka taisa wapas original state mein chala jata hai! Ek paisa bhi gayab nahi hota.</span>
+
+---
+
+#### 2. The ACID Properties
+
+Every senior developer is asked about "ACID" in database interviews. Here is what it means:
+
+1. **Atomicity (All or Nothing):** The entire transaction succeeds, or the entire transaction fails. There is no "halfway".
+2. **Consistency:** The database rules (like "balance cannot drop below $0") are strictly enforced. If a transaction breaks a rule, it rolls back automatically.
+3. **Isolation:** If two users try to transfer money at the exact same millisecond, the database isolates them in an invisible queue so they don't corrupt each other's data.
+4. **Durability:** Once you hit `COMMIT`, the data is saved permanently to the hard drive. Even if you pull the power plug out of the server 1 second later, the data is safe.
+
+---
+
+#### 3. Real-World Scenarios (6 Practical Examples)
+
+When should you use transactions in your backend code? Here are 6 real-world project scenarios.
+
+##### Example 1: E-Commerce Checkout
+**Problem:** A user buys a T-Shirt. You must deduct 1 shirt from Inventory, create an Order record, and save the Payment record.
+```sql
+BEGIN;
+UPDATE inventory SET stock = stock - 1 WHERE item = 'T-Shirt';
+INSERT INTO orders (user_id, item) VALUES (1, 'T-Shirt');
+INSERT INTO payments (order_id, status) VALUES (101, 'Paid');
+COMMIT;
+-- If the payment insert fails, ROLLBACK undoes the inventory deduction!
+```
+
+##### Example 2: The "Undo" Button (Admin Mistakes)
+**Problem:** You are fixing data manually in the database terminal, and you want to delete spam users. You are scared of deleting real users by accident.
+```sql
+BEGIN;
+DELETE FROM users WHERE email LIKE '%@spam.com';
+-- Oops! I realized I deleted a real user.
+ROLLBACK; 
+-- Phew, the data instantly came back!
+```
+
+##### Example 3: User Signup (Relational Data)
+**Problem:** When a user registers, you must insert a row into the `users` table, and then immediately insert a row into the `user_profiles` table.
+```sql
+BEGIN;
+INSERT INTO users (id, email) VALUES (99, 'john@gmail.com');
+-- If this next query fails, the user is deleted so we don't end up with an orphan account!
+INSERT INTO user_profiles (user_id, bio) VALUES (99, 'Hello world');
+COMMIT;
+```
+
+##### Example 4: Flight Booking (Row Locking)
+**Problem:** Two users click "Book Seat 14A" at the exact same millisecond. 
+```sql
+BEGIN;
+-- "FOR UPDATE" locks the row so nobody else can touch it until we COMMIT!
+SELECT * FROM seats WHERE seat_number = '14A' FOR UPDATE;
+UPDATE seats SET status = 'Booked' WHERE seat_number = '14A';
+COMMIT;
+```
+
+##### Example 5: Batch Importing Data
+**Problem:** You are reading a CSV file in Node.js and inserting 10,000 products into the database. If product #9,999 has a syntax error, you don't want half the CSV saved and half missing.
+```sql
+BEGIN;
+-- Insert 10,000 rows inside a loop
+INSERT INTO products (name) VALUES ('Apple');
+INSERT INTO products (name) VALUES ('Banana');
+-- ...
+COMMIT; 
+-- If any row fails, ROLLBACK undoes all 10,000 inserts!
+```
+
+##### Example 6: Multi-Tenant Architecture (Deleting a Company)
+**Problem:** In a SaaS app, if an entire company deletes their account, you must delete their users, their posts, their files, and their billing records.
+```sql
+BEGIN;
+DELETE FROM files WHERE company_id = 5;
+DELETE FROM posts WHERE company_id = 5;
+DELETE FROM users WHERE company_id = 5;
+DELETE FROM companies WHERE id = 5;
+COMMIT;
+```
+
+> [!WARNING]
+> **The Lock-Up Danger:** If you start a transaction (`BEGIN`) in your Node.js code, but your code has a bug and forgets to call `COMMIT` or `ROLLBACK`, the database will freeze those rows forever waiting for your final command! Always wrap your transactions in a `try/catch` block!
+    </script>
+</body>
+</html>

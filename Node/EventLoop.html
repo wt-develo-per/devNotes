@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Loop</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            // Find all marked.js generated mermaid code blocks and convert them to mermaid divs
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            line-height: 1.6; 
+            color: #333; 
+        }
+        pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; }
+        code { font-family: Consolas, Monaco, monospace; background: #f6f8fa; padding: 3px 6px; border-radius: 3px; font-size: 0.9em; }
+        blockquote { border-left: 4px solid #dfe2e5; margin: 0; padding-left: 15px; color: #6a737d; }
+        .mermaid { margin: 30px 0; display: flex; justify-content: center; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #27ae60; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #27ae60; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #27ae60; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="Foundamentals.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="AsyncInternals.html" class="nav-btn">Next: Async Internals &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="Foundamentals.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="AsyncInternals.html" class="nav-btn">Next: Async Internals &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Topic 1: The Event Loop
+
+#### What is the Event Loop?
+The Event Loop is the secret sauce that allows Node.js to perform non-blocking I/O operations despite being single-threaded. When you start a Node.js program, it initializes the Event Loop right away.
+
+Think of it like an incredibly fast traffic cop. Its only job is to look at the **Call Stack** (what the single thread is currently doing) and the **Task Queue** (where finished background tasks are waiting). If the Call Stack is empty, it takes the first thing in the queue and hands it to the Call Stack to be executed.
+
+#### The Architecture (Pictorial Representation)
+
+```mermaid
+graph TD
+    A[V8 Call Stack Main Thread] -->|Executes Code| B{Is it Async I/O?}
+    B -->|No| C[Execute & Pop off Stack]
+    B -->|Yes| D[Send to Node APIs / Web APIs]
+    
+    D -->|Wait for I/O, Timer, DB| E[Background Thread Pool libuv / OS]
+    E -->|Task Finished| F[Callback Queue / Task Queue]
+    
+    F -->|Event Loop pushes back to| A
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px
+    style F fill:#dfd,stroke:#333,stroke-width:2px
+```
+
+---
+
+#### The Phases of the Event Loop
+The Event Loop isn't just one big messy queue. It actually has specific "phases" that it runs through in a strict order, over and over again (one full circle is called a "Tick").
+
+Here are the most important phases:
+
+##### 1. Timers Phase
+This phase executes callbacks scheduled by `setTimeout()` and `setInterval()`. 
+If you set a timer for 100ms, the Event Loop checks this phase to see if 100ms have passed. If yes, it grabs your code and runs it.
+
+##### 2. Poll Phase
+This is where the magic happens. Almost all of your standard callbacks run here: reading files, handling incoming HTTP requests, getting data from a database.
+The Event Loop will often "pause" and wait in this phase if it has nothing else to do, just waiting for a new user request to come in.
+
+##### 3. Check Phase
+This phase executes callbacks specifically scheduled by the `setImmediate()` function. It runs immediately after the Poll phase completes.
+
+##### 4. Close Callbacks
+This phase executes callbacks for closing events, like when a database connection drops or `socket.on('close', ...)`.
+
+#### Visualizing the Phases
+
+```mermaid
+stateDiagram-v2
+    [*] --> Timers: 1. setTimeout, setInterval
+    Timers --> Pending_Callbacks: 2. System level callbacks
+    Pending_Callbacks --> Idle_Prepare: 3. Internal Node use
+    Idle_Prepare --> Poll: 4. Incoming Requests / File Reads / DB Queries
+    Poll --> Check: 5. setImmediate
+    Check --> Close_Callbacks: 6. socket.on('close')
+    Close_Callbacks --> Timers : Next Tick
+```
+
+---
+
+#### A Real-World Code Example
+Let's see the Event Loop in action with some code. Look at this snippet:
+
+```javascript
+const fs = require('fs');
+
+console.log("1. Script starts"); // Synchronous (Call Stack)
+
+setTimeout(() => {
+  console.log("2. setTimeout finishes"); // Timers Phase
+}, 0);
+
+fs.readFile(__filename, () => {
+  console.log("3. File Read finishes"); // Poll Phase
+});
+
+console.log("4. Script ends"); // Synchronous (Call Stack)
+```
+
+**What is the output?**
+1. `1. Script starts`
+2. `4. Script ends`
+3. `2. setTimeout finishes`
+4. `3. File Read finishes`
+
+**Why did it happen in that order?**
+1. Synchronous code (`console.log`) always runs first on the main thread. It ignores the Event Loop entirely.
+2. `setTimeout` is told to wait 0ms, so it immediately goes to the **Timers Phase** queue.
+3. `fs.readFile` goes to the OS background workers. It takes a few milliseconds to read the file, so its callback eventually goes to the **Poll Phase** queue.
+4. After the main thread finishes the synchronous code (printing "4. Script ends"), the Event Loop officially takes over. It checks the Timers Phase first, sees the timeout, and prints "2". It then moves down to the Poll phase and prints "3".
+
+---
+
+#### Microtasks: The VIP Queue (Promises)
+There is a "VIP Queue" that jumps ahead of the normal Event Loop! 
+Whenever a Promise resolves (`.then()`, `async/await`) or you use `process.nextTick()`, those callbacks go into the **Microtask Queue**. 
+
+The Event Loop will completely pause whatever it's doing and empty the Microtask Queue *before* it moves on to the next phase of the normal Event Loop.
+
+```mermaid
+graph LR
+    A[Current Phase Finishes] --> B{Are there any Microtasks?}
+    B -->|Yes| C[Run all Promises & nextTick]
+    C --> B
+    B -->|No| D[Go to Next Event Loop Phase]
+    
+    style C fill:#ff9,stroke:#f66,stroke-width:2px
+```
+
+> [!TIP]
+> **Best Practice:** If you have an extremely heavy calculation, you can break it up using `setImmediate()` or Promises so you don't block the Event Loop for other users.
+    </script>
+</body>
+</html>

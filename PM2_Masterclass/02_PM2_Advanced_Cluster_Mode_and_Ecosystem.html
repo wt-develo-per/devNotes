@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PM2 Advanced Cluster Mode</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #f4f4f4; background-color: #120e1e; }
+        pre { background: #1a1625; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #3c2a68; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #1a1625; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #a476f5; }
+        blockquote { border-left: 5px solid #a476f5; margin: 0; padding-left: 20px; background: #1f1830; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #c49efa; font-size: 1.8em; border-bottom: 2px solid #a476f5; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #a476f5; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #3c2a68; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #c49efa; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c49efa; }
+        .hinglish { color: #4bcdc5; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #3c2a68; padding: 12px; text-align: left; }
+        th { background-color: #1f1830; color: #c49efa; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #1f1830; border: 1px solid #3c2a68; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #a476f5; color: #120e1e !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #c49efa; }
+        .nav-btn:hover { background-color: #c49efa; }
+        .nav-btn.disabled { background-color: #2a223f; color: #6a5e80 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #3c2a68; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_PM2_Fundamentals_and_Daemonization.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_PM2_Fundamentals_and_Daemonization.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### PM2 Masterclass 2: Cluster Mode & Ecosystem
+
+<span class="hinglish">Pichle lesson me humne app ko zinda rakhna seekha. Par ab baat aati hai Performance ki. Agar aapki website viral ho jaye, toh Node.js naturally us traffic ko handle nahi kar payega. Yahan PM2 ek "Scale-Out" magic trick dikhata hai jise Cluster Mode kehte hain!</span>
+
+---
+
+#### 1. The Single-Threaded Problem
+
+<span class="hinglish">Maan lo aapne AWS se ek mahenga server kharida jisme 8 CPU Cores hain. Aap usme apni Node.js API chalate ho. Problem ye hai ki Node.js Single-Threaded hai! Wo hamesha sirf ek hi CPU core use karta hai. Baaki 7 CPU cores bilkul khaali pade rehte hain aur aaram karte hain. Aapne 8x paise diye, par speed 1x hi mil rahi hai! Paise ki barbaadi!</span>
+
+---
+
+#### 2. PM2 Cluster Mode (`-i max`)
+
+<span class="hinglish">PM2 is waste ko rokta hai. Aap terminal me simply ye command type karte ho:</span>
+`pm2 start server.js -i max`
+
+<span class="hinglish">**Ye karta kya hai?** PM2 check karta hai ki server me kitne CPU hain. Agar 8 CPU hain, toh PM2 automatically aapki Node.js app ki 8 identical copies background me start kar dega! Ab agar 8,000 log ek saath aate hain, toh PM2 khud unko 8 alag-alag CPUs par equally distribute (Load Balance) kar dega! Aapka server raaton-raat 8 GUNA fast ho gaya, sirf ek line likhne se!</span>
+
+---
+
+#### 3. The `ecosystem.config.js` File
+
+<span class="hinglish">Senior engineers lambi terminal commands type karna pasand nahi karte (`pm2 start app.js --name "API" --env production -i max --watch...`). Ye bahut messy hai. Iske bajaye, hum ek Javascript file banate hain jisme saari configurations likhi hoti hain. Fir CI/CD me bas `pm2 start ecosystem.config.js` run kar dete hain!</span>
+
+```javascript
+module.exports = {
+  apps : [{
+    name   : "MERN-Backend",
+    script : "./server.js",
+    instances : "max",        // Cluster mode ON!
+    exec_mode : "cluster",
+    watch  : false,           // No auto-restarts in production
+    max_memory_restart : "1G", // Magic memory leak protection
+    env_production: {
+       NODE_ENV: "production",
+       PORT: 3000
+    },
+    env_staging: {
+       NODE_ENV: "staging",
+       PORT: 4000
+    }
+  }]
+}
+```
+
+---
+
+#### 4. Real-World Scenarios (5 Deep Practical Tricks)
+
+<span class="hinglish">Cluster mode aur Ecosystem file milkar aapko superpowers dete hain. Dekhte hain DevOps engineers ise kaise use karte hain:</span>
+
+##### Example 1: Zero-Downtime Deployments (`pm2 reload`)
+**Problem:** <span class="hinglish">Aapke paas 8 Node.js instances chal rahe hain. Naya code push karne ke baad aapne `pm2 restart all` mara. Restart hone me 2 seconds lagte hain. In 2 seconds me jo bhi customer website pe aaya, use 502 Bad Gateway error dikhega!</span>
+**Solution:** 
+<span class="hinglish">`pm2 reload ecosystem.config.js` use karein! PM2 ek-ek karke purane instances ko marega aur naye ko zinda karega. Jab instance #1 restart ho raha hoga, tab customer ka traffic instance #2 aur #3 par bhej diya jayega! 100% Zero-Downtime! Customer ko kabhi server offline nahi milega.</span>
+
+##### Example 2: Protection against Memory Leaks (`max_memory_restart`)
+**Problem:** <span class="hinglish">Aapne ek kharab function likha jo dheere dheere RAM consume kar raha hai (Memory Leak). Kuch din baad, Node.js poori 2GB RAM khaa jata hai aur server freeze hoke crash ho jata hai.</span>
+**Solution:** 
+<span class="hinglish">Ecosystem file me `max_memory_restart: "1G"` likh do! PM2 lagataar RAM check karega. Jaise hi Node.js ki memory 1GB se cross hogi, PM2 samajh jayega ki memory leak hai, aur wo turant app ko restart kar dega taaki memory saaf ho jaye. Server crash hone se hamesha bacha rahega!</span>
+
+##### Example 3: Environment Separation (Staging vs Prod)
+**Problem:** <span class="hinglish">Aap chahte ho ki Staging server par dummy database connect ho, aur Production par asli database connect ho. Ek hi code-base me ye kaise manage karein?</span>
+**Solution:** 
+<span class="hinglish">Ecosystem file me alag-alag `env` blocks banayein (`env_production` aur `env_staging`). Jab CI/CD se staging pe push karo toh command chalegi: `pm2 start ecosystem.config.js --env staging`. Aur live deploy karne pe: `pm2 start ecosystem.config.js --env production`. Variables khud-ba-khud set ho jayenge!</span>
+
+##### Example 4: WebSockets & Sticky Sessions
+**Problem:** <span class="hinglish">Aapne Socket.io lagaya aur PM2 Cluster mode (`-i max`) on kar diya. Ab aapka chat system toot gaya! Kyunki user jab message bhejta hai toh wo Instance #1 se connect hota hai, par doosra message NGINX aur PM2 usko Instance #2 par bhej dete hain. Connection lost!</span>
+**Solution:** 
+<span class="hinglish">Socket.io ko same Instance par banaye rakhne ke liye NGINX aur PM2 ke beech ek "Sticky Session" banani padti hai. Iske liye aapko PM2 me Redis Adapter use karna padta hai, taaki chahe user kisi bhi Instance pe jaye, uski Chat history Redis me safely stored rahe. Cluster mode me bina Redis ke WebSockets nahi chalate!</span>
+
+##### Example 5: App Monitoring & PM2 Plus
+**Problem:** <span class="hinglish">Aapko raat me chain ki neend aani chahiye. Aapko pata hona chahiye ki aapka server kaisa perform kar raha hai bina `pm2 monit` terminal khol ke dekhe.</span>
+**Solution:** 
+<span class="hinglish">Aap `pm2 plus` command run karke apne server ko Keymetrics (PM2 ka official web dashboard) se connect kar sakte ho. Aap apne mobile ya laptop ke browser me jaakar live dekh sakte ho ki konsa API route sabse slow hai, CPU temperature kya hai, aur kitne users live hain. Ekdum pro-level dashboard!</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

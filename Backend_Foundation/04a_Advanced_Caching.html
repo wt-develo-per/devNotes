@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>04a - Advanced Caching</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f9f4fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9b59b6; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="04_Caching_Basics.html" class="nav-btn">&larr; Previous: Caching Basics</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04b_Backend_Performance.html" class="nav-btn">Next: Backend Performance &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="04_Caching_Basics.html" class="nav-btn">&larr; Previous: Caching Basics</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04b_Backend_Performance.html" class="nav-btn">Next: Backend Performance &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 4a: Advanced Caching
+
+Once you master basic Redis, you will quickly run into three massive problems that only senior engineers know how to solve: The Cache Stampede, CDNs, and Cache Invalidation.
+
+---
+
+#### 1. The Cache Stampede (Thundering Herd)
+
+This is one of the most famous ways large websites crash.
+
+Imagine you are running a news website, and a massive breaking news article goes viral. 
+You set the TTL (Time to Live) of that article in Redis to **60 seconds**.
+For 60 seconds, Redis effortlessly serves 50,000 users the article. Your database is perfectly safe.
+
+**The Problem:**
+At exactly second 61, the Redis cache expires. 
+In that *exact millisecond*, 500 new users request the article.
+Because the cache is empty (Cache Miss), all 500 users trigger your backend code to query the slow database at the exact same time. The database spikes to 100% CPU and crashes instantly.
+
+**The Fix: Mutex Locking (Promise Caching)**
+When the first user gets a Cache Miss, your backend must place a "Lock" on that specific database query. The other 499 users are put in a waiting line (usually by awaiting a single Promise in Node.js). 
+Once the first user gets the data from the database and saves it to Redis, the Lock is released, and all 499 waiting users are instantly served the new Redis data. 
+
+---
+
+#### 2. Browser Caching (The Fastest Cache)
+
+> [!NOTE]
+> The absolute fastest way to serve data is to never have the user request it from your server in the first place!
+
+You can configure your Node.js backend to send special HTTP Headers that command the user's web browser to cache data on their own local hard drive.
+
+##### The `Cache-Control` Header
+If you send an image from your server, you should attach this header:
+`Cache-Control: public, max-age=86400`
+* This tells the browser: "Save this image on the user's laptop. Do not ask me for this image again for exactly 86,400 seconds (1 day)."
+
+##### The `ETag` Header (304 Not Modified)
+Sometimes you aren't sure if the data changed. 
+1. Your backend sends a JSON file, and attaches an `ETag` header (a unique fingerprint hash of the JSON, e.g., `ETag: "v1-abc"`).
+2. The browser saves it.
+3. The next day, the browser asks your backend: *"Can I have that JSON file again? But only if the ETag is different than `v1-abc`."* (`If-None-Match: "v1-abc"`)
+4. If the file hasn't changed, your backend sends back an empty response with HTTP Status **304 Not Modified**. This saves massive amounts of bandwidth!
+
+---
+
+#### 3. Content Delivery Networks (CDNs)
+
+If your Node.js backend and Redis cache are physically located in New York, a user in Tokyo will always experience a 200-millisecond delay because light has to physically travel across the ocean.
+
+**The Solution:** A CDN (like Cloudflare, AWS CloudFront, or Fastly).
+
+A CDN is a massive global network of cache servers. 
+When you put your website behind Cloudflare, they copy your images, CSS, and API responses to servers in Tokyo, London, Sydney, and 200 other cities. 
+
+```mermaid
+sequenceDiagram
+    participant User as User in Tokyo
+    participant CDN as CDN Edge (Tokyo)
+    participant Origin as Backend (New York)
+
+    User->>CDN: 1. GET /logo.png
+    Note over CDN: CDN checks its Tokyo Cache
+    CDN-->>User: 2. Returns image in 5ms!
+    
+    User->>CDN: 3. GET /breaking-news.json
+    CDN->>Origin: 4. Miss! CDN asks New York
+    Origin-->>CDN: 5. Returns JSON
+    Note over CDN: CDN saves JSON to Tokyo Cache
+    CDN-->>User: 6. Returns JSON
+```
+Because of CDNs, your Node.js server in New York might only receive 1% of the actual internet traffic, saving you thousands of dollars in server costs.
+
+---
+
+#### 4. The Hardest Problem: Cache Invalidation
+
+> "There are only two hard things in Computer Science: cache invalidation and naming things." - Phil Karlton
+
+**The Problem:**
+You have an e-commerce site. You cache a product page ("Nike Shoes, $100") for 24 hours to keep the site fast.
+Suddenly, the marketing team changes the price in the PostgreSQL database to $80. 
+For the next 24 hours, users will still see $100 on the website because Redis is serving stale data!
+
+You need **Cache Invalidation**: The ability to manually delete specific keys in Redis *before* their TTL expires.
+
+##### The Solution: Cache Tagging
+When you save the Nike Shoes HTML to Redis, don't just use the key `product:15`. 
+Attach **Tags** to it (a feature in advanced Redis setups or CDNs):
+* `Tag: product_15`
+* `Tag: category_shoes`
+* `Tag: brand_nike`
+
+Now, if Nike goes on sale, your backend can simply tell Redis: *"Delete every single cached page that has the tag `brand_nike`."*
+Instantly, thousands of stale web pages are deleted from the cache, forcing the next users to fetch the fresh, $80 prices from the database!
+    </script>
+</body>
+</html>

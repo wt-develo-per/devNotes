@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Creational Design Patterns</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1100px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #a9b7c6; background-color: #1e1e1e; font-size: 14px; }
+        pre { background: #2b2b2b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #6a8759; margin-bottom: 30px; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2b2b2b; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; color: #cc7832; }
+        blockquote { border-left: 5px solid #6a8759; margin: 0 0 30px 0; padding-left: 20px; background: #2b2b2b; padding-top: 15px; padding-bottom: 15px; border-radius: 0 8px 8px 0; font-style: italic; }
+        
+        
+        strong { color: #ffc66d; }
+        .hinglish { color: #629755; font-size: 1.0em; }
+        .danger { color: #e74c3c; font-weight: bold; }
+        .success { color: #2ecc71; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em; }
+        th, td { border: 1px solid #555; padding: 12px; text-align: left; }
+        th { background-color: #9876aa; color: #1e1e1e; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #513865; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #9876aa; }
+        .nav-btn:hover { background-color: #6d4b87; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #513865; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #ffc66d; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9876aa; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9876aa; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02_SOLID_Principles.html" class="nav-btn">&larr; Previous: SOLID Principles</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_Structural_and_Behavioral_Patterns.html" class="nav-btn">Next: Structural & Behavioral &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02_SOLID_Principles.html" class="nav-btn">&larr; Previous: SOLID Principles</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_Structural_and_Behavioral_Patterns.html" class="nav-btn">Next: Structural & Behavioral &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+#### Low-Level Design (LLD) Masterclass 3: Creational Design Patterns
+
+<span class="hinglish">Jab aap coding karte ho, toh kai baar aisi problems aati hain jo aapse pehle lakho engineers face kar chuke hain. Jaise "Database ka connection baar-baar ban raha hai aur MySQL crash ho raha hai!"
+In problems ke liye 1994 me 4 smart engineers (Jinko **"Gang of Four"** kehte hain) ne ek kitaab likhi aur in common problems ke ready-made solutions diye. Inhe hum **Design Patterns** kehte hain!
+
+Design Patterns 3 types ke hote hain:
+1. **Creational:** Objects ko banane (Create) ka sahi tarika.
+2. **Structural:** Classes ko aapas me connect karne ka tarika.
+3. **Behavioral:** Classes ka aapas me baat karne ka tarika.
+
+Is file me hum **Creational Patterns** dekhenge: The Singleton and The Factory!</span>
+
+---
+
+#### 1. The Singleton Pattern (Only One Exists!)
+
+<span class="hinglish">**Concept:** Kya ho agar aap chahte ho ki kisi Class ka sirf aur sirf **EK HI OBJECT** bane poori application me? Chahe koi 100 baar `new Database()` likhe, usko wahi purana ek object return milna chahiye naya banne ke bajaye.</span>
+
+##### <span class="danger">❌ The Bad Way (MySQL "Too Many Connections" Crash)</span>
+<span class="hinglish">Maan lo aapke paas 5 alag-alag Controller files hain (Users, Products, Cart, Orders, Payment). Agar har file me aapne likha `const db = new DatabaseConnection()`, toh Node.js MySQL server ke sath 5 alag connection pool khol lega! Jab 1000 users ek sath aayenge, toh 5000 connections khul jayenge aur MySQL turant crash dega: "Error: Too many connections".</span>
+
+```typescript
+// db.ts
+export class DatabaseConnection {
+    constructor() {
+        console.log("Opening massive connection pool to MySQL...");
+    }
+    public query(sql: string) { /* run query */ }
+}
+
+// userController.ts
+const db1 = new DatabaseConnection(); // ❌ Creates a NEW expensive connection
+db1.query("SELECT * FROM users");
+
+// productController.ts
+const db2 = new DatabaseConnection(); // ❌ Creates ANOTHER expensive connection!
+db2.query("SELECT * FROM products");
+```
+
+##### <span class="success">✅ The Clean Way (The Singleton Pattern)</span>
+<span class="hinglish">Hum is class ko ek **Singleton** bana denge. Hum class ke `constructor` ko Private kar denge taaki koi bahar se `new` keyword use hi na kar sake!</span>
+
+```typescript
+// db.ts
+export class DatabaseSingleton {
+    // 1. Ek STATIC variable jo apne andar us single object ko save rakhega
+    private static instance: DatabaseSingleton;
+
+    // 2. Constructor ko PRIVATE kar diya! Ab bahar se `new DatabaseSingleton()` likhna ERROR dega!
+    private constructor() {
+        console.log("Opening ONE connection pool to MySQL...");
+    }
+
+    // 3. Ek PUBLIC STATIC function jo object return karega
+    public static getInstance(): DatabaseSingleton {
+        // Agar object pehle se nahi bana hai, toh naya banao
+        if (!DatabaseSingleton.instance) {
+            DatabaseSingleton.instance = new DatabaseSingleton();
+        }
+        // Agar pehle se bana hua hai, toh wahi purana object wapas bhej do!
+        return DatabaseSingleton.instance;
+    }
+
+    public query(sql: string) { console.log(`Executing: ${sql}`); }
+}
+
+// ============================================
+// HOW TO USE THE SINGLETON IN YOUR APP
+// ============================================
+
+// userController.ts
+// const db = new DatabaseSingleton();  ❌ ERROR: Constructor is private!
+const db1 = DatabaseSingleton.getInstance(); // ✅ Output: "Opening ONE connection pool..."
+db1.query("SELECT * FROM users");
+
+// productController.ts
+const db2 = DatabaseSingleton.getInstance(); // ✅ Does NOT print anything! It uses the same object.
+db2.query("SELECT * FROM products");
+
+// Verify that both variables are literally pointing to the EXACT same memory object
+console.log(db1 === db2); // true!
+```
+<span class="hinglish">**Real-World Use Cases:** Database Connections, Redis Client, Logger class, ya Configuration (ENV) loader jahan file baar-baar read nahi karni.</span>
+
+---
+
+#### 2. The Factory Method Pattern (The Object Factory)
+
+<span class="hinglish">**Concept:** Kabhi-kabhi object banan thoda complex hota hai aur hum usme `if-else` ka pahaad laga dete hain (Jaise agar type "Email" hai toh EmailNotification banao, "SMS" hai toh SMSNotification banao). Factory Pattern kehta hai: "Object banane ki headache Controller se lelo, aur usko ek Factory (Karkhana) me daal do."</span>
+
+##### <span class="danger">❌ The Bad Way (Business Logic mixed with Object Creation)</span>
+<span class="hinglish">Maan lo ek User Profile controller hai jahan user apni notification preference save karta hai. Wahan notification object create karne ke liye lamba `if-else` hai.</span>
+
+```typescript
+// Types (from Polymorphism chapter)
+interface INotification { send(msg: string): void; }
+class EmailNotif implements INotification { send(m: string) { console.log("Email:", m); } }
+class SMSNotif implements INotification { send(m: string) { console.log("SMS:", m); } }
+class PushNotif implements INotification { send(m: string) { console.log("Push:", m); } }
+
+// userController.ts
+class UserController {
+    public alertUser(userType: string, message: string) {
+        let notifier: INotification;
+
+        // ❌ BAD: Controller object create karne ki complexity handle kar raha hai!
+        // Kal ko agar "WhatsApp" add hua, toh mujhe Controller aakar modify karna padega (OCP Violation!).
+        if (userType === 'email') {
+            notifier = new EmailNotif();
+        } else if (userType === 'sms') {
+            notifier = new SMSNotif();
+        } else if (userType === 'push') {
+            notifier = new PushNotif();
+        } else {
+            throw new Error("Unknown type");
+        }
+
+        notifier.send(message);
+    }
+}
+```
+
+##### <span class="success">✅ The Clean Way (The Factory Pattern)</span>
+<span class="hinglish">Hum object banane ke liye ek "Factory" Class banayenge. Uska sirf ek hi kaam hoga (SRP): Request lo, aur sahi Object bana kar return kardo!</span>
+
+```typescript
+// 1. The Factory Class (The Karkhana)
+class NotificationFactory {
+    // Is static function ko bas ek string do, ye tumhe object de dega!
+    public static createNotifier(type: string): INotification {
+        switch (type.toLowerCase()) {
+            case 'email':
+                return new EmailNotif();
+            case 'sms':
+                return new SMSNotif();
+            case 'push':
+                return new PushNotif();
+            default:
+                throw new Error(`Notification type ${type} not supported!`);
+        }
+    }
+}
+
+// 2. The Clean Controller
+class UserController {
+    public alertUser(userType: string, message: string) {
+        // ✅ CLEAN: The controller doesn't use 'new' keyword anywhere. 
+        // It asks the Factory for the object!
+        const notifier = NotificationFactory.createNotifier(userType);
+        
+        notifier.send(message);
+    }
+}
+
+// Testing it
+const controller = new UserController();
+controller.alertUser('sms', 'Your OTP is 9999'); // Output: SMS: Your OTP is 9999
+controller.alertUser('push', 'New Friend Request!'); // Output: Push: New Friend Request!
+```
+
+<span class="hinglish">**Fayda:** Kal ko agar CEO ne bola "WhatsApp notification add karo", toh main `NotificationFactory` file me ja kar add karunga. Mera `UserController` untouched rahega! Business logic (Controller) aur Object Creation logic (Factory) dono alag ho gaye hain! Ise "Separation of Concerns" kehte hain.</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

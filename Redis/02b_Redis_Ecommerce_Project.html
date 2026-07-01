@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redis E-Commerce Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #e74c3c; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #c0392b; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c0392b; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #c0392b; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #922b21; }
+        .nav-btn:hover { background-color: #e74c3c; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02_Redis_Nodejs_Integration.html" class="nav-btn">&larr; Previous: Node.js Integration</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Redis_Advanced_PubSub_and_Streams.html" class="nav-btn">Next: PubSub & Streams &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02_Redis_Nodejs_Integration.html" class="nav-btn">&larr; Previous: Node.js Integration</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Redis_Advanced_PubSub_and_Streams.html" class="nav-btn">Next: PubSub & Streams &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Redis Masterclass 2b: Amazon/Flipkart Architecture
+
+To truly understand the power of Redis, we must see how an E-Commerce giant like Amazon or Flipkart survives the "Big Billion Days" sale without their servers crashing.
+
+If 1 Crore (10 Million) users open Flipkart at the exact same time, Postgres will instantly die. Here is how Redis saves the company.
+
+---
+
+#### 1. The 10 E-Commerce Redis Scenarios
+
+Here is the exact architecture of a massive E-Commerce web application.
+
+##### Scenario 1: The Homepage (Heavy Caching)
+**Problem:** The Homepage loads 50 "Trending Products". Querying the Postgres database to calculate the top 50 products out of 10 million products takes 4 seconds. If 100,000 users open the homepage, the database receives 100,000 heavy queries per second. It will explode.
+**Solution:** 
+* <span class="hinglish">Flipkart ka backend har ghante (every hour) sirf EK baar Postgres se "Trending Products" calculate karta hai aur usko Redis RAM me JSON String banakar save kar deta hai (`SET homepage_trending "[...data...]"`).</span>
+* <span class="hinglish">Ab jo 1 Lakh users homepage kholenge, Node.js seedha Redis se 0.001 seconds me data de dega. Postgres ko pata bhi nahi chalega ki sale chal rahi hai! Pura load RAM utha leta hai.</span>
+
+##### Scenario 2: Flash Sale Inventory (Preventing Overselling)
+**Problem:** You have 100 iPhone 15s on sale for $100. 50,000 users click "Buy" at the exact same millisecond. If you check inventory in Postgres (`SELECT stock FROM products`), 5,000 users might read "Stock = 100" at the same time, and Postgres will accidentally sell 5,000 phones even though you only have 100!
+**Solution:**
+* <span class="hinglish">Stock ki quantity ko Redis me rakho (`SET iphone_stock 100`). Jab bhi koi "Buy" dabaye, Redis ka `DECR iphone_stock` (Decrement) command chalao. Redis single-threaded hota hai, iska matlab wo ek time par ek hi user ko handle karta hai (lekin light-speed me). Koi bhi double-booking ya glitch nahi ho sakta. Jaise hi stock 0 ke neeche jaye, Node.js turant "Out of Stock" error phenk dega!</span>
+
+##### Scenario 3: The Shopping Cart (Temporary Hashes)
+**Problem:** Users add items to their cart, but 70% of them never checkout. If you save every cart addition into Postgres, you will fill your database with gigabytes of garbage data from users who abandoned their carts.
+**Solution:**
+* <span class="hinglish">Shopping cart ka data permanent nahi hota. Ise Redis ke **Hash** me save karo. Jaise `HSET cart:user_123 product_id 2 qty 1`. Isse cart instantly load hogi kyonki data RAM me hai. Agar user 7 din tak khareedari nahi karta, toh Redis use automatically delete kar dega (TTL ki madad se). Jab user actually "Checkout/Pay" karta hai, tabhi hum data ko safely Postgres (Disk) me save karte hain!</span>
+
+##### Scenario 4: "Recently Viewed Items" (Lists)
+**Problem:** You want to show users a slider of the last 10 products they looked at.
+**Solution:**
+* <span class="hinglish">Postgres me ek table banana "Recently Viewed" ke naam se bohot slow aur mehenga padega. Iske bajaye Redis ka **List** (Array) use karo. Jaise hi user koi naya product dekhe, `LPUSH user:123:recent "iphone"` chalao. Aur maximum 10 items rakhne ke liye `LTRIM user:123:recent 0 9` use karo. Yeh data lightning fast load hoga.</span>
+
+##### Scenario 5: Search Auto-Complete (Sorted Sets)
+**Problem:** When a user types "Sam", you want to instantly suggest "Samsung S23", "Samsung TV". Querying the database using `LIKE '%Sam%'` is famously slow.
+**Solution:**
+* <span class="hinglish">Search suggestions ko Redis **Sorted Sets** me rakho. Jaise hi user type karega, Redis RAM se milliseconds me auto-complete suggestions dhundh kar dega! E-commerce me fast search ka matlab zyada sales.</span>
+
+##### Scenario 6: Rate Limiting Payment Gateways
+**Problem:** A hacker uses a bot to try 10,000 fake credit cards per second on your checkout page.
+**Solution:**
+* <span class="hinglish">Payment API par Redis se ek Rate Limiter laga do. `INCR rate_limit:user_ip`. Agar user 1 minute me 5 se zyada payment try karta hai, toh Node.js usko block kar dega. Redis RAM me hone ki wajah se is security check me time waste nahi hota.</span>
+
+##### Scenario 7: Time-Limited Coupons (TTL)
+**Problem:** You launch a coupon "DIWALI50" that is only valid for exactly 2 hours.
+**Solution:**
+* <span class="hinglish">Postgres me coupon create karke ek background Cron Job chalana jo har minute check kare ki 2 ghante huye ya nahi... yeh bohot inefficient hai. Redis me `SET coupon:DIWALI50 "50%_OFF" EX 7200` likho. Theek 2 ghante baad Redis is coupon ko khud uda dega (evaporate kar dega).</span>
+
+##### Scenario 8: Tracking Unique Visitors (Sets)
+**Problem:** The seller dashboard needs to show exactly how many *Unique* people visited a product page today.
+**Solution:**
+* <span class="hinglish">Redis ka **Set** use karo. `SADD product:123:visitors "user_id_99"`. Set ki khasiyat ye hai ki wo duplicates allow nahi karta. Agar same user 100 baar page refresh karega, tab bhi Redis use sirf 1 baar count karega. Aur total count nikalne ke liye bas `SCARD` command chalani padti hai.</span>
+
+##### Scenario 9: Real-Time Order Tracking
+**Problem:** When a user orders food on Swiggy/Zomato, they stare at the app watching the delivery boy's GPS coordinates update every 3 seconds.
+**Solution:**
+* <span class="hinglish">Delivery boy ki live location Postgres me save karna bewakoofi hai. Hard drive itne saare fast updates handle nahi kar sakti. GPS coordinates ko Redis me save kiya jata hai, kyonki RAM har second me hazaron updates bina thake (without sweating) handle kar sakti hai. Jab order deliver ho jaye, tab Redis se delete kardo.</span>
+
+##### Scenario 10: Distributed Locks for Checkout
+**Problem:** A user accidentally clicks the "Pay Now" button twice really fast. Your server processes two payments and deducts $200 instead of $100.
+**Solution:**
+* <span class="hinglish">Jab user pehli baar "Pay Now" dabaye, Redis me ek Lock bana do: `SET user:123:checkout "locked" NX EX 5`. `NX` (Not Exists) ka matlab hai yeh lock tabhi banega agar yeh pehle se na ho. Jab user galti se dusri baar click karega, Redis batayega ki "Bhai pehle se lock laga hua hai", aur Node.js us dusri request ko turant reject kar dega. User ka paisa bach gaya!</span>
+
+---
+
+#### 2. The Golden Rule of Caching
+
+* <span class="hinglish">Hamesha yaad rakhna: Jo data bar bar read hota hai lekin kam update hota hai (jaise Homepage Products, Categories), usko Redis me rakhte hain. Aur jo data bohot zyada critical hai (jaise successful Payments, Final Orders), jiske udne se company ka nuksan ho sakta hai, usko hamesha Postgres (Disk) par save karte hain!</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

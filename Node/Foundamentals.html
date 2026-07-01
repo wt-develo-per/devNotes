@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node.js Fundamentals</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #27ae60; margin: 0; padding-left: 20px; background: #eafaf1; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #27ae60; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #2ecc71; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #2ecc71; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="EventLoop.html" class="nav-btn">Next: Event Loop &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="EventLoop.html" class="nav-btn">Next: Event Loop &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Topic 1: Fundamentals (A Deep Dive)
+
+What actually *is* Node.js? It is not a programming language, and it is not a framework. 
+
+It is a **JavaScript Runtime Environment**.
+
+Traditionally, JavaScript only lived inside web browsers. The browser (like Chrome) has an engine that takes JavaScript code and turns it into machine code. In Chrome, this is called the **V8 Engine**. In 2009, Ryan Dahl ripped the V8 engine out of Chrome, wrapped it in a C++ program, and called it Node.js. 
+
+Because of this, JavaScript can now interact directly with the operating system—meaning it can read files, create servers, and talk to databases, just like Python or Java!
+
+---
+
+#### 1. The Core Pillars of Node.js
+
+Node.js is built upon three foundational pillars. Understanding these is crucial to mastering backend development.
+
+##### Pillar 1: The V8 Engine
+At its core, Node.js is powered by Google's open-source V8 JavaScript engine. V8 is written in C++ and is incredibly fast because it compiles JavaScript directly into native machine code before executing it. Node.js provides a "wrapper" around V8, adding backend features like the file system API (`fs`) and network API (`http`).
+
+##### Pillar 2: Single-Threaded
+Most traditional backend languages (like Java or PHP) are **multi-threaded**. When a new user connects to a Java server, the server creates a brand new "thread" (a separate worker) just for that user. 1,000 users = 1,000 threads. This eats up a massive amount of RAM.
+
+Node.js is **single-threaded**. It has exactly ONE main worker. Whether you have 1 user or 10,000 users, that single worker handles all of them. This makes Node.js insanely lightweight and memory-efficient.
+
+> [!WARNING]
+> Because it is single-threaded, you must never run "CPU-intensive" tasks (like complex mathematical calculations, image processing, or video rendering) on the main thread. If the single worker gets stuck doing heavy math, all other users on the website will be completely ignored until the math is done! Node.js is meant for I/O tasks (network/database), not CPU tasks.
+
+##### Pillar 3: Asynchronous and Non-Blocking I/O
+If Node.js only has one worker, how does it handle 10,000 users at once without making them wait? The answer is **Non-Blocking I/O**.
+
+Imagine a restaurant:
+* **Blocking (Synchronous):** The waiter takes an order, walks to the kitchen, and stands there staring at the chef until the food is ready. The waiter ignores all other customers in the restaurant.
+* **Non-Blocking (Asynchronous):** The waiter (Node.js) takes an order, drops it off at the kitchen (the Operating System), and immediately walks to the next table to take another order! When the kitchen finishes the food, they ring a bell, and the waiter delivers it.
+
+* <span class="hinglish">Node.js ek smart waiter hai. Jab usko koi database query milti hai, wo query OS ko dekar aage badh jata hai taaki dusre users ko serve kar sake. Jab database se data wapas aata hai, tab Node us data ko pakad kar user ko bhej deta hai. Wo kabhi khali nahi baithta!</span>
+
+---
+
+#### 2. Visualizing Non-Blocking I/O
+
+Here is a Sequence Diagram showing exactly how Node.js handles a massive database query without blocking the main thread:
+
+```mermaid
+sequenceDiagram
+    participant Client as 💻 User Client
+    participant Node as 🟢 Node.js (Main Thread)
+    participant OS as ⚙️ Operating System
+    participant DB as 🗄️ Database
+
+    Client->>Node: 1. Request Data (e.g. GET /profile)
+    Note over Node: Takes the request,<br/>does not wait!
+    Node->>OS: 2. Offload heavy DB query
+    Node-->>Client: 3. Thread is instantly free for NEW requests!
+    
+    Note over OS: OS works in the background
+    OS->>DB: 4. Query Database
+    DB-->>OS: 5. Data returned
+    
+    OS->>Node: 6. Triggers Callback with Data
+    Node->>Client: 7. Sends final Response back to User
+```
+
+---
+
+#### 3. The Module System
+
+Because Node.js projects can get huge, you must split your code into multiple files. Node.js uses **Modules** to do this.
+
+There are two module systems you will encounter in the real world:
+
+##### CommonJS (The Old Standard)
+This is what Node.js used historically. You will see this in older tutorials.
+```javascript
+// Exporting (math.js)
+const add = (a, b) => a + b;
+module.exports = add;
+
+// Importing (app.js)
+const add = require('./math.js');
+console.log(add(2, 2));
+```
+
+##### ES Modules (The Modern Standard)
+This is the modern standard (the exact same syntax used in React and modern Frontend development).
+```javascript
+// Exporting (math.js)
+export const add = (a, b) => a + b;
+
+// Importing (app.js)
+import { add } from './math.js';
+console.log(add(2, 2));
+```
+
+> [!TIP]
+> To use ES Modules (`import/export`) in a Node.js project, you must open your `package.json` file and add `"type": "module"`. Otherwise, Node.js will throw a syntax error!
+
+---
+
+#### 4. Hello World (Pure Node.js)
+
+Here is what a fundamental web server looks like in pure Node.js, without any external packages like Express:
+
+```javascript
+// 1. Import the built-in HTTP module
+import http from 'http';
+
+// 2. Create the server
+const server = http.createServer((request, response) => {
+  // This function runs every single time a user visits the server
+  
+  // Set the response header (Tell the browser we are sending plain text)
+  response.writeHead(200, { 'Content-Type': 'text/plain' });
+  
+  // Send the actual message
+  response.end('Hello from Node.js!');
+});
+
+// 3. Tell the server to listen on port 3000
+server.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
+});
+```
+This simple script perfectly demonstrates the event-driven nature of Node.js. The server sits quietly, doing absolutely nothing, until the "request" event occurs, at which point it fires the callback function!
+    </script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>04 - Networks (Advanced Level)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #e74c3c; margin: 0; padding-left: 20px; background: #fdf5f5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #27ae60; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #e74c3c; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #c0392b; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #c0392b; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="03_Network_Intermediate.html" class="nav-btn">&larr; Previous: Intermediate Level</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="03_Network_Intermediate.html" class="nav-btn">&larr; Previous: Intermediate Level</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Computer Networks 4: Advanced Level (FAANG Scale)
+
+Welcome to the big leagues. In this final file, we are going to look under the hood of the internet to see exactly how connections are established and how data routes across the entire planet.
+
+---
+
+#### 1. The TCP 3-Way Handshake
+
+In File 2, we learned that TCP is a "guaranteed" connection (like a phone call). But how exactly does a laptop establish that connection with a server before sending any HTTP data?
+
+It uses the famous **3-Way Handshake: SYN, SYN-ACK, ACK**.
+
+1. **SYN (Synchronize):** Your laptop sends a tiny packet to Google saying, *"Hi, can I talk to you? My starting sequence number is X."*
+2. **SYN-ACK (Synchronize-Acknowledge):** Google's server receives it and replies, *"Yes, I hear you X! I am ready to talk. My starting sequence number is Y."*
+3. **ACK (Acknowledge):** Your laptop replies, *"I hear you Y! The connection is now open."*
+
+*Only after these 3 steps are completed can your laptop finally send the HTTP `GET` request!*
+
+```mermaid
+sequenceDiagram
+    participant Laptop as 💻 Your Laptop
+    participant Server as ☁️ Google Server
+
+    Laptop->>Server: 1. SYN (Can we talk?)
+    Server-->>Laptop: 2. SYN-ACK (Yes, I hear you!)
+    Laptop->>Server: 3. ACK (Perfect, connection established)
+    Note over Laptop, Server: The TCP Connection is now OPEN
+    Laptop->>Server: 4. HTTP GET / (Finally sending real data)
+```
+
+* <span class="hinglish">Jab bhi aap website open karte ho, website load hone se pehle ye 3-way handshake milliseconds ke andar hota hai. Bina iske TCP connection ban hi nahi sakta!</span>
+
+---
+
+#### 2. ARP (Address Resolution Protocol)
+
+We know that Routers use IP Addresses (Pincodes) to send data across the world. 
+But when the data finally reaches your house, your home Router has to hand the data to your specific phone. 
+To do that, it needs your phone's MAC Address (Physical Hardware Name). 
+
+**How does the Router know which IP Address belongs to which MAC Address?** It uses ARP!
+
+**The ARP Broadcast:**
+1. The Router shouts loudly to the entire house (LAN): *"Hey everyone! Who has the IP address `192.168.1.5`? Tell me your MAC address!"*
+2. Every device hears the shout, but only your phone replies: *"That's me! Here is my MAC Address: `00:1B:44:11:3A:B7`."*
+3. The Router saves this in its **ARP Table** (cache) so it doesn't have to shout next time.
+
+* <span class="hinglish">ARP bilkul ek teacher ki tarah hai jo class mein chillati hai: "Roll number 5 kahan baitha hai?" Roll number 5 haath uthata hai "Ma'am main yahan hoon!" Phir teacher direct uske paas ja kar book de deti hai.</span>
+
+---
+
+#### 3. BGP (Border Gateway Protocol)
+
+If you live in Mumbai and you request a video from Netflix's server in New York, the data has to travel through 20 different routers across multiple countries and ocean cables to get there.
+
+**How does a Router in Mumbai know the fastest path to New York?**
+It uses **BGP**, the protocol that literally holds the global internet together.
+
+BGP is a massive, automated mapping system. 
+Massive ISPs (like Jio, AT&T, Verizon) are called **Autonomous Systems (AS)**. They constantly talk to each other using BGP:
+* Jio tells AT&T: *"I know the fastest way to get to India."*
+* AT&T tells Jio: *"Great! And I know the fastest way to get to Netflix in New York."*
+
+If a giant ocean cable between Europe and America accidentally gets cut by a shark, BGP instantly updates the global map and re-routes all traffic through Japan instead!
+
+> [!WARNING]
+> **The Danger of BGP:** BGP works entirely on "Trust". If a malicious ISP accidentally (or purposefully) broadcasts *"Hey, I am the fastest route to YouTube"*, the entire global internet will start sending YouTube traffic to that ISP, completely taking YouTube offline! This is called a **BGP Hijack**.
+
+---
+
+#### 4. Layer 4 vs. Layer 7 Load Balancing
+
+When you build a massive backend for 10 million users, you put a Load Balancer (like Nginx or AWS ALB) in front of your 50 Node.js servers to distribute the traffic. But there are two ways to do this:
+
+##### Layer 4 Load Balancing (Transport Layer)
+The Load Balancer doesn't look at the actual data. It just looks at the TCP/UDP headers (IP and Port) and blindly forwards the traffic to a server.
+* **Pros:** Blazing fast. It takes almost 0 CPU power.
+* **Cons:** It's "dumb". It cannot make smart decisions.
+
+##### Layer 7 Load Balancing (Application Layer)
+The Load Balancer actually opens the package and reads the HTTP data (like the URL path or Cookies).
+* **Smart Routing:** It can say: <span class="hinglish">"Acha, is user ne `/video` request kiya hai? Toh main isko directly Video Server ke paas bhejunga. Agar usne `/login` request kiya hota, toh main usko Auth Server ke paas bhejta."</span>
+* **Pros:** Extremely smart. Allows for Microservice routing.
+* **Cons:** Slower. It takes CPU power to decrypt HTTPS, read the JSON/Headers, and then re-encrypt it before forwarding.
+
+**Congratulations! You have now mastered Computer Networks from zero to FAANG level!**
+    </script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node.js & Express Interview Q&A</title>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1200px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #a9b7c6; background-color: #1e1e1e; font-size: 15px; }
+        .question-card { background: #2b2b2b; padding: 25px; border-radius: 8px; border-left: 5px solid #6a8759; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .q-title { color: #cc7832; font-size: 1.3em; margin-top: 0; margin-bottom: 15px; font-weight: bold; }
+        .q-title span { color: #9876aa; }
+        .answer { color: #a9b7c6; }
+        .hinglish { color: #629755; font-size: 1.05em; font-style: italic; display: block; margin-bottom: 15px; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 6px; border: 1px solid #555; overflow-x: auto; margin-top: 15px; }
+        code { color: #ffc66d; font-family: 'Fira Code', Consolas, monospace; }
+        strong { color: #ffc66d; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #384f29; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #6a8759; }
+        .nav-btn:hover { background-color: #4a6836; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #ffc66d; font-size: 1.8em; border-bottom: 2px solid #384f29; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #384f29; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #384f29; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #384f29; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Database_and_SQL_Interview.html" class="nav-btn">Next: Database & SQL Q&A &rarr;</a>
+    </div>
+
+    <h3>Top 30 Node.js & Express Interview Questions</h3>
+    <p style="text-align: center; color: #9876aa; margin-bottom: 50px;">Specially curated for Startups & Mid-Size Companies (Hinglish Explanations)</p>
+
+    <!-- QUESTION 1 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q1.</span> What is Node.js and how does it work?</div>
+        <div class="answer">
+            <span class="hinglish">"Node.js ek runtime environment hai jo Chrome ke V8 engine par chalta hai. Ye Javascript ko browser ke bahar (server par) chalne ki takat deta hai. Iska architecture Single-Threaded, Non-Blocking, aur Event-Driven hota hai."</span>
+            Node.js uses a single thread to handle all incoming requests. When an I/O operation (like DB query or file read) is encountered, it delegates it to the C++ Libuv library (Thread Pool) and moves to the next request without waiting.
+        </div>
+    </div>
+
+    <!-- QUESTION 2 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q2.</span> Explain the Event Loop in Node.js.</div>
+        <div class="answer">
+            <span class="hinglish">"Event Loop Node.js ka dil (heart) hai. Ye check karta hai ki kya koi async task complete ho gaya hai. Agar ho gaya hai, toh uske callback function ko wapas Call Stack me daal deta hai execute hone ke liye."</span>
+            It runs in 6 phases: Timers (setTimeout) -> Pending Callbacks -> Idle/Prepare -> Poll (I/O callbacks) -> Check (setImmediate) -> Close Callbacks.
+        </div>
+    </div>
+
+    <!-- QUESTION 3 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q3.</span> What is the difference between `setTimeout` and `setImmediate`?</div>
+        <div class="answer">
+            <span class="hinglish">"Dono functions async hain, par execution order alag hota hai. `setTimeout` tab chalta hai jab uska time khatam ho jaye (Timers phase me). `setImmediate` tab chalta hai jab current Poll phase khatam ho jaye (Check phase me)."</span>
+            If called from within an I/O cycle (like inside `fs.readFile`), `setImmediate` will always execute BEFORE `setTimeout(..., 0)`.
+        </div>
+    </div>
+
+    <!-- QUESTION 4 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q4.</span> What is `process.nextTick()`?</div>
+        <div class="answer">
+            <span class="hinglish">"Ye Event Loop ka part nahi hai! Agar aap `process.nextTick(cb)` use karte ho, toh uska callback EVENT LOOP KI NEXT PHASE SHURU HONE SE PEHLE (instantly) chalega. Ye `setImmediate` se bhi fast hai."</span>
+            It is used for urgent operations that must complete before any other I/O events are processed.
+        </div>
+    </div>
+
+    <!-- QUESTION 5 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q5.</span> Node.js is Single Threaded. Then how does it handle concurrency?</div>
+        <div class="answer">
+            <span class="hinglish">"Node.js ka main code ek thread me chalta hai, par uske peeche **Libuv** naam ki library hoti hai jiske paas 4 se 128 background threads hote hain (Thread Pool). Sabhi heavy I/O operations (file read, DB, cryptography) un background threads par bhej diye jate hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 6 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q6.</span> What are Streams in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Agar 5GB ki movie file read karni hai, toh `fs.readFile()` RAM ko full karke server crash kar dega. Streams data ko chhote-chhote tukdo (Chunks) me read/write karti hain (Netflix buffering ki tarah)."</span>
+            Types of streams: Readable, Writable, Duplex (Both), and Transform (Modify data while passing).
+        </div>
+    </div>
+
+    <!-- QUESTION 7 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q7.</span> What are Buffers?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab hum Streams use karte hain, toh raw binary data aane ka wait karta hai. Buffer ek temporary memory location (RAM me) hai jahan data ikattha hota hai jab tak usko process nahi kiya jata."</span>
+            It is essentially an array of integers representing memory allocation outside the V8 heap.
+        </div>
+    </div>
+
+    <!-- QUESTION 8 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q8.</span> What is the difference between `fs.readFile` and `fs.createReadStream`?</div>
+        <div class="answer">
+            <span class="hinglish">"`readFile` puri file ko ek sath RAM me load karta hai, jisse memory full ho sakti hai. `createReadStream` file ko chunks (e.g. 64KB) me read karta hai, jo memory-efficient hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 9 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q9.</span> What is Event Emitter?</div>
+        <div class="answer">
+            <span class="hinglish">"Ye Observer Design Pattern ka Node.js implementation hai. Iske through ek class event emit kar sakti hai (`emitter.emit('event')`), aur dusri files usko listen kar sakti hain (`emitter.on('event', cb)`). Ye decoupled code likhne ke kaam aata hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 10 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q10.</span> How do you handle CPU-intensive tasks in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Kyunki Node.js Single Threaded hai, koi bhi heavy video processing ya image editing us main thread ko block kar degi. Isko solve karne ke liye hum **Worker Threads** ya **Child Processes** ka use karte hain taaki heavy kaam alag thread me chalta rahe."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 11 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q11.</span> What is Middleware in Express.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Middleware wo function hota hai jiske paas Request (req) aur Response (res) object ka access hota hai. Ye Request aane par aur Controller chalu hone ke beech me chalta hai. Iska main kaam Auth check karna ya data modify karna hota hai. Isme hamesha `next()` call karna zaroori hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 12 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q12.</span> What is the difference between `app.use()` and `app.get()`?</div>
+        <div class="answer">
+            <span class="hinglish">"`app.use()` middleware mount karne ke liye hota hai aur ye har HTTP method (GET, POST, PUT) par chalta hai agar route match ho. `app.get()` specifically sirf GET requests ke liye chalega."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 13 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q13.</span> How do you handle Uncaught Exceptions in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Agar aapke code me koi error throw hua jisko try-catch nahi kiya, toh app crash ho jati hai. Ise bachane ke liye hum `process.on('uncaughtException')` use karte hain. Lekin best practice ye hai ki error log karke server gracefully restart (via PM2) kar diya jaye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 14 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q14.</span> What is the difference between Uncaught Exception and Unhandled Rejection?</div>
+        <div class="answer">
+            <span class="hinglish">"`UncaughtException` tab aata hai jab synchronous code me error aaye. `UnhandledRejection` tab aata hai jab kisi Async Promise me error (reject) aaye aur aapne `.catch()` ya try-catch na lagaya ho."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 15 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q15.</span> Explain CORS (Cross-Origin Resource Sharing).</div>
+        <div class="answer">
+            <span class="hinglish">"Browser default policy ke hisaab se ek website (`a.com`) dusri website (`b.com`) ki API hit nahi kar sakti security reasons ke liye. Ise bypass karne ke liye Express me CORS middleware use hota hai jo headers set karta hai (`Access-Control-Allow-Origin`)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 16 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q16.</span> How does JWT authentication work?</div>
+        <div class="answer">
+            <span class="hinglish">"User login karta hai, server usko ek encrypted Token (JWT) bana kar bhejta hai. Ab har request me user wo token Headers me bhejta hai. Server token ko verify karta hai. JWT stateless hota hai (matlab session ko DB me store nahi karna padta)."</span>
+            Structure: Header (Algorithm) . Payload (User Data) . Signature (Verification).
+        </div>
+    </div>
+
+    <!-- QUESTION 17 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q17.</span> What happens if a JWT is stolen? How do you prevent it?</div>
+        <div class="answer">
+            <span class="hinglish">"Agar JWT chori ho gaya toh hacker use login karne ke liye use kar lega (kyunki JWT ko invalidate nahi kiya ja sakta). Isse bachne ke liye JWT ki expiry time bohot kam (15 mins) rakhte hain. Aur ek 'Refresh Token' DB me save karte hain naya JWT lene ke liye. Token hamesha HttpOnly secure cookies me store karna chahiye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 18 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q18.</span> Why is Node.js not recommended for Heavy CPU operations?</div>
+        <div class="answer">
+            <span class="hinglish">"Node.js single threaded hai. Agar aapne 10 second ka math calculation (ya image resize) main thread par laga diya, toh wo 10 second ke liye ruk jayega aur kisi bhi naye user ki HTTP request serve nahi karega. (Server hang ho jayega!)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 19 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q19.</span> What is Cluster module in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Cluster module Node.js ki ek trick hai jisse hum ek single-threaded app ko multicore (e.g. 8 cores) server par scale karte hain. Ye main process banata hai aur 8 'worker processes' fork (copy) kar deta hai, taaki app 8x zyada traffic handle kar sake. PM2 usually ye internally handle kar leta hai (`pm2 start app.js -i max`)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 20 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q20.</span> What is dependency injection in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Ye ek SOLID principle (Dependency Inversion) hai. Iska matlab hai classes ko andar create (`new UserService()`) karne ke bajaye, unhe bahar se (constructor ke through) bhej do. Isse code easily testable ho jata hai (Mocks use karke)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 21 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q21.</span> How do you prevent SQL Injection/NoSQL Injection in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"User se aaye data ko kabhi bhi query me directly merge nahi karna chahiye (`SELECT * FROM users WHERE email = '${email}'`). Hamesha **Parameterized Queries / Prepared Statements** (`[email]`) ya ORM/ODM (like Prisma, Mongoose) use karna chahiye jo automatically injection rok dete hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 22 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q22.</span> What is the purpose of `package-lock.json`?</div>
+        <div class="answer">
+            <span class="hinglish">"`package.json` me versions me `^` (caret) laga hota hai. Jiska matlab hai next update install ho jayega. `package-lock.json` exact version (down to the last decimal) aur dependency-tree lock karke rakhta hai. Taaki jo code aapke laptop me chal raha hai, exactly wahi production server par chale!"</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 23 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q23.</span> Explain Rate Limiting. Why is it used?</div>
+        <div class="answer">
+            <span class="hinglish">"Rate limiting ensure karta hai ki ek User ya IP address ek minute me sirf fixed number of requests (e.g. 100 requests) bhej sake. Iska use DDOS attacks aur Brute-force password guessing se bachne ke liye hota hai. (Usually implemented using `express-rate-limit` package)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 24 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q24.</span> How does Garbage Collection work in V8?</div>
+        <div class="answer">
+            <span class="hinglish">"V8 engine automatically RAM free karta hai jab variables ka use khatam ho jata hai. Ye **Mark and Sweep** algorithm use karta hai. Jo memory unreachable ho jati hai (jisko koi variable point nahi kar raha), usko 'Sweep' karke clean kar deta hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 25 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q25.</span> What causes Memory Leaks in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"Memory leak tab hota hai jab Garbage collector kisi object ko delete nahi kar pata kyunki koi global variable usko still reference kar raha hota hai. Common causes: Global Arrays push hote rehna bina khali kiye, aur Unclosed database/event listeners."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 26 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q26.</span> What is REPL in Node.js?</div>
+        <div class="answer">
+            <span class="hinglish">"REPL ka matlab hai Read-Eval-Print-Loop. Ye Node.js ka command line environment (shell) hai jahan aap seedhe JS likh kar execute kar sakte ho bina file banaye (Terminal me sirf `node` likhne par jo start hota hai)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 27 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q27.</span> What is the purpose of `module.exports` vs `exports`?</div>
+        <div class="answer">
+            <span class="hinglish">"`module.exports` real object hai jo return hota hai. `exports` sirf ek chhota reference (shortcut pointer) hai `module.exports` ka. Agar aap `exports = function() {}` likhoge, toh link toot jayega aur kuch export nahi hoga. Hamesha `module.exports` use karna best practice hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 28 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q28.</span> How do you debug a Node.js application?</div>
+        <div class="answer">
+            <span class="hinglish">"Sirf `console.log()` use karna amateur approach hai. Senior devs Node.js inspector (`node --inspect index.js`) use karte hain jo Chrome DevTools se connect ho jata hai, ya fir VS Code ka inbuilt debugger use karke breakpoints lagate hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 29 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q29.</span> What is the difference between Dependencies and DevDependencies?</div>
+        <div class="answer">
+            <span class="hinglish">"`Dependencies` wo libraries hain jo app ko Production server par chalne ke liye chahiye (e.g. express, mongoose). `DevDependencies` sirf aapko development ke time chahiye (e.g. typescript, nodemon, jest). Production me `npm install --production` sirf main dependencies install karta hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 30 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q30.</span> How do you handle file uploads in Express?</div>
+        <div class="answer">
+            <span class="hinglish">"Express directly multipart/form-data (files) handle nahi kar sakta. Humko **Multer** naam ka middleware use karna padta hai. Multer file ko binary se nikal kar server ke temporary folder me save karta hai, jiske baad hum usko AWS S3 par bhej dete hain."</span>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Database_and_SQL_Interview.html" class="nav-btn">Next: Database & SQL Q&A &rarr;</a>
+    </div>
+</body>
+</html>

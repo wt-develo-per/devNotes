@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Node.js Buffers</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f9f4fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #27ae60; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1e8449; }
+        .nav-btn:hover { background-color: #2ecc71; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #27ae60; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9b59b6; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="AsyncInternals.html" class="nav-btn">&larr; Previous: Async Internals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Streams.html" class="nav-btn">Next: Streams &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="AsyncInternals.html" class="nav-btn">&larr; Previous: Async Internals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="Streams.html" class="nav-btn">Next: Streams &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Node.js Topic 3: Buffers
+
+Traditionally, the JavaScript language was designed for the web browser. It was very good at handling text (`Strings`) and numbers, but it had absolutely no concept of raw, physical binary data (`0s and 1s`). 
+
+Because Node.js runs on the server and needs to handle images, video files, PDFs, and raw network packets, it introduced the `Buffer` class. A Buffer allows JavaScript to work directly with raw RAM memory!
+
+---
+
+#### 1. What exactly is a Buffer? (The Bus Stop Analogy)
+
+A Buffer is a temporary storage spot in RAM for a chunk of data that is currently moving from one place to another. 
+
+Imagine a bus terminal. Passengers (data) arrive at the terminal at random times and at random speeds. However, the bus (your Node.js processor) only leaves when it has exactly 30 passengers. 
+The passengers need a physical room to sit and wait until the bus is full and ready to go. That waiting room is a **Buffer**. 
+
+* <span class="hinglish">Jab aap internet se ek badi video file download karte ho, toh data chhote-chhote tukdon (chunks) mein aata hai. Node.js un tukdon ko ek 'Waiting Room' (Buffer) mein bitha deta hai. Jab wo room full ho jata hai, tabhi Node us data ko aage process karta hai!</span>
+
+##### Visualizing a Buffer Filling Up
+
+```mermaid
+graph LR
+    subgraph Network ["Fast Network"]
+        A["Data: 10101011"]
+        B["Data: 11001100"]
+    end
+    
+    subgraph BufferRoom ["The Buffer (Waiting Room)"]
+        S1["Slot 1: 10101011"]
+        S2["Slot 2: 11001100"]
+        S3["Slot 3: [Empty, Waiting...]"]
+    end
+    
+    A -->|"Arrives quickly"| S1
+    B -->|"Arrives quickly"| S2
+    S1 -->|"Bus leaves when full"| C["Node.js Video Player"]
+    S2 -->|"Bus leaves when full"| C
+    
+    style S1 fill:#d5f5e3,stroke:#27ae60
+    style S2 fill:#d5f5e3,stroke:#27ae60
+    style S3 fill:#f8f9fa,stroke:#95a5a6,stroke-dasharray: 5 5
+```
+
+When the buffer completely fills up, it is dispatched to your application, and a brand new empty buffer takes its place to catch the next passengers!
+
+---
+
+#### 2. Working with Buffers in Code
+
+Because Buffers are so fundamental to Node.js, they are available "globally". You don't even need to use `require('buffer')` to use them. They are just always there.
+
+##### Creating and Reading Buffers
+```javascript
+// 1. Create an empty buffer of exactly 5 bytes (spots of memory)
+const buf1 = Buffer.alloc(5);
+console.log(buf1); 
+// Output: <Buffer 00 00 00 00 00>
+
+// 2. Create a buffer directly from a String
+const buf2 = Buffer.from("Hello");
+console.log(buf2); 
+// Output: <Buffer 48 65 6c 6c 6f> 
+// (Node automatically converted the English letters into Hexadecimal binary data!)
+
+// 3. Convert the binary data back to readable text
+console.log(buf2.toString()); 
+// Output: "Hello"
+```
+
+> [!TIP]
+> **Pro Tip:** If you ever print a variable in Node.js and see `<Buffer 23 4f 1a ...>`, do not panic! You are just looking at raw, un-decoded binary data. To read it like a human, you usually just need to call `.toString()` on it!
+
+---
+
+#### 3. Advanced: `alloc` vs `allocUnsafe`
+
+When you ask Node to create an empty Buffer of 5 bytes, Node has to go to your RAM, find 5 empty spots, and give them to you. 
+
+```javascript
+// Safe, but slightly slow:
+const buf = Buffer.alloc(5);
+```
+`Buffer.alloc()` will completely scrub and clean the 5 spots of RAM with zeroes before giving it to you (`00 00 00 00 00`). This prevents you from accidentally reading old passwords or data that used to live in that RAM.
+
+```javascript
+// Extremely fast, but dangerous:
+const bufFast = Buffer.allocUnsafe(5);
+```
+`Buffer.allocUnsafe()` does not clean the RAM. It just hands you the memory exactly as it found it. It is incredibly fast, but the buffer might contain random "garbage" data leftover from another application! 
+
+* <span class="hinglish">`alloc` ka matlab hai hotel room clean karke aapko dena. `allocUnsafe` ka matlab hai bina saaf kiye, purane guest ke kachre ke sath room de dena (Fast hai, par risky!).</span>
+
+---
+
+#### 4. How Buffers work with Streams
+
+Buffers and Streams are best friends. They are almost always used together.
+
+When a **Stream** is reading data from a massive 10GB video file, it doesn't just read one single letter at a time—that would destroy your CPU. 
+
+Instead, the Stream reads a large chunk of data (usually exactly 64kb) and pours it into a Buffer. Once that 64kb Buffer is full, the Stream flushes it down the pipe to the user, and starts filling the next Buffer.
+
+```mermaid
+sequenceDiagram
+    participant HardDrive as 💾 Hard Drive
+    participant Stream as 🌊 ReadStream
+    participant Buffer as 📦 64kb Buffer
+    participant Output as 💻 User Browser
+
+    HardDrive->>Stream: Read 10GB File
+    loop Every 64 Kilobytes
+        Stream->>Buffer: Pour data in...
+        Note over Buffer: Wait until full!
+        Buffer-->>Output: Send 64kb chunk to User
+        Note over Buffer: Empty the buffer and repeat
+    end
+```
+
+> [!WARNING]
+> **Buffer Size Limit:** A single Buffer object in Node.js cannot be infinitely large. On a 64-bit machine, the maximum size of a single Buffer is exactly **2 GB** (`2147483647 bytes`). If you try to load a 3GB file entirely into a single Buffer using `fs.readFile`, your server will crash immediately! This is why you must use Streams!
+    </script>
+</body>
+</html>

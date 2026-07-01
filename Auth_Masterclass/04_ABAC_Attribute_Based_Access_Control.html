@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ABAC: Attribute Based Access Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #8e44ad; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f4ecf7; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #8e44ad; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #8e44ad; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #8e44ad; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #9b59b6; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="03_RBAC_Role_Based_Access_Control.html" class="nav-btn">&larr; Previous: RBAC</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="03_RBAC_Role_Based_Access_Control.html" class="nav-btn">&larr; Previous: RBAC</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Auth Masterclass 4: Attribute-Based Access Control (ABAC)
+
+RBAC (Roles) is great, but it has a massive flaw. 
+Imagine you build a blog. You write a rule: `"Only users with the EDITOR role can edit articles."`
+
+**The Disaster:** John is an Editor. He logs in and accidentally edits Sarah's article!
+RBAC failed us. John *does* have the Editor role, but he shouldn't be allowed to edit an article *that he didn't write*. 
+
+We need to check the **Attributes** of the resource. We need **ABAC (Attribute-Based Access Control)**.
+
+---
+
+#### 1. The Ownership Check (Node.js Logic)
+
+With ABAC, you can't just check the JWT token in a middleware. You actually have to query the Database to fetch the resource, check who owns it, and compare it to the logged-in user!
+
+```javascript
+app.put('/api/articles/:id', async (req, res) => {
+    // 1. Get the logged-in user from the JWT
+    const loggedInUserId = req.user.id; 
+
+    // 2. Fetch the requested article from Postgres
+    const article = await db.query('SELECT * FROM articles WHERE id = $1', [req.params.id]);
+
+    if (!article) return res.status(404).json({ error: "Article not found!" });
+
+    // 3. THE ABAC OWNERSHIP CHECK!
+    // Are you the author? Or are you a SUPER_ADMIN (who can bypass everything)?
+    if (article.author_id !== loggedInUserId && req.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: "Access Denied! Tum is article ke maalik nahi ho!" });
+    }
+
+    // 4. Update the article safely
+    await db.query('UPDATE articles SET content = $1 WHERE id = $2', [req.body.content, req.params.id]);
+    res.json({ message: "Article Updated!" });
+});
+```
+
+* <span class="hinglish">RBAC sirf darwaze par khada Watchman hai, jo dekhta hai ki tumhare paas pass hai ya nahi. ABAC andar khada Manager hai, jo dekhta hai ki tum pass le kar andar toh aa gaye, lekin kya ye kursi tumhari hai? Agar post kisi aur ki hai, toh tum modify nahi kar sakte!</span>
+
+---
+
+#### 2. Real-World Scenarios (10 Practical Examples)
+
+How do massive companies use ABAC to enforce complex security rules?
+
+##### Example 1: Multi-Tenant SaaS Isolation
+**Problem:** You build a CRM like Salesforce. "Company A" and "Company B" use your app. A user from Company A tries to view an invoice (`GET /api/invoices/99`) that belongs to Company B.
+**Solution:** This is the most common ABAC use case! Every table in your database must have a `tenant_id` (company ID). In your API, you fetch the invoice and check: `if (invoice.tenant_id !== req.user.tenant_id) return 403 Forbidden;`.
+
+##### Example 2: Premium vs Free Tiers
+**Problem:** You have a Video Editing app. Free users can only export 720p videos. Premium users can export 4K.
+**Solution:** You check the user's "Subscription Attribute". `if (req.body.resolution === '4K' && req.user.plan !== 'PREMIUM') return 403 Forbidden;`. 
+
+##### Example 3: Geo-Blocking (Location Attributes)
+**Problem:** Netflix only has the rights to show "The Office" in the USA. If a user in India tries to play it, it must be blocked.
+**Solution:** The Backend checks the IP Address of the incoming request (The Location Attribute) and compares it to the Movie's allowed regions. `if (!movie.allowed_regions.includes(userCountry)) return 403;`.
+
+##### Example 4: Time-Based Restrictions
+**Problem:** A banking application only allows stock trades to be executed between 9:00 AM and 3:30 PM (Market Hours).
+**Solution:** The backend checks the Current Time (The Environment Attribute) before executing the trade. `if (currentTime < marketOpen || currentTime > marketClose) return 403;`.
+
+##### Example 5: Profile Privacy (Public vs Private)
+**Problem:** On Instagram, you can view a user's photos only if their profile is Public, OR if it's Private but they have accepted your follow request.
+**Solution:** Fetch the target user's profile. `if (targetUser.is_private && !isFollowing(req.user.id, targetUser.id)) return 403 Forbidden;`.
+
+##### Example 6: IP Whitelisting for Admin Panels
+**Problem:** Even if a hacker steals a Super Admin's password and 2FA, you don't want them accessing the Admin Panel from Russia.
+**Solution:** In the Admin middleware, check the Request IP Attribute. `if (!companyAllowedIPs.includes(req.ip)) return 403;`. The admin panel is completely invisible unless accessed from the physical office building!
+
+##### Example 7: File Upload Limits
+**Problem:** A user is trying to upload a 5GB file to your AWS S3 bucket. Your free tier only allows 10MB.
+**Solution:** Check the `Content-Length` header (Request Attribute) before the file even starts uploading! `if (req.headers['content-length'] > 10000000) return 413 Payload Too Large;`.
+
+##### Example 8: Device Limits (Netflix Screen Limit)
+**Problem:** A user is on the "Basic" plan which allows watching on 1 screen. They share their password and try to watch on 3 screens simultaneously.
+**Solution:** When they hit "Play", check Redis for active playing sessions for that `user_id`. `if (activeSessions >= user.plan.max_screens) return 403;`.
+
+##### Example 9: The "Read-Only" Freeze
+**Problem:** A user's credit card failed on their monthly SaaS subscription. You don't want to delete their account, but you want to stop them from creating new projects.
+**Solution:** Change their account status attribute to `PAST_DUE`. Create a middleware on all `POST/PUT/DELETE` routes: `if (req.user.status === 'PAST_DUE') return 403;`. They can still use `GET` APIs to view their old data, but they are frozen from writing!
+
+##### Example 10: Age Restrictions (NSFW Content)
+**Problem:** YouTube needs to block an 15-year-old from watching an age-restricted violent video.
+**Solution:** When the video is requested, calculate the user's age from their Date of Birth in the database. `if (video.is_nsfw && userAge < 18) return 403;`.
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

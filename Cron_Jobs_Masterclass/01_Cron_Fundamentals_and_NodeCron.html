@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cron Fundamentals & Node-Cron</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #fff5e6; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ffd8a8; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #fff5e6; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #d35400; }
+        blockquote { border-left: 5px solid #e67e22; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #e67e22; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #e67e22; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #d35400; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #d35400; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #fdf2e9; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #d35400; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #e67e22; }
+        .nav-btn:hover { background-color: #e67e22; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Advanced_Distributed_Cron.html" class="nav-btn">Next: Advanced Distributed Cron &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Advanced_Distributed_Cron.html" class="nav-btn">Next: Advanced Distributed Cron &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Cron Masterclass 1: Fundamentals & `node-cron`
+
+APIs are completely reactive. They do absolutely nothing until a user clicks a button. 
+But what if you need to delete thousands of expired JWT tokens from your database? Are you going to wake up at 2:00 AM every single night and click a button? 
+
+No! You write a **Cron Job**. A scheduled background task that runs automatically on a timer.
+
+---
+
+#### 1. The Scary Cron Syntax (`* * * * *`)
+
+Cron uses a 5-star string to represent exactly *when* something should run. It reads from left to right:
+`[Minute]  [Hour]  [Day_of_Month]  [Month]  [Day_of_Week]`
+
+Here is how you decode it:
+* `* * * * *` = Every single minute of every single day.
+* `0 * * * *` = Minute 0 of every hour. (Runs at 1:00, 2:00, 3:00...).
+* `0 0 * * *` = Minute 0, Hour 0. (Runs exactly at Midnight every day).
+* `0 9 * * 1` = Minute 0, Hour 9, Day 1. (Runs every Monday at 9:00 AM).
+* `*/15 * * * *` = The slash means "divide". (Runs every 15 minutes).
+
+* <span class="hinglish">Cron syntax dekhne me thoda ajeeb (scary) lagta hai, par ek baar iske 5 spots samajh gaye, toh aap server ko apna personal naukar (servant) bana sakte ho. Jo automatically raat ke 12 baje saara kachra (garbage) saaf kar dega!</span>
+
+---
+
+#### 2. Using `node-cron` in Express
+
+The easiest way to schedule a job in a simple Node.js app is the `node-cron` package. You just write it inside your main `server.js` file!
+
+```javascript
+import cron from 'node-cron';
+import express from 'express';
+
+const app = express();
+
+// 1. Define the Cron Job (Runs every night at 2:00 AM)
+cron.schedule('0 2 * * *', async () => {
+    console.log("Cron triggered: Running Nightly Database Cleanup...");
+    
+    try {
+        const result = await db.query("DELETE FROM sessions WHERE expires_at < NOW()");
+        console.log(`Cleanup Success: Deleted ${result.rowCount} old sessions!`);
+    } catch (error) {
+        console.error("Cron failed:", error);
+    }
+});
+
+app.listen(3000, () => console.log('Server running!'));
+```
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+What do Senior Backend Engineers actually automate in production?
+
+##### Example 1: The "Garbage Collector" (Expired Tokens)
+**Problem:** Every time a user logs in, a Refresh Token is saved in Postgres. After 1 year, your `tokens` table has 10 million expired tokens, making the database incredibly slow.
+**Solution:** `cron.schedule('0 3 * * 0', ...)` -> Every Sunday at 3:00 AM, run `DELETE FROM tokens WHERE expires_at < NOW()`. Your DB stays small and fast!
+
+##### Example 2: Happy Birthday Emails
+**Problem:** You want to send users a 20% discount coupon on their birthday.
+**Solution:** `cron.schedule('0 8 * * *', ...)` -> Every morning at 8:00 AM, query `SELECT email FROM users WHERE MONTH(dob) = CurrentMonth AND DAY(dob) = CurrentDay`. Loop through the results and send them an email!
+
+##### Example 3: The 15-Minute Abandoned Cart Reminder
+**Problem:** A user puts a $1000 laptop in their cart but doesn't check out.
+**Solution:** Run a cron job every 15 minutes: `*/15 * * * *`. Find carts where `status = 'PENDING'` and `last_updated_at` is exactly 1 hour ago. Automatically trigger a "Hey, you forgot something!" email via SendGrid.
+
+##### Example 4: Daily Data Aggregation (Stats)
+**Problem:** You have an Admin Dashboard that shows "Total Sales Today". Running `SELECT SUM(price)` across 5 million rows every time the Admin opens the page takes 10 seconds.
+**Solution:** `cron.schedule('59 23 * * *', ...)` -> At 11:59 PM every night, calculate the total sales for the day ONCE, and save the final number into a tiny `daily_stats` table. The Dashboard now loads in 0.01 seconds!
+
+##### Example 5: API Rate Limit Reset
+**Problem:** You give Free tier users 100 API calls per day. How do you reset their counters?
+**Solution:** If you use Postgres for rate limiting, run a cron exactly at midnight `0 0 * * *` that executes `UPDATE users SET api_calls_today = 0 WHERE plan = 'FREE'`. 
+
+##### Example 6: Database Backups (pg_dump)
+**Problem:** What if your server hard drive crashes? You lose everything.
+**Solution:** Use Node's `child_process.exec()` inside a cron job! `cron.schedule('0 4 * * *', () => { exec('pg_dump mydatabase > backup.sql'); })`. Run it every day at 4:00 AM and push the file to an AWS S3 bucket.
+
+##### Example 7: The "Trial Expired" Locker
+**Problem:** A user signs up for a 14-day free trial on May 1st. On May 15th, they should be locked out.
+**Solution:** Nightly cron job at Midnight. `UPDATE users SET status = 'LOCKED' WHERE trial_end_date < NOW() AND status = 'ACTIVE'`. Next time they log in, they will be forced to the billing page.
+
+##### Example 8: Fetching External Data (Crypto Prices)
+**Problem:** Your app displays Live Bitcoin prices, but the Binance API only allows you to hit them 5 times a minute. If 1000 users open your app, Binance will block your IP!
+**Solution:** Never let users hit Binance directly. Instead, run a cron job `*/15 * * * * *` (Every 15 seconds) that hits Binance ONCE, and saves the Bitcoin price into your own Redis Cache. All 1000 users fetch the price instantly from your Redis, safely!
+
+##### Example 9: The Weekly Newsletter
+**Problem:** You need to send a "Weekly Recap" email to 50,000 users every Friday at 5:00 PM.
+**Solution:** `cron.schedule('0 17 * * 5', ...)` -> Query all active users, generate the email HTML, and push the emails into an AWS SES queue. 
+
+##### Example 10: Automatic Unbanning
+**Problem:** You ban a toxic user on your forum for exactly 3 days.
+**Solution:** Set `banned_until = '2026-06-04'` in the database. Run a cron every hour `0 * * * *` that runs `UPDATE users SET status = 'ACTIVE' WHERE banned_until < NOW() AND status = 'BANNED'`. They are unbanned automatically while you sleep!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

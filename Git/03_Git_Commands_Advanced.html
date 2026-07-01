@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>03 - Git Advanced Commands</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf5f5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        .conflict-box { background: #1e1e1e; color: white; padding: 15px; font-family: monospace; border-radius: 5px; }
+        .conflict-header { color: #569cd6; }
+        .conflict-incoming { color: #4ec9b0; }
+        .conflict-current { color: #dcdcaa; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #f05032; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e74c3c; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02_Git_Commands_Beginner.html" class="nav-btn">&larr; Previous: Beginner Commands</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02_Git_Commands_Beginner.html" class="nav-btn">&larr; Previous: Beginner Commands</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Git Masterclass 3: Senior Level (Fixing Disasters)
+
+Welcome to the real world. In this file, we learn how to fix things when they go horribly wrong. If you master these commands, you will be the "Git Wizard" on your engineering team.
+
+---
+
+#### 1. Merge Conflicts (Don't Panic!)
+
+A Merge Conflict happens when you and a coworker edit the **exact same line of code** in the same file, and Git doesn't know who is right.
+
+* <span class="hinglish">Maan lo aapne Line 10 pe background color 'Red' kar diya, aur aapke dost ne usi Line 10 pe color 'Blue' kar diya. Jab aap dono code merge karoge, toh Git confuse ho jayega. "Main kiski baat sunu? Red ya Blue?" Isko Merge Conflict kehte hain.</span>
+
+When this happens, Git stops everything and injects ugly text directly into your code file. It looks like this in VS Code:
+
+<div class="conflict-box">
+<span class="conflict-header">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (Current Change - Your Code)</span><br>
+<span class="conflict-current">background-color: red;</span><br>
+<span class="conflict-header">=======</span><br>
+<span class="conflict-incoming">background-color: blue;</span><br>
+<span class="conflict-header">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/coworker (Incoming Change - Their Code)</span>
+</div>
+
+##### How to Fix It:
+1. **Do not panic.** This is normal.
+2. Open the file in VS Code. VS Code will highlight this section brightly.
+3. You just delete the weird `<<<<<<` and `======` arrows, and keep the line of code you actually want (or combine both!).
+4. Once you fix the code manually, type:
+   `git add .`
+   `git commit -m "Fixed merge conflict"`
+
+---
+
+#### 2. Undoing Mistakes (`git reset` vs `git revert`)
+
+What happens if you make a terrible commit that breaks the website? You need to undo it.
+
+##### `git revert <commit-id>` (The Safe Way)
+Revert does **not** delete your bad commit. Instead, it creates a brand *new* commit that applies the exact opposite changes. 
+* **Use this if you have already pushed to GitHub.** (Because deleting history on a public server ruins it for your coworkers).
+
+##### `git reset` (The Dangerous Way)
+Reset literally rips the commit out of history as if it never existed. There are 3 levels of violence:
+
+1. **`git reset --soft HEAD~1`** 
+   Deletes the commit from history, but keeps all your modified code in the Staging Area so you can fix your typo and commit again.
+2. **`git reset --mixed HEAD~1`** (Default)
+   Deletes the commit, kicks the files completely out of the Staging Area back into your Working Directory.
+3. **`git reset --hard HEAD~1`** (Nuclear Option ☢️)
+   Deletes the commit AND permanently deletes all the code you wrote. **Use with extreme caution.**
+
+---
+
+#### 3. Merge vs. Rebase (The Ultimate Debate)
+
+When you want to pull the newest code from `main` into your `feature` branch, there are two ways to do it.
+
+##### `git merge main`
+This creates a special "Merge Commit" that ties the two branches together. 
+* **Pros:** It preserves the exact chronological history of what happened.
+* **Cons:** If you have 50 developers, your Git history looks like a messy spiderweb.
+
+##### `git rebase main`
+This is black magic. Rebase rips your feature branch out of the ground, fast-forwards time, and re-plants your branch at the very tip of the newest `main` code.
+* **Pros:** It keeps your Git history perfectly in a straight line (Linear History).
+* **Cons:** If you mess up a Rebase, it is very difficult to fix. Never rebase a public branch that other people are using!
+
+```mermaid
+gitGraph
+    commit id: "1"
+    branch feature
+    commit id: "A"
+    checkout main
+    commit id: "2"
+    commit id: "3"
+    checkout feature
+    commit id: "B"
+```
+*(Note: If we REBASE, Commits A & B are moved AFTER Commit 3!)*
+
+---
+
+#### 4. The Panic Button: `git stash`
+
+**Scenario:** You are halfway through writing a complex new feature. Your code is broken. Suddenly, your boss runs in: *"There is a critical bug on the live website! Fix it right now!"*
+
+You can't switch to the `main` branch, because your broken code will come with you! You also don't want to `git commit` broken code. What do you do?
+
+* `git stash` -> Takes all your unsaved work and hides it in a secret invisible drawer. Your branch is now perfectly clean!
+* Now you can switch to `main`, fix the bug, and commit it.
+* Once the boss is happy, switch back to your branch and type:
+* `git stash pop` -> Takes your unfinished work out of the drawer and puts it exactly back where you left it!
+
+* <span class="hinglish">`git stash` ek secret drawer hai. Jab koi achanak room mein aaye, toh aap apna aadha-adhura kaam drawer mein daal ke table saaf kar dete ho. Jab wo chale jayein, toh `stash pop` karke wapas kaam shuru kar do!</span>
+
+---
+
+#### 5. Standard Git Flow (Branch Naming)
+
+When working in a real company, you don't just name branches randomly. The industry uses a standard structure:
+
+* **`main` (or `master`):** The Holy Grail. This code is currently live on the production website. It must never break.
+* **`develop`:** The staging area. All developers merge their finished features here for testing.
+* **`feature/login-button`:** Where you build new things.
+* **`bugfix/payment-crash`:** Where you fix non-critical bugs.
+* **`hotfix/database-down`:** Absolute emergencies. This branch comes straight off `main`, fixes the fire, and goes right back into `main`.
+
+**Congratulations! You are now a Git Wizard!**
+    </script>
+</body>
+</html>

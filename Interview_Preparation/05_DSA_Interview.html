@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DSA Interview Q&A (Startups & Mid-Size)</title>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1200px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #a9b7c6; background-color: #1e1e1e; font-size: 15px; }
+        .question-card { background: #2b2b2b; padding: 25px; border-radius: 8px; border-left: 5px solid #6a8759; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .q-title { color: #cc7832; font-size: 1.3em; margin-top: 0; margin-bottom: 15px; font-weight: bold; }
+        .q-title span { color: #9876aa; }
+        .answer { color: #a9b7c6; }
+        .hinglish { color: #629755; font-size: 1.05em; font-style: italic; display: block; margin-bottom: 15px; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 6px; border: 1px solid #555; overflow-x: auto; margin-top: 15px; }
+        code { color: #ffc66d; font-family: 'Fira Code', Consolas, monospace; }
+        strong { color: #ffc66d; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #384f29; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #6a8759; }
+        .nav-btn:hover { background-color: #4a6836; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #ffc66d; font-size: 1.8em; border-bottom: 2px solid #384f29; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #384f29; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #384f29; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #384f29; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="04_LLD_and_Design_Patterns_Interview.html" class="nav-btn">&larr; Previous: LLD & Patterns Q&A</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="06_Behavioral_and_HR_Interview.html" class="nav-btn">Next: Behavioral & HR Q&A &rarr;</a>
+    </div>
+
+    <h3>Top 30 DSA Interview Questions</h3>
+    <p style="text-align: center; color: #9876aa; margin-bottom: 50px;">Practical Arrays, Strings, & Hash Maps for Startups (Hinglish Explanations)</p>
+
+    <!-- QUESTION 1 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q1.</span> What is Big O Notation?</div>
+        <div class="answer">
+            <span class="hinglish">"Big O batata hai ki jab data (n) bohot badh jayega (jaise 10 se 10 million), toh aapka code kitna time zyada lega (Time Complexity) aur kitni RAM khayega (Space Complexity). Startups me O(N^2) loops likhne walo ko turant reject kar dete hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 2 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q2.</span> Reverse a String (Without inbuilt methods).</div>
+        <div class="answer">
+            <span class="hinglish">"Sabse common! Hum ek 'Two Pointer' approach use karte hain. Ek pointer string ke start (left = 0) par, aur ek end (right = str.length-1) par rakhte hain. Dono characters ko swap karte hain aur left ko aage, right ko piche late hain jab tak wo cross na ho jayein. Time: O(N)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 3 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q3.</span> Find the Max and Min element in an Array.</div>
+        <div class="answer">
+            <span class="hinglish">"Array ko sort mat karna! Wo O(N log N) time lega. Seedha ek single loop lagao (O(N)). 2 variables rakho `max` aur `min`. Har number ko check karo, agar wo max se bada hai toh max update kardo, agar min se chota hai toh min update kardo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 4 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q4.</span> Check if a String is a Palindrome.</div>
+        <div class="answer">
+            <span class="hinglish">"Palindrome matlab ulta-seedha ek saman (Jaise 'racecar'). Isme bhi 'Two Pointer' lagao. Left index ko Right index se compare karo. Agar kahi bhi match nahi hua, return `false`. Agar loop khatam ho gaya toh `true`. Time: O(N/2) => O(N)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 5 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q5.</span> Two Sum Problem. (Find 2 numbers that add up to Target)</div>
+        <div class="answer">
+            <span class="hinglish">"Do nested loops (loop ke andar loop) lagane se O(N^2) aayega. Ise solve karne ka best tarika **Hash Map (Object/Map)** hai! Har number par jao, check karo ki `Target - CurrentNumber` Map me pehle se hai kya? Agar hai, toh answer mil gaya! Agar nahi, toh current number ko Map me save kardo. Time: O(N)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 6 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q6.</span> Remove duplicates from an Array.</div>
+        <div class="answer">
+            <span class="hinglish">"Sabse easy tarika JS me `new Set(array)` use karna hai kyunki Set duplicates allow nahi karta. Agar bina extra space (In-place) karna ho sorted array me, toh Two Pointers use karo. Ek pointer unique numbers ko track karega, dusra aage badhega."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 7 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q7.</span> Find the Missing Number in an Array of 1 to N.</div>
+        <div class="answer">
+            <span class="hinglish">"Maths zindabad! 1 se N tak sabka sum nikalne ka formula hai `N * (N + 1) / 2`. Isme se given array ke saare elements ka sum minus kar do. Jo number bachega, wahi missing number hai! Time: O(N), Space: O(1)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 8 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q8.</span> Best Time to Buy and Sell Stock.</div>
+        <div class="answer">
+            <span class="hinglish">"Aapko array me lowest price par kharidna hai aur highest par bechna hai. Ek variable rakho `minPrice` (infinity) aur ek `maxProfit` (0). Loop me, agar aaj ka price minPrice se chota hai, toh usko update kardo. Nahi toh, profit check karo (`todayPrice - minPrice`) aur maxProfit update kardo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 9 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q9.</span> Valid Parentheses. (e.g. "{[()]}" is valid)</div>
+        <div class="answer">
+            <span class="hinglish">"Isme **Stack** (Array with push/pop) use hota hai. Jab bhi opening bracket aaye `(`, `{`, `[`, usko stack me Push kardo. Jab bhi closing bracket aaye `)`, toh Stack me Pop karo aur check karo ki kya wo same type ka hai? End me agar Stack khali hai toh valid hai!"</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 10 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q10.</span> Move all Zeroes to the end of the Array.</div>
+        <div class="answer">
+            <span class="hinglish">"Array ke non-zero numbers ko left me shift karte jao. Ek variable `insertPos = 0` rakho. Jab bhi koi non-zero number mile, usko `arr[insertPos]` par dal do aur `insertPos++` kardo. Loop ke baad, bache hue saare indexes me 0 bhar do."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 11 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q11.</span> Find the Majority Element (Appears more than N/2 times).</div>
+        <div class="answer">
+            <span class="hinglish">"Boyer-Moore Voting Algorithm! Ek 'candidate' variable banao aur 'count' ko 0 rakho. Array par iterate karo. Agar count 0 hai, toh current number ko candidate bana do. Agar current number candidate se match karta hai toh `count++`, varna `count--`. Jo end me candidate bachega wahi answer hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 12 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q12.</span> What is the Sliding Window Technique?</div>
+        <div class="answer">
+            <span class="hinglish">"Agar array me lagatar (contiguous) elements ka subarray dhundhna ho (Jaise: max sum of 3 consecutive elements). Toh baar-baar loop lagane ke bajaye, hum ek 3 size ka 'Window' banate hain. Jab window aage khisakti hai, toh left element minus karte hain aur right naya element plus karte hain. O(N)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 13 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q13.</span> Longest Substring Without Repeating Characters.</div>
+        <div class="answer">
+            <span class="hinglish">"Isme Sliding Window + Set use hota hai. Ek Left pointer aur ek Right pointer. Right pointer ko aage badhao aur character ko Set me dalo. Agar character pehle se Set me hai (repeating), toh Left pointer ko aage badhao aur us character ko Set se nikalo jab tak duplicate hat na jaye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 14 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q14.</span> Merge Intervals (e.g. [1,3], [2,6] becomes [1,6]).</div>
+        <div class="answer">
+            <span class="hinglish">"Pehle saare intervals ko unke Start time ke hisaab se Sort kardo. Ek empty result array banao. Iterate karo, agar pichle interval ka End aage wale interval ke Start se bada ya barabar hai, toh dono ko merge kardo (`Math.max(end1, end2)`). Warna naye interval ko result me push kardo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 15 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q15.</span> Reverse a Linked List.</div>
+        <div class="answer">
+            <span class="hinglish">"Linked List me Pointers update karne hote hain. 3 variables chahiye: `prev` (null), `curr` (head), aur `next` (null). Jab tak `curr` null na ho jaye, `next = curr.next` save karo, phir `curr.next = prev` kardo (ulta link). Phir `prev = curr` aur `curr = next` karke aage badh jao."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 16 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q16.</span> Detect a Cycle in a Linked List.</div>
+        <div class="answer">
+            <span class="hinglish">"Floyd's Tortoise and Hare algorithm (Kachhua aur Khargosh)! Ek slow pointer rakho jo 1 step chale, ek fast pointer rakho jo 2 steps chale. Agar linked list me gol chakkar (cycle) hai, toh Fast wala ghoom kar Slow wale se zarur takrayega (`slow === fast`)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 17 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q17.</span> Find the Middle of a Linked List.</div>
+        <div class="answer">
+            <span class="hinglish">"Isme bhi Kachhua aur Khargosh lagta hai. Fast pointer 2 steps, slow 1 step. Jab fast wala end par pahuch jayega (`fast.next === null`), toh slow wala automatically EXACTLY middle me hoga! Ye trick array ki tarah length naapne se bacha leti hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 18 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q18.</span> Merge Two Sorted Arrays.</div>
+        <div class="answer">
+            <span class="hinglish">"Dono arrays par ek-ek pointer lagao (i aur j). Jo element chota ho usko ek naye array me push kardo, aur us pointer ko aage badha do. End me jo bhi array bach jaye, uske saare elements ko copy kardo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 19 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q19.</span> Check if two strings are Anagrams. (e.g. "listen" and "silent")</div>
+        <div class="answer">
+            <span class="hinglish">"Ek tarika: dono ko split, sort aur join karke check karlo (slow). Best tarika: Ek Hash Map me string A ke characters ka frequency (count) store karo. Phir string B par loop lagao aur map me count kam (minus) karte jao. Agar map me sab 0 bache, toh wo Anagram hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 20 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q20.</span> Find the First Non-Repeating Character in a String.</div>
+        <div class="answer">
+            <span class="hinglish">"String par pehle ek loop lagakar Hash Map me sabhi characters ka count save karlo. Phir string par ek dusra loop lagao, aur map me check karo jiska bhi count exactly 1 hai, usko return kardo. Time O(N)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 21 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q21.</span> Binary Search Algorithm.</div>
+        <div class="answer">
+            <span class="hinglish">"Array SORTED hona zaroori hai. Ek `left = 0` aur `right = len-1` pointer lo. Middle element check karo. Agar target middle se chota hai, toh `right = mid-1` kardo (left side dhoondho). Agar bada hai toh `left = mid+1` (right side dhoondho). Isse Time Complexity O(log N) ho jati hai (bohot fast)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 22 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q22.</span> What is a Hash Collision and how do you handle it?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab 2 alag keys (jaise 'John' aur 'Doe') ka Hash function same index number (e.g. index 5) generate kar de memory me. Isko handle karne ke 2 tarike hain: 1. Chaining (Us index par ek array/linked-list bana do). 2. Open Addressing (Agar index 5 full hai, toh agla khali space dhundo, jaise index 6)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 23 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q23.</span> Implement a Queue using Stacks.</div>
+        <div class="answer">
+            <span class="hinglish">"Queue FIFO (First-In-First-Out) hota hai, Stack LIFO hota hai. Isko banane ke liye 2 Stacks chahiye (`stack1` aur `stack2`). Push hamesha `stack1` me karo. Pop karte waqt, `stack1` ka saara data `stack2` me palat do (ulta ho jayega) aur phir `stack2` se pop kardo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 24 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q24.</span> Maximum Subarray Sum (Kadane's Algorithm).</div>
+        <div class="answer">
+            <span class="hinglish">"Negative aur Positive numbers wale array me lagatar elements ka maximum sum dhundhna. Ek `currentSum` aur `maxSum` rakho. Har number ko `currentSum` me add karo. Agar `currentSum` Negative ho jaye, toh usko 0 kar do (kyunki negative number pichle sum ko barbaad kar dega). Har step me `maxSum` update karte raho."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 25 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q25.</span> Maximum Depth (Height) of a Binary Tree.</div>
+        <div class="answer">
+            <span class="hinglish">"Recursion ka magic! Base case: Agar root null hai, toh return 0. Nahi toh `leftDepth = maxDepth(root.left)` aur `rightDepth = maxDepth(root.right)` nikalo. Phir un dono me se jo bada (max) ho, usme 1 plus karke return kardo (`Math.max(left, right) + 1`)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 26 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q26.</span> Invert a Binary Tree.</div>
+        <div class="answer">
+            <span class="hinglish">"Ye wohi question hai jiska answer nahi aane par Homebrew ke founder ko Google ne reject kar diya tha! Recursively ek node ke Left aur Right child ko Aapas me Swap kar do (`temp = root.left; root.left = root.right; root.right = temp;`), aur phir wahi kaam bachon (children) ke liye repeat kardo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 27 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q27.</span> Difference between BFS and DFS.</div>
+        <div class="answer">
+            <span class="hinglish">"DFS (Depth First Search) matlab pehle puri gehrai tak jao (1 branch complete karo) phir wapas aao. Isme Recursion (Stack) use hota hai. BFS (Breadth First Search) matlab level-by-level jao. Pehle saare padosi (neighbors) explore karo. Isme Queue data structure use hota hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 28 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q28.</span> Climb Stairs (Fibonacci sequence DP).</div>
+        <div class="answer">
+            <span class="hinglish">"Aap 1 ya 2 steps le sakte ho. Nth sidi par pahuchne ke kitne tarike hain? Ye actually Fibonacci series hai! Current step tak aane ke tarike = (n-1 step ke tarike) + (n-2 step ke tarike). Ise hum Memoization (Array me results store karke) solve karte hain taaki O(N) me run ho."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 29 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q29.</span> Container With Most Water.</div>
+        <div class="answer">
+            <span class="hinglish">"Two Pointer Approach. Ek pointer left se, ek right se. Area = `Math.min(height[left], height[right]) * distance`. Max area update karo. Jo bhi pillar chhota ho (left ya right), us pointer ko aage/peeche badhao kyunki wahi bottleneck ban raha hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 30 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q30.</span> Product of Array Except Self (Without Division).</div>
+        <div class="answer">
+            <span class="hinglish">"Aap total array ko multiply karke division (/) operator use nahi kar sakte! Ise bina uske O(N) me solve karne ke liye hum Prefix and Postfix multiplications use karte hain. Ek pass left se right karte hain (left walon ka product), aur dusra pass right se left karte hain."</span>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="04_LLD_and_Design_Patterns_Interview.html" class="nav-btn">&larr; Previous: LLD & Patterns Q&A</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="06_Behavioral_and_HR_Interview.html" class="nav-btn">Next: Behavioral & HR Q&A &rarr;</a>
+    </div>
+</body>
+</html>

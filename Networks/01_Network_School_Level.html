@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>01 - Networks (School Level)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #27ae60; margin: 0; padding-left: 20px; background: #f0fdf4; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #27ae60; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #27ae60; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #2ecc71; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #2ecc71; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Network_Beginner.html" class="nav-btn">Next: Beginner Level &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Network_Beginner.html" class="nav-btn">Next: Beginner Level &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Computer Networks 1: School Level
+
+Welcome to the absolute basics of Computer Networking. We will not use complicated jargon here. We will only use real-world examples. 
+
+By the end of this file, you will finally understand exactly what happens when you connect your phone to Wi-Fi!
+
+---
+
+#### 1. What exactly *is* a Network?
+
+Imagine you are sitting in a classroom, and you want to pass a secret paper note to your friend who is sitting three desks away. 
+You hand the note to the person next to you, they hand it to the next person, until it reaches your friend. 
+
+That is exactly what a **Network** is. It is just a group of computers connected by invisible wires (or Wi-Fi) passing digital notes (data) to each other.
+
+* **Real World Example:** If you have a Laptop, a Smart TV, and a Smartphone connected to your home Wi-Fi, you have created a small Network! 
+
+---
+
+#### 2. LAN vs. WAN (Local vs. Wide)
+
+Networks come in two main sizes:
+
+##### 1. LAN (Local Area Network)
+A LAN is a network inside a **small, private area**. Think of it like your house or your office building. 
+* <span class="hinglish">Ye aapka apna private ilaka hai. Bahar ka koi anjaan aadmi isme nahi aa sakta jab tak aap usko Wi-Fi password na do.</span>
+* **Example:** Your home Wi-Fi network connecting your phone, laptop, and printer.
+
+##### 2. WAN (Wide Area Network)
+A WAN is a massive network that connects cities, countries, and continents together using giant underwater ocean cables. 
+* **The ultimate WAN:** The Internet itself is just the biggest WAN in the world! 
+* <span class="hinglish">Jab aapka ghar ka LAN (Local) bahar ki duniya se connect hota hai (jaise YouTube ka server in America), tab wo WAN ke through data bhejta hai.</span>
+
+---
+
+#### 3. The Most Important Concept: MAC vs. IP Address
+
+To send a letter in the real world, you need two things: The person's Name, and their Home Address (Pincode). Computers need the exact same two things!
+
+##### 1. The MAC Address (The Name/Aadhar Card)
+Every single device in the world (your phone, your laptop, your smart watch) is born with a **MAC Address**. It is hardcoded into the physical hardware chip in the factory. 
+* **Example:** `00:1B:44:11:3A:B7`
+* <span class="hinglish">MAC Address device ka physical naam ya Aadhar Card number hai. Ye life mein kabhi change nahi hota!</span>
+
+##### 2. The IP Address (The Home Pincode)
+When you move to a new city, your Name (MAC Address) stays the same, but your Home Address changes. 
+An **IP Address** is your computer's temporary location on the internet.
+* **Example:** `192.168.1.5`
+* <span class="hinglish">Jab aap ghar pe ho, toh aapke phone ka IP address alag hota hai. Jab aap Starbucks mein coffee peene jate ho aur unka Wi-Fi connect karte ho, toh Starbucks aapko ek naya IP address (naya temporary location) de deta hai!</span>
+
+> [!NOTE]
+> **Summary:** The MAC address proves *Who* you are. The IP Address proves *Where* you are.
+
+---
+
+#### 4. Switches vs. Routers (The Traffic Controllers)
+
+If you have 10 computers in a room, how do they physically talk without shouting over each other? You need devices to direct the traffic.
+
+##### The Switch (The Classroom Monitor)
+A Switch is a small physical box that you plug computers into using cables. 
+**A Switch only works INSIDE a LAN.** 
+It memorizes the MAC Addresses (Names) of everyone plugged into it. If Computer A wants to send a photo to Computer B, the Switch looks at the Name, and sends the photo *only* down the specific cable connected to Computer B.
+
+* <span class="hinglish">Switch ek building ka intercom system hai. Flat 101 sirf Flat 102 se baat kar sakta hai. Aap intercom se bahar America call nahi mila sakte!</span>
+
+##### The Router (The Global Post Office)
+If a Switch can only talk inside a building, how do you talk to Google's servers in America? You need a **Router**.
+**A Router connects two DIFFERENT networks together (e.g., your LAN to the Internet WAN).**
+It doesn't care about MAC Addresses (Names). It cares about IP Addresses (Pincodes). It reads the destination IP Address on your data, looks at a massive global map (Routing Table), and decides which road to throw the data down so it reaches America.
+
+* <span class="hinglish">Router ek sachha Post Office hai. Wo dekhta hai "Accha, is chitthi pe America ka Pincode hai? Theek hai, isko flight waali line mein daal do."</span>
+
+---
+
+#### 5. Visualizing Your Home Network
+
+Let's bring it all together. This is exactly what happens when you send a WhatsApp message from your bed.
+
+```mermaid
+graph TD
+    subgraph Home ["Your Home LAN (Local Area Network)"]
+        Phone("📱 Your Phone<br>IP: 192.168.1.5")
+        Laptop("💻 Your Laptop<br>IP: 192.168.1.6")
+        Switch("🔀 Home Switch/Wi-Fi")
+    end
+    
+    Router("🌍 Home Router<br>The Door to the Outside")
+    
+    subgraph Internet ["The Internet WAN (Wide Area Network)"]
+        ISP("🏢 Jio/Airtel ISP")
+        Google("☁️ Google Server<br>IP: 8.8.8.8")
+    end
+
+    Phone -->|"1. WhatsApp Msg"| Switch
+    Laptop -->|"Connected"| Switch
+    Switch -->|"2. Pass to Router"| Router
+    Router -->|"3. Route to Internet"| ISP
+    ISP -->|"4. Deliver across world"| Google
+    
+    style Phone fill:#d5f5e3,stroke:#27ae60
+    style Laptop fill:#d5f5e3,stroke:#27ae60
+    style Switch fill:#d5f5e3,stroke:#27ae60
+    style Router fill:#fcf3cf,stroke:#f1c40f
+    style ISP fill:#fadbd8,stroke:#e74c3c
+    style Google fill:#fadbd8,stroke:#e74c3c
+```
+
+**Step-by-Step Flow:**
+1. Your Phone sends a message to your Home Wi-Fi (which acts as a **Switch**).
+2. The Switch says: <span class="hinglish">"Ye message mere ghar ke andar kisi laptop ke liye nahi hai. Ye bahar jaana chahta hai. Mujhe ye Router ko dena padega."</span>
+3. The **Router** looks at the IP address of WhatsApp's server, figures out the best path out of your house, and hands the message to your Internet Service Provider (Jio/Airtel).
+4. Jio/Airtel acts as a massive global post office and delivers it to the final destination!
+    </script>
+</body>
+</html>

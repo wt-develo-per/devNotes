@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PM2 Fundamentals & Daemonization</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #f4f4f4; background-color: #120e1e; }
+        pre { background: #1a1625; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #3c2a68; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #1a1625; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #a476f5; }
+        blockquote { border-left: 5px solid #a476f5; margin: 0; padding-left: 20px; background: #1f1830; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #c49efa; font-size: 1.8em; border-bottom: 2px solid #a476f5; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #a476f5; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #3c2a68; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #c49efa; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c49efa; }
+        .hinglish { color: #4bcdc5; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #3c2a68; padding: 12px; text-align: left; }
+        th { background-color: #1f1830; color: #c49efa; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #1f1830; border: 1px solid #3c2a68; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #a476f5; color: #120e1e !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #c49efa; }
+        .nav-btn:hover { background-color: #c49efa; }
+        .nav-btn.disabled { background-color: #2a223f; color: #6a5e80 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #3c2a68; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_PM2_Advanced_Cluster_Mode_and_Ecosystem.html" class="nav-btn">Next: Cluster Mode & Ecosystem &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_PM2_Advanced_Cluster_Mode_and_Ecosystem.html" class="nav-btn">Next: Cluster Mode & Ecosystem &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### PM2 Masterclass 1: Daemonization & Auto-Recovery
+
+<span class="hinglish">Jab ek Junior developer pehli baar apni Node.js app ko AWS server pe dalta hai, wo khushi se `node server.js` run karta hai. API perfectly kaam karti hai! Par jaise hi wo apna SSH terminal (Putty/Mac Terminal) close karta hai... uski website turant offline ho jati hai! Aisa kyu? Kyunki Node.js us terminal ke saath bandha hua tha. Terminal gaya, toh Node.js bhi gaya. Is problem ko solve karne ke liye PM2 (Process Manager 2) banaya gaya tha.</span>
+
+---
+
+#### 1. What is a "Daemon"?
+
+<span class="hinglish">PM2 ek "Daemon" (Demon) process create karta hai. Daemon ka matlab hai ek aisi invisible aatma jo server ke background me humesha zinda rehti hai. Jab aap `pm2 start server.js` type karte ho, toh PM2 aapki app ko pakad kar background me chhupa deta hai. Ab aap apna laptop band karo ya internet disconnect karo, aapki Node.js app 24/7 background me chalti rahegi!</span>
+
+---
+
+#### 2. The Core Lifecycle Commands
+
+<span class="hinglish">PM2 use karna bahut aasan hai, bas in 5 commands ko samajhna zaroori hai:</span>
+
+* `pm2 start server.js --name "MyAPI"`: <span class="hinglish">Aapki app ko background me start karta hai aur usko ek naam de deta hai.</span>
+* `pm2 list`: <span class="hinglish">Ek sundar sa table dikhata hai jisme saari running apps, unka memory usage, aur CPU usage dikhta hai.</span>
+* `pm2 stop MyAPI`: <span class="hinglish">App ko temporarily rok deta hai (pause kar deta hai). PM2 ko abhi bhi pata hai ki ye app exist karti hai.</span>
+* `pm2 restart MyAPI`: <span class="hinglish">App ko stop karke wapas turant start karta hai (koi naya code push karne ke baad use hota hai).</span>
+* `pm2 delete MyAPI`: <span class="hinglish">App ko completely destroy kar deta hai. PM2 ki list se hamesha ke liye gayab!</span>
+
+---
+
+#### 3. Real-World Scenarios (5 Deep Practical Tricks)
+
+<span class="hinglish">Production me PM2 sirf background me run karne ke liye use nahi hota. Ye ek "Rakshak" (Protector) ki tarah kaam karta hai. Chalo dekhte hain 5 Real-World Scenarios jahan PM2 jaan bachata hai.</span>
+
+##### Example 1: Auto-Restarting on Crashes (Unhandled Rejections)
+**Problem:** <span class="hinglish">Kisi user ne ek galat string bhej di, aapke database ne error throw kiya, aur aapne `try/catch` nahi lagaya tha. Aapki poori Node.js application crash ho gayi aur server offline ho gaya! Rat ke 3 baje!</span>
+**Solution:** 
+<span class="hinglish">Agar aapne app PM2 se chalayi thi (`pm2 start`), toh aapko uthne ki zaroorat hi nahi hai! PM2 lagataar aapki app ko monitor karta hai. Jaise hi Node.js crash hota hai, PM2 usko 1 millisecond ke andar automatically wapas restart kar deta hai. User ko pata bhi nahi chalega ki server crash hua tha!</span>
+
+##### Example 2: Surviving AWS Server Reboots (`startup` & `save`)
+**Problem:** <span class="hinglish">AWS ne maintenance ke liye aapka physical EC2 server reboot kar diya. Jab server wapas on hua, toh Ubuntu Linux chal raha hai, par aapki Node.js API offline hai kyunki kisi ne `pm2 start` nahi kiya!</span>
+**Solution:** 
+<span class="hinglish">Server reboot survive karne ke liye 2 jaadui commands chahiye:</span>
+1. `pm2 save`: <span class="hinglish">Ye command PM2 ko bolti hai, "Bhai, jo jo apps abhi chal rahi hain, unki ek Snapshot le ke hard-drive me save kar le."</span>
+2. `pm2 startup`: <span class="hinglish">Ye command Ubuntu Linux ke core me ek script likh deti hai. "Jaise hi tu boot hoga, sabse pehle PM2 ko start karna, aur PM2 khud us Snapshot ko read karke saari apps on kar dega!"</span>
+
+##### Example 3: The Danger of `--watch` in Production
+**Problem:** <span class="hinglish">Localhost pe hum Nodemon use karte hain taaki file save karte hi server restart ho jaye. PM2 me bhi ek `--watch` flag hota hai. Ek Junior dev ne production me `pm2 start server.js --watch` run kar diya. Ab jab bhi users koi photo upload karte hain `/uploads` folder me, poora server restart ho jata hai!</span>
+**Solution:** 
+<span class="hinglish">Production me `--watch` KABHI USE NAHI KARNA CHAHIYE! Production server tabhi restart hona chahiye jab aap khud CI/CD pipeline se naya code deploy karein. User ke file upload karne par server restart hona bohot badi bewakoofi hai!</span>
+
+##### Example 4: Centralized Log Management
+**Problem:** <span class="hinglish">Aapki app PM2 ke background me dafan ho chuki hai. Ab aapke `console.log("Database connected!")` kahan jaa rahe hain? Aapko errors kaise dikhenge?</span>
+**Solution:** 
+<span class="hinglish">Aap terminal me `pm2 logs` type karte ho! Ye ek live dashboard khol deta hai. Saari console.logs (green color me) aur saari console.errors (red color me) live stream hoti hain. Agar sirf error dekhne hain, toh `pm2 logs --err` use karein! PM2 automatically in logs ko `/root/.pm2/logs/` folder me ek `.log` file me save karta rehta hai taaki history delete na ho.</span>
+
+##### Example 5: Graceful Shutdowns (Killing with Kindness)
+**Problem:** <span class="hinglish">Aapne server par `pm2 restart` mara. Lekin usi exact millisecond me ek customer credit card se payment kar raha tha aur DB query chal rahi thi. PM2 ne app ko berahmi se (brutally) kill kar diya! Customer ke paise kat gaye par DB me order save nahi hua! Disaster!</span>
+**Solution:** 
+<span class="hinglish">PM2 instantly kill karne se pehle ek `SIGINT` signal bhejta hai. Aap Node.js me us signal ko catch kar sakte ho:</span>
+```javascript
+process.on('SIGINT', async () => {
+    console.log("PM2 is trying to kill me! Waiting for queries to finish...");
+    await mongoose.connection.close(); // Save pending queries
+    process.exit(0); // Safely die
+});
+```
+<span class="hinglish">PM2 1.6 seconds tak wait karega taaki aap apna zaroori kaam khatam kar sako. Agar 1.6 seconds me aap exit nahi hue, tab PM2 `SIGKILL` bhej kar zinda laash bana dega (force kill). Ise "Graceful Shutdown" kehte hain!</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

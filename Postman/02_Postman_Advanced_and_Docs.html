@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Postman Advanced & Docs</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f39c12; }
+        blockquote { border-left: 5px solid #e67e22; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #d35400; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #d35400; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #a04000; }
+        .nav-btn:hover { background-color: #e67e22; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #d35400; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #d35400; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e67e22; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e67e22; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Postman_Basics_and_Variables.html" class="nav-btn">&larr; Previous: Basics & Variables</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Postman_Basics_and_Variables.html" class="nav-btn">&larr; Previous: Basics & Variables</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Postman Masterclass 2: Automation & Documentation
+
+In the first file, we learned how to organize our API endpoints using Collections and Variables. 
+Now, we are going to learn how to write **Javascript inside Postman** to completely automate our testing, and how to instantly generate beautiful Web Documentation for the Frontend Team.
+
+---
+
+#### 1. Automated Token Extraction (The Magic Trick)
+
+**The Problem:** Every time you login (`POST /api/login`), the server sends back a new JWT Token. You have to manually copy that token from the response, open the variables tab, paste it, and save it. Doing this 10 times a day is exhausting.
+
+**The Solution:** You can write a tiny Javascript snippet in the **"Tests"** tab of your Login request. Postman will automatically run this script *after* the server responds!
+
+```javascript
+// Inside the "Tests" tab of your POST /login request:
+
+// 1. Parse the JSON response sent by the server
+const response = pm.response.json();
+
+// 2. Automatically save the token into a Postman Variable!
+pm.environment.set("jwt_token", response.token);
+
+console.log("Magic! Token extracted and saved automatically!");
+```
+
+```mermaid
+graph LR
+    A["Send Login Request"] --> B["Server Returns JSON Token"]
+    B --> C["Postman Tests Tab Runs JS"]
+    C --> D["Automatically updates {{jwt_token}} variable"]
+    
+    style C fill:#d5f5e3,stroke:#27ae60
+    style D fill:#fad7a1,stroke:#d35400
+```
+
+* <span class="hinglish">Ye feature sabse bada time saver hai! Jaise hi aap Login button par "Send" dabaoge, Postman khud server ka response padhega, usme se token nikalega, aur use variable mein save kar dega. Matlab aapko zindagi mein kabhi bhi token manually copy-paste nahi karna padega. Click 'Login', and everything else instantly works!</span>
+
+---
+
+#### 2. Pre-Request Scripts
+
+While the "Tests" tab runs Javascript *after* a request, the **"Pre-request Script"** tab runs Javascript *before* the request is sent!
+
+**The Problem:** You want to test the "Register User" API. But the database enforces unique emails. You have to manually type a different email (`test1@gmail`, `test2@gmail`) every single time you hit "Send".
+
+**The Solution:** Use a Pre-request script to generate a random email dynamically!
+
+```javascript
+// Inside the "Pre-request Script" tab:
+
+// Generate a random number between 1 and 100,000
+const randomNum = Math.floor(Math.random() * 100000);
+const randomEmail = `user${randomNum}@gmail.com`;
+
+// Save it to a variable
+pm.variables.set("dynamic_email", randomEmail);
+```
+*(Now, in your raw JSON body, just write `{"email": "{{dynamic_email}}"}`. Every time you hit Send, it will use a brand new email!)*
+
+---
+
+#### 3. Automated API Testing (Assertions)
+
+Postman isn't just for pinging APIs; it is a full Automated Testing Suite. You can write "Assertions" (Rules) that Postman will check. If a rule fails, the test turns **RED**. If it passes, it turns **GREEN**.
+
+```javascript
+// Inside the "Tests" tab:
+
+// Test 1: Check if the server returned a 200 OK status
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+// Test 2: Check if the API returned an Array of users (not an object!)
+pm.test("Response should be an array", function () {
+    const jsonData = pm.response.json();
+    pm.expect(jsonData).to.be.an('array');
+});
+
+// Test 3: Check if the request was fast (under 200ms)
+pm.test("Response time is fast enough", function () {
+    pm.expect(pm.response.responseTime).to.be.below(200);
+});
+```
+
+* <span class="hinglish">Senior developers Postman ke andar aise saikdo (hundreds) tests likhte hain. Phir wo "Run Collection" button click karte hain, aur Postman ek sath saari APIs ko fire karta hai aur check karta hai ki sab green hai ya nahi. Agar ek bhi API ne galti se 500 error diya ya slow chali, toh turant pata chal jata hai!</span>
+
+---
+
+#### 4. API Documentation (The 1-Click Magic)
+
+You spent 3 weeks building the backend. Now the React frontend developer asks: *"Bro, how do I use the Login API? What JSON does it expect? What errors does it throw?"*
+
+You could spend hours writing a Word Document. Or... you could use Postman.
+
+Because you already organized your routes into Folders (Auth, Products), and you saved example Responses, you can just **Right-Click your Collection -> View Documentation -> Publish**.
+
+Postman will instantly generate a beautiful, live Web Page (hosted on the internet) that looks exactly like Stripe's API Documentation! It will show the exact URLs, Headers, JSON Bodies, and code snippets in JavaScript/Python for the Frontend team to copy-paste.
+
+---
+
+#### 5. Real-World Scenarios (10 Practical Examples)
+
+Here are 10 advanced ways Senior Developers automate Postman.
+
+##### Example 1: The One-Click Login (Token Extraction)
+**Scenario:** Instead of copy-pasting JWT tokens, write `pm.environment.set("jwt", pm.response.json().token);` in the Login route's Tests tab. 
+
+##### Example 2: Dynamic Timestamps for Testing
+**Scenario:** You need to test an API that only accepts dates in the future.
+**Script:** In Pre-request, write `pm.variables.set("future_time", Date.now() + 86400000);` (Adds 24 hours).
+
+##### Example 3: Verifying the Server didn't crash
+**Scenario:** Write a global Collection-level test: `pm.test("Not 500", () => { pm.response.to.not.have.status(500); });`. It will run on EVERY single API automatically!
+
+##### Example 4: Faking User Data (Faker.js)
+**Scenario:** Postman has `faker` built in! In Pre-request: `pm.variables.set("fake_name", pm.variables.replaceIn('{{$randomFullName}}'));` generates real-sounding names for Signup APIs.
+
+##### Example 5: Testing Pagination Logic
+**Scenario:** Assert that the API returned exactly 50 items: `pm.expect(pm.response.json().data.length).to.eql(50);`.
+
+##### Example 6: Checking for Security Headers
+**Scenario:** Assert that your Node.js server is sending the `Strict-Transport-Security` header to prevent hackers. `pm.response.to.have.header("Strict-Transport-Security");`.
+
+##### Example 7: Simulating Slow Networks
+**Scenario:** Your React dev wants to see the "Loading Spinner" but your local API is too fast. You can use Postman's built-in Network Throttling (or add a Pre-request `setTimeout`) to simulate 3G speeds.
+
+##### Example 8: Clearing variables on Logout
+**Scenario:** When you hit the `POST /logout` route, run a Test script: `pm.environment.unset("jwt_token");` to physically destroy the variable so you can't accidentally use it again.
+
+##### Example 9: Data-Driven Testing (CSV)
+**Scenario:** You want to test the Login API with 50 different wrong passwords. You don't hit send 50 times. You upload a CSV file to the Postman "Collection Runner", and it fires the API 50 times automatically, reading from the CSV!
+
+##### Example 10: Generating Code Snippets
+**Scenario:** The Mobile App developer asks how to call your API in `Swift` (iOS). In Postman, click the `</>` icon on the right sidebar. It instantly generates the exact `Swift / Kotlin / Axios` code required to call your API!
+    </script>
+</body>
+</html>

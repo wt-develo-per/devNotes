@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deployment Fundamentals & VPS</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #e8f5e9; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #c8e6c9; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #e8f5e9; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #2e7d32; }
+        blockquote { border-left: 5px solid #43a047; margin: 0; padding-left: 20px; background: #f1f8e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #1b5e20; font-size: 1.8em; border-bottom: 2px solid #43a047; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #43a047; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #2e7d32; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #2e7d32; }
+        .hinglish { color: #f39c12; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f1f8e9; color: #1b5e20; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #1b5e20; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #43a047; }
+        .nav-btn:hover { background-color: #2e7d32; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_CI_CD_and_Docker_Deployment.html" class="nav-btn">Next: CI/CD & Docker &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_CI_CD_and_Docker_Deployment.html" class="nav-btn">Next: CI/CD & Docker &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Deployment Masterclass 1: VPS, PM2, and NGINX
+
+You have built a beautiful Express.js API. It runs perfectly on `http://localhost:3000`. 
+But you can't just leave your laptop open, connected to WiFi, with `npm start` running forever!
+
+You need to rent a **VPS (Virtual Private Server)** in the cloud, move your code there, and configure it to stay alive permanently.
+
+---
+
+#### 1. PaaS vs IaaS (Where do we deploy?)
+
+* **PaaS (Platform as a Service):** Examples are *Heroku, Vercel, Render*. You just click "Deploy" and they do all the server magic for you. It's incredibly easy, but very expensive when you scale!
+* **IaaS (Infrastructure as a Service):** Examples are *AWS EC2, DigitalOcean, Hetzner*. They give you a blank Linux computer (VPS) and say "Good luck." It is extremely cheap, but you have to configure everything yourself!
+
+Senior Developers know how to deploy on IaaS!
+
+* <span class="hinglish">PaaS ek fully furnished flat ki tarah hai. Aap bas apna bag le kar aao, par rent bohot high hai! IaaS ek khali zameen (empty plot) hai. Sasti milti hai, par eent (bricks) aur cement aapko khud lagana padega! Hum IaaS seekhenge!</span>
+
+---
+
+#### 2. The Holy Trinity of VPS Deployment
+
+When you rent a blank Ubuntu server on AWS, you only need 3 tools to get your app running:
+
+1. **SSH:** The tool you use in your terminal to securely log into the remote server.
+2. **PM2:** Node.js stops running if you close the terminal. PM2 is a Process Manager that keeps your app running 24/7 in the background!
+3. **NGINX:** Your app runs on port `3000`. But users don't type `mysite.com:3000` in the browser! They type `mysite.com` (which defaults to port `80`). NGINX sits at port 80, takes the traffic, and secretly passes it back to your Node app on port 3000!
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+Here is exactly how you configure a production Linux Server!
+
+##### Example 1: SSH Login
+**Problem:** How do you actually get inside the server AWS gave you?
+**Solution:** Open your terminal and type `ssh ubuntu@13.54.99.12` (using the IP address AWS gave you). You are now typing commands directly into a computer sitting in a data center in London!
+
+##### Example 2: Pulling your Code
+**Problem:** How do you get your code from your laptop to the server?
+**Solution:** Do not drag and drop files! Instead, push your code to a private GitHub repo. Then SSH into your server and run `git clone https://github.com/my/repo.git`. Always use Git as the bridge!
+
+##### Example 3: The Crash Problem
+**Problem:** You run `node server.js` on the server. A user sends bad data, an error is thrown, and your server crashes. It stays offline all night while you sleep!
+**Solution:** Never use `node server.js` in production. Install PM2: `npm install -g pm2`. Then run `pm2 start server.js`. If your app crashes, PM2 will instantly restart it in 1 millisecond!
+
+##### Example 4: Server Reboots
+**Problem:** AWS restarts your physical server for maintenance. When it turns back on, your Node app doesn't start automatically!
+**Solution:** Run `pm2 startup`. This generates a script that tells Ubuntu: "Every time you boot up, automatically launch my PM2 Node apps before doing anything else!"
+
+##### Example 5: Viewing Live Logs
+**Problem:** Since PM2 runs in the background, you can't see your `console.log()` outputs anymore!
+**Solution:** Run `pm2 logs`. It will open a beautiful live dashboard showing the console outputs of every single Node app running on your server!
+
+##### Example 6: NGINX Reverse Proxy
+**Problem:** You bought `mywebsite.com`. Users type it into Chrome, which goes to port 80. Your Node app is on port 3000. It says "Site Not Reached".
+**Solution:** Install NGINX. Write a config file:
+```nginx
+server {
+    listen 80;
+    server_name mywebsite.com;
+    location / {
+        proxy_pass http://localhost:3000;
+    }
+}
+```
+Now, NGINX catches the port 80 traffic and acts as a bridge to your Node app!
+
+##### Example 7: Free SSL Certificates (HTTPS)
+**Problem:** Your site says "Not Secure" in Chrome because it's running on HTTP, not HTTPS. Paid SSL certs cost $100/year!
+**Solution:** Use **Certbot** (Let's Encrypt). Run `sudo certbot --nginx -d mywebsite.com`. Certbot will automatically rewrite your NGINX config, generate a free SSL certificate, and give your site the green HTTPS padlock in 10 seconds!
+
+##### Example 8: Handling `.env` Secrets
+**Problem:** You should never commit `.env` files (containing your DB passwords) to GitHub. But if you `git clone` on the server, the `.env` file is missing! Your app will crash!
+**Solution:** You must manually create it on the server. SSH in, run `nano .env`, and paste your production passwords directly into the Linux text editor. Save and exit. 
+
+##### Example 9: Load Balancing with PM2
+**Problem:** You rented a powerful server with 4 CPU Cores, but Node.js is single-threaded and only uses 1 Core! You are wasting 75% of your server's power!
+**Solution:** Run `pm2 start server.js -i max`. PM2 will look at your hardware, realize you have 4 Cores, and spin up 4 identical copies of your Node app, balancing the traffic perfectly between them!
+
+##### Example 10: Environment Variables in PM2
+**Problem:** You want to run your app in production mode so it runs faster.
+**Solution:** Tell PM2 about it! Run `pm2 start server.js --name "MyAPI" --env production`. Now `process.env.NODE_ENV` will equal `production` inside your code, optimizing Express!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

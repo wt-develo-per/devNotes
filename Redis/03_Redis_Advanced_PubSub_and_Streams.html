@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redis Advanced: Pub/Sub & Streams</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #e74c3c; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #c0392b; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c0392b; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #c0392b; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #922b21; }
+        .nav-btn:hover { background-color: #e74c3c; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02b_Redis_Ecommerce_Project.html" class="nav-btn">&larr; Previous: E-Commerce Project</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02b_Redis_Ecommerce_Project.html" class="nav-btn">&larr; Previous: E-Commerce Project</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Redis Masterclass 3: Advanced Pub/Sub & Message Queues
+
+Up until now, we treated Redis purely as a database to store and read static data. 
+But Redis has two massive superpowers that make it the ultimate backend weapon: **Pub/Sub (Broadcasting)** and **Streams (Background Queues)**.
+
+---
+
+#### 1. Pub/Sub (Publish/Subscribe)
+
+Pub/Sub is an architectural pattern where one service "shouts" a message, and multiple other services "listen" to it. It does not store the data permanently. If a service is offline when the shout happens, it misses the message forever!
+
+* <span class="hinglish">Pub/Sub bilkul ek FM Radio jaisa hai. Redis ek Radio Station hai. Node.js server 1 (Publisher) kehta hai: "Bhaiyo, naya gaana baja raha hu 'channel_1' par". Ab Node.js server 2 aur 3 (Subscribers) jinhone 'channel_1' par tune-in kiya hoga, unhe gaana instantly sunayi de jayega. Agar Node server 4 offline tha, toh usse gaana nahi milega. Data save nahi hota, bas hawa me broadcast hota hai!</span>
+
+```javascript
+import Redis from 'ioredis';
+const publisher = new Redis();
+const subscriber = new Redis();
+
+// 1. Subscriber tunes into the "news" radio channel
+subscriber.subscribe('news', () => console.log('Listening to news...'));
+subscriber.on('message', (channel, message) => {
+    console.log(`Received on ${channel}: ${message}`);
+});
+
+// 2. Publisher shouts into the channel!
+publisher.publish('news', 'Breaking: India wins the World Cup!');
+```
+
+---
+
+#### 2. The WebSocket Problem (Why you MUST use Pub/Sub)
+
+If you build a Chat App using `Socket.io`, it works perfectly when you have 1 Node.js server. 
+But when your app grows, you need 3 Node.js servers (Server A, B, and C).
+
+**The Nightmare:** User 1 connects to Server A. User 2 connects to Server B. User 1 sends a message to User 2. But Server A has no idea who User 2 is, because User 2 is connected to Server B! The chat is broken!
+
+**The Redis Solution:**
+Whenever Server A gets a chat message, it uses Redis Pub/Sub to broadcast it: `redis.publish('chat', message)`. 
+Server B and Server C hear the broadcast! Server B says, *"Hey, I have User 2 connected to me! I'll deliver the message to him!"*
+
+```mermaid
+graph TD
+    User1["User 1 (Mobile)"] -->|"Sends Msg"| ServerA["Node Server A"]
+    User2["User 2 (Web)"] <-->|"Receives Msg"| ServerB["Node Server B"]
+    User3["User 3 (Desktop)"] <--> ServerC["Node Server C"]
+    
+    ServerA -->|"Publishes to Channel"| Redis["Redis Pub/Sub"]
+    Redis -->|"Broadcasts to all Servers"| ServerB
+    Redis -->|"Broadcasts to all Servers"| ServerC
+    
+    style Redis fill:#fad7a1,stroke:#d35400
+    style ServerA fill:#d5f5e3,stroke:#27ae60
+    style ServerB fill:#d5f5e3,stroke:#27ae60
+    style ServerC fill:#d5f5e3,stroke:#27ae60
+```
+
+---
+
+#### 3. Message Queues & Streams (Background Workers)
+
+Node.js is single-threaded. If a user uploads a heavy 4K video, compressing that video will take 5 minutes and block the entire server. No other user will be able to log in during those 5 minutes!
+
+**The Solution:** Never do heavy tasks on your main Web Server. Put the task into a **Redis Queue**. 
+A separate "Worker" server will read the task from Redis and process the video in the background!
+
+* <span class="hinglish">Maan lo ek restaurant hai. Waiter (Main Node Server) ka kaam sirf order lena hai. Agar Waiter khud kitchen me jaakar khana banane lag jaye (heavy task), toh baaki customers gussa ho jayenge! Waiter apna order ek parchi par likh kar Token Board (Redis Queue) par chipka deta hai. Kitchen me baithe Chefs (Worker Servers) ek ek parchi uthate hain aur background me khana banate hain. Server free rehta hai!</span>
+
+---
+
+#### 4. Real-World Scenarios (10 Practical Examples)
+
+Here is how Senior Backend Engineers use Pub/Sub and Queues.
+
+##### Example 1: Real-Time Live Sports Scores (Pub/Sub)
+**Problem:** You have 1 million users staring at the Cricbuzz app waiting for the score to change. You can't have them refreshing the database every second.
+**Solution:** Every user connects via WebSockets. When Virat hits a Six, the Admin pushes the score to Redis Pub/Sub. Redis instantly broadcasts it to all 10 AWS servers, which push it to all 1 million users simultaneously.
+
+##### Example 2: Sending Bulk Marketing Emails (Queue)
+**Problem:** You need to send a "Happy New Year" email to 100,000 users. Sending emails takes 1 second each. Your server will freeze for 27 hours!
+**Solution:** Loop through your users and throw 100,000 "jobs" into a Redis List (`LPUSH email_queue "user_id"`). Your 5 Background Worker servers will slowly `RPOP` the jobs and send the emails over the next few hours without crashing the main API.
+
+##### Example 3: Microservice Communication (Pub/Sub)
+**Problem:** You have an `Order API` and an `Inventory API`. When an order is placed, the inventory must decrease. 
+**Solution:** The Order API publishes an event: `PUBLISH new_order '{"id": 123}'`. The Inventory API is subscribed to this channel, hears it, and updates the stock. They don't need to know each other's IP addresses!
+
+##### Example 4: Video Processing (Streams / Queue)
+**Problem:** A user uploads a 4K video. It must be compressed to 1080p, 720p, and 480p.
+**Solution:** Save the video to AWS S3. Push the `video_id` to a Redis Queue. The heavy `FFMPEG` worker server pulls the ID from Redis, downloads the video, compresses it, and updates the DB when finished.
+
+##### Example 5: Stock Market Ticker (Pub/Sub)
+**Problem:** The price of AAPL stock changes 50 times a second. You need to stream this live to thousands of trading dashboards.
+**Solution:** Use Pub/Sub. The trading engine pushes price updates to the `stock:AAPL` channel. Any dashboard subscribed to that channel gets the live flashing red/green numbers instantly.
+
+##### Example 6: The "Task Failed" Retry System (Queue)
+**Problem:** A background worker tries to charge a credit card, but the Stripe API is down. The job is lost!
+**Solution:** Use advanced Redis queues (like the `BullMQ` library on npm). It tracks failed jobs and automatically retries them 5 minutes later.
+
+##### Example 7: Live Chat Rooms / Discord (Pub/Sub)
+**Problem:** A Discord server has 50,000 members. When someone types in the `#general` channel, everyone needs to see it.
+**Solution:** Every channel in your app corresponds to a Redis Pub/Sub channel (`subscribe('discord:channel_id')`). The broadcast is handled natively by Redis in RAM.
+
+##### Example 8: Clearing Distributed Caches (Pub/Sub)
+**Problem:** You have 3 Node servers. Server A caches the User Profile in its *local memory* (not Redis, but literal Node variables to be extremely fast). Server B updates the user profile. Server A's local cache is now stale!
+**Solution:** Server B publishes an `INVALIDATE_USER_123` event via Redis Pub/Sub. Server A hears the event and clears its local memory cache!
+
+##### Example 9: Generating PDF Reports (Queue)
+**Problem:** A user clicks "Download Bank Statement". Generating the PDF takes 20 seconds. If they wait on the loading screen, the browser will timeout.
+**Solution:** The API immediately responds with `{"status": "Processing"}`. It sends a job to the Redis Queue. The user's frontend polls the server every 5 seconds. When the worker finishes the PDF, it updates the DB, and the frontend finally downloads it.
+
+##### Example 10: In-App Notifications (Pub/Sub)
+**Problem:** Someone likes your Instagram photo. You want the little red notification bell to appear instantly on your phone without refreshing the app.
+**Solution:** When the "Like" API is hit, it publishes an event to Redis: `PUBLISH user:your_id:notifications "new_like"`. Your phone, connected via WebSockets, receives the broadcast and lights up the red dot!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

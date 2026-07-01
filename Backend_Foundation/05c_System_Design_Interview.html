@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>05c - System Design Interview Masterclass</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #1abc9c; margin: 0; padding-left: 20px; background: #f2fcf9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .cheat-sheet { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-top: 40px; }
+        .cheat-sheet h4 { color: #1abc9c; border-bottom: 1px solid #34495e; padding-bottom: 10px; margin-top: 0; }
+        .cheat-sheet strong { color: #1abc9c; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #16a085; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #1abc9c; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #1abc9c; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="05b_Database_Scaling.html" class="nav-btn">&larr; Previous: Database Scaling</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="05b_Database_Scaling.html" class="nav-btn">&larr; Previous: Database Scaling</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 5c: System Design Interview
+
+When you interview for a Senior Backend Engineering role at a top tech company, you will face the System Design Interview. You will be given a whiteboard and 45 minutes to design a massive, global application from scratch.
+
+This file provides the framework and the case studies to pass it.
+
+---
+
+#### 1. The 4-Step Interview Framework
+
+Never just start drawing boxes. Follow this exact framework to show seniority.
+
+##### Step 1: Requirements Gathering (5 mins)
+Clarify the scope. 
+* **Functional:** "Can users upload videos? Can they comment? Can they livestream?"
+* **Non-Functional:** "Does this need to be Highly Available or Highly Consistent? What is the expected Daily Active User (DAU) count?"
+
+##### Step 2: Back-of-the-Envelope Estimations (5 mins)
+Do the math out loud.
+* "If we have 10M users uploading a 1MB photo a day, that is 10TB of storage per day. Therefore, we cannot use a single SQL database. We must use a distributed Blob Storage system like AWS S3."
+
+##### Step 3: High-Level Design (15 mins)
+Draw the core components: Client -> API Gateway -> Load Balancer -> Microservices -> Cache -> Database.
+
+##### Step 4: Deep Dive & Trade-offs (20 mins)
+This is where you pass or fail. The interviewer will ask: *"What happens if Justin Bieber joins and gets 100M followers? How does your system handle it?"* 
+You must identify Single Points of Failure (SPOFs) and explain your architectural trade-offs.
+
+---
+
+#### Case Study 1: Design Twitter (The News Feed)
+
+**The Problem:** Generating a user's timeline by joining the tweets of the 500 people they follow takes too long in a SQL database.
+
+**The Solution:** The "Fanout" Architecture.
+
+##### 1. Fanout on Write (Push Model)
+When a normal user tweets, the backend does NOT just save the tweet to a database. It actively pushes the tweet into a Redis List (Timeline Cache) for *every single person* who follows them.
+* **Pros:** When a follower opens Twitter, reading their feed is instantaneous `O(1)` because it is pre-computed in Redis.
+* **Cons:** If Justin Bieber (100M followers) tweets, the backend tries to push that tweet into 100,000,000 Redis caches at the exact same time. The server crashes (The Celebrity Problem).
+
+##### 2. Fanout on Read (Pull Model) for Celebrities
+To solve the celebrity problem, you use a Hybrid model.
+Normal users use Fanout-on-Write. But if an account has > 100k followers, you skip the push. Instead, when a follower opens their app, the backend *pulls* the celebrity's tweets dynamically and merges them with the Redis cache.
+
+---
+
+#### Case Study 2: Design WhatsApp (Chat System)
+
+**The Problem:** HTTP is stateless and unidirectional (the client asks, the server answers). How does the server push a chat message to a phone without the phone asking?
+
+**The Solution:** WebSockets.
+
+##### The Architecture
+1. **The Persistent Connection:** When a user opens WhatsApp, their phone establishes a stateful, persistent **WebSocket** connection to a specific Chat Server.
+2. **The Session Manager:** Because you have 10,000 Chat Servers, you need a Redis database (Session Manager) that remembers: *"User A's WebSocket is connected to Server #402."*
+3. **The Message Flow:**
+   * User A sends a message to User B.
+   * The message hits Server #402.
+   * Server #402 checks the Session Manager: *"Where is User B?"*
+   * Session Manager replies: *"User B is on Server #911."*
+   * Server #402 puts the message into a **Message Queue (Kafka)**.
+   * Server #911 reads Kafka, finds the message, and pushes it down the open WebSocket directly to User B's phone.
+
+```mermaid
+sequenceDiagram
+    participant A as User A Phone
+    participant S1 as Chat Server 402
+    participant Redis as Session Manager
+    participant MQ as Kafka Event Bus
+    participant S2 as Chat Server 911
+    participant B as User B Phone
+
+    Note over A, S1: Persistent WebSocket
+    Note over B, S2: Persistent WebSocket
+
+    A->>S1: Send Message to B
+    S1->>Redis: "Which server holds User B?"
+    Redis-->>S1: "Server 911"
+    
+    S1->>MQ: Publish: Route to Server 911
+    MQ->>S2: Consume Message
+    S2->>B: Push Message instantly via WebSocket
+```
+
+---
+
+#### Case Study 3: Design YouTube (Video Streaming)
+
+**The Problem:** Videos are massive files. If you stream a 1GB video from a SQL database, the database will instantly die.
+
+**The Solution:** Splitting Metadata from Binary Data.
+
+##### The Architecture
+1. **Metadata Storage:** Title, Views, Likes, and Comments are stored in a standard **PostgreSQL** or **MongoDB** database, heavily cached with Redis.
+2. **Binary Storage (Blob):** The actual `.mp4` video file is saved to an Object Store (like **AWS S3**). 
+3. **The CDN (Content Delivery Network):** Streaming from AWS S3 is still too slow globally. The video files are aggressively pushed to Edge CDN servers (Cloudflare) in 200 cities around the world. 
+4. **Adaptive Bitrate Streaming:** When a user watches a video, the CDN doesn't send the whole 1GB file. The video is chopped into 5-second "chunks". The video player downloads chunk 1 in 1080p. If the user's internet slows down, the player requests chunk 2 in 480p automatically.
+
+---
+
+<div class="cheat-sheet">
+<h4>The Ultimate System Design Cheat Sheet</h4>
+<p>In an interview, when the interviewer gives you a requirement, instantly map it to the correct technology:</p>
+<ul>
+    <li>Need <strong>insanely fast reads</strong> for heavily requested data? &rarr; <strong>Redis / Memcached</strong></li>
+    <li>Need to store <strong>massive files</strong> (images, videos, PDFs)? &rarr; <strong>AWS S3 (Blob Storage)</strong></li>
+    <li>Need to run <strong>heavy background tasks</strong> without blocking the API? &rarr; <strong>RabbitMQ / Kafka (Message Queues)</strong></li>
+    <li>Need strict <strong>financial accuracy (ACID)</strong> and relationships? &rarr; <strong>PostgreSQL / MySQL</strong></li>
+    <li>Need <strong>flexible schemas</strong> and massive horizontal write scaling? &rarr; <strong>MongoDB / Cassandra / DynamoDB</strong></li>
+    <li>Need <strong>full-text fuzzy searching</strong> (like Google)? &rarr; <strong>Elasticsearch</strong></li>
+    <li>Need to stream data to a client in <strong>real-time</strong>? &rarr; <strong>WebSockets / Server-Sent Events (SSE)</strong></li>
+    <li>Need to speed up loading times for <strong>global users</strong>? &rarr; <strong>CDN (Cloudflare / CloudFront)</strong></li>
+</ul>
+</div>
+    </script>
+</body>
+</html>

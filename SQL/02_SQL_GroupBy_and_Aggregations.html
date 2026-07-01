@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Group By & Aggregations</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #34495e; margin: 0; padding-left: 20px; background: #f2f4f4; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        strong { color: #2980b9; }
+        .hinglish { color: #c0392b; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #34495e; color: white; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #34495e; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #34495e; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_SQL_Joins.html" class="nav-btn">&larr; Previous: Joins</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_SQL_Indexes.html" class="nav-btn">Next: Indexes &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_SQL_Joins.html" class="nav-btn">&larr; Previous: Joins</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_SQL_Indexes.html" class="nav-btn">Next: Indexes &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### SQL Masterclass 2: GROUP BY & Aggregations
+
+Sometimes, you don't want to see individual rows of data. If your company has 10 million sales records, looking at every single row is useless. 
+
+You want to summarize the data. You want to know: *"How much money did we make in total?"* or *"How many users signed up per city?"*
+
+This is where **Aggregations** and **GROUP BY** come in.
+
+---
+
+#### 1. The Setup (Our Example Table)
+
+Imagine a massive table called `sales`. It records every single item sold by different employees across different cities.
+
+| id | employee_name | city | amount |
+|---|---|---|---|
+| 1 | Alice | New York | $100 |
+| 2 | Bob | London | $50 |
+| 3 | Alice | New York | $200 |
+| 4 | Charlie | London | $300 |
+| 5 | Bob | London | $150 |
+
+---
+
+#### 2. Aggregation Functions (The Math)
+
+Aggregations are math functions that take **many rows** and crush them down into a **single value**.
+
+* `COUNT()`: How many rows exist?
+* `SUM()`: Add all the numbers together.
+* `AVG()`: Find the average number.
+* `MAX()` / `MIN()`: Find the highest or lowest number.
+
+```sql
+-- What is the total amount of money our entire company made?
+SELECT SUM(amount) AS total_revenue
+FROM sales;
+```
+**Result:**
+| total_revenue |
+|---|
+| $800 |
+
+*(The database took all 5 rows, added 100+50+200+300+150, and returned a single row).*
+
+---
+
+#### 3. The `GROUP BY` Clause
+
+What if the CEO doesn't want the total revenue of the *whole company*, but instead wants to know the total revenue **per city**?
+
+You cannot just run `SUM(amount)` because that gives you one massive number. You need to tell the database to split the data into "buckets" (groups) based on the City, and then run the `SUM()` math on each individual bucket!
+
+* <span class="hinglish">Jab bhi boss aapse sawal puche jisme "per" lag gaya ho (jaise "Sales PER city", "Users PER month"), tab samajh jao ki `GROUP BY` use karna hi padega! Data ko pehle City ke hisaab se balti (buckets) mein daalo, phir har balti ka Total nikalo.</span>
+
+```sql
+SELECT city, SUM(amount) AS city_total, COUNT(id) as total_sales
+FROM sales
+GROUP BY city;
+```
+
+**Result:**
+| city | city_total | total_sales |
+|---|---|---|
+| New York | $300 | 2 |
+| London | $500 | 3 |
+
+*(Notice how Alice's $100 and $200 were crushed into a single "New York" row of $300).*
+
+> [!WARNING]
+> **The Golden Rule of GROUP BY:** If you select a column (like `city`), and you use an aggregation function (like `SUM`), you **MUST** put the standard column in the `GROUP BY` clause. If you forget to write `GROUP BY city`, the database will throw a fatal syntax error!
+
+---
+
+#### 4. `WHERE` vs `HAVING` (The Filtering Trap)
+
+This is the #1 most common interview question for Junior Backend Developers.
+
+Imagine you want to see the total revenue per city, **BUT** you only want to see cities that made **more than $400**. 
+
+Your first instinct is to use the `WHERE` clause:
+```sql
+-- ❌ THIS WILL CRASH!
+SELECT city, SUM(amount)
+FROM sales
+WHERE SUM(amount) > 400
+GROUP BY city;
+```
+**Why does this crash?** Because the `WHERE` clause runs *before* the data is grouped! The database says: *"How can I check if the SUM is > 400 when I haven't even grouped the cities together to do the math yet?!"*
+
+##### The Solution: `HAVING`
+If you want to filter data **AFTER** it has been grouped and summarized, you must use the `HAVING` clause.
+
+* <span class="hinglish">`WHERE` normal rows ko filter karta hai, math hone se *pehle*. Aur `HAVING` groups ko filter karta hai, math hone ke *baad*! Agar condition mein `SUM()` ya `COUNT()` jaisa formula laga hai, toh aakhein band karke `HAVING` use karo.</span>
+
+```sql
+-- ✅ THE CORRECT WAY
+SELECT city, SUM(amount)
+FROM sales
+GROUP BY city
+HAVING SUM(amount) > 400;
+```
+
+**Result:**
+| city | sum |
+|---|---|
+| London | $500 |
+
+*(New York is successfully hidden because its total ($300) failed the `HAVING` filter!)*
+
+---
+
+#### 5. Real-World Scenarios (10 Practical Examples)
+
+To truly master `GROUP BY`, you must see how it is used in real companies. Here are 10 scenarios you will face as a Backend Developer.
+
+##### Example 1: E-Commerce (Total Sales per Category)
+**Problem:** The CEO wants to know which product category generates the most revenue.
+```sql
+SELECT category, SUM(price * quantity) AS total_revenue
+FROM order_items
+GROUP BY category
+ORDER BY total_revenue DESC;
+```
+
+##### Example 2: Social Media (Finding Active Users)
+**Problem:** Find out how many posts each user has made on a Twitter-clone app.
+```sql
+SELECT user_id, COUNT(post_id) AS total_posts
+FROM posts
+GROUP BY user_id;
+```
+
+##### Example 3: HR System (Average Salary per Department)
+**Problem:** The HR Director wants to know the average salary paid in Engineering vs Marketing.
+```sql
+SELECT department_name, AVG(salary) AS avg_salary
+FROM employees
+GROUP BY department_name;
+```
+
+##### Example 4: Admin Dashboard (Traffic by Device)
+**Problem:** The analytics team wants to know if users prefer Mobile or Desktop.
+```sql
+SELECT device_type, COUNT(session_id) AS login_count
+FROM user_logins
+GROUP BY device_type;
+```
+
+##### Example 5: Daily Revenue Analytics (Grouping by Date)
+**Problem:** Create a chart showing the total money made *every single day* this month. (Using a date function to ignore the exact time).
+```sql
+SELECT DATE(created_at) AS order_date, SUM(total_amount) AS daily_revenue
+FROM orders
+GROUP BY DATE(created_at)
+ORDER BY order_date ASC;
+```
+
+##### Example 6: Security (Finding Duplicate Emails)
+**Problem:** Due to a bug, some users signed up with the same email twice. Find all emails that exist more than once in the database!
+*(This combines `GROUP BY` and the `HAVING` trap!)*
+```sql
+SELECT email, COUNT(id) AS account_count
+FROM users
+GROUP BY email
+HAVING COUNT(id) > 1;
+```
+
+##### Example 7: Logistics (Orders per City)
+**Problem:** The shipping department wants to know which city receives the most packages so they can open a new warehouse there.
+```sql
+SELECT shipping_city, COUNT(id) AS total_shipments
+FROM orders
+GROUP BY shipping_city
+ORDER BY total_shipments DESC;
+```
+
+##### Example 8: EdTech (Average Class Scores)
+**Problem:** A school wants to find out which classroom has the smartest students on average.
+```sql
+SELECT class_id, AVG(test_score) AS average_score
+FROM student_exams
+GROUP BY class_id
+ORDER BY average_score DESC;
+```
+
+##### Example 9: SaaS (Most Popular Pricing Plan)
+**Problem:** The CEO wants to know if people prefer the "Basic", "Pro", or "Enterprise" plan.
+```sql
+SELECT plan_name, COUNT(user_id) AS total_subscribers
+FROM subscriptions
+GROUP BY plan_name;
+```
+
+##### Example 10: Advanced Multi-Column Grouping
+**Problem:** You don't just want total sales per year. You want total sales per **Year AND Month** (e.g., "Jan 2023", "Feb 2023").
+```sql
+-- You can group by MULTIPLE columns at the exact same time!
+SELECT YEAR(created_at) AS sales_year, MONTH(created_at) AS sales_month, SUM(amount) AS total
+FROM orders
+GROUP BY YEAR(created_at), MONTH(created_at)
+ORDER BY sales_year DESC, sales_month DESC;
+```
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

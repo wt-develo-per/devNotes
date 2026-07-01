@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>02 - Git Beginner Commands</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #2980b9; margin: 0; padding-left: 20px; background: #f4f9fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #f05032; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Git_Theory_and_Concepts.html" class="nav-btn">&larr; Previous: Theory & Concepts</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Git_Commands_Advanced.html" class="nav-btn">Next: Advanced Commands &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Git_Theory_and_Concepts.html" class="nav-btn">&larr; Previous: Theory & Concepts</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Git_Commands_Advanced.html" class="nav-btn">Next: Advanced Commands &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Git Masterclass 2: The Daily Workflow
+
+You will use the commands in this file 90% of the time. These are the absolute basics of surviving in a real software engineering job.
+
+---
+
+#### 1. Setting Up (Do this once)
+
+Before you do anything, you must tell Git who you are. Otherwise, when you upload code, your team won't know who wrote it!
+```bash
+git config --global user.name "John Doe"
+git config --global user.email "john@example.com"
+```
+
+##### Getting a Project
+There are only two ways to start working on a project:
+1. **Starting from scratch:** If you create a brand new folder on your computer, type `git init`. This creates a hidden `.git` folder and turns your normal folder into a tracked Git Repository.
+2. **Joining a team:** If you join a company, the code already exists on GitHub. You just type `git clone https://github.com/company/project.git`. This downloads the entire history to your laptop.
+
+---
+
+#### 2. The Holy Trinity (Status, Add, Commit)
+
+This is your daily routine. You write some code in VS Code, and now you want to "Save" it to your Git Time Machine.
+
+##### Step 1: `git status`
+Always, *always* type `git status` first. 
+It tells you exactly which files you have modified, and which files are waiting in the Staging Area.
+* <span class="hinglish">Sabse pehle `git status` dalo. Ye tumhe batayega ki tumne kin files mein changes kiye hain jo abhi tak save nahi hue hain.</span>
+
+##### Step 2: `git add`
+Remember the 3 Trees from File 1? You need to move your modified files into the "Staging Area" (The Waiting Room).
+* `git add index.html` (Moves just one file to the waiting room).
+* `git add .` (Moves ALL modified files into the waiting room. Be careful with this!).
+
+##### Step 3: `git commit -m`
+Now that your files are in the Staging Area, you take the snapshot to permanently save them.
+* `git commit -m "Added the login button"`
+
+> [!TIP]
+> **Pro Tip:** Your commit message must be in the **Imperative Mood** (as if you are giving a command). Do not write "I added the login button" or "Adding login button". Write: `"Add login button"`.
+
+---
+
+#### 3. Syncing with the Cloud (GitHub)
+
+So far, all your commits only exist on your physical laptop. If you drop your laptop in the ocean, your code is gone forever!
+
+##### `git push`
+This uploads your local commits to the cloud (GitHub).
+* `git push origin main` (Pushes your local 'main' branch to the remote 'origin' server).
+* <span class="hinglish">`origin` bas ek nickname hai us URL ka jahan aapne code clone kiya tha. Jab aap `git push` karte ho, toh aapka local save point internet pe chala jata hai.</span>
+
+##### `git pull`
+What if your coworker pushed a new feature to GitHub while you were sleeping? 
+Before you start coding in the morning, you MUST download their changes!
+* `git pull origin main` (Downloads the newest code from GitHub and perfectly merges it into your laptop).
+
+---
+
+#### 4. Branching (Working Safely)
+
+Never, ever write experimental code on the `main` branch. 
+
+##### Creating a Branch
+* `git branch feature/payment` (Creates a clone of the code called `feature/payment`).
+
+##### Switching Branches
+* `git switch feature/payment` (Moves you into that alternate universe).
+* *Note:* Older tutorials will tell you to use `git checkout`. Git recently created the `switch` command because `checkout` was too confusing (it did too many different things). Use `git switch`!
+
+##### The Shortcut
+You can create a branch AND switch to it in one single command:
+* `git switch -c feature/payment`
+
+---
+
+#### 5. The Real-World Workflow (Pull Requests)
+
+When you finish your `feature/payment` branch, how does it get into the `main` branch?
+
+In the real world, you **do not** use the `git merge` command yourself! That is too dangerous. Instead, you use a **Pull Request (PR)**.
+
+1. You type `git push origin feature/payment`. (Uploads your branch to GitHub).
+2. You go to GitHub.com and click **"Create Pull Request"**.
+3. A Pull Request is a formal request saying: *"Hey Senior Developers, please look at my payment branch. If the code looks good, please allow me to pull it into the main branch."*
+4. Your Senior Developer reviews the code, approves it, and clicks the green "Merge" button on the website.
+
+```mermaid
+sequenceDiagram
+    participant You as 💻 Your Laptop (feature/login)
+    participant GitHub as ☁️ GitHub
+    participant Senior as 🧑‍💻 Senior Dev
+
+    You->>GitHub: 1. git push origin feature/login
+    You->>GitHub: 2. Open a Pull Request (PR)
+    Note over GitHub, Senior: The Code Review Process
+    Senior->>GitHub: 3. Leaves comments: "Fix line 42"
+    You->>GitHub: 4. Pushes fix to branch
+    Senior->>GitHub: 5. Clicks "Approve & Merge"
+    Note over GitHub: GitHub merges feature/login into main!
+```
+    </script>
+</body>
+</html>

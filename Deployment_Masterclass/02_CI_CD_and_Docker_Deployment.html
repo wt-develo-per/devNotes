@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CI/CD & Docker Deployment</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #e8f5e9; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #c8e6c9; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #e8f5e9; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #2e7d32; }
+        blockquote { border-left: 5px solid #43a047; margin: 0; padding-left: 20px; background: #f1f8e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #1b5e20; font-size: 1.8em; border-bottom: 2px solid #43a047; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #43a047; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #2e7d32; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #2e7d32; }
+        .hinglish { color: #f39c12; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f1f8e9; color: #1b5e20; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #1b5e20; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #43a047; }
+        .nav-btn:hover { background-color: #2e7d32; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Deployment_Fundamentals_and_VPS.html" class="nav-btn">&larr; Previous: VPS & NGINX</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02b_Deep_Dive_CI_CD_Pipeline.html" class="nav-btn">Next: CI/CD Deep Dive &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Deployment_Fundamentals_and_VPS.html" class="nav-btn">&larr; Previous: VPS & NGINX</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02b_Deep_Dive_CI_CD_Pipeline.html" class="nav-btn">Next: CI/CD Deep Dive &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Deployment Masterclass 2: CI/CD & Docker
+
+In File 1, we learned how to SSH into a server, type `git pull`, run `npm install`, and restart PM2.
+Doing this manually every single time you fix a typo is exhausting. What if you deploy a bug at 3:00 AM?
+
+We need to automate this process so that **typing `git push` instantly updates the live server.**
+
+---
+
+#### 1. The CI/CD Pipeline (GitHub Actions)
+
+**CI (Continuous Integration):** A robot automatically runs your automated tests when you push code, to ensure you didn't break anything.
+**CD (Continuous Deployment):** If the tests pass, the robot automatically logs into your AWS server via SSH, pulls the code, and restarts your app!
+
+```mermaid
+graph LR
+    Dev[Developer] -->|git push| GitHub[GitHub Repo]
+    GitHub -->|Triggers| Actions[GitHub Actions]
+    Actions -->|Runs Tests| Tests{Tests Pass?}
+    Tests -->|No| Reject[Email Developer 'Failed']
+    Tests -->|Yes| SSH[SSH into AWS Server]
+    SSH --> Deploy[git pull & pm2 restart]
+    
+    style Dev fill:#1b5e20,stroke:#2e7d32,color:#fff
+    style Actions fill:#000,stroke:#333,color:#fff
+    style SSH fill:#f39c12,stroke:#e67e22,color:#fff
+```
+
+* <span class="hinglish">Manual deployment matlab roz subah khud jaake dukan ka shutter kholna aur jhaadu lagana. CI/CD ek automated robot hai. Aap bas laptop pe `git push` dabate ho, aur robot udkar dukan kholta hai, naya code set karta hai, aur customer ko serve karna shuru kar deta hai!</span>
+
+---
+
+#### 2. Docker: "It works on my machine!"
+
+The biggest lie in Software Engineering is: *"It works on my machine, so it should work on the server!"*
+Your laptop might have Node v20, but the AWS Server has Node v14. Your code crashes!
+
+**Docker solves this.** 
+Instead of sending your code to the server, you send a "Docker Image" (A frozen box containing your Code + Node.js v20 + Ubuntu OS). You run that Box on AWS, and it is 100% mathematically guaranteed to behave exactly like it did on your laptop.
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+How do Senior Engineers automate deployments?
+
+##### Example 1: GitHub Actions Setup
+**Problem:** You want GitHub to run a script when you push code.
+**Solution:** Create a folder `.github/workflows/deploy.yml`. Write YAML code that tells GitHub: `on: push to main branch`, run `npm run test`, and if it passes, use the `appleboy/ssh-action` plugin to securely connect to your VPS!
+
+##### Example 2: Securing Secrets in CI/CD
+**Problem:** The GitHub Action needs your server's SSH Key to log into AWS, but if you paste it in your `.yml` file, the whole world can hack your server!
+**Solution:** Use **GitHub Secrets**. Go to Repo Settings -> Secrets. Add `SSH_PRIVATE_KEY`. In your `.yml` file, you write `${{ secrets.SSH_PRIVATE_KEY }}`. GitHub injects it secretly at runtime!
+
+##### Example 3: Zero-Downtime Deployments
+**Problem:** When GitHub runs `pm2 restart app`, your server goes offline for 3 seconds while Node boots up. Users see a 502 Bad Gateway error!
+**Solution:** Use **PM2 Reload**. `pm2 reload app`. PM2 will start a *second* background copy of your new code. Once the new copy is fully ready, it quietly deletes the old copy. Users never see a single millisecond of downtime!
+
+##### Example 4: Instant Rollbacks
+**Problem:** You pushed a massive bug that crashes the app. You need to fix it immediately, but fixing the code will take 20 minutes!
+**Solution:** PM2 keeps a history! Just SSH into the server and run `pm2 revert app`. PM2 will instantly switch back to the previous working version of your code!
+
+##### Example 5: Staging vs Production
+**Problem:** You want to test a new feature on a live URL before showing it to customers.
+**Solution:** Buy `staging.mywebsite.com`. Set up a second GitHub Action that triggers only on the `develop` branch. When you push to `develop`, it deploys to the Staging URL for your QA team. When you push to `main`, it deploys to the Production URL!
+
+##### Example 6: The Dockerfile
+**Problem:** You want to freeze your app into a Docker Image.
+**Solution:** Write a `Dockerfile`:
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . .
+CMD ["npm", "start"]
+```
+This 6-line file instructs Docker exactly how to build the "Frozen Box"!
+
+##### Example 7: Docker Compose (The Magic Command)
+**Problem:** Your app needs Node.js, MongoDB, AND Redis. Starting all 3 manually is annoying.
+**Solution:** Write a `docker-compose.yml` file listing all 3 services. You type `docker-compose up -d`, and Docker automatically downloads the DB, configures the network, and starts everything together!
+
+##### Example 8: Database Migrations in CI/CD
+**Problem:** You added a new column to a Postgres table on your laptop. But when GitHub deploys your code, the live DB doesn't have that column!
+**Solution:** Add a step in your GitHub Actions `.yml` file: `npm run migrate:up`. This runs a SQL script that safely adds the column to the live database *before* restarting PM2!
+
+##### Example 9: Notifying Slack/Discord
+**Problem:** The team wants to know when a new version goes live.
+**Solution:** Add a final step to your GitHub Action that uses `curl` to send a Webhook message to your company's Slack channel: "✅ Version 2.4 deployed to Production successfully!"
+
+##### Example 10: Handling Heavy `npm install`
+**Problem:** Every time GitHub Actions deploys, it runs `npm install` on the server, which takes 30 seconds and eats up the server's CPU!
+**Solution:** Use a Docker Registry (like Docker Hub or AWS ECR). GitHub Actions builds the image on GitHub's fast computers, pushes the 50MB Image to Docker Hub, and your cheap AWS server just pulls the finished Image! No `npm install` required on the live server!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

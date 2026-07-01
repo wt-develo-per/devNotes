@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OWASP Top 10 Masterclass</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #c0392b; }
+        blockquote { border-left: 5px solid #e74c3c; margin: 0; padding-left: 20px; background: #fdf5f5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .vuln-box { background: white; padding: 25px; border-radius: 8px; border: 1px solid #ddd; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #e74c3c; }
+        .vuln-title { margin-top: 0; color: #2c3e50; font-size: 1.8em; }
+        .badge { background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.5em; vertical-align: middle; margin-right: 10px; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #c0392b; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #922b21; }
+        .nav-btn:hover { background-color: #e74c3c; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #c0392b; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e74c3c; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### The Official OWASP Top 10 (Masterclass)
+
+The Open Web Application Security Project (OWASP) is a global nonprofit organization. Every few years, they release the **OWASP Top 10**: a consensus-driven report representing the most critical security risks to web applications in the world. 
+
+As a backend engineer, you will be expected to know these exact 10 categories, how they work, and how to stop them.
+
+*(Note: This covers the most recent Official OWASP Top 10 list).*
+
+---
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#1</span> Broken Access Control</h4>
+<strong>What is it?</strong><br>
+This is the #1 most common flaw on the web. It happens when users can act outside of their intended permissions. It is usually a logic flaw in your code, which means automated security scanners cannot find it!
+
+<strong>How it happens:</strong>
+* **IDOR (Insecure Direct Object Reference):** A normal user changes the URL from `/api/receipts/15` to `/api/receipts/16` and is able to see another user's private data because the backend forgot to check if the data *belongs* to them.
+* **Force Browsing:** A normal user navigates to `/admin/dashboard`. The frontend hides the button, but the backend doesn't verify their "Admin" role, so it allows the request.
+
+<strong>The Fix:</strong>
+Never rely on the frontend for security. Implement strict Authorization middleware on the backend. **Always verify that the `logged_in_user_id` owns the resource being requested.**
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#2</span> Cryptographic Failures</h4>
+<strong>What is it?</strong><br>
+Previously known as "Sensitive Data Exposure." This happens when data is compromised in transit (while moving over the network) or at rest (saved in the database) due to weak or absent cryptography.
+
+<strong>How it happens:</strong>
+* Using standard HTTP instead of HTTPS, allowing hackers on public Wi-Fi to intercept passwords.
+* Storing passwords in plain text, or using outdated, broken hashing algorithms like MD5 or SHA-1.
+* Not encrypting highly sensitive database columns (like Social Security Numbers or Credit Cards).
+
+<strong>The Fix:</strong>
+Enforce HTTPS everywhere using HSTS. Use modern salting and hashing algorithms like `bcrypt` or `Argon2` for passwords. Encrypt sensitive database fields at rest.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#3</span> Injection</h4>
+<strong>What is it?</strong><br>
+Injection occurs when untrusted user input is sent to an interpreter as part of a command or query. This tricks the system into executing unintended commands. *(Note: XSS is now grouped into this category).*
+
+<strong>How it happens:</strong>
+* **SQL Injection (SQLi):** Typing `' OR 1=1 --` into a login box to bypass authentication or drop a table.
+* **Command Injection:** Passing shell commands into an input field (e.g., `; rm -rf /`) that the backend executes using Node's `child_process.exec()`.
+* **Cross-Site Scripting (XSS):** Injecting malicious `<script>` tags into comment sections to steal cookies from other users.
+
+<strong>The Fix:</strong>
+**Never trust user input.** Use Parameterized Queries (or ORMs) for SQL. Use input validation (allow-lists). Escape and sanitize all HTML output.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#4</span> Insecure Design</h4>
+<strong>What is it?</strong><br>
+A new category. It represents flaws in architectural design and missing "Threat Modeling." A perfect implementation cannot fix an insecure design.
+
+<strong>How it happens:</strong>
+* An e-commerce site doesn't have an anti-bot system in place, allowing a hacker to buy out the entire inventory of PS5s in 0.1 seconds using a script.
+* A "Forgot Password" feature uses Security Questions like "What is your favorite color?", which a hacker can easily guess.
+
+<strong>The Fix:</strong>
+"Shift Left" in your development cycle. Think like a hacker *before* you write the code. Build robust business logic, implement CAPTCHAs, and use secure recovery methods (like magic email links instead of security questions).
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#5</span> Security Misconfiguration</h4>
+<strong>What is it?</strong><br>
+The code is fine, but the server environment is set up dangerously. 
+
+<strong>How it happens:</strong>
+* Leaving default passwords on your database (e.g., username: `admin`, password: `admin`).
+* Leaving an Amazon S3 Cloud Bucket set to "Public Read/Write."
+* **Verbose Error Messages:** Crashing the Node.js server and returning a 50-line Stack Trace to the user's browser, which accidentally leaks folder paths and database passwords.
+
+<strong>The Fix:</strong>
+Disable default accounts immediately. Use `.env` files. Always catch errors and return a generic `500 Internal Server Error` message to the user in production environments.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#6</span> Vulnerable and Outdated Components</h4>
+<strong>What is it?</strong><br>
+Modern backend development relies heavily on open-source libraries (NPM packages). If you use a library that has a known vulnerability, hackers can use it to break into your server.
+
+<strong>How it happens:</strong>
+* You install an NPM package for image processing. A year later, a massive security hole is found in that package. You don't update it, so hackers use a public exploit to take over your server.
+
+<strong>The Fix:</strong>
+Run `npm audit` frequently to check for vulnerable dependencies. Remove unused dependencies. Keep your Node.js runtime and all packages up to date.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#7</span> Identification and Authentication Failures</h4>
+<strong>What is it?</strong><br>
+When application functions related to session management or user identity are implemented incorrectly, allowing hackers to compromise passwords or session tokens.
+
+<strong>How it happens:</strong>
+* Allowing users to create the password `123456`.
+* Not using Rate Limiting on the `/login` route, allowing a hacker to execute a "Brute Force" attack (guessing 10,000 passwords a second).
+* Putting Session IDs in the URL (e.g., `https://site.com/dashboard?session=xyz123`) where they can be easily copied and shared.
+
+<strong>The Fix:</strong>
+Implement strict password complexity rules. Implement Multi-Factor Authentication (MFA). Use Redis to enforce strict Rate Limiting on login routes. Store JWTs securely in `HttpOnly` cookies.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#8</span> Software and Data Integrity Failures</h4>
+<strong>What is it?</strong><br>
+This relates to code and infrastructure that does not protect against integrity violations. 
+
+<strong>How it happens:</strong>
+* **Insecure CI/CD pipelines:** A hacker compromises a GitHub Action plugin you use, injecting malicious code directly into your automated build process.
+* **Insecure Deserialization:** The backend accepts serialized data (like a complex JavaScript object) from the frontend and blindly executes it, allowing the attacker to achieve Remote Code Execution (RCE).
+* Auto-updating your app without verifying the digital signature of the update.
+
+<strong>The Fix:</strong>
+Ensure CI/CD pipelines have strict access control. Do not accept serialized objects from untrusted sources. Use checksums and digital signatures to verify software updates.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#9</span> Security Logging and Monitoring Failures</h4>
+<strong>What is it?</strong><br>
+Hackers love quiet servers. If you aren't logging security events, a hacker can poke around your API for 6 months without you ever knowing they are there.
+
+<strong>How it happens:</strong>
+* You do not log failed login attempts.
+* You do not have an alert system. A hacker runs a script causing 5,000 "403 Forbidden" errors on an admin route, and no one on your team is notified.
+
+<strong>The Fix:</strong>
+Log all login failures, high-value transactions, and access control failures. Ship your logs to a centralized system (like Datadog or ELK stack). Set up automated alerts to ping your team's Slack when an unusual spike in 401/403 errors occurs.
+</div>
+
+<div class="vuln-box">
+<h4 class="vuln-title"><span class="badge">#10</span> Server-Side Request Forgery (SSRF)</h4>
+<strong>What is it?</strong><br>
+This occurs when a web application fetches a remote resource without validating the user-supplied URL. It forces your backend server to launch an attack against *itself* or internal networks.
+
+<strong>How it happens:</strong>
+* Your app lets users import an avatar via a URL. 
+* A hacker provides the URL `http://169.254.169.254/latest/meta-data/`.
+* Your Node.js server makes an HTTP request to that URL. Because that URL is the highly-sensitive AWS internal metadata API, AWS returns your master cloud API keys to your server, which then saves them as the "avatar" for the hacker to download!
+
+<strong>The Fix:</strong>
+Never trust user-supplied URLs for backend requests. Implement strict allow-lists of domains. explicitly block internal network IP ranges (like `127.0.0.1`, `10.0.0.0/8`, `169.254.169.254`) in your HTTP request clients.
+</div>
+
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

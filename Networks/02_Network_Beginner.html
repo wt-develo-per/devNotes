@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>02 - Networks (Beginner Level)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #2980b9; margin: 0; padding-left: 20px; background: #f4f9fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #27ae60; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Network_School_Level.html" class="nav-btn">&larr; Previous: School Level</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Network_Intermediate.html" class="nav-btn">Next: Intermediate Level &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Network_School_Level.html" class="nav-btn">&larr; Previous: School Level</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Network_Intermediate.html" class="nav-btn">Next: Intermediate Level &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Computer Networks 2: Beginner Level
+
+Now that you know what a Network is, it is time to understand the absolute most famous concepts in networking. If you sit in a Software Engineering interview, they will almost always ask you about **TCP vs. UDP** and **The OSI Model**.
+
+---
+
+#### 1. The OSI Model (Simplified)
+
+The OSI Model is a conceptual 7-layer cake. It explains how a WhatsApp message turns from text on your screen into physical electrical electricity on a wire. 
+
+As a software developer, you do not need to memorize all 7. You only need to know **four** of them:
+
+1. **Layer 7 - Application Layer:** This is where you live. This is HTTP, JSON, and APIs. 
+2. **Layer 4 - Transport Layer:** This decides *how* to send the data. Does it need a guarantee (TCP) or should it just be fast (UDP)?
+3. **Layer 3 - Network Layer:** The Router layer. This attaches the IP Address (Pincode) to the message.
+4. **Layer 2 - Data Link Layer:** The Switch layer. This attaches the MAC Address (Physical Hardware Name) to the message.
+
+* <span class="hinglish">Real-life Example: Aap Amazon se ek T-Shirt mangwaate ho (Layer 7). Amazon decide karta hai ki isko safe courier se bhejna hai (Layer 4). Phir us box pe aapka IP Address/Pincode likhta hai (Layer 3). Phir usko aapke building ke watchman / MAC Address ko de deta hai (Layer 2).</span>
+
+---
+
+#### 2. TCP vs. UDP (The Most Famous Interview Question)
+
+At Layer 4 (The Transport Layer), the internet has two different delivery companies. You have to choose which one you want to use.
+
+##### TCP (Transmission Control Protocol)
+**Analogy:** A Phone Call.
+When you call your friend, you first say "Hello?". They say "Hello" back. You are now connected. If you say a sentence and they don't hear it, they say "Can you repeat that?" and you repeat it.
+* **Guaranteed Delivery:** No data is ever lost. If it drops, it is re-transmitted.
+* **Ordered:** Packets arrive in the exact order they were sent.
+* **Slow:** Because it has to constantly check "Did you get it?", it is slightly slower.
+* **Used in:** Emails, Web Browsing (HTTP), File Downloads. (You do not want a downloaded PDF to randomly be missing page 4!).
+
+##### UDP (User Datagram Protocol)
+**Analogy:** Throwing Postcards out of a Train Window.
+You just write the message and throw it out the window. You do not check if it reached. You do not care what order it reaches in. 
+* **No Guarantees:** Data can be lost.
+* **Unordered:** Packet 3 might arrive before Packet 1.
+* **Lightning Fast:** Because there is no checking, it is insanely fast.
+* **Used in:** Live Video Calls (Zoom), Multiplayer Gaming. 
+
+* <span class="hinglish">Kyun hum Zoom call mein UDP use karte hain? Agar mera face 1 second ke liye freeze ho jaaye (lost packet), toh TCP us purane video frame ko dobara bhejega. Par Zoom pe purana frame dekhne ka kya fayda? Mujhe live video chahiye! Isliye hum UDP use karte hain—jo miss ho gaya so gaya, aage badho!</span>
+
+---
+
+#### 3. DNS (Domain Name System)
+
+Computers only understand numbers (IP Addresses). But humans are very bad at memorizing numbers. 
+
+Nobody wants to type `142.250.190.46` in their browser. We want to type `google.com`.
+The **DNS** is the Phonebook of the internet. It translates human names into computer numbers.
+
+##### How DNS Works:
+1. You type `google.com` into your browser.
+2. Your laptop has no idea what that is. So it asks a **DNS Resolver** (usually a server owned by Jio/Airtel or Google's `8.8.8.8`).
+3. The DNS server looks up its massive phonebook: <span class="hinglish">"Acha, google.com ko dhund rahe ho? Uska real IP address `142.250.190.46` hai!"</span>
+4. Your browser then directly connects to `142.250.190.46`.
+
+```mermaid
+sequenceDiagram
+    participant User as 💻 Your Laptop
+    participant DNS as 📖 DNS Server (8.8.8.8)
+    participant Google as ☁️ Google Server
+
+    User->>DNS: 1. "Bhai, google.com ka IP kya hai?"
+    DNS-->>User: 2. "Uska IP 142.250.190.46 hai!"
+    Note over User, Google: Now the laptop knows exactly where to go!
+    User->>Google: 3. Connect to 142.250.190.46 (Using TCP)
+    Google-->>User: 4. Returns Google Homepage HTML
+```
+
+> [!TIP]
+> **Pro Tip:** Ever wondered why changing your DNS to `8.8.8.8` (Google's public DNS) makes your internet feel faster? It's because Indian ISPs (like BSNL or Jio) sometimes have very slow DNS phonebooks. When you use Google's DNS, the translation from name-to-number happens in 10 milliseconds!
+    </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>05b - Database Scaling (The Hard Parts)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf5f5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e74c3c; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="05a_Microservices_Deep_Dive.html" class="nav-btn">&larr; Previous: Microservices Deep Dive</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05c_System_Design_Interview.html" class="nav-btn">Next: System Design Interview &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="05a_Microservices_Deep_Dive.html" class="nav-btn">&larr; Previous: Microservices Deep Dive</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05c_System_Design_Interview.html" class="nav-btn">Next: System Design Interview &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 5b: Database Scaling (The Hard Parts)
+
+When you hit true FAANG scale (Facebook, Apple, Amazon, Netflix, Google), traditional database strategies completely break down. 
+
+At 100,000 requests per second, you must make fundamental compromises in your architecture.
+
+---
+
+#### 1. The CAP Theorem
+
+This is the most important theory in all of distributed systems.
+The CAP Theorem states that a distributed database can only guarantee **TWO** out of the following three traits at any given time:
+
+* **C - Consistency:** Every user sees the exact same data at the exact same time. If John updates his profile picture, Mary instantly sees the new picture.
+* **A - Availability:** Every request receives a successful response, even if some database servers are currently on fire.
+* **P - Partition Tolerance:** The system continues to work even if the network cable connecting Database A and Database B is cut in half.
+
+> [!IMPORTANT]
+> **The Brutal Truth:** Because network cables *will* get cut in the real world (Network Partitions are inevitable), you MUST choose Partition Tolerance (P).
+> Therefore, every senior engineer must make a choice: **Will your system be CP or AP?**
+
+##### The CP System (Consistency + Partition Tolerance)
+* **Example:** A Banking App using PostgreSQL.
+* If the network breaks, the bank **turns off the API entirely** (Sacrifices Availability). It is better to return an error than to accidentally let a user withdraw $100 twice due to out-of-sync databases.
+
+##### The AP System (Availability + Partition Tolerance)
+* **Example:** Instagram using Cassandra (NoSQL).
+* If the network breaks, Instagram stays online. It will accept your "Like", but it might take 5 minutes for that "Like" to sync to your friend's phone in Europe (Sacrifices Consistency). This is called **"Eventual Consistency"**.
+
+---
+
+#### 2. Advanced Sharding Techniques
+
+When a database becomes too massive for one server, we split it across multiple servers (Sharding). But how does your Node.js backend know *which* server holds User #500?
+
+##### Algorithmic Sharding (Consistent Hashing)
+You take the `User_ID`, run it through a math formula, and use the result to pick the server.
+* `Server = User_ID % 4`
+* User 5: `5 % 4 = 1` -> Server 1.
+* **Pros:** Very fast. The backend instantly knows which server to talk to.
+* **Cons:** If you need to add a 5th server, the math completely changes (`% 5`), meaning millions of users suddenly point to the wrong servers, requiring a massive data migration!
+
+##### Directory Sharding
+You create a master "Lookup Database". 
+* **Pros:** Extremely flexible. You can easily move User 5 to a new server just by updating the lookup table.
+* **Cons:** The lookup table is a Single Point of Failure. If it goes down, the entire system breaks.
+
+##### The "Celebrity Problem" (Hotspots)
+Imagine you shard a social network geographically. Server 1 holds US users, Server 2 holds European users. 
+Suddenly, a celebrity on Server 1 goes viral. Server 1 receives 100,000 requests a second and crashes, while Server 2 sits perfectly idle. Sharding data evenly does not mean traffic will be even!
+
+---
+
+#### 3. Event Sourcing
+
+Traditional databases store the "Current State" of something. 
+If your bank balance is $100, the database literally says: `balance = 100`.
+
+**The Problem:** What if there is a bug and the balance becomes $0? You have no idea *how* it happened, because the history is overwritten.
+
+**Event Sourcing** is an architecture where you NEVER update or delete data. You only Append.
+Instead of storing the current state, you store an immutable log of every **Event** that ever happened.
+
+* Event 1: `Account_Created`
+* Event 2: `Deposit_100`
+* Event 3: `Withdraw_50`
+* Event 4: `Deposit_200`
+
+To find out the current balance, the backend reads the entire log from the beginning and calculates the state (`0 + 100 - 50 + 200 = 250`). 
+* **Why banks use this:** Flawless audit trails. You can perfectly rewind the database to any exact second in history by simply replaying the events up to that timestamp.
+
+---
+
+#### 4. CQRS (Command Query Responsibility Segregation)
+
+If you use Event Sourcing, calculating a user's balance is very slow (because you have to add up 5,000 transaction events every time they open the app).
+
+To fix this, we use **CQRS**. We physically split the architecture into two completely different databases:
+
+1. **The Write Database (Commands):** Optimized for safely recording Events (e.g., PostgreSQL or Kafka).
+2. **The Read Database (Queries):** Optimized purely for insanely fast reading (e.g., a Redis cache or Elasticsearch).
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Backend
+    participant WriteDB as Write DB (Event Log)
+    participant Sync as Sync Worker
+    participant ReadDB as Read DB (Redis)
+
+    User->>Backend: POST /deposit (+$100)
+    Backend->>WriteDB: Append Event: Deposit_$100
+    Backend-->>User: Success
+    
+    Note over WriteDB, Sync: Asynchronously...
+    Sync->>WriteDB: Reads new event
+    Sync->>Sync: Calculates new total ($500)
+    Sync->>ReadDB: Overwrites Current Balance to $500
+    
+    User->>Backend: GET /balance
+    Backend->>ReadDB: Instantly fetch balance
+    ReadDB-->>Backend: Returns $500
+```
+
+With CQRS, your Write operations never block your Read operations, allowing you to achieve unimaginable scale.
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NGINX Fundamentals & Reverse Proxy</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #333; }
+        pre { background: #1e1e1e; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #1e1e1e; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #009688; }
+        blockquote { border-left: 5px solid #009688; margin: 0; padding-left: 20px; background: #e0f2f1; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        
+        /* Modifying H4 to look like a clean section header */
+        
+        /* H5 for sub-sections */
+        
+        strong { color: #00796b; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #e0f2f1; color: #00796b; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #e0f2f1; border: 1px solid #b2dfdb; border-radius: 8px; }
+        .nav-btn { background-color: #00796b; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #004d40; }
+        .nav-btn:hover { background-color: #004d40; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #00796b; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #00796b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #00796b; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #00796b; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Advanced_LoadBalancing_and_Security.html" class="nav-btn">Next: Load Balancing & Security &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Advanced_LoadBalancing_and_Security.html" class="nav-btn">Next: Load Balancing & Security &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+##### NGINX Masterclass 1: The Bouncer of the Internet
+
+Node.js is incredible at handling complex database queries and asynchronous API logic. But Node.js is actually **terrible** at doing simple things, like serving static HTML files or handling thousands of raw incoming TCP connections simultaneously. 
+
+If you expose your Node.js `port 3000` directly to the public internet, a hacker can easily overwhelm it. This is why we use **NGINX** as a Reverse Proxy.
+
+---
+
+###### 1. What is a Reverse Proxy?
+
+A standard "Proxy" (like a VPN) sits between your laptop and the internet, hiding *your* identity. 
+A **Reverse Proxy** sits between the internet and your backend servers, hiding the *server's* identity!
+
+* <span class="hinglish">NGINX ek night club ke Bouncer ki tarah kaam karta hai. Public seedha club ke andar (Node.js pe) nahi ghus sakti. Unhe pehle front door par NGINX se milna padega (Port 80/443). NGINX check karta hai, aur agar sab thik hai, toh wo chupke se request ko pichle darwaze (Port 3000) se Node.js ko bhej deta hai! Node.js safe rehta hai.</span>
+
+Because NGINX is written in highly optimized `C` code, it can easily handle 10,000 simultaneous connections using almost zero RAM. Node.js would crash trying to do the same!
+
+---
+
+###### 2. The Anatomy of `nginx.conf`
+
+Configuring NGINX looks scary because of all the curly braces, but it actually has a very logical, 3-level structure.
+
+1. **The `http` block:** This is the top-level wrapper. Everything web-related goes in here.
+2. **The `server` block:** This defines a specific website. If you host 3 websites on one AWS Server (e.g., `amazon.com`, `google.com`, `apple.com`), you will have three `server {}` blocks!
+3. **The `location` block:** This defines what happens when the user visits a specific URL path (e.g., `/api` vs `/images`).
+
+```nginx
+### Level 1: HTTP Context
+http {
+    
+    # Level 2: Server Context (Defines www.mysite.com)
+    server {
+        listen 80;
+        server_name www.mysite.com;
+
+        # Level 3: Location Context (What to do for specific URLs)
+        
+        # If they visit the root URL '/'
+        location / {
+            root /var/www/html; # Serve static HTML files directly!
+        }
+        
+        # If they visit '/api'
+        location /api {
+            proxy_pass http://localhost:3000; # Send it to Node.js!
+        }
+    }
+}
+```
+
+---
+
+###### 3. Deep-Dive: Why serve static files with NGINX?
+
+If you want to serve an image (`logo.png`), you *could* write `app.use(express.static('public'))` in Node.js. 
+But remember: Node is single-threaded. If Node is busy reading `logo.png` from the hard drive, it cannot process incoming API requests. 
+
+NGINX is asynchronous and built specifically to read files from the hard drive instantly. By writing `root /var/www/html;` inside NGINX, it grabs the image and sends it to the user. **Node.js never even knows the user asked for an image!** You save 100% of your Node CPU for actual API logic.
+
+---
+
+###### 4. Real-World Scenarios (5 Deep Practical Tricks)
+
+Let's look at 5 specific ways Senior Engineers configure their NGINX `location` blocks.
+
+##### Example 1: The Core `proxy_pass`
+**Problem:** You want all traffic hitting `api.mysite.com` to secretly be handled by your Express server running on port 3000.
+**Explanation:** 
+```nginx
+location / {
+    proxy_pass http://localhost:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+*Deep Dive:* Notice the `proxy_set_header` lines? When NGINX forwards the request to Node, it acts as a middleman. Node.js will think the IP address of the user is `127.0.0.1` (localhost)! We must explicitly tell NGINX to take the user's real IP address (`$remote_addr`) and inject it into the Headers, so your Node.js logs and rate-limiters actually work!
+
+##### Example 2: The React Router 404 Fix (`try_files`)
+**Problem:** You host a React app using NGINX. A user goes to `/dashboard` and it throws a 404 Not Found error because NGINX looks for a literal folder named `dashboard` on the hard drive.
+**Explanation:** 
+```nginx
+location / {
+    root /var/www/react-build;
+    index index.html;
+    try_files $uri $uri/ /index.html;
+}
+```
+*Deep Dive:* `try_files` tells NGINX to try 3 things in order:
+1. `$uri`: Is there a literal file named `/dashboard`? (No).
+2. `$uri/`: Is there a folder named `/dashboard/`? (No).
+3. `/index.html`: If both fail, stop throwing a 404 error! Just send them back to `index.html`. Once `index.html` loads, the React Javascript will take over, read the URL bar, and render the Dashboard component!
+
+##### Example 3: Hiding the Server Identity (`server_tokens off`)
+**Problem:** A hacker uses `curl -I mysite.com` and sees a header `Server: nginx/1.18.0`. Now they know exactly which version of NGINX you run, and they can look up specific vulnerabilities for version 1.18.0!
+**Explanation:** 
+```nginx
+http {
+    server_tokens off;
+}
+```
+*Deep Dive:* Adding this one line to the `http` block strips the version number from all HTTP response headers. The hacker will only see `Server: nginx`. Giving hackers less information is the first rule of web security!
+
+##### Example 4: Custom "502 Bad Gateway" Pages
+**Problem:** Your PM2 Node.js server crashes. When users visit your API, NGINX tries to `proxy_pass` to port 3000, realizes nobody is listening, and throws an ugly, generic, white "502 Bad Gateway - nginx" screen. It makes your brand look unprofessional.
+**Explanation:** 
+```nginx
+server {
+    error_page 502 /custom_502.html;
+    
+    location = /custom_502.html {
+        root /var/www/errors;
+        internal;
+    }
+}
+```
+*Deep Dive:* The `error_page` directive tells NGINX to intercept the 502 error. Instead of showing the ugly default screen, it secretly loads `/custom_502.html` from the hard drive (which can be a beautiful branded page saying "We are currently under maintenance!"). The `internal;` keyword ensures that hackers cannot manually navigate to `mysite.com/custom_502.html`.
+
+##### Example 5: Expiring Caches for Static Assets
+**Problem:** You update your `style.css` file, but users complain that your website still looks old! Their browsers are caching the old CSS file.
+**Explanation:** 
+```nginx
+location ~* \.(css|js|png|jpg|jpeg|gif|ico)$ {
+    root /var/www/assets;
+    expires 30d;
+    add_header Cache-Control "public, no-transform";
+}
+```
+*Deep Dive:* This uses a Regular Expression (`~*`) to match any request ending in an image or code file extension. It adds a powerful `Cache-Control` header telling the browser to cache this file for exactly 30 days (`expires 30d`). If you ever update the CSS file, you simply change the HTML link to `style.v2.css`, forcing NGINX and the browser to fetch the new file!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

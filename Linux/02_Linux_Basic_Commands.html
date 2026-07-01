@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Linux Basic Commands</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #2980b9; margin: 0; padding-left: 20px; background: #f4f9fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: #f1c40f !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #f39c12; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; color: #fff !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Linux_Theory_and_Filesystem.html" class="nav-btn">&larr; Previous: Theory & Filesystem</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Linux_Server_Deployment.html" class="nav-btn">Next: Server Deployment &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Linux_Theory_and_Filesystem.html" class="nav-btn">&larr; Previous: Theory & Filesystem</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Linux_Server_Deployment.html" class="nav-btn">Next: Server Deployment &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Linux Masterclass 2: Survival Commands
+
+When you SSH into a live server, you won't have a mouse. You won't have VS Code. You will only have a blinking cursor. 
+
+This file contains the 20% of Linux commands that you will use 90% of the time as a Backend Developer.
+
+---
+
+#### 1. Navigation & Manipulation (The Basics)
+
+Before you can fix a bug on the server, you have to know where you are and how to move around.
+
+* **`pwd` (Print Working Directory):** Tells you exactly which folder you are currently standing in. *(e.g., `/var/www/my-app`)*.
+* **`cd /var/log` (Change Directory):** Moves you into the `/var/log` folder.
+  * *Pro Tip:* `cd ..` moves you UP one folder. `cd ~` instantly teleports you back to your home folder!
+* **`ls -la` (List):** Shows you all the files in the current folder. The `-la` part is critical: it shows **L**ong details (like permissions) and **A**ll files (including hidden `.env` files).
+* **`mkdir logs`:** Creates a new folder called "logs".
+* **`touch index.js`:** Creates a brand new, empty file called `index.js`.
+
+> [!CAUTION]
+> **The Most Dangerous Command in Linux:** `rm -rf node_modules`
+> `rm` means remove. `-r` means recursive (delete folders inside folders). `-f` means force (do not ask for permission). 
+> * <span class="hinglish">Agar aapne galti se `rm -rf /` chala diya, toh Linux poore Operating System ko hi delete kar dega, aur server turant mar jayega! Hamesha 2 baar check karo ki aap kis folder mein ho!</span>
+
+---
+
+#### 2. Reading Log Files (Crucial for Debugging)
+
+If your Node.js application crashes at 3:00 AM, the only clue you have is the log file. But you cannot open a 5GB log file in Notepad—it will crash your computer!
+
+##### `cat error.log`
+Prints the ENTIRE file into the terminal at once. 
+* **When to use it:** Only for very small files (like looking at a `.env` file).
+
+##### `less error.log`
+Opens the file interactively. You can use the arrow keys to scroll up and down, and press `q` to quit. It only loads the part of the file you are currently looking at, so it uses almost zero RAM!
+* **When to use it:** When you need to read a massive 5GB file safely.
+
+##### `tail -f error.log` (The Developer's Best Friend)
+`tail` shows you the last 10 lines of a file. The `-f` means "Follow". 
+* **When to use it:** When you are actively testing a bug! `tail -f` stays open and updates in **real-time** on your screen exactly as new errors are written to the file!
+* <span class="hinglish">`tail -f` ek live CCTV camera ki tarah hai. Aap terminal ek side mein khol lo, aur website pe jaa kar refresh button dabao. Agar koi error aayi, toh wo turant screen pe live print ho jayegi!</span>
+
+---
+
+#### 3. Searching for Needles in Haystacks (`grep`)
+
+Imagine you have a log file with 10 million lines, and you only want to see the lines where a specific user (`john@gmail.com`) had a problem.
+
+**`grep`** is a search command. It filters text and only prints lines that match your search.
+
+* **`grep "john@gmail.com" server.log`** 
+  (Finds and prints every single line in `server.log` that contains John's email).
+
+##### The Power of the Pipe (`|`)
+You can "pipe" the output of one command into the input of another command!
+* **`cat server.log | grep "ERROR"`**
+  (This reads the entire file, pours that text into `grep`, and `grep` filters out everything except the actual ERRORS!)
+
+##### Finding Lost Files (`find`)
+While `grep` searches for text *inside* a file, `find` searches the filesystem for the actual files themselves.
+* **`find /var/www -name "app.js"`**
+  (Searches the entire `/var/www` folder and all its subfolders looking for a file exactly named `app.js`).
+* <span class="hinglish">`grep` ek kitaab ke andar text dhoondhta hai. `find` library mein gum hui kitaab (file) ko dhoondhta hai!</span>
+
+---
+
+#### 4. Process Management (Assassinating frozen apps)
+
+Sometimes, your Node.js app enters an infinite loop, consumes 100% of the CPU, and completely freezes. You need to find the app and kill it.
+
+##### `htop` (or `top`)
+This is the Linux equivalent of the Windows "Task Manager". It shows you a live, colorful graph of your CPU, RAM, and every single process currently running on the server. Press `q` to quit.
+
+##### `ps aux`
+Prints a static list of every single process running right now. Because the list is huge, we usually pipe it into `grep` to find what we want!
+* **`ps aux | grep "node"`** 
+  (This asks Linux: "Show me all 10,000 running processes, but filter them so I only see the ones running Node.js!")
+
+The output will look like this:
+`ubuntu   14523  2.5  5.0  node server.js`
+*(The number `14523` is the PID - Process ID. We need this!)*
+
+##### `kill -9 14523`
+The `kill` command is how you assassinate a frozen program. 
+The `-9` flag means "SIGKILL" (Absolute Murder). It tells Linux to instantly destroy the process without giving it any chance to save its work or say goodbye.
+
+* <span class="hinglish">`kill` normally program ko pyaar se bolta hai "Bhai, apna kaam khatam kar ke band ho ja." Par agar program freeze ho gaya hai aur baat nahi sun raha, toh hum `kill -9` use karte hain. Yeh seedha us program ke sar pe goli maar deta hai aur usko turant khatam kar deta hai!</span>
+
+---
+
+#### 5. Permissions (`chmod`)
+
+In File 1, we learned about `rwx` (Read, Write, Execute). 
+Sometimes, you upload a bash script (`deploy.sh`), but Linux refuses to run it, saying "Permission Denied".
+
+You need to change the file permissions using `chmod`.
+Linux uses a 3-digit number system to represent permissions:
+* `4` = Read
+* `2` = Write
+* `1` = Execute
+
+If you want to give the Owner full power (4+2+1 = 7), you use the number 7.
+* **`chmod 755 deploy.sh`**: (Owner can do everything. Group and World can only Read and Execute).
+
+> [!WARNING]
+> **Never use `chmod 777`!**
+> `777` means literally everyone on the internet can Read, Write, and Execute your file. Junior developers often use `777` to fix "Permission Denied" errors because they are frustrated, but it creates a massive security hole that hackers will instantly exploit!
+    </script>
+</body>
+</html>

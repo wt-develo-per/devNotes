@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>03 - Networks (Intermediate Level)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f9f4fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #2c3e50; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #27ae60; }
+        .nav-btn:hover { background-color: #34495e; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9b59b6; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02_Network_Beginner.html" class="nav-btn">&larr; Previous: Beginner Level</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_Network_Advanced.html" class="nav-btn">Next: Advanced Level &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02_Network_Beginner.html" class="nav-btn">&larr; Previous: Beginner Level</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_Network_Advanced.html" class="nav-btn">Next: Advanced Level &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Computer Networks 3: Intermediate Level
+
+In this file, we solve the biggest mystery of the internet: **We ran out of IP Addresses 15 years ago.** 
+How is the internet still working if we have 20 billion devices, but only 4 billion possible IP addresses? 
+
+---
+
+#### 1. Public vs. Private IPs
+
+An IPv4 address (like `192.168.1.5`) is a 32-bit number. That means there are mathematically only **4.3 Billion** unique IP addresses in the entire world.
+But today, there are 20+ Billion devices. We ran out of IPs in 2011!
+
+To fix this, scientists split IPs into two types: **Public** and **Private**.
+
+##### Public IPs (The Real Address)
+These are 100% unique globally. Google has a Public IP, Facebook has one, and your Home Router has exactly *one*.
+
+##### Private IPs (The Fake Address)
+These are fake, reusable IPs that only exist *inside* your house (your LAN). 
+If you check your phone's Wi-Fi settings right now, your IP is probably `192.168.1.5` or `10.0.0.5`. 
+Guess what? My phone is *also* `192.168.1.5`. And your neighbor's phone is `192.168.1.5`. 
+
+Because these Private IPs are trapped inside the LAN, they never conflict with each other!
+
+* **Analogy:** Think of a Hotel. The Hotel has one Public Address (e.g., 100 Main Street). But inside the hotel, there are 50 rooms numbered 101 to 150 (Private IPs). Thousands of hotels around the world all have a "Room 101", but it never causes confusion because Room 101 only matters *inside* that specific building!
+
+---
+
+#### 2. NAT (Network Address Translation)
+
+If your laptop has a fake Private IP (`192.168.1.5`), how on earth can it talk to Google (`8.8.8.8`) on the Public Internet?
+
+This is where **NAT** comes in. NAT is a software running on your Home Router. 
+* <span class="hinglish">NAT ek Office Receptionist ki tarah kaam karta hai.</span>
+
+1. You (Employee #5) want to send a letter to Google.
+2. You give the letter to the Receptionist (NAT Router).
+3. The Receptionist erases your name (Private IP), and stamps the company's Official Name (Public IP) on the letter, and mails it.
+4. When Google replies, they send it to the Company. 
+5. The Receptionist opens it, checks their secret notebook, sees "Ah, this reply was meant for Employee #5", and hands it back to you!
+
+```mermaid
+sequenceDiagram
+    participant You as 💻 Laptop (Private: 192.168.1.5)
+    participant NAT as 🔄 NAT Router (Public: 45.22.x.x)
+    participant Google as ☁️ Google (Public: 8.8.8.8)
+
+    You->>NAT: 1. "Send this search to Google" (From: 192.168.1.5)
+    Note over NAT: NAT erases your Private IP.<br/>Writes its own Public IP.
+    NAT->>Google: 2. "Send this search" (From: 45.22.x.x)
+    Google-->>NAT: 3. "Here are the search results"
+    Note over NAT: NAT checks its notebook.<br/>Routes it back to you!
+    NAT-->>You: 4. "Here is your data"
+```
+
+---
+
+#### 3. Ports (The Apartment Numbers)
+
+If an IP Address is the building you live in, the **Port** is your specific Apartment Number.
+
+Your single computer has 65,535 Ports.
+When data reaches your laptop's IP address, how does the laptop know if the data is for Google Chrome, or for Spotify, or for an incoming Skype call?
+It uses Ports!
+
+##### Famous Ports Every Developer Must Know:
+* **Port 80 (HTTP):** Standard unencrypted web traffic.
+* **Port 443 (HTTPS):** Secure, encrypted web traffic. (If you type `https://facebook.com`, you are literally connecting to Facebook's IP on Port 443).
+* **Port 22 (SSH):** Secure Shell. Used by developers to securely log into remote cloud servers.
+* **Port 5432 (PostgreSQL):** The default port your Node.js backend uses to talk to your database.
+
+* <span class="hinglish">Jab aap `localhost:3000` likhte ho apne React app mein, toh 'localhost' aapke computer ka IP hai, aur '3000' aapke Node.js server ka apartment number (Port) hai! Data seedha us apartment mein jata hai.</span>
+
+---
+
+#### 4. Subnetting (Dividing the Neighborhood)
+
+Subnetting is the math of dividing a massive network into smaller, logical groups. 
+If you work at a company with 1,000 computers, you do not want all 1,000 computers on the same network shouting at each other (causing massive network congestion). 
+
+You create **Subnets**:
+* Subnet A: 200 computers for the Sales Team.
+* Subnet B: 200 computers for the Engineering Team.
+
+##### The Subnet Mask
+You will often see `255.255.255.0` in your computer's settings. 
+This mask tells the computer which part of the IP address is the "Neighborhood" and which part is the "House Number".
+* If your IP is `192.168.1.5` and the mask is `255.255.255.0`...
+* The first three blocks (`192.168.1`) are your Neighborhood.
+* The last block (`.5`) is your specific House Number!
+* <span class="hinglish">Matlab, 192.168.1 ke neighborhood mein jitne bhi log hain (jaise 192.168.1.10), wo sab aapke padosi hain aur aap unse direct baat kar sakte ho bina bahar ke Router ke!</span>
+    </script>
+</body>
+</html>

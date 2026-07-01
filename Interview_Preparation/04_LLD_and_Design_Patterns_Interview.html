@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LLD & Design Patterns Interview Q&A</title>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1200px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #a9b7c6; background-color: #1e1e1e; font-size: 15px; }
+        .question-card { background: #2b2b2b; padding: 25px; border-radius: 8px; border-left: 5px solid #6a8759; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .q-title { color: #cc7832; font-size: 1.3em; margin-top: 0; margin-bottom: 15px; font-weight: bold; }
+        .q-title span { color: #9876aa; }
+        .answer { color: #a9b7c6; }
+        .hinglish { color: #629755; font-size: 1.05em; font-style: italic; display: block; margin-bottom: 15px; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 6px; border: 1px solid #555; overflow-x: auto; margin-top: 15px; }
+        code { color: #ffc66d; font-family: 'Fira Code', Consolas, monospace; }
+        strong { color: #ffc66d; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #384f29; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #6a8759; }
+        .nav-btn:hover { background-color: #4a6836; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #ffc66d; font-size: 1.8em; border-bottom: 2px solid #384f29; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #384f29; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #384f29; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #384f29; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="03_System_Design_HLD_Interview.html" class="nav-btn">&larr; Previous: System Design Q&A</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05_DSA_Interview.html" class="nav-btn">Next: DSA Q&A &rarr;</a>
+    </div>
+
+    <h3>Top 30 LLD & Design Patterns Interview Questions</h3>
+    <p style="text-align: center; color: #9876aa; margin-bottom: 50px;">Mastering OOPs, SOLID, and Gang of Four Patterns (Hinglish Explanations)</p>
+
+    <!-- QUESTION 1 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q1.</span> What is Object-Oriented Programming (OOP)?</div>
+        <div class="answer">
+            <span class="hinglish">"OOP ek programming style hai jisme hum variables aur functions ko khula chhodne ke bajaye, unhe ek 'Object' (jaise Car ya User) ke andar pack kar dete hain. Isse code real-world chizon se match karta hai aur maintain karna easy ho jata hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 2 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q2.</span> Name the 4 Pillars of OOPs.</div>
+        <div class="answer">
+            <span class="hinglish">"1. Encapsulation (Data chhupana). 2. Abstraction (Complexity chhupana). 3. Inheritance (Code reuse karna). 4. Polymorphism (Ek function, bohot saare roop)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 3 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q3.</span> Explain Encapsulation.</div>
+        <div class="answer">
+            <span class="hinglish">"Capsule ki tarah data ko andar lock kar dena. Ek User class me 'balance' variable ko `private` banana taaki bahar se koi usko direct edit (`user.balance = 5000`) na kar sake. Usme paise dalne ke liye public method (`depositMoney`) allow karna."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 4 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q4.</span> What is the difference between Encapsulation and Abstraction?</div>
+        <div class="answer">
+            <span class="hinglish">"Encapsulation ka goal 'Security' (hiding internal state) hota hai. Abstraction ka goal 'Simplicity' (hiding internal complexity) hota hai. Jaise gaadi (car) me steering wheel Abstraction hai (engine kaise kaam karta hai ye nahi janna padta), aur bonnet ke andar locked engine Encapsulation hai (koi chedchad nahi kar sakta)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 5 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q5.</span> What is Inheritance?</div>
+        <div class="answer">
+            <span class="hinglish">"Maa-baap ke features bacchon me aana. Agar ek `BaseUser` class me `login()` function hai, toh hum `Admin` aur `Customer` class banate waqt `BaseUser` ko extend kar sakte hain. Hume login ka code 3 baar nahi likhna padega (Code Reusability)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 6 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q6.</span> Explain Polymorphism.</div>
+        <div class="answer">
+            <span class="hinglish">"Polymorphism matlab 'Many Forms'. Jaise ek `sendNotification()` function hai. Agar main usko 'Email' object du toh wo email bhejega, 'SMS' object du toh SMS bhejega. Function ka naam same hai, par uska kaam input ke hisaab se badal jata hai bina kisi if-else ke."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 7 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q7.</span> What is the difference between an Interface and an Abstract Class?</div>
+        <div class="answer">
+            <span class="hinglish">"Interface ek contract hota hai jisme sirf functions ke naam hote hain (koi logic nahi hota). Multiple interfaces ek class me lag sakti hain. Abstract class me kuch functions ka logic ho sakta hai aur kuch khali chode ja sakte hain (abstract). Lekin aap sirf 1 hi abstract class ko inherit kar sakte ho."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 8 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q8.</span> What is Method Overloading vs Method Overriding?</div>
+        <div class="answer">
+            <span class="hinglish">"Overloading (Compile-time Polymorphism): Ek hi class me same naam ke 2 functions par arguments alag hon (e.g. `add(a,b)` aur `add(a,b,c)`). Overriding (Runtime Polymorphism): Child class Parent class ke function ko rewrite karti hai apna logic daalne ke liye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 9 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q9.</span> What does S.O.L.I.D stand for?</div>
+        <div class="answer">
+            <span class="hinglish">"S - Single Responsibility Principle, O - Open/Closed Principle, L - Liskov Substitution Principle, I - Interface Segregation Principle, D - Dependency Inversion Principle. Ye uncle bob ke 5 rules hain clean code likhne ke liye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 10 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q10.</span> Explain Single Responsibility Principle (SRP).</div>
+        <div class="answer">
+            <span class="hinglish">"Ek class ka sirf EK HI kaam hona chahiye (One reason to change). Agar ek 'UserController' validation bhi kar raha hai, database me save bhi kar raha hai, aur Email bhi bhej raha hai, toh SRP toot gaya. Teeno kaamon ke liye alag service classes banani chahiye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 11 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q11.</span> Explain Open/Closed Principle (OCP).</div>
+        <div class="answer">
+            <span class="hinglish">"Class should be OPEN for extension but CLOSED for modification. Agar VIP discount add karna hai, toh purani file khol kar `if(VIP)` mat likho (bugs aa sakte hain). Ek nayi `VIPDiscount` class banao aur extend karo. Purana code untouched rehna chahiye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 12 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q12.</span> Explain Liskov Substitution Principle (LSP).</div>
+        <div class="answer">
+            <span class="hinglish">"Child class Parent ki jagah le sakti hai bina kisi error ke. Agar Parent me `fly()` method hai, aur Penguin (Child) usme error throw kar de, toh aapne LSP tod diya! Jo promise parent karta hai, child wo promise nahi tod sakta."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 13 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q13.</span> Explain Interface Segregation Principle (ISP).</div>
+        <div class="answer">
+            <span class="hinglish">"Ek bohot bada 'Fat Interface' mat banao. Agar aapki interface me 10 methods hain (e.g. `print()`, `scan()`, `fax()`), toh ek basic Printer ko scan aur fax zabardasti implement karna padega. Badi interface ko 3 choti interfaces me tod dena chahiye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 14 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q14.</span> Explain Dependency Inversion Principle (DIP).</div>
+        <div class="answer">
+            <span class="hinglish">"High-level module low-level module par depend nahi karna chahiye. Matlab aapka Checkout system directly 'Stripe' library se tightly-coupled nahi hona chahiye. Beech me ek 'PaymentInterface' hona chahiye taaki kal ko Stripe hata kar PayPal lagana ho toh 1 line me ho jaye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 15 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q15.</span> What are Design Patterns?</div>
+        <div class="answer">
+            <span class="hinglish">"Software development me kuch problems baar-baar aati hain (jaise DB connection manage karna). Design Patterns un problems ke proven, ready-made solutions hain jo 'Gang of Four' (4 senior engineers) ne 1994 me likhe the."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 16 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q16.</span> Name the 3 types of Design Patterns.</div>
+        <div class="answer">
+            <span class="hinglish">"1. Creational (Object kaise banega - e.g. Singleton, Factory). 2. Structural (Classes aapas me kaise judengi - e.g. Adapter, Decorator). 3. Behavioral (Classes ek dusre se baat kaise karengi - e.g. Observer, Strategy)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 17 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q17.</span> Explain the Singleton Pattern.</div>
+        <div class="answer">
+            <span class="hinglish">"Jab hum chahte hain ki puri app me kisi class ka sirf EK HI object bane. Jaise Database connection. Agar har file `new DB()` karegi toh MySQL crash ho jayega. Hum constructor ko `private` kar dete hain aur `getInstance()` method banate hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 18 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q18.</span> What is the Factory Method Pattern?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab object banane ka logic bohot bada ho (lamba if-else block). Hum wo kachra logic Controller se nikal kar ek 'Factory' class me daal dete hain. Controller bas bolta hai `Factory.create('Email')` aur factory usko object bana kar de deti hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 19 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q19.</span> Explain the Observer Pattern.</div>
+        <div class="answer">
+            <span class="hinglish">"Ye event-driven programming (Pub-Sub) hai. Jab User register hota hai toh 3 aur cheezein karni hain (Email, Analytics, Bonus). Hum un teeno ko main function me tightly-couple karne ke bajaye ek 'UserRegistered' event EMIT karte hain, aur teeno classes apna-apna kaam sun (LISTEN) ke kar leti hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 20 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q20.</span> What is the Strategy Pattern?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab aapke paas ek kaam karne ke 10 algorithms (tarike) hon (Jaise 10 alag-alag Discount Coupons). Inko `if-else` me fasane ke bajaye, har algorithm ki alag class banate hain (Strategy), aur runtime par jisko chahein swap kar lete hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 21 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q21.</span> Explain the Decorator Pattern.</div>
+        <div class="answer">
+            <span class="hinglish">"Agar ek class me runtime par naye features add karne hon bina usko modify kiye (OCP). Jaise ek `Coffee` class hai. Hum uske upar `MilkDecorator` aur `SugarDecorator` lapet (wrap) sakte hain uska price badhane ke liye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 22 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q22.</span> What is the Adapter Pattern?</div>
+        <div class="answer">
+            <span class="hinglish">"Do incompatible (alag-alag) interfaces ko jodne ka kaam karta hai. Jaise aapke paas 2-pin charger hai aur board 3-pin hai. Aap beech me Adapter lagate ho! Code me ye legacy code (XML) aur naye code (JSON) ko connect karne ke kaam aata hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 23 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q23.</span> Explain the Facade Pattern.</div>
+        <div class="answer">
+            <span class="hinglish">"Facade ka matlab 'Mukhauta' (Front door). Piche 10 complex APIs/Classes chal rahi hain (OrderProcessor, PaymentGateway, InventoryCheck), par Frontend ko wo sab handle nahi karna! Hum ek simple `OrderFacade` class banate hain jisme ek simple `placeOrder()` function hota hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 24 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q24.</span> What is the Builder Pattern?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab ek object banane me 15 arguments pass karne padein (Telescoping constructor problem: `new User(name, age, null, null, null, address)`). Builder pattern ek step-by-step approach deta hai: `new UserBuilder().setName('A').setAge(20).build()`."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 25 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q25.</span> What does DRY stand for?</div>
+        <div class="answer">
+            <span class="hinglish">"Don't Repeat Yourself. Agar aapne ek hi logic 2 alag-alag jagah likh diya hai (copy-paste), toh jab usme bug aayega toh aapko dono jagah theek karna padega. Us logic ko ek helper/utility function me nikal kar reuse karna chahiye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 26 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q26.</span> What does KISS stand for?</div>
+        <div class="answer">
+            <span class="hinglish">"Keep It Simple, Stupid. Engineers over-engineering karke simple array filter ko map-reduce-promise-all me ghuma dete hain jisko koi aur samajh nahi pata. Code hamesha simple aur readable hona chahiye 'Smart' dikhne ke bajaye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 27 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q27.</span> What does YAGNI stand for?</div>
+        <div class="answer">
+            <span class="hinglish">"You Aren't Gonna Need It. Developers aage ke 5 saal ka soch kar aise complex abstract classes aur interfaces bana dete hain jinme aaj ki date me kuch bhi use nahi ho raha. 'Future-proofing' ke chakkar me aaj ka code complex mat banao. Jab zaroorat hogi tab add karlena."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 28 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q28.</span> What is tight coupling vs loose coupling?</div>
+        <div class="answer">
+            <span class="hinglish">"Tight coupling: Class A directly Class B ka naam (`new Stripe()`) use kar rahi hai. Agar B me bug aaya toh A bhi toot jayegi. Loose coupling: Class A ko pata hi nahi hai B kaun hai, wo ek Interface (`IPayment`) ke through baat karti hai. Aise me B ko delete karke C lagana bohot easy hota hai (Dependency Inversion)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 29 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q29.</span> Why is composition preferred over inheritance?</div>
+        <div class="answer">
+            <span class="hinglish">"Inheritance (is-a relationship) me ek time baad 'Gorilla-Banana' problem aa jati hai (Banana mangoge toh pura jungle sath aayega). Composition (has-a relationship) me hum dusri classes ke features inherit karne ke bajaye unke objects apni class me inject kar lete hain. Ye bohot flexible hota hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 30 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q30.</span> How do you test private methods in a class?</div>
+        <div class="answer">
+            <span class="hinglish">"Tricky question! Best practice kehti hai ki aapko Private methods ko unit test nahi karna chahiye. Aapko sirf Public methods (jo un private methods ko use kar rahe hain) unko test karna chahiye. Agar koi private method itna complex hai ki testing mang raha hai, toh use extract karke ek nayi class ka public method bana do!"</span>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="03_System_Design_HLD_Interview.html" class="nav-btn">&larr; Previous: System Design Q&A</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05_DSA_Interview.html" class="nav-btn">Next: DSA Q&A &rarr;</a>
+    </div>
+</body>
+</html>

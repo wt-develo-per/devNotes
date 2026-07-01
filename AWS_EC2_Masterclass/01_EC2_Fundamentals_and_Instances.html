@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AWS EC2 Fundamentals</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #232f3e; background-color: #f8f9fa; }
+        pre { background: #232f3e; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ff9900; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #232f3e; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #ff9900; }
+        blockquote { border-left: 5px solid #ff9900; margin: 0; padding-left: 20px; background: #fff5e6; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #ff9900; font-size: 1.8em; border-bottom: 2px solid #232f3e; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #232f3e; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #ff9900; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #e68a00; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #d37700; }
+        .hinglish { color: #1f618d; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #ff9900; color: #fff; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #232f3e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #ff9900; }
+        .nav-btn:hover { background-color: #3b4e6b; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_EC2_Security_Groups_and_Networking.html" class="nav-btn">Next: Security Groups & Networking &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_EC2_Security_Groups_and_Networking.html" class="nav-btn">Next: Security Groups & Networking &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### AWS EC2 Masterclass 1: The Cloud Computer
+
+<span class="hinglish">Sabse pehle ek myth (galat fehmi) clear karte hain. "Cloud" ka matlab aasmaan me udne wale badal nahi hote. Cloud ka simple matlab hai: Kisi aur ka computer, jo aap rent pe le rahe ho! AWS (Amazon Web Services) duniya ka sabse bada landlord hai, aur EC2 (Elastic Compute Cloud) unka sabse popular flat hai.</span>
+
+---
+
+#### 1. What is an AMI? (Amazon Machine Image)
+
+<span class="hinglish">Jab aap AWS pe naya server banate ho, toh Amazon aapse poochta hai "Bhai, isme konsa operating system (OS) daalna hai?". Ise AMI kehte hain. 
+Aapko options milenge: Windows, Amazon Linux, aur Ubuntu.
+Ek Node.js Developer ko hamesha **Ubuntu** choose karna chahiye. Kyunki internet pe 99% Node.js aur NGINX ke tutorials Ubuntu ke command (`apt-get`) use karte hain. Amazon Linux me `yum` use hota hai jisme bahut errors aate hain!</span>
+
+---
+
+#### 2. Instance Types (`t2.micro` vs `c5.large`)
+
+<span class="hinglish">Har application ki zaroorat alag hoti hai. Amazon alag-alag size ke server deta hai:</span>
+
+* **The T-Series (General Purpose):** `t2.micro` ya `t3.small`. <span class="hinglish">Ye saste aur basic servers hain. Demo apps aur choti APIs ke liye perfect hain. AWS free tier me aapko ek `t2.micro` free milta hai.</span>
+* **The C-Series (Compute Optimized):** `c5.large`. <span class="hinglish">Agar aapki app video processing ya heavy math (Machine Learning) karti hai, toh ise C-Series ka CPU chahiye.</span>
+* **The R-Series (RAM/Memory Optimized):** <span class="hinglish">Agar aap ek bada In-Memory database (jaise Redis) chala rahe ho, toh aapko R-Series chahiye jisme RAM bohot zyada hoti hai.</span>
+
+---
+
+#### 3. The `.pem` Key Pair (No Passwords Allowed!)
+
+<span class="hinglish">Jab aap naya server banate ho, AWS aapse kabhi "Password" set karne ko nahi bolta. Kyu? Kyunki passwords asani se hack ho jate hain (Brute force attacks).
+Uske bajaye, AWS ek **Key Pair** generate karta hai. Ek Public Key jo wo apne server ke darwaze par laga deta hai, aur ek `.pem` (Private Key) file jo wo aapke laptop me download kar deta hai.
+Jab aap `ssh -i mykey.pem ubuntu@server-ip` karte ho, toh tala aur chabi match hoti hai, aur aap bina password ke login ho jate ho! (Agar aapne `.pem` file kho di, toh aapka server hamesha ke liye lock ho jayega!).</span>
+
+---
+
+#### 4. Real-World Scenarios (5 Deep Practical Tricks)
+
+<span class="hinglish">AWS Console bahut confusing lagta hai naye developers ko. Chalo in 5 scenarios se AWS ke concepts clear karte hain.</span>
+
+##### Example 1: The Free Tier Trap
+**Problem:** <span class="hinglish">Aapne socha AWS 1 saal ke liye free hai. Aapne 2 `t2.micro` server bana diye (ek frontend ke liye, ek backend ke liye). Mahine ke ant me aapko $15 ka bill aa gaya! Aisa kyu?</span>
+**Solution:** 
+<span class="hinglish">AWS aapko 1 saal free nahi deta, wo aapko "750 Hours per Month" free deta hai. Ek mahine me 730 hours hote hain. Agar aap 1 server chalate ho, toh wo 730 hours use karega (Free!). Par agar aap 2 server ek saath on kar dete ho, toh wo 730 + 730 = 1460 hours use karenge, aur AWS aapke credit card se paise kaat lega!</span>
+
+##### Example 2: Elastic IPs (Static IP Address)
+**Problem:** <span class="hinglish">Aapne GoDaddy par apni domain (`mywebsite.com`) ko apne AWS server ke IP `13.54.99.12` se connect kar diya. Kal aapne server ko thodi der ke liye "Stop" aur fir "Start" kiya. Aapki website down ho gayi!</span>
+**Solution:** 
+<span class="hinglish">By default, jab bhi EC2 server reboot ya stop hota hai, Amazon usko ek naya IP address de deta hai! Isko fix karne ke liye aapko AWS me **Elastic IP** (Static IP) claim karni padti hai aur use apne server se attach karna padta hai. Ab chahe aap server 100 baar reboot karo, IP address hamesha same rahega!</span>
+
+##### Example 3: Stop vs Terminate
+**Problem:** <span class="hinglish">Aap weekend pe vacation pe jaa rahe the, socha server band kar du taaki paise bachein. Aapne galti se "Terminate" pe click kar diya. Monday ko wapas aaye toh server tha hi nahi!</span>
+**Solution:** 
+<span class="hinglish">Dhyan rakhein:
+**Stop:** Server ko Switch Off karna. (Hard-drive ka data safe rehta hai, aur aap ise dobara on kar sakte ho).
+**Terminate:** Server aur uske andar ki hard-drive ko bomb se uda dena! Data hamesha ke liye delete ho jata hai aur isko undo nahi kar sakte.</span>
+
+##### Example 4: Vertical vs Horizontal Scaling
+**Problem:** <span class="hinglish">Aapki startup viral ho gayi. `t2.micro` server hang hone laga hai. Kya aapko usko upgrade karke `t3.large` (2 Core, 8GB RAM) banana chahiye?</span>
+**Solution:** 
+<span class="hinglish">Ise **Vertical Scaling** (Server ko bada karna) kehte hain. Iski ek limit hoti hai, ek time baad server bahut mahenga ho jata hai.
+Modern dev teams **Horizontal Scaling** use karti hain. Wo purane `t2.micro` ko upgrade nahi karte, balki AWS me 5 naye `t2.micro` servers on kar dete hain aur NGINX Load Balancer ke zariye traffic distribute kar dete hain. Agar traffic kam ho jaye, toh 3 servers ko band karke paise bacha lete hain!</span>
+
+##### Example 5: Spot Instances (90% Discount)
+**Problem:** <span class="hinglish">Aapko raat me 10,000 images ko resize karna hai. Is heavy math ke liye aapko 5 servers chahiye. Par aapka budget bohot kam hai.</span>
+**Solution:** 
+<span class="hinglish">Aap AWS **Spot Instances** use kar sakte ho! AWS ke paas hazaron free servers khali pade rehte hain. AWS unhe 90% discount par de deta hai! Lekin ek shart par: Agar AWS ko un servers ki achank zaroorat padhi, toh wo aapko sirf 2 minute ki warning dega aur server aapse wapas chheen lega (Terminated). Image processing ya background queues (BullMQ) ke liye ye perfect aur sabse sasta option hai!</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

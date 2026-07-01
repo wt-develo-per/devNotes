@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RBAC: Role Based Access Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #8e44ad; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f4ecf7; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #8e44ad; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #8e44ad; }
+        .hinglish { color: #d35400; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #8e44ad; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #9b59b6; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02_Refresh_Token_Rotation_and_Logic.html" class="nav-btn">&larr; Previous: Refresh Token Rotation</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_ABAC_Attribute_Based_Access_Control.html" class="nav-btn">Next: ABAC &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02_Refresh_Token_Rotation_and_Logic.html" class="nav-btn">&larr; Previous: Refresh Token Rotation</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="04_ABAC_Attribute_Based_Access_Control.html" class="nav-btn">Next: ABAC &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Auth Masterclass 3: Role-Based Access Control (RBAC)
+
+In the previous files, we solved **AuthN (Authentication)**: Proving *Who* you are (using Access and Refresh tokens).
+Now we must solve **AuthZ (Authorization)**: Deciding *What* you are allowed to do.
+
+If you don't implement AuthZ correctly, any normal user could accidentally send a request to `DELETE /api/users` and wipe your entire database!
+
+---
+
+#### 1. The RBAC Database Architecture
+
+How do we actually store roles and permissions in Postgres? You need 3 core tables to build a solid RBAC system:
+
+1. **`users` Table:** Stores the user (`id`, `name`, `role_id`).
+2. **`roles` Table:** Stores the roles (`id`, `name` like 'ADMIN' or 'USER').
+3. **`permissions` Table:** Stores the actions (`id`, `action` like 'delete_user', 'create_post').
+4. *(Optional but recommended)* **`role_permissions` Table:** A mapping table that connects Roles to Permissions (e.g., The 'ADMIN' role has the 'delete_user' permission).
+
+* <span class="hinglish">Jab ek choti app banti hai, tab log simply `users` table me ek string column daal dete hain `role = "admin"`. Lekin jab app badi hoti hai (jaise Netflix ya AWS), tab aapko ek proper Permissions table chahiye hoti hai. Taaki aap dynamically decide kar sako ki "Manager" role kya kya kar sakta hai, bina backend code change kiye!</span>
+
+---
+
+#### 2. The Express.js Middleware Defense
+
+To protect an API route, you write a Custom Middleware in Node.js. 
+
+```javascript
+// The Authorization Middleware
+const authorize = (allowedRoles) => {
+    return (req, res, next) => {
+        // req.user is set by your previous JWT verification middleware
+        const userRole = req.user.role; 
+
+        if (!allowedRoles.includes(userRole)) {
+            return res.status(403).json({ error: "Access Denied! Tumhari aukaat nahi hai!" });
+        }
+        
+        // If they have the role, let them through!
+        next(); 
+    };
+};
+
+// Applying the defense to a route
+app.delete('/api/users/:id', authorize(['SUPER_ADMIN']), deleteUserFunction);
+app.post('/api/products', authorize(['ADMIN', 'SUPER_ADMIN']), createProductFunction);
+```
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+How do Senior Developers handle roles in production?
+
+##### Example 1: Banned Users
+**Problem:** A user is spamming the forum. You want to stop them from posting, but you still want them to be able to log in and read posts.
+**Solution:** Change their role from `USER` to `BANNED`. In your middleware for `POST /comments`, only allow `['USER', 'ADMIN']`. The banned user gets a 403 Forbidden instantly!
+
+##### Example 2: Hiding UI Elements in React
+**Problem:** A normal user clicks the "Delete User" button on the frontend. The backend blocks it with 403 Forbidden, but the user is still confused why the button exists!
+**Solution:** Send the user's role in the Access Token. In React, use Conditional Rendering: `&lt;Fragment&gt;{user.role === 'ADMIN' && &lt;button&gt;Delete&lt;/button&gt;}&lt;/Fragment&gt;`. Never show buttons they can't click!
+
+##### Example 3: The "Super Admin" Fallback
+**Problem:** You create a new route `GET /api/reports`. You forget to add `SUPER_ADMIN` to the allowed roles array. Now even the CEO is blocked!
+**Solution:** Modify your `authorize` middleware so that if `req.user.role === 'SUPER_ADMIN'`, it ALWAYS calls `next()` and ignores the array check entirely. Super Admins bypass everything.
+
+##### Example 4: Caching Permissions in Redis
+**Problem:** Querying Postgres to check if a user has the `edit_post` permission on every single API call slows down the server.
+**Solution:** When a user logs in, fetch all their permissions from Postgres ONCE, and store them in a Redis Hash. The middleware checks RAM (Redis) instead of Disk (Postgres), taking 0.001 seconds!
+
+##### Example 5: Hierarchy (Managers vs Employees)
+**Problem:** An `ADMIN` should be able to create a `MANAGER`, but a `MANAGER` should only be able to create an `EMPLOYEE`.
+**Solution:** Assign a "Weight" or "Level" integer to roles in the database (`SUPER_ADMIN: 100`, `ADMIN: 80`, `MANAGER: 50`). In your route, write logic: `if (req.user.level <= targetUser.level) return 403`. You can never modify someone above your level!
+
+##### Example 6: Implicit vs Explicit Permissions
+**Problem:** Hardcoding `['ADMIN', 'SUPER_ADMIN']` into 500 different routes is a nightmare to maintain. What if you add a new role called `MODERATOR`? You have to edit 500 files!
+**Solution:** Use Explicit Permissions instead of Roles in your middleware! `app.delete('/post', requirePermission('delete_post'))`. Now, if you want Moderators to delete posts, you just add a row to the `role_permissions` database table. Zero code changes!
+
+##### Example 7: The "Guest" Role (Unauthenticated Users)
+**Problem:** You have an E-commerce site. Anyone can view products, but only logged-in users can buy.
+**Solution:** In your JWT middleware, if there is no token, don't throw an error! Instead, set `req.user = { role: 'GUEST' }`. Now your RBAC system naturally handles public users without breaking!
+
+##### Example 8: Temporary Elevation (Sudo Mode)
+**Problem:** An Admin's laptop is stolen while they are logged in. The thief starts deleting databases!
+**Solution:** For ultra-sensitive actions (like GitHub's "Delete Repository"), require the Admin to re-enter their password, even if their token is valid. This issues a short 5-minute "Sudo Token" specifically for destructive actions.
+
+##### Example 9: Multi-Role Systems
+**Problem:** A user is both an `EDITOR` and a `MODERATOR`.
+**Solution:** Change `req.user.role` from a string to an Array of strings: `['EDITOR', 'MODERATOR']`. The middleware checks if *any* of their roles intersect with the allowed roles array using `userRoles.some(r => allowedRoles.includes(r))`.
+
+##### Example 10: "Shadow Banning"
+**Problem:** If you ban a toxic user, they will just create a new account and keep spamming.
+**Solution:** Give them a hidden role called `SHADOW_BANNED`. Let them post comments successfully on the backend, but filter out their comments so nobody else can see them. The troll thinks they are posting, but they are talking to a wall!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

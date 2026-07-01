@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>05 - Architecture & Scaling Masterclass</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #f1c40f; margin: 0; padding-left: 20px; background: #fffdf5; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #f39c12; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e67e22; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e67e22; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="04b_Backend_Performance.html" class="nav-btn">&larr; Previous: Backend Performance</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05a_Microservices_Deep_Dive.html" class="nav-btn">Next: Microservices Deep Dive &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="04b_Backend_Performance.html" class="nav-btn">&larr; Previous: Backend Performance</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="05a_Microservices_Deep_Dive.html" class="nav-btn">Next: Microservices Deep Dive &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 5: Architecture & Scaling
+
+This is the final test of a senior backend engineer. You know how APIs, databases, security, and caching work. Now, you must stitch them all together to build a system that can handle 10,000,000 active users without crashing.
+
+---
+
+#### 1. Monolith vs. Microservices
+
+Every backend starts as a Monolith and dreams of becoming a Microservice architecture.
+
+##### The Monolith
+A single Node.js codebase running on a single server containing all the logic: Users, Products, Payments, and Emails.
+* **Pros:** Extremely fast to build. Easy to deploy. Easy to test.
+* **Cons:** If a developer makes a typo in the Email code, it crashes the entire server, taking down the Payments system with it. You also have to scale the *entire* server, even if only the Payments system is busy.
+
+##### Microservices
+You split your backend into 4 completely independent, smaller Node.js servers: `UserService`, `ProductService`, `PaymentService`, and `EmailService`.
+* **Pros:** Complete isolation. If the Email service crashes, the Payments service stays online. You can scale the Payments service to 50 servers while leaving the Users service at just 1 server.
+* **Cons:** Extremely complex. You now have to manage 4 different deployments, 4 different databases, and deal with network latency because the services must talk to each other over HTTP.
+
+---
+
+#### 2. The API Gateway
+
+If you use Microservices, how does the frontend React app know which of the 4 servers to talk to? 
+You do NOT want the frontend maintaining 4 different API URLs.
+
+**The Fix:** You use an **API Gateway**.
+This is a single server that acts as a "Reverse Proxy". The frontend only talks to the API Gateway. The Gateway reads the URL path and magically routes the request to the correct internal microservice.
+
+```mermaid
+graph TD
+    UI[Frontend Client]
+    Gateway[API Gateway / Nginx]
+    
+    Auth[Auth Microservice]
+    Pay[Payment Microservice]
+    Search[Search Microservice]
+
+    UI -->|GET /api/pay| Gateway
+    UI -->|GET /api/search| Gateway
+    
+    Gateway -->|Routes /auth| Auth
+    Gateway -->|Routes /pay| Pay
+    Gateway -->|Routes /search| Search
+```
+
+---
+
+#### 3. Database Scaling Architectures
+
+A single PostgreSQL database can handle massive loads, but eventually, the Hard Drive will run out of I/O bandwidth. You must scale the database itself.
+
+##### Replication (Primary-Replica)
+In 90% of web apps, users READ data (GET requests) far more often than they WRITE data (POST requests). 
+* **The Architecture:** You have 1 "Primary" database that accepts all POST/PUT requests. You then create 3 "Replica" databases that perfectly mirror the Primary. 
+* All `SELECT` (read) queries are routed to the Replicas, instantly quadrupling your read capacity!
+
+##### Sharding (Horizontal DB Scaling)
+When your database grows to 10 Terabytes, a single Hard Drive cannot hold it. 
+* **The Architecture:** You "Shard" (split) the database. You put Users A-M on Database Server 1, and Users N-Z on Database Server 2. 
+* **The Catch:** This is a nightmare to manage. You can no longer easily `JOIN` a user from Server 1 to a product on Server 2.
+
+---
+
+#### 4. Event-Driven Architecture (Pub/Sub)
+
+In a Microservice world, services need to talk to each other. 
+If the `PaymentService` successfully processes a credit card, it needs to tell the `EmailService` to send a receipt. 
+
+If it does this via a direct HTTP API call, and the `EmailService` is down, the HTTP call fails, and the user never gets their receipt!
+
+**The Fix:** Use an **Event Bus** (like Apache Kafka or RabbitMQ).
+The `PaymentService` simply shouts an Event into the void: *"Payment #505 is complete!"* (Publish). It doesn't care who is listening.
+The `EmailService` is listening to the Event Bus (Subscribe). If the `EmailService` is currently offline, the Event Bus holds onto the message safely. When the EmailService boots back up, it reads the message and sends the receipt!
+
+---
+
+#### 5. The Final Master Architecture
+
+Here is the grand finale. This flowchart represents the holy grail of modern, enterprise-level backend architecture. This system can handle millions of users, is fully fault-tolerant, and is infinitely scalable.
+
+```mermaid
+graph TD
+    User((User))
+    CDN((Cloudflare CDN))
+    
+    Gateway[API Gateway / Load Balancer]
+    
+    subgraph Microservices
+        Auth[Auth Service x5]
+        Prod[Product Service x20]
+        Cart[Cart Service x10]
+    end
+
+    subgraph Caching Layer
+        Redis[(Redis Cluster)]
+    end
+    
+    subgraph Message Queue
+        Kafka{{Apache Kafka Event Bus}}
+    end
+
+    subgraph Background Workers
+        Worker1[Email Worker]
+        Worker2[Analytics Worker]
+    end
+
+    subgraph Database Cluster
+        PrimaryDB[(PostgreSQL Primary)]
+        Replica1[(PG Read Replica 1)]
+        Replica2[(PG Read Replica 2)]
+    end
+
+    %% The Flow
+    User -->|1. Request| CDN
+    CDN -->|2. Cache Miss| Gateway
+    Gateway -->|3. Route Request| Prod
+    
+    Prod -->|4. Check Cache| Redis
+    Redis -.->|5. Cache Miss| Prod
+    
+    Prod -->|6. Read Query| Replica1
+    Replica1 -.->|7. Data| Prod
+    
+    Prod -->|8. Async Task| Kafka
+    Kafka -->|9. Consume| Worker1
+    
+    Prod -->|10. Write Query| PrimaryDB
+    PrimaryDB -.->|11. Auto-Replicate| Replica1
+    PrimaryDB -.->|Auto-Replicate| Replica2
+    
+    classDef blue fill:#e8f4f8,stroke:#3498db;
+    classDef orange fill:#fdf4e8,stroke:#f39c12;
+    classDef green fill:#e8f8f5,stroke:#1abc9c;
+    classDef purple fill:#f5eef8,stroke:#9b59b6;
+    
+    class Gateway,Auth,Prod,Cart blue;
+    class PrimaryDB,Replica1,Replica2 orange;
+    class Redis green;
+    class Kafka,Worker1,Worker2 purple;
+```
+
+##### Understanding the Master Diagram:
+1. The **CDN** filters out static requests (images/HTML) before they even hit your servers.
+2. The **API Gateway** acts as a Load Balancer, routing traffic to dozens of identical horizontal microservices.
+3. The Microservices always check **Redis** first.
+4. If it's a Heavy Read query, it asks a **Read Replica**. If it's a Write query, it goes to the **Primary Database**.
+5. The Primary DB invisibly streams its changes to the Replicas.
+6. If a task takes too long (like sending an email), the Microservice drops a ticket into **Kafka**, and a Background Worker handles it asynchronously.
+
+**Congratulations. You have completed the Backend Foundation Masterclass.**
+    </script>
+</body>
+</html>

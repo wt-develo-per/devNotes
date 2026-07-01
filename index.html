@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full-Stack & System Design Masterclass Hub</title>
+    <style>
+        /* Exact Typography and Sizing Matching Validation Masterclass */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.7;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+        }
+
+        /* Zero H1 or H2 Styles - Starts from H3 */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2980b9; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; margin-bottom: 10px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+
+        /* Hub Header styling */
+        .hub-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            border-left: 6px solid #2980b9;
+        }
+        .hub-header p {
+            margin: 10px 0 0 0;
+            color: #555;
+            font-size: 1.05em;
+        }
+
+        /* Search and Filter Controls */
+        .controls-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 18px;
+            font-size: 1em;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+        .search-input:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.15);
+        }
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-btn {
+            background: #f1f3f5;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #495057;
+            transition: background 0.2s, color 0.2s, transform 0.1s;
+        }
+        .filter-btn:hover {
+            background: #e2e6ea;
+            transform: translateY(-1px);
+        }
+        .filter-btn.active {
+            background: #2980b9;
+            color: white;
+        }
+
+        /* Grid Layout */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 25px;
+        }
+
+        /* Card Styling */
+        .module-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            transition: transform 0.25s, box-shadow 0.25s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #eaecef;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .card-header {
+            padding: 18px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-header-title {
+            font-weight: bold;
+            font-size: 1.15em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .file-count-badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .card-body {
+            padding: 15px 20px;
+            flex-grow: 1;
+        }
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .file-item {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #f1f3f5;
+            padding-bottom: 8px;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .file-link {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: color 0.2s, padding-left 0.2s;
+            display: block;
+        }
+        .file-link:hover {
+            color: #2980b9;
+            padding-left: 5px;
+        }
+        .file-link::before {
+            content: "📄 ";
+            font-size: 0.9em;
+        }
+        
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            color: #7f8c8d;
+            font-size: 1.2em;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hub-header">
+        <h3>Full-Stack & System Design Masterclass Hub</h3>
+        <p>Your centralized origin point for accessing all 23 masterclass modules and 91 structured learning files. Select a module or use the instant filter below.</p>
+    </div>
+
+    <div class="controls-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search any topic, module, or file name (e.g., 'Redis', 'Zod', 'Docker', 'Interview', 'Event Loop')...">
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-category="All">All Categories (23)</button>
+            <button class="filter-btn" data-category="Backend Core">Backend Core</button>
+            <button class="filter-btn" data-category="Databases & Caching">Databases & Caching</button>
+            <button class="filter-btn" data-category="Architecture">Architecture</button>
+            <button class="filter-btn" data-category="DevOps & Cloud">DevOps & Cloud</button>
+            <button class="filter-btn" data-category="Security & Tools">Security & Tools</button>
+            <button class="filter-btn" data-category="Interview Prep">Interview Prep</button>
+        </div>
+    </div>
+
+    <div class="modules-grid" id="modulesGrid">
+        
+        <div class="module-card" data-category="Backend Core" data-search="authentication & authorization auth_masterclass access vs refresh tokens refresh token rotation rbac: role based access control abac: attribute based access control">
+            <div class="card-header" style="background-color: #8e44ad;">
+                <div class="card-header-title">
+                    <span>🔐</span>
+                    <span>Authentication & Authorization</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Auth_Masterclass/01_Access_vs_Refresh_Tokens.html" class="file-link" title="01_Access_vs_Refresh_Tokens.html">Access vs Refresh Tokens</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Auth_Masterclass/02_Refresh_Token_Rotation_and_Logic.html" class="file-link" title="02_Refresh_Token_Rotation_and_Logic.html">Refresh Token Rotation</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Auth_Masterclass/03_RBAC_Role_Based_Access_Control.html" class="file-link" title="03_RBAC_Role_Based_Access_Control.html">RBAC: Role Based Access Control</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Auth_Masterclass/04_ABAC_Attribute_Based_Access_Control.html" class="file-link" title="04_ABAC_Attribute_Based_Access_Control.html">ABAC: Attribute Based Access Control</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="aws ec2 compute aws_ec2_masterclass aws ec2 fundamentals aws ec2 security groups">
+            <div class="card-header" style="background-color: #ff9900;">
+                <div class="card-header-title">
+                    <span>☁️</span>
+                    <span>AWS EC2 Compute</span>
+                </div>
+                <span class="file-count-badge">2 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="AWS_EC2_Masterclass/01_EC2_Fundamentals_and_Instances.html" class="file-link" title="01_EC2_Fundamentals_and_Instances.html">AWS EC2 Fundamentals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="AWS_EC2_Masterclass/02_EC2_Security_Groups_and_Networking.html" class="file-link" title="02_EC2_Security_Groups_and_Networking.html">AWS EC2 Security Groups</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="aws s3 object storage aws_s3_masterclass aws s3 fundamentals & buckets s3 node.js integration step-by-step aws s3 setup">
+            <div class="card-header" style="background-color: #0073bb;">
+                <div class="card-header-title">
+                    <span>📦</span>
+                    <span>AWS S3 Object Storage</span>
+                </div>
+                <span class="file-count-badge">3 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="AWS_S3_Masterclass/01_S3_Fundamentals_and_Buckets.html" class="file-link" title="01_S3_Fundamentals_and_Buckets.html">AWS S3 Fundamentals & Buckets</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="AWS_S3_Masterclass/02_S3_Nodejs_Integration_and_Uploads.html" class="file-link" title="02_S3_Nodejs_Integration_and_Uploads.html">S3 Node.js Integration</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="AWS_S3_Masterclass/03_Step_by_Step_S3_Setup.html" class="file-link" title="03_Step_by_Step_S3_Setup.html">Step-by-Step AWS S3 Setup</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Backend Core" data-search="backend foundation & scaling backend_foundation 01 - http and apis (deep dive) sql interview practice (beginner to advanced) 02 - databases and data modeling (the ultimate masterclass) 03a - authentication & authorization 03b - web security & vulnerabilities (top 10 masterclass) 03 - authentication and security (masterclass) 04a - advanced caching 04b - backend performance 04 - caching basics 05a - microservices & cloud native 05b - database scaling (the hard parts) 05c - system design interview masterclass 05 - architecture & scaling masterclass">
+            <div class="card-header" style="background-color: #2980b9;">
+                <div class="card-header-title">
+                    <span>🏗️</span>
+                    <span>Backend Foundation & Scaling</span>
+                </div>
+                <span class="file-count-badge">13 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Backend_Foundation/01_HTTP_and_APIs.html" class="file-link" title="01_HTTP_and_APIs.html">01 - HTTP and APIs (Deep Dive)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/02b_SQL_Interview_Practice.html" class="file-link" title="02b_SQL_Interview_Practice.html">SQL Interview Practice (Beginner to Advanced)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/02_Databases_and_Data_Modeling.html" class="file-link" title="02_Databases_and_Data_Modeling.html">02 - Databases and Data Modeling (The Ultimate Masterclass)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/03a_Authentication_and_Authorization.html" class="file-link" title="03a_Authentication_and_Authorization.html">03a - Authentication & Authorization</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/03b_Web_Security_and_Vulnerabilities.html" class="file-link" title="03b_Web_Security_and_Vulnerabilities.html">03b - Web Security & Vulnerabilities (Top 10 Masterclass)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/03_Authentication_and_Security.html" class="file-link" title="03_Authentication_and_Security.html">03 - Authentication and Security (Masterclass)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/04a_Advanced_Caching.html" class="file-link" title="04a_Advanced_Caching.html">04a - Advanced Caching</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/04b_Backend_Performance.html" class="file-link" title="04b_Backend_Performance.html">04b - Backend Performance</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/04_Caching_Basics.html" class="file-link" title="04_Caching_Basics.html">04 - Caching Basics</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/05a_Microservices_Deep_Dive.html" class="file-link" title="05a_Microservices_Deep_Dive.html">05a - Microservices & Cloud Native</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/05b_Database_Scaling.html" class="file-link" title="05b_Database_Scaling.html">05b - Database Scaling (The Hard Parts)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/05c_System_Design_Interview.html" class="file-link" title="05c_System_Design_Interview.html">05c - System Design Interview Masterclass</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Backend_Foundation/05_Architecture_and_Scaling.html" class="file-link" title="05_Architecture_and_Scaling.html">05 - Architecture & Scaling Masterclass</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Other" data-search="cron_jobs_masterclass cron_jobs_masterclass cron fundamentals & node-cron distributed cron & job queues">
+            <div class="card-header" style="background-color: #2c3e50;">
+                <div class="card-header-title">
+                    <span>📁</span>
+                    <span>Cron_Jobs_Masterclass</span>
+                </div>
+                <span class="file-count-badge">2 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Cron_Jobs_Masterclass/01_Cron_Fundamentals_and_NodeCron.html" class="file-link" title="01_Cron_Fundamentals_and_NodeCron.html">Cron Fundamentals & Node-Cron</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Cron_Jobs_Masterclass/02_Advanced_Distributed_Cron.html" class="file-link" title="02_Advanced_Distributed_Cron.html">Distributed Cron & Job Queues</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="ci/cd & deployment deployment_masterclass deployment fundamentals & vps deep dive: ci/cd pipeline ci/cd & docker deployment step-by-step mern deployment">
+            <div class="card-header" style="background-color: #1b5e20;">
+                <div class="card-header-title">
+                    <span>🚢</span>
+                    <span>CI/CD & Deployment</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Deployment_Masterclass/01_Deployment_Fundamentals_and_VPS.html" class="file-link" title="01_Deployment_Fundamentals_and_VPS.html">Deployment Fundamentals & VPS</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Deployment_Masterclass/02b_Deep_Dive_CI_CD_Pipeline.html" class="file-link" title="02b_Deep_Dive_CI_CD_Pipeline.html">Deep Dive: CI/CD Pipeline</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Deployment_Masterclass/02_CI_CD_and_Docker_Deployment.html" class="file-link" title="02_CI_CD_and_Docker_Deployment.html">CI/CD & Docker Deployment</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Deployment_Masterclass/03_Step_by_Step_MERN_Deployment.html" class="file-link" title="03_Step_by_Step_MERN_Deployment.html">Step-by-Step MERN Deployment</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="docker & containerization docker docker theory & containers dockerfiles & building images docker compose & networks dockerizing a mern stack">
+            <div class="card-header" style="background-color: #066ada;">
+                <div class="card-header-title">
+                    <span>🐳</span>
+                    <span>Docker & Containerization</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Docker/01_Docker_Theory_and_Containers.html" class="file-link" title="01_Docker_Theory_and_Containers.html">Docker Theory & Containers</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Docker/02_Dockerfile_and_Building.html" class="file-link" title="02_Dockerfile_and_Building.html">Dockerfiles & Building Images</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Docker/03_Docker_Compose_and_Networks.html" class="file-link" title="03_Docker_Compose_and_Networks.html">Docker Compose & Networks</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Docker/04_Docker_MERN_Stack_Real_World.html" class="file-link" title="04_Docker_MERN_Stack_Real_World.html">Dockerizing a MERN Stack</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Other" data-search="email_queues_masterclass email_queues_masterclass email fundamentals & nodemailer bullmq email architecture">
+            <div class="card-header" style="background-color: #2c3e50;">
+                <div class="card-header-title">
+                    <span>📁</span>
+                    <span>Email_Queues_Masterclass</span>
+                </div>
+                <span class="file-count-badge">2 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Email_Queues_Masterclass/01_Email_Fundamentals_and_Nodemailer.html" class="file-link" title="01_Email_Fundamentals_and_Nodemailer.html">Email Fundamentals & Nodemailer</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Email_Queues_Masterclass/02_BullMQ_Email_Queue_Architecture.html" class="file-link" title="02_BullMQ_Email_Queue_Architecture.html">BullMQ Email Architecture</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Security & Tools" data-search="git version control git 01 - git theory and concepts 02 - git beginner commands 03 - git advanced commands">
+            <div class="card-header" style="background-color: #2c3e50;">
+                <div class="card-header-title">
+                    <span>code</span>
+                    <span>Git Version Control</span>
+                </div>
+                <span class="file-count-badge">3 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Git/01_Git_Theory_and_Concepts.html" class="file-link" title="01_Git_Theory_and_Concepts.html">01 - Git Theory and Concepts</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Git/02_Git_Commands_Beginner.html" class="file-link" title="02_Git_Commands_Beginner.html">02 - Git Beginner Commands</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Git/03_Git_Commands_Advanced.html" class="file-link" title="03_Git_Commands_Advanced.html">03 - Git Advanced Commands</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Interview Prep" data-search="technical interview prep interview_preparation node.js & express interview q&a database & sql interview q&a system design (hld) interview q&a lld & design patterns interview q&a dsa interview q&a (startups & mid-size) behavioral & hr interview q&a">
+            <div class="card-header" style="background-color: #384f29;">
+                <div class="card-header-title">
+                    <span>🎯</span>
+                    <span>Technical Interview Prep</span>
+                </div>
+                <span class="file-count-badge">6 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Interview_Preparation/01_Nodejs_and_Express_Interview.html" class="file-link" title="01_Nodejs_and_Express_Interview.html">Node.js & Express Interview Q&A</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Interview_Preparation/02_Database_and_SQL_Interview.html" class="file-link" title="02_Database_and_SQL_Interview.html">Database & SQL Interview Q&A</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Interview_Preparation/03_System_Design_HLD_Interview.html" class="file-link" title="03_System_Design_HLD_Interview.html">System Design (HLD) Interview Q&A</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Interview_Preparation/04_LLD_and_Design_Patterns_Interview.html" class="file-link" title="04_LLD_and_Design_Patterns_Interview.html">LLD & Design Patterns Interview Q&A</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Interview_Preparation/05_DSA_Interview.html" class="file-link" title="05_DSA_Interview.html">DSA Interview Q&A (Startups & Mid-Size)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Interview_Preparation/06_Behavioral_and_HR_Interview.html" class="file-link" title="06_Behavioral_and_HR_Interview.html">Behavioral & HR Interview Q&A</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="linux & server administration linux linux theory & filesystem linux basic commands linux server deployment">
+            <div class="card-header" style="background-color: #f39c12;">
+                <div class="card-header-title">
+                    <span>🐧</span>
+                    <span>Linux & Server Administration</span>
+                </div>
+                <span class="file-count-badge">3 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Linux/01_Linux_Theory_and_Filesystem.html" class="file-link" title="01_Linux_Theory_and_Filesystem.html">Linux Theory & Filesystem</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Linux/02_Linux_Basic_Commands.html" class="file-link" title="02_Linux_Basic_Commands.html">Linux Basic Commands</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Linux/03_Linux_Server_Deployment.html" class="file-link" title="03_Linux_Server_Deployment.html">Linux Server Deployment</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Architecture" data-search="low level design & oops lld_and_design_patterns_masterclass oops & clean code deep dive s.o.l.i.d principles deep dive creational design patterns behavioral design patterns">
+            <div class="card-header" style="background-color: #513865;">
+                <div class="card-header-title">
+                    <span>📐</span>
+                    <span>Low Level Design & OOPs</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="LLD_and_Design_Patterns_Masterclass/01_OOPs_and_Clean_Code.html" class="file-link" title="01_OOPs_and_Clean_Code.html">OOPs & Clean Code Deep Dive</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="LLD_and_Design_Patterns_Masterclass/02_SOLID_Principles.html" class="file-link" title="02_SOLID_Principles.html">S.O.L.I.D Principles Deep Dive</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="LLD_and_Design_Patterns_Masterclass/03_Creational_Design_Patterns.html" class="file-link" title="03_Creational_Design_Patterns.html">Creational Design Patterns</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="LLD_and_Design_Patterns_Masterclass/04_Structural_and_Behavioral_Patterns.html" class="file-link" title="04_Structural_and_Behavioral_Patterns.html">Behavioral Design Patterns</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Backend Core" data-search="logging & observability logging_masterclass logging fundamentals centralized logging & tracing">
+            <div class="card-header" style="background-color: #d35400;">
+                <div class="card-header-title">
+                    <span>📋</span>
+                    <span>Logging & Observability</span>
+                </div>
+                <span class="file-count-badge">2 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Logging_Masterclass/01_Logging_Fundamentals.html" class="file-link" title="01_Logging_Fundamentals.html">Logging Fundamentals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Logging_Masterclass/02_Centralized_Logging_and_Tracing.html" class="file-link" title="02_Centralized_Logging_and_Tracing.html">Centralized Logging & Tracing</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Architecture" data-search="computer networks & protocols networks 01 - networks (school level) 02 - networks (beginner level) 03 - networks (intermediate level) 04 - networks (advanced level)">
+            <div class="card-header" style="background-color: #16a085;">
+                <div class="card-header-title">
+                    <span>🌐</span>
+                    <span>Computer Networks & Protocols</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Networks/01_Network_School_Level.html" class="file-link" title="01_Network_School_Level.html">01 - Networks (School Level)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Networks/02_Network_Beginner.html" class="file-link" title="02_Network_Beginner.html">02 - Networks (Beginner Level)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Networks/03_Network_Intermediate.html" class="file-link" title="03_Network_Intermediate.html">03 - Networks (Intermediate Level)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Networks/04_Network_Advanced.html" class="file-link" title="04_Network_Advanced.html">04 - Networks (Advanced Level)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="nginx & reverse proxy nginx_masterclass nginx fundamentals & reverse proxy nginx advanced load balancing deep dive: nginx vs apache">
+            <div class="card-header" style="background-color: #00796b;">
+                <div class="card-header-title">
+                    <span>⚙️</span>
+                    <span>NGINX & Reverse Proxy</span>
+                </div>
+                <span class="file-count-badge">3 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="NGINX_Masterclass/01_NGINX_Fundamentals_and_Reverse_Proxy.html" class="file-link" title="01_NGINX_Fundamentals_and_Reverse_Proxy.html">NGINX Fundamentals & Reverse Proxy</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="NGINX_Masterclass/02_Advanced_LoadBalancing_and_Security.html" class="file-link" title="02_Advanced_LoadBalancing_and_Security.html">NGINX Advanced Load Balancing</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="NGINX_Masterclass/03_NGINX_vs_Apache.html" class="file-link" title="03_NGINX_vs_Apache.html">Deep Dive: NGINX vs Apache</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Backend Core" data-search="node.js core & internals node node core modules (part 1) node core modules (part 2) node.js async internals node.js buffers node.js error handling event loop node.js file uploads node.js fundamentals node.js memory node.js middleware node.js streams">
+            <div class="card-header" style="background-color: #27ae60;">
+                <div class="card-header-title">
+                    <span>🟢</span>
+                    <span>Node.js Core & Internals</span>
+                </div>
+                <span class="file-count-badge">11 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Node/06_Node_Core_Modules_Part1.html" class="file-link" title="06_Node_Core_Modules_Part1.html">Node Core Modules (Part 1)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/07_Node_Core_Modules_Part2.html" class="file-link" title="07_Node_Core_Modules_Part2.html">Node Core Modules (Part 2)</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/AsyncInternals.html" class="file-link" title="AsyncInternals.html">Node.js Async Internals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/Buffers.html" class="file-link" title="Buffers.html">Node.js Buffers</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/Errors.html" class="file-link" title="Errors.html">Node.js Error Handling</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/EventLoop.html" class="file-link" title="EventLoop.html">Event Loop</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/FileUploads.html" class="file-link" title="FileUploads.html">Node.js File Uploads</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/Foundamentals.html" class="file-link" title="Foundamentals.html">Node.js Fundamentals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/Memory.html" class="file-link" title="Memory.html">Node.js Memory</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/Middlewares.html" class="file-link" title="Middlewares.html">Node.js Middleware</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Node/Streams.html" class="file-link" title="Streams.html">Node.js Streams</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Security & Tools" data-search="owasp top 10 security owasp_security owasp top 10 masterclass">
+            <div class="card-header" style="background-color: #c0392b;">
+                <div class="card-header-title">
+                    <span>🔒</span>
+                    <span>OWASP Top 10 Security</span>
+                </div>
+                <span class="file-count-badge">1 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Owasp_security/OWASP_Top_10.html" class="file-link" title="OWASP_Top_10.html">OWASP Top 10 Masterclass</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="DevOps & Cloud" data-search="pm2 process manager pm2_masterclass pm2 fundamentals & daemonization pm2 advanced cluster mode">
+            <div class="card-header" style="background-color: #2c3e50;">
+                <div class="card-header-title">
+                    <span>🚀</span>
+                    <span>PM2 Process Manager</span>
+                </div>
+                <span class="file-count-badge">2 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="PM2_Masterclass/01_PM2_Fundamentals_and_Daemonization.html" class="file-link" title="01_PM2_Fundamentals_and_Daemonization.html">PM2 Fundamentals & Daemonization</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="PM2_Masterclass/02_PM2_Advanced_Cluster_Mode_and_Ecosystem.html" class="file-link" title="02_PM2_Advanced_Cluster_Mode_and_Ecosystem.html">PM2 Advanced Cluster Mode</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Security & Tools" data-search="postman & api testing postman postman basics & variables postman advanced & docs">
+            <div class="card-header" style="background-color: #d35400;">
+                <div class="card-header-title">
+                    <span>🧪</span>
+                    <span>Postman & API Testing</span>
+                </div>
+                <span class="file-count-badge">2 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Postman/01_Postman_Basics_and_Variables.html" class="file-link" title="01_Postman_Basics_and_Variables.html">Postman Basics & Variables</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Postman/02_Postman_Advanced_and_Docs.html" class="file-link" title="02_Postman_Advanced_and_Docs.html">Postman Advanced & Docs</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Databases & Caching" data-search="redis & in-memory caching redis redis fundamentals redis e-commerce architecture redis & node.js integration redis advanced: pub/sub & streams">
+            <div class="card-header" style="background-color: #c0392b;">
+                <div class="card-header-title">
+                    <span>⚡</span>
+                    <span>Redis & In-Memory Caching</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Redis/01_Redis_Fundamentals.html" class="file-link" title="01_Redis_Fundamentals.html">Redis Fundamentals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Redis/02b_Redis_Ecommerce_Project.html" class="file-link" title="02b_Redis_Ecommerce_Project.html">Redis E-Commerce Architecture</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Redis/02_Redis_Nodejs_Integration.html" class="file-link" title="02_Redis_Nodejs_Integration.html">Redis & Node.js Integration</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Redis/03_Redis_Advanced_PubSub_and_Streams.html" class="file-link" title="03_Redis_Advanced_PubSub_and_Streams.html">Redis Advanced: Pub/Sub & Streams</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Databases & Caching" data-search="sql & relational databases sql sql joins sql group by & aggregations sql indexes sql transactions sql query optimization">
+            <div class="card-header" style="background-color: #34495e;">
+                <div class="card-header-title">
+                    <span>🗄️</span>
+                    <span>SQL & Relational Databases</span>
+                </div>
+                <span class="file-count-badge">5 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="SQL/01_SQL_Joins.html" class="file-link" title="01_SQL_Joins.html">SQL Joins</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="SQL/02_SQL_GroupBy_and_Aggregations.html" class="file-link" title="02_SQL_GroupBy_and_Aggregations.html">SQL Group By & Aggregations</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="SQL/03_SQL_Indexes.html" class="file-link" title="03_SQL_Indexes.html">SQL Indexes</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="SQL/04_SQL_Transactions.html" class="file-link" title="04_SQL_Transactions.html">SQL Transactions</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="SQL/05_SQL_Query_Optimization.html" class="file-link" title="05_SQL_Query_Optimization.html">SQL Query Optimization</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Architecture" data-search="high level system design system_design_masterclass system design fundamentals database scaling & sharding caching & message queues microservices vs monolith">
+            <div class="card-header" style="background-color: #2980b9;">
+                <div class="card-header-title">
+                    <span>🏛️</span>
+                    <span>High Level System Design</span>
+                </div>
+                <span class="file-count-badge">4 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="System_Design_Masterclass/01_System_Design_Fundamentals_and_Scaling.html" class="file-link" title="01_System_Design_Fundamentals_and_Scaling.html">System Design Fundamentals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="System_Design_Masterclass/02_Database_Scaling_and_Sharding.html" class="file-link" title="02_Database_Scaling_and_Sharding.html">Database Scaling & Sharding</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="System_Design_Masterclass/03_Caching_and_Message_Queues.html" class="file-link" title="03_Caching_and_Message_Queues.html">Caching & Message Queues</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="System_Design_Masterclass/04_Microservices_vs_Monolith.html" class="file-link" title="04_Microservices_vs_Monolith.html">Microservices vs Monolith</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="module-card" data-category="Backend Core" data-search="data validation & zod validation_masterclass zod real world form controller validation & zod fundamentals express validation middleware">
+            <div class="card-header" style="background-color: #00796b;">
+                <div class="card-header-title">
+                    <span>🛡️</span>
+                    <span>Data Validation & Zod</span>
+                </div>
+                <span class="file-count-badge">3 Files</span>
+            </div>
+            <div class="card-body">
+                <ul class="file-list">
+                    
+                    <li class="file-item">
+                        <a href="Validation_Masterclass/01a_Zod_Real_World_Form_Controller.html" class="file-link" title="01a_Zod_Real_World_Form_Controller.html">Zod Real World Form Controller</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Validation_Masterclass/01_Validation_Fundamentals_and_Zod.html" class="file-link" title="01_Validation_Fundamentals_and_Zod.html">Validation & Zod Fundamentals</a>
+                    </li>
+                    <li class="file-item">
+                        <a href="Validation_Masterclass/02_Express_Validation_Middleware.html" class="file-link" title="02_Express_Validation_Middleware.html">Express Validation Middleware</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="no-results" id="noResults">
+            No matching masterclass modules or files found. Try a different search keyword!
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.module-card');
+        const noResults = document.getElementById('noResults');
+
+        let activeCategory = 'All';
+        let searchQuery = '';
+
+        function filterCards() {
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const cardCategory = card.getAttribute('data-category');
+                const cardSearchText = card.getAttribute('data-search');
+                
+                const matchesCategory = (activeCategory === 'All' || cardCategory === activeCategory);
+                const matchesSearch = (searchQuery === '' || cardSearchText.includes(searchQuery));
+
+                if (matchesCategory && matchesSearch) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase().trim();
+            filterCards();
+        });
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeCategory = btn.getAttribute('data-category');
+                filterCards();
+            });
+        });
+    </script>
+</body>
+</html>

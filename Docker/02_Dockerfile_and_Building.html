@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dockerfiles & Building Images</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #2980b9; }
+        blockquote { border-left: 5px solid #3498db; margin: 0; padding-left: 20px; background: #ebf5fb; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        strong { color: #2980b9; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #066ada; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #2496ed; }
+        .nav-btn:hover { background-color: #0550a4; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #066ada; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Docker_Theory_and_Containers.html" class="nav-btn">&larr; Previous: Theory & Containers</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Docker_Compose_and_Networks.html" class="nav-btn">Next: Compose & Networks &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Docker_Theory_and_Containers.html" class="nav-btn">&larr; Previous: Theory & Containers</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Docker_Compose_and_Networks.html" class="nav-btn">Next: Compose & Networks &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Docker Masterclass 2: The Dockerfile
+
+In the last file, we learned that an **Image** is a recipe, and a **Container** is the baked cake.
+But how do you write the recipe for your Node.js application? You use a `Dockerfile`!
+
+A `Dockerfile` is just a simple text file with step-by-step instructions on how to build your app into an Image.
+
+---
+
+#### 1. The Anatomy of a Node.js Dockerfile
+
+Here is the industry-standard `Dockerfile` for a Node.js application.
+
+```dockerfile
+### 1. Start with a base image (The Operating System + Node.js installed)
+FROM node:18-alpine
+
+### 2. Create a folder inside the container to hold our code
+WORKDIR /app
+
+### 3. Copy ONLY the package.json first (We will explain why later!)
+COPY package*.json ./
+
+### 4. Install the dependencies
+RUN npm install
+
+### 5. Copy the rest of your source code (server.js, etc)
+COPY . .
+
+### 6. Open Port 3000 so the outside world can access the API
+EXPOSE 3000
+
+### 7. Start the server!
+CMD ["npm", "start"]
+```
+
+To bake the cake (build the Image), you run this command in your terminal:
+`docker build -t my-node-app .`
+*(The `.` tells Docker to look for the Dockerfile in the current folder).*
+
+---
+
+#### 2. The `.dockerignore` File (The Fatal Mistake)
+
+Notice Step 5: `COPY . .` 
+This copies *everything* from your laptop into the Container. Do you know what happens if you copy your laptop's `node_modules` folder into a Linux Container? The container will crash immediately! 
+Your laptop's `node_modules` were compiled for Windows/Mac, but the Container is running Linux!
+
+* <span class="hinglish">Jaise Git mein `.gitignore` hota hai, waise hi Docker mein `.dockerignore` hota hai. Aapko ek file banani padti hai jisme aap `node_modules` aur `.env` likhte ho. Taaki jab Docker `COPY . .` kare, toh wo in dangerous folders ko ignore kar de, aur sirf aapka asli source code copy kare!</span>
+
+**Standard `.dockerignore` file:**
+```text
+node_modules
+npm-debug.log
+.env
+.git
+```
+
+---
+
+#### 3. The "Layer Caching" Secret of Senior Devs
+
+Look back at the Dockerfile. Why did we do `COPY package.json` and `RUN npm install` BEFORE we copied the rest of the source code (`COPY . .`)? Why not just copy everything at once?
+
+**The Answer is Layer Caching.**
+Docker executes the Dockerfile line by line. If a line hasn't changed, Docker uses a cached (saved) version to save time.
+
+* <span class="hinglish">Agar hum apna source code pehle copy karte (`COPY . .`), toh har baar jab hum `server.js` mein ek chota sa comma (,) bhi change karte, Docker dekhta ki code badal gaya hai, aur wo **puri `npm install` command wapas se chalata!** Isse har build mein 5 minute lagte.</span>
+
+Because we copy `package.json` first, Docker caches the `npm install` step! Now, when you edit `server.js`, Docker says *"Oh, the package.json hasn't changed, I'll just reuse the cached node_modules!"* 
+Your build time drops from **5 minutes to 1 second**.
+
+---
+
+#### 4. Real-World Scenarios (10 Practical Examples)
+
+Here are 10 advanced Dockerfile techniques used by Backend Engineers in production.
+
+##### Example 1: Alpine Linux (Saving AWS Money)
+**Problem:** A standard `FROM node:18` image is 1.1 GB in size. Storing this on AWS Elastic Container Registry costs a lot of money and takes minutes to download.
+**Solution:** Senior devs use `FROM node:18-alpine`. Alpine is a stripped-down mini version of Linux. It reduces the image size from 1.1 GB to **only 115 MB**! Faster deployments, cheaper storage.
+
+##### Example 2: Multi-Stage Builds (React/Frontend)
+**Problem:** You are building a React app in Docker. You need Node.js to run `npm run build`, but the final output is just static HTML/CSS files. If you ship Node.js to production, the image is 500MB and vulnerable to hacking.
+**Solution:** Use Multi-Stage Builds! 
+```dockerfile
+### Stage 1: Build the React App using heavy Node.js
+FROM node:18 AS builder
+RUN npm run build
+
+### Stage 2: Throw away Node.js! Just serve the HTML using lightweight NGINX
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+```
+The final image is now 15MB instead of 500MB!
+
+##### Example 3: Running as Non-Root (Security)
+**Problem:** By default, Docker runs your Node.js app as the `root` (admin) user. If a hacker exploits a vulnerability in your code, they get admin access to the entire container.
+**Solution:** Add `USER node` to the end of your Dockerfile. It forces the app to run as a low-level, restricted user. Hackers get trapped.
+
+##### Example 4: Build Arguments (ARG)
+**Problem:** You want to bake a version number into the image during the build process, but you don't want to hardcode it in the Dockerfile.
+**Solution:** Use `ARG APP_VERSION`. When building, run `docker build --build-arg APP_VERSION=v2.0 .`.
+
+##### Example 5: Environment Variables (ENV)
+**Problem:** You need your Node.js code to know it is running in Production mode.
+**Solution:** Add `ENV NODE_ENV=production` inside the Dockerfile. Express.js will read this and automatically optimize itself to run 3x faster!
+
+##### Example 6: Healthchecks (Auto-Healing)
+**Problem:** Your container is technically "running", but the Express server inside it crashed and is returning 500 errors. Docker doesn't know it's broken.
+**Solution:** Add a Healthcheck to the Dockerfile:
+`HEALTHCHECK --interval=30s CMD curl -f http://localhost:3000/health || exit 1`
+If it fails, Docker will automatically restart the container!
+
+##### Example 7: Handling Timezones
+**Problem:** Docker containers default to UTC time. If your `console.log(new Date())` relies on Indian Standard Time (IST), it will be 5.5 hours wrong!
+**Solution:** Set the timezone directly in the Dockerfile: `ENV TZ=Asia/Kolkata`. 
+
+##### Example 8: `CMD` vs `ENTRYPOINT`
+**Problem:** `CMD ["npm", "start"]` can be easily overwritten by a user running `docker run myapp bash`. You want to force the container to ONLY run `npm start` and block anything else.
+**Solution:** Use `ENTRYPOINT ["npm", "start"]`. It makes the command mandatory and un-overridable.
+
+##### Example 9: Installing System Packages (Python in Node)
+**Problem:** Your Node.js app uses the `child_process` module to run a Python script. But `node:18-alpine` doesn't have Python installed!
+**Solution:** Run an Alpine Linux command to install Python *before* you run npm install:
+`RUN apk add --no-cache python3`
+
+##### Example 10: Production Process Managers (PM2)
+**Problem:** You shouldn't use `npm start` in a production Docker container because if the Node thread crashes, the container dies.
+**Solution:** Install a process manager globally in the Dockerfile:
+`RUN npm install -g pm2`
+`CMD ["pm2-runtime", "server.js"]`
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

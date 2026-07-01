@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redis Fundamentals</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #e74c3c; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #c0392b; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c0392b; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #c0392b; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #922b21; }
+        .nav-btn:hover { background-color: #e74c3c; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Redis_Nodejs_Integration.html" class="nav-btn">Next: Node.js Integration &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Redis_Nodejs_Integration.html" class="nav-btn">Next: Node.js Integration &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Redis Masterclass 1: Fundamentals
+
+When your App goes viral and 100,000 users try to access your Postgres Database at the exact same time, your server will melt, crash, and burn.
+The database is always the slowest part of a backend. 
+
+Enter **Redis** (Remote Dictionary Server). It is the fastest database on the planet.
+
+---
+
+#### 1. Why is Redis so Fast? (RAM vs Disk)
+
+Normal databases like Postgres and MongoDB save their data on a **Hard Drive (Disk)**. Hard drives are safe (data survives a power outage), but they are mechanically slow.
+
+Redis saves 100% of its data in **RAM (Memory)**. RAM is exponentially faster than a Hard Drive. 
+A single Redis server can handle **millions of requests per second** with sub-millisecond latency. 
+
+* <span class="hinglish">Disk par data likhna aur padhna aisa hai jaise Library ki almari se kitab dhoondh kar lana. Bahut time lagta hai. RAM me data rakhna aisa hai jaise wo kitab aapke haath me hi khuli hui hai! Redis isliye fast hai kyunki wo saara data RAM me rakhta hai. Lekin dhyan rakhna, agar server ka power cut hua, toh RAM ka saara data udd jayega! Isliye Redis ko "Primary Database" nahi banate, balki Postgres ke aage ek "Helper (Cache)" ki tarah use karte hain.</span>
+
+---
+
+#### 2. Redis Data Structures
+
+Most people think Redis is just a simple "Key-Value" store where you save strings. But Redis has incredibly powerful Data Structures built-in.
+
+##### A. Strings (The Basic Key-Value)
+You give it a Key, and it saves a Value. (Can hold up to 512MB per string).
+```text
+SET username "john_doe"
+GET username // returns "john_doe"
+```
+
+##### B. Hashes (Objects)
+Perfect for storing User Profiles without saving a massive JSON string.
+```text
+HSET user:100 name "John" age 25 city "New York"
+HGET user:100 name // returns "John"
+HGETALL user:100 // returns {name: "John", age: "25", city: "New York"}
+```
+* <span class="hinglish">Hash basically ek Javascript Object (`{}`) ki tarah kaam karta hai. Fayda yeh hai ki agar aapko sirf user ki `age` update karni hai, toh aapko pura user object load nahi karna padega, seedha `age` modify kar sakte ho!</span>
+
+##### C. Lists (Arrays / Queues)
+It is a Linked List. You can push data to the Left (Start) or Right (End) extremely fast.
+```text
+LPUSH latest_tweets "Hello World"
+LPUSH latest_tweets "Learning Redis!"
+LRANGE latest_tweets 0 10 // Get the top 10 most recent tweets
+```
+
+##### D. Sets (Unique Arrays)
+A List where every item MUST be unique. Perfect for tracking unique visitors.
+```text
+SADD user:1:hobbies "Cricket"
+SADD user:1:hobbies "Reading"
+SADD user:1:hobbies "Cricket" // Ignored! Already exists.
+SMEMBERS user:1:hobbies // returns ["Cricket", "Reading"]
+```
+
+##### E. Sorted Sets (Rankings & Leaderboards)
+A Set where every item is attached to a "Score" (a number). Redis automatically keeps it sorted from highest to lowest!
+```text
+ZADD gaming_leaderboard 9000 "player_1"
+ZADD gaming_leaderboard 15000 "player_2"
+ZREVRANGE gaming_leaderboard 0 2 // Instantly returns top 3 players!
+```
+* <span class="hinglish">Agar aap Postgres me Leaderboard banaoge, toh `ORDER BY score DESC` karne me database ko poori table scan karni padegi, jo slow hota hai. Redis me Sorted Set automatically hamesha sorted hi rehta hai, chahe 1 Crore players hi kyu na ho! Response time instantly 0.001 seconds hota hai.</span>
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+Here is exactly how Senior Backend Developers use Redis in massive applications.
+
+##### Example 1: Session Management (Auth)
+**Problem:** Storing user login sessions in Postgres is slow. Storing them in JWT means you can't force-logout a user if they get hacked.
+**Solution:** Store the Session ID as a String in Redis. When the user logs out, you simply `DEL session_id` from Redis, instantly locking them out.
+
+##### Example 2: API Rate Limiting (Preventing DDOS)
+**Problem:** A hacker is hitting your Login API 5,000 times a second to brute-force a password.
+**Solution:** Use Redis to count requests! `INCR user_ip_address`. If the count goes above 10, your Node server blocks the IP. Because Redis is in RAM, this check adds 0 delay to the API!
+
+##### Example 3: Caching Heavy Postgres Queries
+**Problem:** Generating the "Top 100 Most Popular Products" takes 5 seconds because Postgres has to scan 50 million rows.
+**Solution:** Postgres calculates it ONCE. You save the result as a JSON String in Redis. For the next 24 hours, Node.js skips Postgres completely and reads the Top 100 instantly from Redis.
+
+##### Example 4: Real-Time Gaming Leaderboards
+**Problem:** In PUBG or Call of Duty, calculating who is Rank #1 out of 5 million live players is mathematically heavy.
+**Solution:** Use a Redis **Sorted Set**. Every time a player gets a kill, do `ZINCRBY leaderboard 1 "player_id"`. Redis handles the sorting math automatically in RAM.
+
+##### Example 5: Unique Page View Tracking
+**Problem:** You want to count how many *Unique* people visited a blog post today. If a guy refreshes 50 times, it should only count as 1.
+**Solution:** Use a Redis **Set**. `SADD post_1_views "user_id"`. Because Sets are unique, duplicates are automatically rejected.
+
+##### Example 6: E-Commerce Shopping Cart
+**Problem:** Amazon wants shopping carts to load instantly, even if the user hasn't logged in yet.
+**Solution:** Use a Redis **Hash**. `HSET cart_123 product_id 5`. It is much faster than doing complex database JOINS for temporary data.
+
+##### Example 7: The Latest Feed (Twitter/Instagram)
+**Problem:** Getting the 5 most recent tweets out of billions of rows is slow.
+**Solution:** Use a Redis **List**. Every time someone tweets, `LPUSH` it to their followers' lists. Reading the top 5 is an instant `LRANGE 0 4` command.
+
+##### Example 8: Temporary OTP Codes (Time-To-Live)
+**Problem:** You send a 6-digit SMS OTP, and it must expire in exactly 5 minutes.
+**Solution:** Save it in Redis as a String and attach an Expiration (TTL). `SET otp_code 123456 EX 300`. After exactly 300 seconds, Redis deletes the key automatically. No cron jobs required!
+
+##### Example 9: Caching User Permissions (RBAC)
+**Problem:** Every single API route needs to check if the user is an "Admin". Querying the database 50 times per second just for permissions is a waste.
+**Solution:** Load the user's role into a Redis Hash upon login. All APIs check Redis instead of Postgres.
+
+##### Example 10: "Currently Online" Status
+**Problem:** You want a green dot next to a user's name if they are currently online.
+**Solution:** Every time they send an API request, set `SET user_online_123 "true" EX 60`. If they don't do anything for 60 seconds, Redis deletes the key, and the dot turns gray!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

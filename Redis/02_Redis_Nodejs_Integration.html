@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redis & Node.js Integration</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #e74c3c; }
+        blockquote { border-left: 5px solid #c0392b; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #c0392b; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c0392b; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #c0392b; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #922b21; }
+        .nav-btn:hover { background-color: #e74c3c; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Redis_Fundamentals.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02b_Redis_Ecommerce_Project.html" class="nav-btn">Next: E-Commerce Project &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_Redis_Fundamentals.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02b_Redis_Ecommerce_Project.html" class="nav-btn">Next: E-Commerce Project &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Redis Masterclass 2: Node.js Integration
+
+Knowing Redis commands is great, but how do you actually write the Javascript code to connect your Express.js API to Redis?
+
+We use a package called `ioredis` (it is much better and more modern than the old `redis` package).
+
+---
+
+#### 1. Connecting to Redis
+
+First, `npm install ioredis`. Then, create a connection file:
+
+```javascript
+import Redis from 'ioredis';
+
+// Connect to the Redis Server (running locally on port 6379 by default)
+const redis = new Redis({
+    host: 'localhost',
+    port: 6379,
+});
+
+redis.on('connect', () => {
+    console.log('Connected to Redis RAM Database!');
+});
+
+export default redis;
+```
+
+---
+
+#### 2. The Golden Pattern: Cache Hit vs Cache Miss
+
+Whenever you build an API, you must follow this exact logic:
+1. **Check Redis first.** Does the data exist in RAM? 
+2. If YES **(Cache Hit):** Return it immediately to the user. (Takes 0.01 seconds).
+3. If NO **(Cache Miss):** Query Postgres (Takes 3 seconds). Send the data to the user, AND save it into Redis so the *next* user gets a Cache Hit!
+
+```javascript
+import express from 'express';
+import redis from './redis.js';
+import db from './postgres.js'; // Fake DB connection
+
+const app = express();
+
+app.get('/api/trending-products', async (req, res) => {
+    // 1. Check Redis First
+    const cachedData = await redis.get('trending_products');
+
+    if (cachedData) {
+        console.log("CACHE HIT! Serving from RAM instantly.");
+        // Redis stores strings, so we must JSON.parse it back into a JS Object
+        return res.json(JSON.parse(cachedData));
+    }
+
+    console.log("CACHE MISS! Querying the slow Database...");
+    // 2. Database Query
+    const products = await db.query('SELECT * FROM products ORDER BY sales DESC LIMIT 100');
+
+    // 3. Save to Redis for the NEXT user! (Expires in 60 seconds)
+    // We must JSON.stringify it because Redis Strings only accept text.
+    await redis.set('trending_products', JSON.stringify(products), 'EX', 60);
+
+    return res.json(products);
+});
+```
+
+* <span class="hinglish">Ye code pattern har badi company (Netflix, Amazon) use karti hai. Pehla user jab API hit karega, toh usko 3 second lagenge kyonki Cache Miss hoga. Lekin agle 1 ghante tak jo bhi 10,000 users wahi API hit karenge, un sabko data 0.01 second me mil jayega kyonki unhe Cache Hit milega!</span>
+
+---
+
+#### 3. Real-World Scenarios (10 Practical Examples)
+
+Here is how Senior Developers use `ioredis` in production.
+
+##### Example 1: Graceful Degradation (Don't crash the server!)
+**Problem:** Redis is just a helper cache. If the Redis server crashes, your Node.js API should NOT crash. It should silently fallback to Postgres.
+**Solution:** Wrap your Redis code in a `try/catch`. If `redis.get()` throws an error, catch it, log "Redis is down", and just run the Postgres query anyway! The app becomes slow, but it stays alive.
+
+##### Example 2: Cache Invalidation (The hardest problem)
+**Problem:** You cached the user's profile data. The user updates their name to "Batman". If they refresh the page, they still see their old name because the API is returning the stale Redis Cache!
+**Solution:** Whenever you run an `UPDATE` or `DELETE` query in Postgres, you must also manually run `redis.del('user:123:profile')` to destroy the old cache.
+
+##### Example 3: JWT Blocklisting (Security)
+**Problem:** A user logs out, but their JWT token is still technically valid for another hour. If a hacker steals it, they can still login.
+**Solution:** When a user logs out, save their JWT token into Redis: `redis.set(token, "blocked", "EX", 3600)`. Every time an API is called, check if the token exists in this Redis blocklist!
+
+##### Example 4: Caching External APIs
+**Problem:** Your app calls the Stripe API or a Weather API. They charge you $0.01 per request, and it takes 2 seconds to load.
+**Solution:** Don't just cache your own database; cache external API calls! If 50 users ask for the weather in "New York", call the Weather API once, and serve the rest from Redis.
+
+##### Example 5: Advanced Time-To-Live (TTL)
+**Problem:** You want the Daily Leaderboard cache to expire exactly at Midnight, not just "in 24 hours".
+**Solution:** Instead of using `EX` (Expire in X seconds), use `EXAT`. Calculate the exact Unix Timestamp for midnight tonight, and pass that to Redis.
+
+##### Example 6: Distributed Locks (Preventing Double Booking)
+**Problem:** Two users try to buy the exact same concert ticket at the exact same millisecond. Postgres might accidentally sell it to both!
+**Solution:** Use Redis as a Lock. `redis.set('ticket:10', 'locked', 'NX', 'EX', 10)`. `NX` means "Only set this if it does not exist". The first user gets the lock, the second user is rejected instantly.
+
+##### Example 7: Storing JSON (RedisJSON)
+**Problem:** Using `JSON.stringify()` every time is annoying, and you can't update just the "age" property of a user without parsing the whole string.
+**Solution:** Use the RedisJSON module! You can write `redis.call('JSON.SET', 'user:1', '.', {name: 'John', age: 25})`, and then update just the age natively!
+
+##### Example 8: Pipelining (Batching Commands)
+**Problem:** You need to save 1,000 different keys into Redis. Running `redis.set()` 1,000 times will take 1000 network trips (slow).
+**Solution:** Use a Pipeline!
+```javascript
+const pipeline = redis.pipeline();
+for (let i = 0; i < 1000; i++) {
+    pipeline.set(`key:${i}`, `value:${i}`);
+}
+await pipeline.exec(); // Sends all 1,000 commands in ONE single trip!
+```
+
+##### Example 9: Incrementing Page Views
+**Problem:** Updating a database row every time someone views a YouTube video will destroy your Postgres database.
+**Solution:** Just use `redis.incr('video:123:views')`. It is atomically safe and takes 0 CPU power. Once an hour, a background script reads the Redis number and updates Postgres in bulk.
+
+##### Example 10: Express.js Middleware Caching
+**Problem:** You are tired of writing the `Cache Hit / Cache Miss` logic in every single API route.
+**Solution:** Write a custom Express Middleware called `checkCache`. Put it *before* your route handlers. If it finds the data in Redis, it uses `res.send()` and stops the request. If not, it calls `next()` to let your route hit the database!
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

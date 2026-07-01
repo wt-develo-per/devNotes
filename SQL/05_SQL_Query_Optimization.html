@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Query Optimization</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #8e44ad; margin: 0; padding-left: 20px; background: #f9f4fc; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #8e44ad; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #8e44ad; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9b59b6; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9b59b6; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="04_SQL_Transactions.html" class="nav-btn">&larr; Previous: Transactions</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="04_SQL_Transactions.html" class="nav-btn">&larr; Previous: Transactions</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### SQL Masterclass 5: Query Optimization
+
+Anyone can write a SQL query that works on 10 rows. A Senior Backend Engineer writes queries that work instantly on **10 Million rows**.
+
+Query Optimization is the art of re-writing your SQL so the database does the least amount of work possible.
+
+---
+
+#### 1. The `EXPLAIN` Command (Asking for directions)
+
+When you write a complex SQL query, how do you know if the database is using your Indexes, or if it's doing a slow Sequential Scan?
+
+You just put the word **`EXPLAIN`** in front of your query! The database will not actually run the query; instead, it will print out its "Master Plan" of exactly how it *intends* to run it.
+
+```sql
+-- ❌ "Is my database doing something stupid?" Let's find out:
+EXPLAIN SELECT * FROM users WHERE email = 'bob@gmail.com';
+
+-- OUTPUT: 
+-- "Seq Scan on users (cost=0.00..15243.00 rows=1)" -> This means it's SLOW!
+```
+
+* <span class="hinglish">`EXPLAIN` likhna bilkul ek mechanic se puchne jaisa hai: "Bhai, gaadi theek karne se pehle bata, tu kaunsa purza (part) kholne wala hai?" Agar mechanic bole ki wo pura engine bahar nikalega (Sequential Scan), toh aap turant rok doge aur bolenge: "Nahi bhai, Index use kar!"</span>
+
+---
+
+#### 2. The N+1 Query Problem (The Ultimate Trap)
+
+This is the most famous bug in Backend Engineering. It usually happens when you use an ORM (like Prisma, TypeORM, or Sequelize).
+
+Imagine you want to display a list of 10 users, and next to each user, you want to show their latest post.
+
+**The Junior Approach (N+1):**
+1. You run **1** query to get the 10 users: `SELECT * FROM users LIMIT 10;`
+2. You loop through the array of users in JavaScript.
+3. For *each* user in the loop, you run a new query: `SELECT * FROM posts WHERE user_id = ?;`
+
+Because you have 10 users (`N`), you ran the first query (`1`), plus 10 more inside the loop! You hit your database **11 times**. 
+If you fetched 1,000 users, you would hit your database **1,001 times** instantly! The database will crash under the traffic.
+
+**The Senior Approach (JOIN):**
+You use a `JOIN` to get the Users AND the Posts in a single trip to the database. You hit the database exactly **1 time**.
+
+```mermaid
+graph TD
+    subgraph BadWay ["❌ The N+1 Problem (1,001 Queries)"]
+        A1["Node.js Loop"] -->|"SELECT posts... (1)"| DB1[Database]
+        A1 -->|"SELECT posts... (2)"| DB1
+        A1 -->|"SELECT posts... (1000)"| DB1
+        style DB1 fill:#f2d7d5,stroke:#c0392b
+    end
+    
+    subgraph GoodWay ["✅ The JOIN Approach (1 Query)"]
+        A2["Node.js"] -->|"SELECT ... INNER JOIN"| DB2[Database]
+        style DB2 fill:#d5f5e3,stroke:#27ae60
+    end
+```
+
+---
+
+#### 3. Real-World Scenarios (10 Optimization Examples)
+
+Here are 10 practical things you must do to optimize queries in production.
+
+##### Example 1: The `SELECT *` Trap
+**Problem:** A junior developer writes `SELECT * FROM posts`. The table has a `video_data` column that holds 5MB of raw data. The app only needed the post titles, but downloading `SELECT *` crashed the Node.js server's RAM.
+```sql
+-- Solution: Never use SELECT *. Explicitly ask for exactly what you need.
+SELECT id, title, created_at FROM posts;
+```
+
+##### Example 2: The Wildcard Trap (`LIKE '%...%'`)
+**Problem:** You build a search bar: `SELECT * FROM users WHERE email LIKE '%@gmail.com'`. The query is incredibly slow, even though `email` has a B-Tree index!
+```sql
+-- Solution: B-Trees sort alphabetically. If you put the wildcard (%) at the START of the word, the database CANNOT use the index (it has to read the whole book backwards)!
+-- Only put wildcards at the END to keep the index working!
+SELECT * FROM users WHERE email LIKE 'john%';
+```
+
+##### Example 3: The Pagination Limit
+**Problem:** Your API sends an array of 5,000 products to the frontend React app. The user's browser freezes, and your database cries.
+```sql
+-- Solution: Always use LIMIT and OFFSET to send data in small chunks (Pagination).
+SELECT id, name FROM products LIMIT 50 OFFSET 0; -- Page 1
+SELECT id, name FROM products LIMIT 50 OFFSET 50; -- Page 2
+```
+
+##### Example 4: Counting Rows Efficiently
+**Problem:** You have a massive Twitter clone. Your dashboard runs `SELECT COUNT(*) FROM tweets` to see how many tweets exist. The query takes 30 seconds because it has to literally count 500 million rows.
+```sql
+-- Solution: If you don't need the EXACT number (e.g., "around 500 million"), you can ask the database for its cached estimate!
+-- In PostgreSQL:
+SELECT reltuples AS estimate FROM pg_class WHERE relname = 'tweets';
+```
+
+##### Example 5: Filtering Early (Subqueries vs Joins)
+**Problem:** You want to join a table of 1 Million users with a table of 10 Million orders, but you only care about users from "New York".
+```sql
+-- Solution: If you do a massive JOIN first, it consumes huge memory. 
+-- You should filter the users to 'New York' FIRST (making the list tiny), and THEN Join the orders!
+SELECT u.name, o.amount 
+FROM (SELECT id, name FROM users WHERE city = 'New York') u
+JOIN orders o ON u.id = o.user_id;
+```
+
+##### Example 6: Bulk Inserts
+**Problem:** You have a CSV file with 1,000 new products. You run 1,000 separate `INSERT` statements in a loop.
+```sql
+-- Solution: Every separate INSERT command requires a slow network round-trip. 
+-- Combine them into a single BULK INSERT query!
+INSERT INTO products (name, price) VALUES 
+  ('Laptop', 1000), 
+  ('Mouse', 50), 
+  ('Keyboard', 100);
+```
+
+##### Example 7: UNION vs UNION ALL (The Hidden DISTINCT)
+**Problem:** You want to combine a list of active users with a list of banned users. You use `UNION`. The query is surprisingly slow.
+```sql
+-- Solution: UNION automatically removes duplicates under the hood (which requires a massive, slow sorting operation). 
+-- If you KNOW the two lists have no duplicates, always use UNION ALL to skip the sorting!
+SELECT email FROM active_users
+UNION ALL
+SELECT email FROM banned_users;
+```
+
+##### Example 8: EXISTS vs IN (Large Subqueries)
+**Problem:** You want to find all Users who have made at least one Order. You use `WHERE id IN (SELECT user_id FROM orders)`. If you have 50 million orders, the database crashes trying to build that massive list in memory.
+```sql
+-- Solution: Use EXISTS. It stops searching the moment it finds the FIRST match for a user, instead of building a massive array of all 50 million orders.
+SELECT name FROM users u
+WHERE EXISTS (
+    SELECT 1 FROM orders o WHERE o.user_id = u.id
+);
+```
+
+##### Example 9: Avoiding Functions on Indexed Columns
+**Problem:** You want to find all users born in 1995. You have an index on `date_of_birth`. You run: `SELECT * FROM users WHERE YEAR(date_of_birth) = 1995`. It does a slow Sequential Scan!
+```sql
+-- Solution: Wrapping an indexed column inside a function (like YEAR()) DESTROYS the index! 
+-- The database has to extract the year for every single row before comparing. Keep the column "naked".
+SELECT * FROM users 
+WHERE date_of_birth >= '1995-01-01' AND date_of_birth <= '1995-12-31';
+```
+
+##### Example 10: Strategic Denormalization
+**Problem:** Your homepage requires you to `JOIN` 6 different tables just to calculate a user's "Total Profile Score". The query takes 3 seconds, making the homepage unusable.
+```sql
+-- Solution: Sometimes, it is okay to break the rules of Database Normalization to gain speed.
+-- Instead of calculating the score dynamically with 6 JOINs every time, add a 'profile_score' column directly to the 'users' table. 
+-- Update this single number in the background whenever they do something. Read it instantly!
+SELECT id, name, profile_score FROM users;
+```
+
+> [!IMPORTANT]
+> **Summary:** Always use `EXPLAIN` to double-check your work, never run queries inside a `for` loop (N+1), never use `SELECT *`, and keep your indexed columns "naked" (no functions) in your `WHERE` clauses!
+    </script>
+</body>
+</html>

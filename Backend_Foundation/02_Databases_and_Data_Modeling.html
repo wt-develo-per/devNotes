@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>02 - Databases and Data Modeling (The Ultimate Masterclass)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #27ae60; margin: 0; padding-left: 20px; background: #f8f9fa; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #34495e; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #27ae60; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #27ae60; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_HTTP_and_APIs.html" class="nav-btn">&larr; Previous: HTTP & APIs</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02b_SQL_Interview_Practice.html" class="nav-btn">Next: SQL Interview Practice &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_HTTP_and_APIs.html" class="nav-btn">&larr; Previous: HTTP & APIs</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02b_SQL_Interview_Practice.html" class="nav-btn">Next: SQL Interview Practice &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 2: Databases (The Ultimate Masterclass)
+
+This is your single, definitive guide to Databases. From beginner basics to senior-level architectural concepts, this file covers everything you need to build, scale, and optimize data layers for production systems.
+
+---
+
+#### 1. The Core Philosophy of Data Storage
+If HTTP is how computers talk, databases are how computers remember. 
+
+Why not just save data to a `.txt` file using Node.js `fs.writeFile`?
+1. **Concurrency:** If 100 users buy an item at the exact same millisecond, writing to a `.txt` file will completely corrupt the file. Databases use complex internal locks to guarantee order.
+2. **Searchability:** Finding user `#9,000,000` in a text file requires reading the entire file line-by-line (O(N)). Databases use algorithmic Data Structures (like B-Trees) to find that user in less than 4 steps (O(log N)).
+3. **Durability:** Databases use a "Write-Ahead Log" (WAL). Before data is even written to the main table, the database writes a tiny note to the hard drive saying "I am about to do this." If the power goes out, it reads the note on reboot and finishes the job.
+
+---
+
+#### 2. SQL / Relational Databases (The Heavy Duty Engine)
+**Examples:** PostgreSQL, MySQL, SQL Server, Oracle.
+
+SQL (Structured Query Language) databases organize data into rigid **Tables**. Before you can insert data, you must define a strict **Schema** (blueprint).
+
+##### Core Concepts
+* **Primary Key (PK):** The unique identifier for a row (e.g., `id: 1`).
+* **Foreign Key (FK):** A column in Table B that points to the Primary Key in Table A. This enforces a mathematical **Relationship**.
+
+---
+
+#### 3. The SQL Language: Beginner to Advanced
+To work with Relational databases, you write queries in SQL. Here is your ultimate cheat sheet from basic commands to advanced data analytics.
+
+##### Level 1: Beginner SQL (CRUD Operations)
+CRUD stands for Create, Read, Update, Delete.
+
+**1. Create a Table (The Schema):**
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    age INT DEFAULT 18
+);
+```
+
+**2. Insert Data (Create):**
+```sql
+INSERT INTO users (name, email, age) 
+VALUES ('Alice', 'alice@test.com', 25);
+```
+
+**3. Read Data (Select):**
+```sql
+-- Get all columns for users older than 20, sorted by age.
+SELECT * FROM users 
+WHERE age > 20 
+ORDER BY age DESC 
+LIMIT 10;
+```
+
+**4. Update & Delete:**
+```sql
+UPDATE users SET age = 26 WHERE name = 'Alice';
+DELETE FROM users WHERE id = 5;
+```
+
+##### Level 2: Intermediate SQL (Relationships & Aggregations)
+
+**1. The JOIN Operations (Combining Data):**
+Because data is split across tables (Normalization), SQL databases use `JOIN` commands to stitch it back together.
+* **INNER JOIN:** Returns only rows where there is a match in BOTH tables.
+* **LEFT JOIN:** Returns ALL rows from the Left table, even if there is no match in the Right table.
+
+```sql
+-- Get users and their orders. 
+-- Even if a user has 0 orders, they still show up because it is a LEFT JOIN.
+SELECT users.name, orders.total_price 
+FROM users 
+LEFT JOIN orders ON users.id = orders.user_id;
+```
+
+**2. Aggregations (GROUP BY & HAVING):**
+Used to calculate totals, averages, or counts.
+* *Note:* You cannot use `WHERE` to filter aggregated data. You must use `HAVING`.
+
+```sql
+-- Find out how many users exist in each city, 
+-- but ONLY show cities that have more than 50 users.
+SELECT city, COUNT(id) as total_users 
+FROM users 
+GROUP BY city 
+HAVING COUNT(id) > 50; 
+```
+
+##### Level 3: Advanced SQL (Senior-Level Queries)
+
+**1. Subqueries:**
+A query inside another query.
+
+```sql
+-- Find all users who are older than the average age of all users.
+SELECT name, age 
+FROM users 
+WHERE age > (SELECT AVG(age) FROM users);
+```
+
+**2. CTEs (Common Table Expressions):**
+CTEs (`WITH` statements) allow you to create temporary, virtual tables that only exist for the duration of your query. This makes insanely complex SQL queries readable.
+
+```sql
+-- 1. Create a virtual table of only VIP users
+WITH VipUsers AS (
+    SELECT id, name FROM users WHERE spent > 10000
+),
+-- 2. Create another virtual table of massive orders
+MassiveOrders AS (
+    SELECT user_id, total FROM orders WHERE total > 500
+)
+-- 3. Now write a simple query combining your virtual tables!
+SELECT V.name, M.total 
+FROM VipUsers V
+INNER JOIN MassiveOrders M ON V.id = M.user_id;
+```
+
+**3. Window Functions:**
+The most powerful tool in SQL. They allow you to perform calculations across a specific "window" of rows *without* collapsing them into a single row like `GROUP BY` does.
+
+```sql
+-- Show every employee, their salary, AND how their salary ranks 
+-- compared to the rest of the people in their specific department.
+SELECT 
+    name, 
+    department, 
+    salary,
+    RANK() OVER (PARTITION BY department ORDER BY salary DESC) as rank_in_dept
+FROM employees;
+```
+
+---
+
+#### 4. Normalization and ACID Properties (The Architecture)
+
+##### Normalization (The Art of Organizing SQL)
+Normalization is a strict set of mathematical rules to **prevent data duplication** and prevent "update anomalies" (e.g., if a user changes their address, you only want to update it in exactly ONE place).
+
+1. **1NF (First Normal Form):** Every column must hold "atomic" (single) values. You cannot have an `hobbies` column that says `"skiing, gaming"`.
+2. **2NF (Second Normal Form):** Everything must be in 1NF, and all columns must depend on the Primary Key.
+3. **3NF (Third Normal Form):** Everything must be in 2NF, and columns cannot depend on *other* non-primary key columns. (e.g., You shouldn't have `price`, `quantity`, AND `total_cost` in the same table. Just calculate `total_cost` on the fly).
+
+```mermaid
+erDiagram
+    USERS ||--o{ ORDERS : places
+    ORDERS ||--|{ ORDER_ITEMS : contains
+    PRODUCTS ||--o{ ORDER_ITEMS : "is part of"
+    
+    USERS { int id PK string name }
+    ORDERS { int id PK int user_id FK date created_at }
+    PRODUCTS { int id PK string name float price }
+    ORDER_ITEMS { int id PK int order_id FK int product_id FK int quantity }
+```
+
+##### The ACID Properties (Crucial for Senior Engineers)
+When money or human lives are on the line, your database must be ACID compliant.
+1. **Atomicity (All or Nothing):** Transactions cannot be half-finished. If transferring $100 from Alice to Bob crashes halfway through, the database instantly hits "undo" (Rollback).
+2. **Consistency:** Data must never violate schema rules. A transaction trying to write text into a number field will fail instantly.
+3. **Isolation:** If Alice and Bob both try to buy the last concert ticket at the exact same millisecond, the database runs them one-by-one invisibly to prevent a "Double Spend" bug.
+4. **Durability:** Once the database says "Saved," it is permanently physically saved.
+
+**Advanced: Isolation Levels**
+There are different levels of "Isolation".
+* *Read Uncommitted:* Very fast, but you might read "dirty" data that is about to be rolled back.
+* *Serializable:* The safest, highest level. The database locks rows so tightly that it acts as if transactions are happening completely sequentially, but it is slow.
+
+---
+
+#### 5. NoSQL / Non-Relational (The Modern Scaling Engine)
+**Examples:** MongoDB, DynamoDB, Redis, Cassandra.
+
+In the Web 2.0 era, websites (like Facebook) needed to scale to billions of users. SQL databases struggle to scale infinitely because complex `JOIN`s require all data to live on the same physical server. NoSQL was born to solve massive horizontal scaling and handle unstructured data.
+
+##### The 4 Types of NoSQL
+1. **Document Stores (MongoDB):** Data is stored in flexible JSON documents. Great for rapid development and varying data shapes.
+2. **Key-Value Stores (Redis):** Incredibly fast dictionaries in RAM. Used for caching.
+3. **Column-Family Stores (Cassandra/Scylla):** Optimized for insane write-speeds and time-series data (e.g., IoT sensors, user analytics logs).
+4. **Graph Databases (Neo4j):** Optimized specifically for finding relationships between things (e.g., Facebook's "Friends of Friends" recommendation engine).
+
+##### Denormalization (The NoSQL Philosophy)
+In NoSQL, **Storage is cheap, but CPU is expensive.**
+Instead of making the database do complex, CPU-heavy `JOIN` operations across 5 tables, NoSQL prefers that you **embed the data directly inside the document**, even if it means duplicating data!
+
+**A Denormalized NoSQL Document:**
+```json
+{
+  "_id": "user_123",
+  "name": "Alice",
+  "address": { "city": "New York", "zip": "10001" },
+  "recent_orders": [
+    { "order_id": "99", "item": "Laptop", "price": 1000 }
+  ]
+}
+```
+*Why? Because to load Alice's profile page, the backend makes exactly ONE database query, not three.*
+
+##### BASE vs ACID
+While SQL uses ACID, NoSQL trades strictness for speed using **BASE**:
+* **B**asically **A**vailable: The database almost never goes offline.
+* **S**oft State: The state of the system might change over time without input.
+* **E**ventual Consistency: If you update your profile picture, it might take 2 seconds for the server in Japan to see it. It is not instantly consistent, but it gets there *eventually*.
+
+---
+
+#### 6. Advanced Architecture: Scaling Databases
+
+When your 1 database server hits 100% CPU, how do you fix it?
+
+##### Step 1: Vertical Scaling (Scale Up)
+You turn off the database, buy a bigger hard drive, 128GB of RAM, and a better CPU, and turn it back on. 
+* *Limit:* Eventually, you cannot buy a bigger computer.
+
+##### Step 2: Replication (Primary-Replica)
+Most apps have 90% READS (looking at data) and 10% WRITES (saving data).
+You set up 1 "Primary" server that handles all `INSERT` and `UPDATE` queries. You set up 5 "Replica" servers. The Primary instantly copies all its data to the Replicas. You point all your `SELECT` queries to the Replicas.
+
+```mermaid
+graph TD
+    A["Node.js Backend"] -->|"WRITES (INSERT/UPDATE)"| B["Primary Database Server"]
+    A -->|"READS (SELECT)"| C["Replica Server 1"]
+    A -->|"READS (SELECT)"| D["Replica Server 2"]
+    A -->|"READS (SELECT)"| E["Replica Server 3"]
+    
+    B -.->|"Syncs Data"| C
+    B -.->|"Syncs Data"| D
+    B -.->|"Syncs Data"| E
+```
+
+##### Step 3: Horizontal Scaling (Sharding)
+When even the Replicas can't handle the load, you split your actual data across multiple Primary servers. 
+* Database Server 1 holds Users A-M.
+* Database Server 2 holds Users N-Z.
+This is incredibly hard to manage but allows infinite scaling. (This is where NoSQL like Cassandra shines natively).
+
+---
+
+#### 7. The CAP Theorem (Distributed Systems)
+When you use a cluster of multiple database servers, you face a mathematical law called the **CAP Theorem**. You can only guarantee **TWO out of THREE**:
+
+1. **Consistency (C):** Every read receives the absolute most recent write. 
+2. **Availability (A):** Every request receives a non-error response. The database never rejects you.
+3. **Partition Tolerance (P):** The system continues operating even if the network cable between Server 1 and Server 2 is destroyed.
+
+Because network failures on the internet are guaranteed, you MUST choose **P**. That leaves a choice between C and A.
+
+* **CP (Consistency + Partition Tolerance):** If the network breaks, the database shuts down to protect data integrity. (Example: A Banking SQL system. It's better to be offline than to show the wrong bank balance).
+* **AP (Availability + Partition Tolerance):** If the network breaks, the database stays online and answers queries, even if it serves slightly "stale" (old) data. (Example: Cassandra for Twitter feeds. It's fine if a tweet takes 5 seconds to show up for everyone).
+
+---
+
+#### 8. Performance Optimization (Senior Engineering)
+
+##### Indexing (The B-Tree)
+Running `SELECT * FROM users WHERE email = 'bob@test.com'` on a table with 10 million rows causes a **Full Table Scan**. It checks every row one by one. It is incredibly slow.
+
+When you add an **Index** to the `email` column, the database builds a separate, invisible "B-Tree" data structure in the background.
+
+```mermaid
+graph TD
+    A["Is M the middle letter?"]
+    A -->|"Less than M"| B["Go to A-L"]
+    A -->|"Greater than M"| C["Go to N-Z"]
+    
+    B --> D["Find B"]
+    D --> E("bob@test.com is located exactly at Hard Drive Sector 8,451")
+    
+    style E fill:#e8f4f8,stroke:#3498db
+```
+Using a B-Tree, finding 1 record among 10 million takes exactly ~4 steps (O(log n)).
+
+**The Catch (Why not index everything?):**
+Every single time you `INSERT`, `UPDATE`, or `DELETE` a user, the database must pause and re-balance the complex B-Tree. 
+* **Rule:** Indexes drastically speed up READS, but permanently slow down WRITES. Only index columns you frequently search by (like email, usernames, or foreign keys).
+
+##### Composite Indexes (Leftmost Prefix Rule)
+If you frequently query `WHERE first_name = 'John' AND last_name = 'Doe'`, you can create a single index on `(first_name, last_name)`.
+* *The Rule:* A composite index only works if you query from left-to-right. Querying `WHERE last_name = 'Doe'` will NOT use the index!
+
+##### The N+1 Query Problem
+When using an ORM (like Prisma or TypeORM in Node.js), a common junior mistake is the N+1 problem.
+If you fetch 100 Users, and then run a loop to fetch the Posts for each user, you are executing **101 database queries** (1 for the users, 100 for the posts). 
+* *The Fix:* Always use Eager Loading / SQL `JOIN`s to fetch everything in exactly 1 query!
+    </script>
+</body>
+</html>

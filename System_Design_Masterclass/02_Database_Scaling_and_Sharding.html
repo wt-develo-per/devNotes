@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Scaling & Sharding</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #1a252f; background-color: #fdfefe; }
+        pre { background: #2c3e50; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #f1c40f; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #f1c40f; margin: 0; padding-left: 20px; background: #fef9e7; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        h3 { color: #2980b9; font-size: 1.8em; border-bottom: 2px solid #f1c40f; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #d35400; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #2980b9; padding-bottom: 6px; }
+        h5 { color: #2980b9; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #c0392b; }
+        .hinglish { color: #27ae60; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #bdc3c7; padding: 12px; text-align: left; }
+        th { background-color: #2980b9; color: #fff; font-weight: bold; }
+        
+        .mermaid-container { background: white; padding: 20px; border-radius: 8px; border: 1px solid #bdc3c7; margin: 20px 0; text-align: center; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #fdfefe; border: 1px solid #bdc3c7; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .nav-btn { background-color: #2980b9; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1a5276; }
+        .nav-btn:hover { background-color: #3498db; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_System_Design_Fundamentals_and_Scaling.html" class="nav-btn">&larr; Previous: Fundamentals & Scaling</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Caching_and_Message_Queues.html" class="nav-btn">Next: Caching & Queues &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_System_Design_Fundamentals_and_Scaling.html" class="nav-btn">&larr; Previous: Fundamentals & Scaling</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_Caching_and_Message_Queues.html" class="nav-btn">Next: Caching & Queues &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### System Design Masterclass 2: Database Scaling & Sharding
+
+<span class="hinglish">Node.js server ko scale karna aasan hai (aur 10 server kharid lo). Par **Database** ko scale karna System Design ka sabse mushkil kaam hai! Agar aap MySQL ke 10 servers kharid loge, toh data kis server par save hoga? Agar User 1 ne Server A me signup kiya, aur agle din Server B par login karne gaya, toh usko "User Not Found" milega!
+Is problem ko solve karne ke liye hum Database Replication aur Sharding use karte hain.</span>
+
+---
+
+#### 1. The CAP Theorem (The Golden Rule)
+
+<span class="hinglish">System Design me ek rule hai: Aap ek distributed database me se teeno cheezein ek sath nahi pa sakte (You can only pick 2). Ye interview ka sabse common sawaal hai:</span>
+
+* **C - Consistency:** <span class="hinglish">Sabhi users ko hamesha same data dikhega. Agar maine Bank me 100 Rs deposit kiye, toh usi millisecond me meri biwi ko bhi balance 100 Rs dikhna chahiye (Zero delay).</span>
+* **A - Availability:** <span class="hinglish">System kabhi down nahi hona chahiye. Agar 1 server jal gaya, tab bhi website chalti rehni chahiye.</span>
+* **P - Partition Tolerance:** <span class="hinglish">Agar Mumbai aur USA ke servers ka aapas me internet connection toot jaye, tab bhi system zinda rehna chahiye.</span>
+
+<span class="hinglish">**Real-World Application:** Bank databases **CP (Consistency + Partition Tolerance)** choose karte hain, isliye kabhi-kabhi ATM down ho jata hai (availability sacrifice kar di) taaki galat balance na dikhe. Instagram aur Amazon **AP (Availability + Partition Tolerance)** choose karte hain. Website hamesha chalegi, bhale hi like count 2 minute purana dikhe (Eventual Consistency)!</span>
+
+---
+
+#### 2. Replication (Master-Slave Architecture)
+
+<span class="hinglish">Maan lo aapke paas 1 MySQL server hai jisme 90% traffic sirf "Reads" ka hai (log product dekh rahe hain) aur 10% traffic "Writes" ka hai (log kharid rahe hain). Read heavy traffic ko sambhalne ke liye hum Replication use karte hain.</span>
+
+<span class="hinglish">Ek Main Server (**Master**) hota hai jispar Node.js sirf Data WRITE (INSERT/UPDATE) karta hai. Us Master ki 3 copy (**Slaves/Read-Replicas**) banai jati hain. Master chup chap apna saara data Slaves me copy karta rehta hai. Ab Node.js saare READ (SELECT) queries un Slaves par bhejta hai. Isse Master par se load khatam ho jata hai!</span>
+
+```mermaid
+graph TD
+    Node["Node.js API"] -->|"Write (INSERT)"| Master[("Master DB")]
+    Master -.->|"Auto Sync Data"| Slave1[("Read Replica 1")]
+    Master -.->|"Auto Sync Data"| Slave2[("Read Replica 2")]
+    Master -.->|"Auto Sync Data"| Slave3[("Read Replica 3")]
+    
+    Node -->|"Read (SELECT)"| Slave1
+    Node -->|"Read (SELECT)"| Slave2
+    Node -->|"Read (SELECT)"| Slave3
+```
+
+---
+
+#### 3. Database Sharding (Splitting the Data)
+
+<span class="hinglish">Replication se Reads fast hote hain, par Writes abhi bhi 1 hi Master par jaa rahe hain. Agar Master ka 1TB hard-drive full ho gaya, toh kya karenge? Tab hum **Sharding** karte hain.
+Sharding ka matlab hai database ki ek bohot badi table ko tod kar (split karke) multiple servers me baant dena!
+Example: Users `A se M` wale (Aman, Mahesh) Server 1 me rahenge. Users `N se Z` wale (Nitin, Zoya) Server 2 me rahenge. Ab hamari storage capacity double ho gayi!</span>
+
+---
+
+#### 4. Real-World Design Scenarios (The Interviews)
+
+<span class="hinglish">Database design theek se samajhne ke liye in 2 massive architectures ko todte hain.</span>
+
+##### Scenario 1: Design Twitter's Tweet Storage
+**The Problem:** <span class="hinglish">Twitter par har din 500 Million se zyada tweets aate hain. Koi bhi ek database itna data save nahi kar sakta. Hume ise Shard karna padega. Par kis aadhar (key) par shard karein?</span>
+
+**The Architecture:**
+1. **Sharding by UserID:** <span class="hinglish">Pehla thought aata hai ki Virat Kohli ke saare tweets ek Server par rakhte hain, aur SRK ke saare tweets dusre Server par. **Problem:** Virat Kohli jab tweet karega, toh usko millions log dekhte hain. Jiss Server pe Virat Kohli hai, wo server high traffic ki wajah se jal jayega! (Ise "Hot Key" problem kehte hain).</span>
+2. **Sharding by TweetID (The Senior Solution):** <span class="hinglish">Hum User ke hisaab se shard nahi karte. Hum TweetID par ek Hash Function chalate hain. Isse kya hota hai ki Virat ka ek tweet Server 1 me jata hai, dusra tweet Server 2 me, aur teesra Server 3 me. Traffic poori tarah evenly spread ho jata hai, aur koi bhi server overload nahi hota!</span>
+3. **The Tradeoff:** <span class="hinglish">Iski ek downside hai. Jab mujhe Virat ke "Saare tweets" padhne honge, toh backend ko Saare servers (1, 2 aur 3) se data nikal kar join karna padega (Scatter-Gather). Par Twitter ke liye ye theek hai, kyunki likhna (writing) zyada zaroori hai.</span>
+
+```mermaid
+graph TD
+    User["User posts Tweet ID: 901"] --> API["API Gateway"]
+    API --> Hash["Hash Function: 901 Mod 3"]
+    Hash -->|"Result = 1"| Shard1[("DB Shard 1")]
+    Hash -.-> Shard2[("DB Shard 2")]
+    Hash -.-> Shard3[("DB Shard 3")]
+    
+    Viewer["User loads Virats Profile"] --> API2["Timeline Service"]
+    API2 -->|"Query all shards"| Shard1
+    API2 -->|"Query all shards"| Shard2
+    API2 -->|"Query all shards"| Shard3
+    API2 -->|"Merge and Sort"| Viewer
+```
+
+##### Scenario 2: Design an E-Commerce Shopping Cart (Amazon)
+**The Problem:** <span class="hinglish">Black Friday sale par Amazon pe lakho log shopping kar rahe hain. Achhanak Amazon ka main database down ho jata hai. Kya Amazon log-out karke users ko error de dega? Nahi! Amazon har minute millions of dollars lose karega. Unhe "Availability" chahiye, Consistency nahi.</span>
+
+**The Architecture:**
+1. **The CAP Choice:** <span class="hinglish">Amazon ne choose kiya **AP (Availability + Partition Tolerance)**. Cart system hamesha available rehna chahiye, bhale hi data 5 second purana kyu na ho.</span>
+2. **The Database (DynamoDB/Cassandra):** <span class="hinglish">Amazon ek special distributed NoSQL database use karta hai jiske saare nodes barabar hote hain (Koi Master-Slave nahi). Agar Node 1 offline hai, toh Node 2 turant request le leta hai, aur Cart me item add ho jata hai.</span>
+3. **Eventual Consistency & Conflict Resolution:** <span class="hinglish">Kya hoga agar User ne laptop aur phone dono se ek sath alag-alag item cart me daale aur wo alag-alag servers (Node 1 aur Node 2) me save ho gaye? Jab servers wapas sync honge, unme conflict aayega.
+Amazon ka rule hai: "Shopping Cart me hamesha items ko Merge karo, kabhi delete mat karo!" Database vector clocks use karke dono items ko merge kar dega. User ke cart me dono item aa jayenge. User chahe toh baad me ek ko hata dega, par Amazon chahta hai ki sale hamesha ho! (Revenue first).</span>
+
+```mermaid
+graph TD
+    User["Add to Cart"] --> API["Cart Service"]
+    API -->|"Write"| Node1[("DynamoDB Node 1")]
+    API -.->|"If Node 1 is down Write"| Node2[("DynamoDB Node 2")]
+    
+    Node1 -->|"Syncs later"| Merge["Conflict Resolution: Merge Both"]
+    Node2 -->|"Syncs later"| Merge
+    Merge --> Final[("Final Cart View")]
+```
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const renderer = new marked.Renderer();
+            const originalCode = renderer.code.bind(renderer);
+            renderer.code = function(code, language, isEscaped) {
+                if (language === 'mermaid') {
+                    return `<code class="language-mermaid" style="display:none;">${code}</code>`;
+                }
+                return originalCode(code, language, isEscaped);
+            };
+
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content, { renderer: renderer });
+
+            mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+            document.querySelectorAll('code.language-mermaid').forEach((block, index) => {
+                const id = `mermaid-${index}`;
+                const source = block.textContent;
+                
+                const div = document.createElement('div');
+                div.className = 'mermaid-container';
+                div.id = id;
+                
+                block.replaceWith(div);
+                
+                mermaid.render(id + '-svg', source).then(result => {
+                    div.innerHTML = result.svg;
+                }).catch(err => {
+                    console.error(err);
+                    div.innerHTML = "Mermaid Syntax Error: " + err.message;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

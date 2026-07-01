@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database & SQL Interview Q&A</title>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1200px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #a9b7c6; background-color: #1e1e1e; font-size: 15px; }
+        .question-card { background: #2b2b2b; padding: 25px; border-radius: 8px; border-left: 5px solid #6a8759; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .q-title { color: #cc7832; font-size: 1.3em; margin-top: 0; margin-bottom: 15px; font-weight: bold; }
+        .q-title span { color: #9876aa; }
+        .answer { color: #a9b7c6; }
+        .hinglish { color: #629755; font-size: 1.05em; font-style: italic; display: block; margin-bottom: 15px; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 6px; border: 1px solid #555; overflow-x: auto; margin-top: 15px; }
+        code { color: #ffc66d; font-family: 'Fira Code', Consolas, monospace; }
+        strong { color: #ffc66d; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #384f29; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #6a8759; }
+        .nav-btn:hover { background-color: #4a6836; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #ffc66d; font-size: 1.8em; border-bottom: 2px solid #384f29; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #384f29; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #384f29; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #384f29; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_Nodejs_and_Express_Interview.html" class="nav-btn">&larr; Previous: Node & Express Q&A</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_System_Design_HLD_Interview.html" class="nav-btn">Next: System Design Q&A &rarr;</a>
+    </div>
+
+    <h3>Top 30 Database & SQL Interview Questions</h3>
+    <p style="text-align: center; color: #9876aa; margin-bottom: 50px;">From SQL Joins to NoSQL Scaling (Hinglish Explanations)</p>
+
+    <!-- QUESTION 1 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q1.</span> What is the difference between SQL (Relational) and NoSQL databases?</div>
+        <div class="answer">
+            <span class="hinglish">"SQL (MySQL, Postgres) ek Excel sheet ki tarah hai jisme fixed columns (schema) hote hain. Ye complex relationships (Joins) ke liye best hai. NoSQL (MongoDB) ek JSON document ki tarah hai jisme schema flexible hota hai. Ye unstructured data aur massive horizontal scaling ke liye best hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 2 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q2.</span> Explain the ACID properties in databases.</div>
+        <div class="answer">
+            <span class="hinglish">"ACID ensures karta hai ki database transactions safe rahen (jaise banking). <br>
+            A - Atomicity: Ya toh pura kaam hoga ya kuch nahi hoga (All or Nothing).<br>
+            C - Consistency: Data hamesha valid state me rahega (Negative balance nahi ho sakta).<br>
+            I - Isolation: Do log ek sath transaction karein toh unhe ek dusre ka partial data nahi dikhega.<br>
+            D - Durability: Agar server power-cut ho jaye, toh bhi data hard-drive me safe rahega."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 3 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q3.</span> What are Database Indexes and how do they work?</div>
+        <div class="answer">
+            <span class="hinglish">"Index ek kitab ke piche bane 'Index page' ki tarah hota hai. Agar aap index nahi lagaoge, toh DB ko 1 million rows scan karni padengi ek user dhundhne ke liye (Full Table Scan). Index lagane se DB B-Tree data structure banata hai, aur O(log N) speed me data nikal leta hai."</span>
+            Drawback: Indexes slow down WRITE operations (INSERT/UPDATE) because the B-Tree has to be reorganized.
+        </div>
+    </div>
+
+    <!-- QUESTION 4 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q4.</span> What is the difference between Primary Key and Unique Key?</div>
+        <div class="answer">
+            <span class="hinglish">"Dono duplicates ko rokte hain, par ek table me sirf ek hi Primary Key ho sakti hai (jo automatically clustered index banati hai), jabki Unique Keys bohot saari ho sakti hain. Aur Primary Key kabhi NULL nahi ho sakti, par Unique Key me 1 bar NULL allow hota hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 5 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q5.</span> What is a Foreign Key?</div>
+        <div class="answer">
+            <span class="hinglish">"Foreign Key 2 tables ko link karti hai. Ye 'Referential Integrity' maintain karti hai. Agar User ID 5 exist nahi karti, toh aap Orders table me us user ke liye order insert nahi kar sakte. Foreign key error fek degi."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 6 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q6.</span> Explain INNER JOIN vs LEFT JOIN.</div>
+        <div class="answer">
+            <span class="hinglish">"INNER JOIN me sirf wahi data aata hai jo dono tables me match hota ho. LEFT JOIN me left table ka SARA data aata hai, bhale hi right table me uski details na ho (wahan NULL dikhega)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 7 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q7.</span> What is the difference between WHERE and HAVING in SQL?</div>
+        <div class="answer">
+            <span class="hinglish">"`WHERE` filter tab lagta hai jab data rows ko group karne se pehle filter karna ho. `HAVING` tab lagta hai jab aapko `GROUP BY` karne ke baad aggregates par filter lagana ho (e.g. `HAVING COUNT(*) > 5`)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 8 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q8.</span> What is the N+1 Query Problem?</div>
+        <div class="answer">
+            <span class="hinglish">"Ye ORMs (jaise Prisma/Sequelize) ka sabse bada bug hai. Maan lo aap 100 users mangwate ho (1 query). Fir har user ke post mangwane ke liye loop me ek query chalate ho (100 queries). Total 101 queries ho gayin! Ise bachane ke liye SQL me JOIN ya ORM me `include`/`populate` use karna chahiye taaki sab 1 query me aa jaye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 9 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q9.</span> How do you handle Pagination in databases? (OFFSET vs Cursor)</div>
+        <div class="answer">
+            <span class="hinglish">"Chhote data ke liye hum `LIMIT 10 OFFSET 20` use karte hain. Par agar OFFSET 10000 ho jaye, toh DB pehle 10000 rows ginta hai fir discard karta hai (bohot slow!). Bade scale (Twitter/Facebook) par hum **Cursor-based Pagination** use karte hain: `WHERE id > last_seen_id LIMIT 10`, jo O(1) me run hoti hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 10 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q10.</span> What are Database Transactions?</div>
+        <div class="answer">
+            <span class="hinglish">"Transaction multiple queries ka ek group hota hai jisko Atomicity (All or nothing) milti hai. Hum `BEGIN` se start karte hain, aur agar sab theek ho toh `COMMIT` karte hain. Agar kisi ek query me error aa jaye, toh hum `ROLLBACK` kar dete hain aur purana data wapas aa jata hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 11 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q11.</span> What is Database Normalization?</div>
+        <div class="answer">
+            <span class="hinglish">"Data ki duplication ko kam karne ki technique. Ek badi table jisme User aur Order dono ka data hai, usko tod kar 2 alag tables banana taaki storage bache aur data inconsistency na ho (1NF, 2NF, 3NF)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 12 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q12.</span> What is Denormalization and why do we use it in NoSQL?</div>
+        <div class="answer">
+            <span class="hinglish">"Normalization reads ko slow kar deti hai kyunki Joins lagane padte hain. Denormalization (MongoDB) me hum intentionally data duplicate karte hain (ek hi JSON document me sab daal dete hain) taaki disk se 1 hi baar me sab read ho jaye aur performance super-fast ho!"</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 13 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q13.</span> What is the CAP Theorem?</div>
+        <div class="answer">
+            <span class="hinglish">"Distributed databases me aapko teeno me se sirf 2 cheezein mil sakti hain: Consistency (sabko same data dikhe), Availability (system kabhi down na ho), Partition Tolerance (internet break hone par bhi chale). Banks CP choose karte hain, Amazon/Instagram AP choose karte hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 14 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q14.</span> What is Master-Slave Replication?</div>
+        <div class="answer">
+            <span class="hinglish">"Database par traffic kam karne ke liye. Hum ek 'Master' server banate hain jo sirf Writes (INSERT/UPDATE) leta hai. Wo Master apna data 3 'Slaves' (Replicas) me copy karta rehta hai. Ab hamari Node.js API saari 'READ' queries un 3 slaves par bhejti hai. Isse master overload nahi hota."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 15 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q15.</span> What is Database Sharding?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab ek Database ki Hard-Drive full ho jati hai (Vertical scaling limit), tab hum ek badi table ko horizontally 2 hisso me tod dete hain. Users A-M Node 1 par jayenge, aur Users N-Z Node 2 par jayenge. Ise Sharding kehte hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 16 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q16.</span> Explain the 'Hot Key' problem in Sharding.</div>
+        <div class="answer">
+            <span class="hinglish">"Agar aap UserID ke hisaab se sharding karte ho, aur Virat Kohli (High traffic user) Node 1 par hai, toh jab Virat tweet karega, saara traffic Node 1 par jayega aur wo crash ho jayega. Ise Hot Key problem kehte hain. Isse bachne ke liye hum Consistent Hashing use karte hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 17 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q17.</span> What is Eventual Consistency in NoSQL?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab hum Amazon AP system (Availability over Consistency) use karte hain, toh agar master me data update hota hai, usko slaves tak pohchne me 2 seconds lag sakte hain. In 2 seconds me kuch users ko purana data dikhega. Par 'eventually' (kuch der baad) sabko sahi data dikhne lagega."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 18 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q18.</span> What is a MongoDB Replica Set?</div>
+        <div class="answer">
+            <span class="hinglish">"MongoDB me High Availability ke liye minimum 3 nodes lagaye jate hain (1 Primary, 2 Secondary). Agar Primary node jal jaye/crash ho jaye, toh baaki 2 nodes apas me 'Election' karte hain aur ek naya Primary chun lete hain bina downtime ke!"</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 19 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q19.</span> When should you NOT use MongoDB?</div>
+        <div class="answer">
+            <span class="hinglish">"MongoDB me complex JOINs (Aggregation pipelines) slow hote hain, aur Multi-document transactions native SQL jitne robust nahi hote. Agar aapki app me bohot strict relational data hai (jaise ERP ya Banking software), wahan hamesha Postgres/MySQL use karna chahiye."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 20 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q20.</span> What are Stored Procedures?</div>
+        <div class="answer">
+            <span class="hinglish">"Stored procedure database ke andar likha hua ek function (code) hota hai jise aap pre-compile karke save kar sakte ho. Isse network traffic bachta hai kyunki Node.js ko lambi SQL query bhejne ke bajaye sirf us procedure ka naam call karna padta hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 21 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q21.</span> Explain Database Triggers.</div>
+        <div class="answer">
+            <span class="hinglish">"Trigger ek automatic action hota hai. Jaise aap rule set kar sakte ho: 'Jab bhi `orders` table me naya INSERT aaye, automatically `inventory` table me se 1 item kam kar dena'. Isme backend Node code ki zarurat nahi padti."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 22 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q22.</span> What is the difference between TRUNCATE and DELETE?</div>
+        <div class="answer">
+            <span class="hinglish">"`DELETE` ek DML command hai jo row-by-row data delete karta hai aur Rollback ho sakta hai. `TRUNCATE` ek DDL command hai jo table ki storage ko reset kar deta hai. Ye bohot fast hota hai par Rollback nahi kiya jaa sakta."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 23 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q23.</span> How does Redis caching work?</div>
+        <div class="answer">
+            <span class="hinglish">"Redis ek NoSQL Key-Value database hai jo Hard-Drive ke bajaye server ki RAM me data store karta hai. Hard-drive se query karne me 50ms lagte hain, jabki Redis (RAM) se 1ms me data aa jata hai. Ye viral data caching aur session storage ke liye use hota hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 24 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q24.</span> Explain Cache-Aside Strategy.</div>
+        <div class="answer">
+            <span class="hinglish">"Backend pehle Redis (Cache) me check karta hai. Agar data mil gaya (Cache Hit) toh wapas bhej deta hai. Agar nahi mila (Cache Miss) toh MySQL se nikalta hai, Redis me save karta hai, aur fir user ko bhejta hai. Lazy loading!"</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 25 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q25.</span> What is Connection Pooling?</div>
+        <div class="answer">
+            <span class="hinglish">"Database se connection banana (TCP handshake) bohot heavy process hai. Agar har API request par naya connection banaoge toh DB crash ho jayega. Connection Pool me hum pehle se hi (e.g. 10) connections bana kar rakhte hain, requests unhi 10 pipes ko re-use karti hain."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 26 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q26.</span> What is a Graph Database (like Neo4j) used for?</div>
+        <div class="answer">
+            <span class="hinglish">"Jab data me relationships hi sabse zyada important ho (Jaise Facebook: You -> friends with -> John -> likes -> Nike). Aise highly connected data ko SQL me 10 JOINs lagane padenge, par Graph DB me ye milliseconds me query ho jata hai."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 27 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q27.</span> What is MongoDB Aggregation?</div>
+        <div class="answer">
+            <span class="hinglish">"Aggregation MongoDB ka tarika hai SQL ke 'GROUP BY' aur 'JOIN' jaisi complex queries karne ka. Isme ek pipeline hoti hai (array of steps): pehle `$match` se filter karo, fir `$group` se combine karo, fir `$sort` se order karo."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 28 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q28.</span> Explain the difference between Clustered and Non-Clustered Indexes.</div>
+        <div class="answer">
+            <span class="hinglish">"Clustered index (Primary Key) directly table ka data ussi order me hard-drive par save karta hai. Isliye 1 table me sirf 1 clustered index ho sakta hai. Non-clustered index ek alag pointer file banata hai (jaise book ke last me index page)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 29 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q29.</span> What is an ORM (like Prisma/Sequelize) and ODM (like Mongoose)?</div>
+        <div class="answer">
+            <span class="hinglish">"Ye libraries hume raw SQL ya MongoDB queries likhne se bachati hain. Hum Node.js me simple Javascript Objects/Methods (`User.find()`) use karte hain, aur ORM internally usko safe SQL query me convert kar deta hai (preventing SQL injection)."</span>
+        </div>
+    </div>
+
+    <!-- QUESTION 30 -->
+    <div class="question-card">
+        <div class="q-title"><span>Q30.</span> How do you store passwords in the database?</div>
+        <div class="answer">
+            <span class="hinglish">"Passwords ko KABHI BHI plain text me store nahi karna chahiye. Unko one-way Hash kiya jata hai using algorithms like bcrypt (with Salting). Taki agar database hack bhi ho jaye, toh hackers reverse engineering karke asli password na nikal payein."</span>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="01_Nodejs_and_Express_Interview.html" class="nav-btn">&larr; Previous: Node & Express Q&A</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="03_System_Design_HLD_Interview.html" class="nav-btn">Next: System Design Q&A &rarr;</a>
+    </div>
+</body>
+</html>

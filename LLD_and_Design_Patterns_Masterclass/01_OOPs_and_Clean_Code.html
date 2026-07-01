@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OOPs & Clean Code Deep Dive</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Fira Code', Consolas, Monaco, monospace; max-width: 1100px; margin: 0 auto; padding: 40px 20px; line-height: 1.8; color: #a9b7c6; background-color: #1e1e1e; font-size: 16px; }
+        pre { background: #2b2b2b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #6a8759; margin-bottom: 30px; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2b2b2b; padding: 4px 8px; border-radius: 4px; font-size: 0.95em; color: #cc7832; }
+        blockquote { border-left: 5px solid #6a8759; margin: 0 0 30px 0; padding-left: 20px; background: #2b2b2b; padding-top: 15px; padding-bottom: 15px; border-radius: 0 8px 8px 0; font-style: italic; }
+        
+        
+        strong { color: #ffc66d; }
+        .hinglish { color: #629755; font-size: 1.05em; }
+        .danger { color: #e74c3c; font-weight: bold; }
+        .success { color: #2ecc71; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #555; padding: 12px; text-align: left; }
+        th { background-color: #9876aa; color: #1e1e1e; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #2b2b2b; border: 1px solid #3c3f41; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .nav-btn { background-color: #513865; color: #ffc66d !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #9876aa; }
+        .nav-btn:hover { background-color: #6d4b87; }
+        .nav-btn.disabled { background-color: #333; color: #666 !important; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #444; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #513865; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #ffc66d; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #9876aa; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #9876aa; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_SOLID_Principles.html" class="nav-btn">Next: SOLID Principles &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_SOLID_Principles.html" class="nav-btn">Next: SOLID Principles &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+#### Low-Level Design (LLD) Masterclass 1: OOPs & Clean Code (The Deep Dive)
+
+<span class="hinglish">Jab ek Junior developer code likhta hai, toh uska ek hi goal hota hai: *"Sirf output aa jaye, chahe code kaisa bhi dikhe"*. Wo ek hi function ke andar 500 lines likh deta hai, jisme 20 `if-else` hote hain. Isko programming ki duniya me **Spaghetti Code** (Noodles ki tarah uljha hua code) kehte hain. 
+
+Senior developers jaante hain ki code machine ke liye nahi, **Insano ke padhne ke liye** likha jata hai! Kyunki kal ko agar koi bug aaya, ya naya feature dalna pada, toh us 500-line ke kachre me ghoom kar aapka dimag kharab ho jayega. Isliye hum **OOPs (Object Oriented Programming)** aur **Clean Code** ka use karte hain code ko chhote, saaf, aur testable hisso (Classes) me todne ke liye.</span>
+
+---
+
+#### Part 1: The 4 Pillars of OOPs (With Real-World Node.js Examples)
+
+<span class="hinglish">College me humne inki definitions ratli thi, par unka backend development me kya use hai, ye kisi ne nahi bataya. Chaliye har ek pillar ko TypeScript/Node.js ke real examples ke sath samajhte hain.</span>
+
+##### 1. Encapsulation (Data ko Chhupana aur Safe rakhna)
+<span class="hinglish">**Concept:** Apne bank account ka balance aap directly change nahi kar sakte `account.balance = 100000`. Agar koi bhi variable directly change kar payega, toh security khatam ho jayegi. Encapsulation ka matlab hai data ko `private` rakhna, aur usko change karne ke liye functions (`methods`) dena, jinke andar validation ho. (Apne purse ko chain lagana).</span>
+
+**Real-World Example (User Wallet):**
+```typescript
+class UserWallet {
+    // 1. Data is PRIVATE (Encapsulated). Bahar se koi isko read ya write nahi kar sakta.
+    private balance: number = 0;
+
+    // 2. Data read karne ke liye Getter method (Public)
+    public getBalance(): number {
+        return this.balance;
+    }
+
+    // 3. Data change karne ke liye method, jisme validation hai!
+    public addMoney(amount: number): void {
+        if (amount <= 0) {
+            throw new Error("Pagal hai kya? Negative paisa nahi add kar sakte!");
+        }
+        this.balance += amount; // Validated update
+    }
+}
+
+const myWallet = new UserWallet();
+// myWallet.balance = 10000;  ❌ ERROR: Property 'balance' is private!
+myWallet.addMoney(500);       // ✅ SUCCESS: Proper way to update.
+```
+
+##### 2. Inheritance (Code Repeat karne se bachna)
+<span class="hinglish">**Concept:** Maan lo aapki e-commerce app me ek `Customer` hai aur ek `Admin` hai. Dono ka email, password aur login karne ka tarika same hai. Agar aap `CustomerClass` aur `AdminClass` dono me `login()` ka code likhoge, toh wo code repeat (DRY violation) hoga. Inheritance se hum ek `BaseUser` (Maa-Baap) class banate hain, aur uske saare features bacchon me automatically aa jate hain.</span>
+
+**Real-World Example (Authentication):**
+```typescript
+// Base Class (Parent)
+class BaseUser {
+    constructor(protected email: string) {}
+
+    public login() {
+        console.log(`Connecting to DB... Logging in user: ${this.email}`);
+        // Login logic here (session create, token generate)
+    }
+}
+
+// Child Class 1
+class Customer extends BaseUser {
+    public buyProduct() {
+        console.log(`${this.email} is buying a product!`);
+    }
+}
+
+// Child Class 2
+class Admin extends BaseUser {
+    public deleteProduct() {
+        console.log(`${this.email} (ADMIN) deleted a product!`);
+    }
+}
+
+const rahul = new Customer("rahul@gmail.com");
+rahul.login();       // ✅ Automatically inherited from BaseUser!
+rahul.buyProduct();
+
+const boss = new Admin("admin@company.com");
+boss.login();        // ✅ Automatically inherited from BaseUser!
+boss.deleteProduct();
+```
+
+##### 3. Polymorphism (Ek Naam, Anek Roop - Bahuroopiya)
+<span class="hinglish">**Concept:** "Poly" matlab Many (Bahut saare), "Morph" matlab Forms (Roop). Aapke paas ek function hai `send()`. Agar aap us function me `Email` ka object bhejte ho, toh wo email bhejta hai. Agar `SMS` ka object bhejte ho, toh wo SMS bhejta hai. Yani ek hi function alag-alag objects ke sath alag tarah se behave karta hai! Isse hum `if-else` lagane se bach jate hain.</span>
+
+**Real-World Example (Notification System):**
+```typescript
+// Ek common interface/contract jisko sabko manna padega
+interface INotification {
+    send(message: string): void;
+}
+
+// Roop 1 (Email)
+class EmailNotification implements INotification {
+    send(message: string): void {
+        console.log(`Sending EMAIL: ${message} via AWS SES...`);
+    }
+}
+
+// Roop 2 (SMS)
+class SMSNotification implements INotification {
+    send(message: string): void {
+        console.log(`Sending SMS: ${message} via Twilio...`);
+    }
+}
+
+// The Magic Function (Polymorphic function)
+// Ye function check nahi karta ki ye Email hai ya SMS (No if-else). 
+// Ye bas object ki .send() method ko call kar deta hai!
+function notifyUser(notifier: INotification, message: string) {
+    notifier.send(message); 
+}
+
+const emailObj = new EmailNotification();
+const smsObj = new SMSNotification();
+
+notifyUser(emailObj, "Welcome to our app!"); // Output: Sending EMAIL...
+notifyUser(smsObj, "Your OTP is 1234");      // Output: Sending SMS...
+```
+
+##### 4. Abstraction (Complexity ko Chhupana)
+<span class="hinglish">**Concept:** TV ka remote ek Abstraction hai. Aapko pata hai ki Volume Up ka button dabane se aawaz badhegi. Aapko ye janne ki zaroorat nahi hai ki remote ke andar kaunsi wires lagi hain aur wo TV ke infrared sensor se kaise baat kar rahi hain! Same in code, hum internal complex logic (SQL queries, API calls) ko chhupa dete hain taaki dusra developer aaram se hamari class use kar sake bina dimaag kharab kiye.</span>
+
+**Real-World Example (Payment Gateway):**
+```typescript
+class StripePaymentGateway {
+    // Private (Hidden) complex logic
+    private connectToStripeAPI() {
+        console.log("Setting up SSL, generating tokens, connecting to Stripe servers...");
+    }
+    private validateCreditCard(card: string) {
+        console.log("Running Luhn algorithm to check card validity...");
+    }
+
+    // Public API (The TV Remote buttons for other developers)
+    public chargeUser(amount: number, card: string) {
+        this.validateCreditCard(card);
+        this.connectToStripeAPI();
+        console.log(`Successfully charged $${amount}!`);
+    }
+}
+
+// Dusra developer jo isko use karega, usko andar ki complexity ka pata hi nahi hai!
+const payment = new StripePaymentGateway();
+payment.chargeUser(500, "1234-5678-9101"); // Simple and Clean!
+```
+
+---
+
+#### Part 2: Refactoring a "God Controller" (The Architecture Setup)
+
+<span class="hinglish">Backend development me juniors sabse badi galti kya karte hain? Wo Express.js ka ek route banate hain (`app.post('/register')`), aur usi function ke andar Validation likh dete hain, usi ke andar Database me save karne ki lambi SQL query likh dete hain, aur usi ke andar Nodemailer ka email bhejne ka code likh dete hain. 
+
+Isko **"God Controller"** kehte hain. (Kyunki ek hi function sab kuch kar raha hai). Agar kal ko Email API fail ho gayi, toh pura function crash ho jayega aur user database me save bhi nahi hoga! Ise padhna, debug karna aur Unit Test karna IMPOSSIBLE hai.</span>
+
+##### <span class="danger">❌ The Bad Way (Spaghetti God Controller)</span>
+
+```javascript
+// routes.js (Junior Developer Code)
+const express = require('express');
+const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
+const db = require('./database');
+
+const app = express();
+
+app.post('/register', async (req, res) => {
+    try {
+        // 1. Validation Logic
+        const { email, password, age } = req.body;
+        if (!email || !email.includes('@')) return res.status(400).send("Invalid email");
+        if (password.length < 6) return res.status(400).send("Password too short");
+        if (age < 18) return res.status(400).send("Too young");
+
+        // 2. Business Logic (Hashing)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // 3. Database Logic (SQL queries tightly coupled)
+        const checkUser = await db.query(`SELECT * FROM users WHERE email = '${email}'`);
+        if (checkUser.length > 0) return res.status(400).send("Email exists");
+        
+        const result = await db.query(
+            `INSERT INTO users (email, password, age) VALUES ('${email}', '${hashedPassword}', ${age})`
+        );
+
+        // 4. External Service Logic (Email)
+        const transporter = nodemailer.createTransport({ /* SMTP config */ });
+        await transporter.sendMail({
+            from: 'no-reply@myapp.com',
+            to: email,
+            subject: 'Welcome!',
+            text: 'Thanks for registering.'
+        });
+
+        res.status(200).send("User registered successfully");
+    } catch (error) {
+        res.status(500).send("Server crashed!"); // Pata hi nahi chalega kahan crash hua!
+    }
+});
+```
+
+##### <span class="success">✅ The Clean Way (Senior Level - MVC / Layered Architecture)</span>
+
+<span class="hinglish">Seniors "Separation of Concerns" (SoC) ka use karte hain. Har cheez ki apni ek alag Layer (Class) hoti hai.
+1. **Controller Layer:** Iska kaam sirf HTTP Request lena aur HTTP Response dena hai. (Ye waiter hai).
+2. **Service Layer:** Yahan core business logic (password hash karna, checks lagana) hota hai. (Ye head chef hai).
+3. **Repository Layer:** Iska kaam sirf aur sirf Database se baat karna (SQL/MongoDB) hai. (Ye store-room incharge hai).</span>
+
+**Step 1: The Repository Layer (Only Database)**
+```typescript
+// UserRepository.ts
+class UserRepository {
+    async findByEmail(email: string) {
+        return await db.query(`SELECT * FROM users WHERE email = ?`, [email]);
+    }
+    async create(userData: any) {
+        return await db.query(`INSERT INTO users...`, [userData]);
+    }
+}
+```
+
+**Step 2: The Service Layer (Only Business Logic)**
+```typescript
+// UserService.ts
+class UserService {
+    // "Dependency Injection" - Hum service ko Repository bahar se de rahe hain.
+    constructor(
+        private userRepo: UserRepository, 
+        private emailService: EmailService
+    ) {}
+
+    async registerUser(userData: any) {
+        // Business logic check
+        const existing = await this.userRepo.findByEmail(userData.email);
+        if (existing) throw new Error("Email already exists");
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        userData.password = hashedPassword;
+
+        // Save to DB via Repository
+        const newUser = await this.userRepo.create(userData);
+
+        // Send Email via EmailService (Abstracted away)
+        this.emailService.sendWelcomeEmail(newUser.email);
+
+        return newUser;
+    }
+}
+```
+
+**Step 3: The Controller Layer (Only HTTP Req/Res)**
+```typescript
+// UserController.ts
+class UserController {
+    constructor(private userService: UserService) {}
+
+    async register(req: Request, res: Response) {
+        try {
+            // Joi or Zod validation library used here
+            validateRequest(req.body); 
+            
+            // Just call the service! The controller is DUMB and CLEAN.
+            const user = await this.userService.registerUser(req.body);
+            
+            res.status(200).json({ message: "Success", user });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+}
+```
+<span class="hinglish">**Fayda kya hua?** 
+1. **Testing:** Kal ko mujhe UserService test karni hai, toh mujhe Express server chalane ki zaroorat nahi hai! Mai seedha `new UserService()` banake functions run kar sakta hu.
+2. **Reusability:** Agar kal ko aapse Admin Panel banane ko bola gaya, jahan se user register honge (without Express HTTP, maybe via CLI), toh aap wahi same `UserService` wapas use kar sakte ho bina code duplicate kiye!
+3. **Readability:** Controller ko dekh kar 2 second me samajh aa jata hai ki kya ho raha hai. Code bilkul ek kahani (story) ki tarah padha jaa raha hai.</span>
+
+---
+
+#### Part 3: OOP vs Functional Programming (Node.js Dilemma)
+
+<span class="hinglish">Javascript aur Typescript ek aisi unique language hain jo dono support karti hain. Aap chaho toh Java ki tarah sab kuch `class` me bana lo, ya fir C ki tarah simple `function()` bana lo. Toh interview me agar poocha jaye ki *"Aap classes kab banate ho aur functions kab?"*, toh ye answer dena:</span>
+
+##### 1. When to use Functional Programming (Pure Functions)
+<span class="hinglish">Jab aapko koi aisa logic likhna ho jisko koi data yaad rakhne ki zaroorat na ho (Stateless). Jisko ek input do, aur wo calculation karke ek output de de. Isme kabhi Class (OOP) nahi banani chahiye! Ise **Utility ya Helpers** kehte hain.</span>
+
+```typescript
+// ✅ PERFECT USE CASE FOR FUNCTIONAL PROGRAMMING
+// taxCalculator.util.ts
+export function calculateGST(price: number): number {
+    return price * 0.18; 
+}
+export function formatDate(dateStr: string): string {
+    return new Date(dateStr).toISOString();
+}
+// Inko test karna sabse aasan hota hai kyunki inme koi external database dependency nahi hoti!
+```
+
+##### 2. When to use OOPs (Classes)
+<span class="hinglish">Jab aapke functions (methods) ko apna State (Data) yaad rakhna ho. Ya fir jab aapko alag-alag modules ko aapas me connect karna ho (**Dependency Injection**). Ek Controller ko batana padta hai ki wo kaunsi Service use karega. Ye bina Classes ke design karna bohot messy ho jata hai.</span>
+
+```typescript
+// ✅ PERFECT USE CASE FOR OOP
+// ShoppingCart.ts
+class ShoppingCart {
+    // STATE (Data to remember)
+    private items: Product[] = []; 
+    private discountCode: string | null = null;
+
+    // METHODS that modify the state
+    public addItem(item: Product) {
+        this.items.push(item);
+    }
+
+    public applyDiscount(code: string) {
+        this.discountCode = code;
+    }
+
+    public calculateTotal() {
+        let sum = this.items.reduce((total, i) => total + i.price, 0);
+        if (this.discountCode) sum -= 50;
+        return sum;
+    }
+}
+```
+<span class="hinglish">**Golden Rule Summary for Node.js Architecture:**
+* **Controllers, Services, Repositories:** Hamesha **Classes** (OOPs) use karo taaki inke andar ek dusre ki classes inject ki ja sake.
+* **Math, Formatting, Array Sorting:** Hamesha **Pure Functions** use karo ek `utils.ts` file me!</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

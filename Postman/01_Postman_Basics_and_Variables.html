@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Postman Basics & Variables</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f39c12; }
+        blockquote { border-left: 5px solid #e67e22; margin: 0; padding-left: 20px; background: #fdf2e9; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #d35400; }
+        .hinglish { color: #8e44ad; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #d35400; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #a04000; }
+        .nav-btn:hover { background-color: #e67e22; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #d35400; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #d35400; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #e67e22; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #e67e22; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Postman_Advanced_and_Docs.html" class="nav-btn">Next: Automation & Docs &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Postman_Advanced_and_Docs.html" class="nav-btn">Next: Automation & Docs &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Postman Masterclass 1: Variables & Organization
+
+Writing backend code without Postman is like flying an airplane completely blind. Postman allows you to send fake HTTP requests to your server so you can test if your logic works before you ever write a single line of React frontend code.
+
+However, Junior developers use Postman incorrectly. They treat it like a simple search bar. Senior developers treat Postman like an automated test suite.
+
+---
+
+#### 1. Organizing your APIs (The Hierarchy)
+
+When you are building a real project, you will end up with 50+ different API routes. If you don't organize them, you will go insane trying to find the "Create User" route.
+
+Postman uses a strict folder structure. You must never leave a request floating outside of a Collection!
+
+```mermaid
+graph TD
+    Workspace["🏢 Workspace (Your Desk)"]
+    
+    Collection1["📁 Collection: Uber Clone App"]
+    Collection2["📁 Collection: Personal Portfolio"]
+    
+    Workspace --> Collection1
+    Workspace --> Collection2
+    
+    Folder1["📂 Folder: Users & Auth"]
+    Folder2["📂 Folder: Rides"]
+    
+    Collection1 --> Folder1
+    Collection1 --> Folder2
+    
+    Req1["🟢 POST /api/users/login"]
+    Req2["🔵 GET /api/users/profile"]
+    
+    Folder1 --> Req1
+    Folder1 --> Req2
+    
+    style Workspace fill:#f9e79f,stroke:#f39c12
+    style Collection1 fill:#fad7a1,stroke:#d35400
+    style Folder1 fill:#d5f5e3,stroke:#27ae60
+```
+
+* <span class="hinglish">Jab bhi naya project shuru karo, sabse pehle Postman mein ek naya **Collection** banao (Jaise "E-Commerce App"). Phir uske andar alag alag features ke liye **Folders** banao ("Products", "Cart", "Auth"). Kabhi bhi requests ko bahar aise hi lawaris (orphaned) mat chodna, warna 2 mahine baad wapas aaoge toh samajh hi nahi aayega kaunsi API kis cheez ki hai!</span>
+
+---
+
+#### 2. Variables (The End of Hardcoding)
+
+**The Junior Mistake:**
+A junior developer creates 20 requests in Postman. In every single request, they manually type:
+* `http://localhost:3000/api/users`
+* `http://localhost:3000/api/products`
+
+What happens when they deploy the server to AWS, and the URL changes to `https://api.mywebsite.com`? They have to manually open 20 requests and edit the URL one by one!
+
+**The Senior Solution (Variables):**
+Instead of typing the URL, you create a Variable in Postman using double curly braces: `{{baseUrl}}`. Then, you write your requests like this:
+* `{{baseUrl}}/api/users`
+* `{{baseUrl}}/api/products`
+
+##### How Environments Work
+An "Environment" in Postman is just a group of variables that you can switch between instantly using a dropdown menu in the top right corner.
+
+```mermaid
+graph LR
+    subgraph "Your API Request"
+        Req["{{baseUrl}}/api/login"]
+    end
+    
+    subgraph "Local Environment"
+        Env1["baseUrl = http://localhost:3000"]
+    end
+    
+    subgraph "Production Environment"
+        Env2["baseUrl = https://api.uber.com"]
+    end
+    
+    Env1 -->|"If Local is selected"| Req
+    Env2 -.->|"If Prod is selected"| Req
+    
+    style Req fill:#fff,stroke:#34495e,stroke-width:2px
+    style Env1 fill:#d5f5e3,stroke:#27ae60
+    style Env2 fill:#f2d7d5,stroke:#c0392b
+```
+
+* <span class="hinglish">Socho agar aapne 50 APIs banayi hain aur sabme `localhost:3000` hardcode kar diya hai. Ab boss bolta hai "Bhai, live server (AWS) pe test kar". Aapko 50 jagah URL change karna padega! Agar aap `{{baseUrl}}` variable aur Environments use karte ho, toh bas top-right dropdown se "Production" select karo. Postman khud saare `{{baseUrl}}` ko live server wale URL se replace kar dega. Ek click mein saari 50 APIs switch ho jayengi!</span>
+
+---
+
+#### 3. Real-World Practical Uses for Variables
+
+You can use `{{variables}}` anywhere in Postman! Not just in the URL.
+
+##### 1. In the URL Path
+```text
+GET {{baseUrl}}/api/users/{{test_user_id}}
+```
+*(Instead of typing `id=99` every time, save it as a variable so all your test routes use the exact same test user).*
+
+##### 2. In the Query Parameters
+```text
+GET {{baseUrl}}/api/search?keyword={{search_term}}
+```
+
+##### 3. In the Headers
+| Key | Value |
+|---|---|
+| `Authorization` | `Bearer {{jwt_token}}` |
+| `x-api-key` | `{{stripe_secret_key}}` |
+
+##### 4. Inside the JSON Body
+Yes! You can even use variables inside the raw JSON payload you send to the server!
+```json
+{
+    "email": "{{test_email}}",
+    "password": "{{test_password}}"
+}
+```
+*(If you need to change the test email, you change it in the Environment Variables tab, and it updates across all your login and signup JSON requests instantly!).*
+
+---
+
+#### 4. Collection-Level Authorization (The Inheritance Trick)
+
+Most of your APIs will require a JWT (JSON Web Token) to prove the user is logged in. 
+
+**The Junior Mistake:**
+The junior developer logs in, copies the token, goes to the "Get Profile" API, opens the "Authorization" tab, and pastes the token. Then they go to the "Update Profile" API, and paste the token again. When the token expires after 1 hour, they have to re-paste the new token in 50 different places.
+
+**The Senior Solution:**
+In Postman, you don't put the token in the individual requests. 
+
+1. You click on the **Collection** itself (the main folder folder).
+2. Go to the **Authorization** tab.
+3. Set it to **"Bearer Token"**. 
+4. Paste your token (or a `{{jwt_token}}` variable) there **once**. 
+
+Then, for all the 50 requests inside that Collection, you set their Authorization tab to **"Inherit auth from parent"**. 
+
+```mermaid
+graph TD
+    Parent["📁 Collection (Auth: Bearer {{jwt_token}})"]
+    
+    Req1["🟢 POST /api/posts"]
+    Req2["🔵 GET /api/profile"]
+    Req3["🔴 DELETE /api/account"]
+    
+    Parent -->|"Inherits Token Automatically"| Req1
+    Parent -->|"Inherits Token Automatically"| Req2
+    Parent -->|"Inherits Token Automatically"| Req3
+    
+    style Parent fill:#fad7a1,stroke:#d35400
+```
+
+* <span class="hinglish">"Inherit auth from parent" ka matlab hai ki saare bache (API requests) apne papa (Collection folder) se token udhaar le lenge. Agar token expire ho jaye, toh aapko har request me jaake paste nahi karna! Bas ek jagah (Collection level pe) naya token dalna hai, aur saari APIs automatically naya token use karne lagengi! Isse aapka ghanto ka time bachega.</span>
+
+> [!TIP]
+> **Best Practice Checklist:**
+> 1. Never hardcode URLs. Always use `{{baseUrl}}`.
+> 2. Put your JWT Token at the Collection level, never in the individual requests.
+> 3. Use `{{}}` double curly braces in Postman to access variables anywhere (in the URL, in the Body JSON, or in the Headers).
+
+---
+
+#### 5. Real-World Scenarios (10 Practical Examples)
+
+Here is how Senior Developers use Variables and Workspaces in real production companies.
+
+##### Example 1: Multi-Environment Switching (Dev vs Prod)
+**Problem:** You need to test an API locally, on a Staging server, and on Live Production.
+**Solution:** Create 3 Environments in Postman ("Local", "Staging", "Prod"). Set `baseUrl` differently in each. You can now test the exact same API across all 3 servers just by clicking a dropdown menu.
+
+##### Example 2: Role-Based Testing (Admin vs User)
+**Problem:** You need to test if a normal user can accidentally access the Admin Dashboard.
+**Solution:** Create two Collection Variables: `{{jwt_admin}}` and `{{jwt_user}}`. Quickly swap them in the Authorization tab to test security vulnerabilities without logging in and out manually.
+
+##### Example 3: E-Commerce Cart Tracking
+**Problem:** To checkout, you must first create a cart, add items, and then pay. You need the Cart ID for every step.
+**Solution:** Save the Cart ID as a variable `{{cart_id}}`. Use `POST /cart/{{cart_id}}/add` and `POST /cart/{{cart_id}}/checkout`. You never have to copy-paste the ID manually!
+
+##### Example 4: Rapid API Versioning
+**Problem:** Your company upgrades from API v1 to v2. 
+**Solution:** Change your base URL from `api.website.com/v1` to `{{api_domain}}/{{api_version}}`. Now you can swap `api_version` from `v1` to `v2` globally to test the new endpoints.
+
+##### Example 5: Hiding Secrets (Security)
+**Problem:** You want to share your Postman Collection with a coworker, but you don't want to give them your personal Stripe Secret Key.
+**Solution:** Put the Stripe Key in your **Environment Variables**, not the Collection Variables. Environment variables stay secret on your laptop and do not get exported when you share the Collection file!
+
+##### Example 6: Dynamic Pagination Testing
+**Problem:** You are testing an API that returns 10,000 users, and you need to test pages 1 through 5.
+**Solution:** Use `GET /api/users?page={{page_num}}`. You just update the variable to quickly jump through pages without editing the URL string.
+
+##### Example 7: JSON Body Templating
+**Problem:** You are testing an Order Creation API that requires a massive 500-line JSON body. It makes Postman lag.
+**Solution:** Save the massive JSON string into a Collection Variable called `{{dummy_order_payload}}`. Inside the raw Body tab, just write `{{dummy_order_payload}}`. The UI stays perfectly clean!
+
+##### Example 8: Testing Webhooks Locally (Ngrok)
+**Problem:** Stripe is sending webhooks to your local machine, but your local machine URL changes every time you restart Ngrok.
+**Solution:** Save the Ngrok URL as `{{ngrok_url}}`. When Ngrok restarts, you update this variable once, and all your Webhook testing routes are instantly fixed.
+
+##### Example 9: API Key Headers
+**Problem:** Every request to a weather API requires `x-api-key: 123456` in the Headers.
+**Solution:** Set the Header at the **Collection level** (just like Authorization). Every route inside the collection will automatically attach the custom Header!
+
+##### Example 10: Dynamic Search Queries
+**Problem:** You are building an Amazon clone and want to test the search bar with 10 different products rapidly.
+**Solution:** `GET /search?q={{search_term}}`. You just edit the `search_term` variable, and keep hitting the "Send" button to see different results.
+    </script>
+</body>
+</html>

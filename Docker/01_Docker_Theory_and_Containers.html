@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Docker Theory & Containers</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #2980b9; }
+        blockquote { border-left: 5px solid #3498db; margin: 0; padding-left: 20px; background: #ebf5fb; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .mermaid { margin: 40px 0; display: flex; justify-content: center; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        strong { color: #2980b9; }
+        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #066ada; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #2496ed; }
+        .nav-btn:hover { background-color: #0550a4; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #066ada; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #3498db; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Dockerfile_and_Building.html" class="nav-btn">Next: The Dockerfile &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Dockerfile_and_Building.html" class="nav-btn">Next: The Dockerfile &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### Docker Masterclass 1: Theory & Containers
+
+*"But it works on my machine!"* - The most famous lie in Software Engineering.
+
+You write a Node.js app on your Windows laptop. It works perfectly. You zip the code and send it to your coworker who uses a Mac. It crashes. You send it to an AWS Ubuntu Linux server. It crashes.
+Why? Because your code depends on your specific Operating System, your exact version of Node.js (v18), and your specific hard drive folders.
+
+**Docker solves this permanently.**
+
+---
+
+#### 1. What is Docker? (The Shipping Container)
+
+In the 1950s, transporting cargo was a nightmare. A ship would carry loose bags of coffee, cars, and pianos. Loading and unloading took weeks because every item was a different shape.
+Then, someone invented the **Standardized Steel Shipping Container**. Now, it doesn't matter what is inside the box (coffee or a car). The crane just picks up the 20x20 box and puts it on the ship in 5 seconds.
+
+Docker is the Shipping Container for Code.
+You put your Node.js code, the specific Node v18 runtime, and all your Linux dependencies into a single, standardized digital box. You can hand this box to a Mac, a Windows PC, or an AWS Server, and they just say: *"I don't care what's inside, I just run the box!"*
+
+* <span class="hinglish">Docker ek jaadui dibba (magic box) hai. Is dibbe ke andar aap apna code, database, aur apna khudka ek mini OS daal dete ho. Ab is dibbe ko duniya ke kisi bhi computer par chalao, yeh exactly same tarike se chalega kyonki bahar ke computer se isko koi matlab hi nahi hai!</span>
+
+---
+
+#### 2. Virtual Machines vs Containers
+
+Before Docker, we used Virtual Machines (VMs) to isolate apps. But VMs are incredibly slow and heavy.
+
+```mermaid
+graph TD
+    subgraph VM ["Virtual Machine (Heavy)"]
+        A1["Hardware"] --> B1["Host OS (Windows)"]
+        B1 --> C1["Hypervisor"]
+        C1 --> D1["Guest OS (Linux - 2GB!)"]
+        D1 --> E1["App 1"]
+        C1 --> D2["Guest OS (Linux - 2GB!)"]
+        D2 --> E2["App 2"]
+        style VM fill:#fad7a1,stroke:#d35400
+    end
+
+    subgraph Docker ["Docker Container (Lightweight)"]
+        A2["Hardware"] --> B2["Host OS (Windows)"]
+        B2 --> C2["Docker Engine"]
+        C2 --> D3["App 1 (50MB)"]
+        C2 --> D4["App 2 (50MB)"]
+        style Docker fill:#d5f5e3,stroke:#27ae60
+    end
+```
+
+**Why VMs suck:** A Virtual Machine requires you to install an entirely fake Operating System (like a 2GB Linux OS) just to run a 50MB Node.js app. If you have 3 apps, you need 3 heavy Linux installations.
+**Why Docker is amazing:** Docker Containers do NOT install a full Operating System. They share the Host's OS kernel. A Docker container can start in **0.1 seconds** and only takes up 50MB of RAM!
+
+---
+
+#### 3. Images vs Containers (The Recipe vs The Cake)
+
+You will hear these two words constantly. You must know the difference.
+
+* **Docker Image:** The Image is the blueprints. It is the recipe. It is a read-only file that contains your code and instructions. You cannot "run" an image, just like you cannot eat a recipe.
+* **Docker Container:** A Container is a running instance of an Image. It is the actual baked cake! You can bake 10 identical cakes (Containers) from a single recipe (Image).
+
+---
+
+#### 4. The 4 Core Commands
+
+If you know these 4 commands, you know 80% of Docker:
+
+1. `docker pull ubuntu`: Downloads the "Recipe" for an Ubuntu system from the internet (DockerHub).
+2. `docker run -d --name myapp nginx`: Bakes the cake! It creates and starts a running Container in the background (`-d` means detached).
+3. `docker ps`: Lists all the cakes that are currently baking (running containers).
+4. `docker stop myapp`: Stops the running container.
+
+---
+
+#### 5. Real-World Scenarios (10 Practical Examples)
+
+Here is exactly how Senior Developers use Docker in the real world.
+
+##### Example 1: The 5-Minute Developer Onboarding
+**Problem:** A new Junior Developer joins your company. They spend 3 days installing Node.js, Postgres, Redis, and configuring environment variables just to run the app locally.
+**Solution:** Using Docker, the Junior dev just types `docker run my-company-app`. It automatically downloads the correct database and server environment. They start coding in 5 minutes.
+
+##### Example 2: Testing Beta Software Safely
+**Problem:** You want to test the brand new Python 4.0 Beta, but you don't want to ruin your laptop's current Python 3 setup.
+**Solution:** `docker run -it python:4.0-beta bash`. You are now inside an isolated container with Python 4. When you close it, it vanishes. Your laptop is completely untouched.
+
+##### Example 3: Running Multiple Database Versions
+**Problem:** You are maintaining a legacy app that needs MySQL 5, and building a new app that needs MySQL 8. You cannot install both natively on Windows without massive conflicts.
+**Solution:** Run two separate Docker containers! `docker run mysql:5` on Port 3306, and `docker run mysql:8` on Port 3307. They never conflict.
+
+##### Example 4: Exact Production Matching
+**Problem:** Your local laptop is a Mac (ARM processor), but AWS is running Ubuntu Linux (x86). Code works on Mac, but crashes on Linux.
+**Solution:** Docker simulates the exact Linux environment on your Mac. If the Docker container runs perfectly on your Mac, it is **100% mathematically guaranteed** to run perfectly on AWS.
+
+##### Example 5: Rapid Tear-Downs for Testing
+**Problem:** You want to run your automated API tests, but every time you run them, they fill the database with junk data. You have to manually write scripts to clean the database.
+**Solution:** Spin up a fresh Postgres Docker container, run the tests, and then instantly destroy the container (`docker rm -f mydb`). The database is wiped perfectly clean every single time!
+
+##### Example 6: Isolated Security Hacking
+**Problem:** You want to open a suspicious file a user uploaded, but you are scared it has a virus.
+**Solution:** Spin up a temporary Docker container, open the file inside the container, and then delete the container. The virus is trapped inside the box and cannot touch your real hard drive.
+
+##### Example 7: Bypassing "Node Version Manager (NVM)"
+**Problem:** Switching between Node v14, v16, and v18 using NVM on your laptop is annoying and sometimes corrupts global npm packages.
+**Solution:** Never install Node.js on your laptop again. Just use `docker run node:14` or `docker run node:18`. Keep your host machine perfectly clean.
+
+##### Example 8: Horizontal Scaling (Cloning)
+**Problem:** It's Black Friday. Your website traffic goes up 1000%. Your single Node.js server is going to crash.
+**Solution:** Because Docker containers are standardized boxes, AWS can instantly copy/paste your Container 50 times across 50 different servers to handle the traffic.
+
+##### Example 9: Reverting Bad Deployments
+**Problem:** You deploy an update to Production at 3 AM. It completely breaks the website.
+**Solution:** Because Docker Images are versioned (e.g., `myapp:v2`), you just run a command to stop `v2` and instantly start `myapp:v1`. The website is fixed in 5 seconds without having to recompile code or `git revert`.
+
+##### Example 10: Limiting Resources (CPU/RAM Caps)
+**Problem:** You have a background task that processes videos. Sometimes it has a bug and eats 100% of the server's CPU, freezing the entire machine.
+**Solution:** When you start a Docker container, you can add `--cpus="0.5" --memory="512m"`. Now, no matter how buggy the code is, it is physically trapped in a box and can never consume more than 50% of the CPU! Your server is safe.
+    </script>
+</body>
+</html>

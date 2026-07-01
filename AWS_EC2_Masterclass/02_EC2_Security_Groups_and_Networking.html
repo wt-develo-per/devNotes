@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AWS EC2 Security Groups</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #232f3e; background-color: #f8f9fa; }
+        pre { background: #232f3e; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ff9900; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #232f3e; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #ff9900; }
+        blockquote { border-left: 5px solid #ff9900; margin: 0; padding-left: 20px; background: #fff5e6; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        /* Modifying H3 to look like a clean title */
+        h3 { color: #ff9900; font-size: 1.8em; border-bottom: 2px solid #232f3e; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Modifying H4 to look like a clean section header */
+        h4 { color: #232f3e; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #ff9900; padding-bottom: 6px; }
+        
+        /* H5 for sub-sections */
+        h5 { color: #e68a00; font-size: 1.1em; margin-top: 20px; }
+        
+        strong { color: #d37700; }
+        .hinglish { color: #1f618d; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #ff9900; color: #fff; font-weight: bold; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #232f3e; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #ff9900; }
+        .nav-btn:hover { background-color: #3b4e6b; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_EC2_Fundamentals_and_Instances.html" class="nav-btn">&larr; Previous: EC2 Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <a href="01_EC2_Fundamentals_and_Instances.html" class="nav-btn">&larr; Previous: EC2 Fundamentals</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+### AWS EC2 Masterclass 2: Security Groups (The Virtual Firewall)
+
+<span class="hinglish">Aapne EC2 server bana liya, Node.js install kar liya, aur NGINX bhi start kar diya. Par jab aap apne browser me server ka IP address dalte ho, toh website load hi nahi hoti! Aisa lagta hai server offline hai. 
+
+Aisa kyu hota hai? Kyunki AWS by default aapke server ko puri duniya ke samne ekdam Nanga (unprotected) nahi chhodta. AWS uske aage ek "Virtual Firewall" khadi kar deta hai jise **Security Groups** kehte hain. Jab tak aap expressly allow na karein, koi bhi aapke server se baat nahi kar sakta!</span>
+
+---
+
+#### 1. Inbound vs Outbound Rules
+
+<span class="hinglish">Security Group do tarah ke rules (niyam) par chalta hai:</span>
+
+* **Inbound Rules:** <span class="hinglish">Bahar se (Internet se) kon andar server me ghus sakta hai? By default, ye 100% BLOCKED hota hai!</span>
+* **Outbound Rules:** <span class="hinglish">Andar se (Aapka Server) internet par kahan kahan jaa sakta hai? By default, ye 100% ALLOWED hota hai (taaki aapka server `npm install` karke packages download kar sake).</span>
+
+---
+
+#### 2. The Holy Ports
+
+<span class="hinglish">Ek computer me 65,000 "Ports" (Darwaze) hote hain. Agar aapko ek successful website chalani hai, toh aapko AWS Dashboard me Inbound Rules edit karke ye 3 darwaze kholne hi padenge:</span>
+
+1. **Port 22 (SSH):** <span class="hinglish">Taaki aap apne laptop se terminal ke zariye AWS server me login kar sako.</span>
+2. **Port 80 (HTTP):** <span class="hinglish">Taaki public browser aapki website dekh sake bina SSL ke.</span>
+3. **Port 443 (HTTPS):** <span class="hinglish">Taaki public browser aapki website ko securely dekh sake (Green padlock).</span>
+
+---
+
+#### 3. Real-World Scenarios (5 Deep Practical Tricks)
+
+<span class="hinglish">DevOps Engineers Security Groups ko bahut smartly use karte hain. Chalo dekhte hain 5 real-world hacking aur networking scenarios.</span>
+
+##### Example 1: Locking Down SSH (Port 22)
+**Problem:** <span class="hinglish">Aapne Inbound Rules me Port 22 ko `0.0.0.0/0` (Allow Anyone) kar diya. Ab Russia aur China ke hackers bot scripts chala rahe hain jo har second aapke server me login karne ki koshish kar rahe hain. Aapke server ka CPU full ho jayega!</span>
+**Solution:** 
+<span class="hinglish">Port 22 ko kabhi public nahi rakhna chahiye. Security Group Inbound Rule me Port 22 ke aage `0.0.0.0/0` hata kar "My IP" select karein. Isse AWS automatically aapke ghar ke WiFi ka IP address detect kar lega. Ab puri duniya me sirf aur sirf AAP apne laptop se server me login kar paoge! Koi hacker attempt bhi nahi kar payega.</span>
+
+##### Example 2: The Port 3000 Quick Test
+**Problem:** <span class="hinglish">Aapne NGINX abhi tak install nahi kiya hai. Aapne simply `pm2 start server.js` run kiya jo Port 3000 par chal raha hai. Aap browser me IP:3000 dalte ho par website nahi khulti.</span>
+**Solution:** 
+<span class="hinglish">Jab tak NGINX (jo Port 80 par kaam karta hai) ready nahi hota, aap temporary testing ke liye Security Group me ek naya Custom TCP rule add kar sakte ho: Port 3000, Allow `0.0.0.0/0`. Isse aap directly browser me `IP:3000` daal kar Node.js API ko bina NGINX ke test kar sakte ho! Jab testing ho jaye, toh port 3000 ko wapas delete/block kar dena chahiye taaki public direct Node.js ko access na kar sake.</span>
+
+##### Example 3: The ICMP Ping Block
+**Problem:** <span class="hinglish">Aapko lagta hai aapka EC2 server crash ho gaya hai. Aap Windows command prompt open karke likhte ho `ping 13.54.99.12` par wo hamesha "Request Timed Out" deta hai! Server on hai, fir bhi ping kyu nahi ho raha?</span>
+**Solution:** 
+<span class="hinglish">AWS by default `Ping` requests ko block kar deta hai taaki DDoS attacks na ho sakein! Ping ek special protocol use karta hai jise **ICMP** kehte hain (TCP/UDP nahi). Agar aap chahte ho ki aapka server ping ka jawaab de, toh aapko Security Group me ek naya Inbound rule banana padega: Protocol select karein "All ICMP - IPv4", aur source set karein `0.0.0.0/0`. Par hackers se bachne ke liye mostly log ise blocked hi rakhte hain.</span>
+
+##### Example 4: Private IP vs Public IP Communication
+**Problem:** <span class="hinglish">Aapke paas 2 EC2 instances hain. Ek par Node.js chal raha hai, aur doosre par aapne apni MongoDB database install ki hai. Aap Node.js me MongoDB ka "Public IP Address" connect karte ho. Ye bahot SLOW chalta hai aur AWS aapse Data Transfer ka paisa maangta hai!</span>
+**Solution:** 
+<span class="hinglish">Jab 2 server ek hi AWS Account (VPC) ke andar hote hain, toh unhe internet (Public IP) ke zariye baat karne ki zaroorat nahi hai! Har EC2 instance ka ek "Private IP" (jaise `172.31.5.15`) hota hai. Agar aap Node.js se MongoDB ke Private IP par connect karoge, toh connection instant hoga (kabhi internet par nahi jayega), fully secure hoga, aur AWS us data transfer ka 0 paisa charge karega!</span>
+
+##### Example 5: Zero-Trust Database Firewall
+**Problem:** <span class="hinglish">Aapne Database EC2 instance me Port 27017 (MongoDB) open kar diya `0.0.0.0/0` ke liye. Ab duniya me koi bhi aapke database server se connect hone ka try kar sakta hai. Kisi din koi password crack kar lega!</span>
+**Solution:** 
+<span class="hinglish">Database servers ko kabhi bhi Public IP par allow nahi karte! Security Group ka sabse powerful feature hai ki aap IP address ke bajaye kisi dusre Security Group ko allow kar sakte ho.
+Database server ke Inbound Rule me jayen -> Port 27017 -> Source me likhein "Node.js-Web-Security-Group-ID".
+Iska matlab hai: "Hey Database! Sirf aur sirf us computer ko andar aane dena jiske paas Node.js wala Security Group laga hua hai." Ab duniya ka koi bhi hacker connect nahi kar sakta, chahe uske paas correct password hi kyu na ho! Ise "Zero-Trust Architecture" kehte hain.</span>
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Design Fundamentals</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #1a252f; background-color: #fdfefe; }
+        pre { background: #2c3e50; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #f1c40f; }
+        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #2c3e50; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #f1c40f; }
+        blockquote { border-left: 5px solid #f1c40f; margin: 0; padding-left: 20px; background: #fef9e7; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+        
+        
+        strong { color: #c0392b; }
+        .hinglish { color: #27ae60; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #bdc3c7; padding: 12px; text-align: left; }
+        th { background-color: #2980b9; color: #fff; font-weight: bold; }
+        
+        .mermaid-container { background: white; padding: 20px; border-radius: 8px; border: 1px solid #bdc3c7; margin: 20px 0; text-align: center; }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #fdfefe; border: 1px solid #bdc3c7; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .nav-btn { background-color: #2980b9; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1a5276; }
+        .nav-btn:hover { background-color: #3498db; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Standardized Heading Styles (No H1 or H2, matching Validation Masterclass) */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2980b9; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #2980b9; font-size: 1.1em; margin-top: 20px; }
+        h6 { color: #2980b9; font-size: 1.0em; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Database_Scaling_and_Sharding.html" class="nav-btn">Next: Database Scaling &rarr;</a>
+    </div>
+    <div id="content"></div>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="02_Database_Scaling_and_Sharding.html" class="nav-btn">Next: Database Scaling &rarr;</a>
+    </div>
+    <script type="text/markdown" id="markdown-content">
+##### System Design Masterclass 1: Fundamentals & Scaling
+
+<span class="hinglish">Jab aap Junior ya Mid-level developer hote ho, aapka focus hota hai "Feature kaise banau?" (API kaise likhu, Database me data kaise daalu, React me component kaise banau). 
+Par jab aap Senior Engineer ya Architect bante ho, tab features likhna secondary ho jata hai. Aapka main focus hota hai "Architecture". "Agar is API par 1 million log ek sath aa gaye, toh kya ye bachegi ya crash ho jayegi?" 
+
+Google, Netflix, aur Amazon jaise bade systems ko banane ki is soch ko **System Design (High-Level Design)** kehte hain. Is module me hum real-world systems ko tod kar (deconstruct karke) dekhenge.</span>
+
+---
+
+###### 1. Vertical vs Horizontal Scaling
+
+<span class="hinglish">Maan lijiye aapne ek nayi E-Commerce website banayi. Diwali Sale aayi aur achanak 10,000 log ek sath aa gaye. Aapka 2GB RAM ka server slow ho gaya aur crash ho gaya. Aapke paas usko theek karne ke 2 raaste hain:</span>
+
+* **Vertical Scaling (Scale UP):** <span class="hinglish">Aap apna chhota 2GB RAM ka server AWS se delete karte ho aur uski jagah ek mahenga 64GB RAM aur 16-Core CPU wala server kharid lete ho. Ise "Vertical" (upar ki taraf badhna) kehte hain. Iski sabse badi problem ye hai ki ek limit ke baad aap server bada nahi kar sakte (Duniya me 1000TB RAM wala server nahi milta!), aur ye hardware bohot zyada mehnga hota hai. Iske alawa, agar ye ek akela server crash hua, toh aapki poori company band! (Single Point of Failure).</span>
+
+* **Horizontal Scaling (Scale OUT):** <span class="hinglish">Modern zamane me hum Vertical scaling avoid karte hain. Hum us 2GB RAM wale server ko upgrade nahi karte. Hum uske jaise **10 aur naye (aur saste) 2GB RAM wale servers** kharid lete hain aur un sab me same Node.js code daal dete hain. Ye system limitless hai! Google aur Facebook isi tarah kaam karte hain; unke paas lakho chhote saste servers hain jo ek sath milkar kaam karte hain. Agar 2 server jal bhi gaye, toh baaki 8 servers website ko zinda rakhte hain!</span>
+
+```mermaid
+graph TD
+    subgraph Vertical_Scaling [Vertical Scaling]
+        S1[Small Server 2GB] -->|Upgrades to| S2[Massive Server 64GB]
+    end
+    
+    subgraph Horizontal_Scaling [Horizontal Scaling]
+        H1[Server 2GB] -->|Clones to| H2[Server 1: 2GB]
+        H1 -->|Clones to| H3[Server 2: 2GB]
+        H1 -->|Clones to| H4[Server 3: 2GB]
+    end
+```
+
+---
+
+###### 2. The Load Balancer (The Traffic Police)
+
+<span class="hinglish">Agar aapne Horizontal scaling karke 10 servers (Port 3001 se 3010) kharid liye, toh users ko kaise pata chalega ki kis port par jana hai? User toh sirf `mywebsite.com` likhega.
+Hum sabse aage ek **Load Balancer (e.g., NGINX, AWS ALB)** khada kar dete hain. 
+
+User apni request hamesha Load Balancer ko bhejta hai. Load Balancer ek Traffic Police ki tarah kaam karta hai aur round-robin tarike se dekhta hai ki: "Customer 1 ko Server 1 pe bhejo, Customer 2 ko Server 2 pe bhejo". Isse koi bhi ek server kabhi overload nahi hota!</span>
+
+```mermaid
+graph LR
+    U1[User 1] --> LB[NGINX Load Balancer]
+    U2[User 2] --> LB
+    U3[User 3] --> LB
+    
+    LB -->|Routes to| Node1[Node Server 1]
+    LB -->|Routes to| Node2[Node Server 2]
+    LB -->|Routes to| Node3[Node Server 3]
+```
+
+---
+
+###### 3. Real-World Design Scenarios (The Interviews)
+
+<span class="hinglish">Top tech companies ke System Design interviews me aapse seedhe sawaal pooche jate hain: "Bitly ya Pastebin kaise banaoge?" Chaliye inke Architecture ko deep dive karte hain.</span>
+
+##### Scenario 1: Design a URL Shortener (Like Bitly)
+**The Problem:** <span class="hinglish">User ek lambi URL (`https://amazon.com/products/iphone/123456`) deta hai, aur aapko ek bohot chhoti URL (`https://bit.ly/aBc3`) deni hai. Jab koi us chhoti URL pe click kare, toh wo original lambi URL pe redirect ho jaye. Isko 100 Million users ke liye scale karna hai bina system crash kiye!</span>
+
+**The Architecture:**
+1. **The Hash Function (Base62):** <span class="hinglish">Jab user lambi URL de, hume uske badle 7-character ka ek chhota random string banana padega. Hum **Base62 Encoding** use karte hain jisme hum `[a-z, A-Z, 0-9]` (total 62 characters) ka use karte hain. Sirf 7 characters use karke hum 3.5 Trillion unique links bana sakte hain! (62 * 62 * 62... 7 times).</span>
+2. **Database Choice:** <span class="hinglish">Yahan hume MySQL ke complex relationships (Joins) nahi chahiye. Humko sirf "ShortLink -> LongLink" map karna hai. Toh hum NoSQL (MongoDB ya AWS DynamoDB) use karenge kyunki Key-Value pairs read karne me NoSQL extremely fast hota hai.</span>
+3. **Collision Handling:** <span class="hinglish">Kya hoga agar algorithm ne 2 alag lambi links ke liye by chance same "aBc3" code generate kar diya? Hum Database me "aBc3" (Short URL column) ko `UNIQUE` index banayenge. Agar duplicate error aaya, toh hum Node.js algorithm se kahenge "Bhai, ye naam pehle se hai, naya random code generate kar".</span>
+4. **Caching (The Secret Weapon):** <span class="hinglish">Maan lo ek link viral ho jati hai (jaise Virat Kohli ne apni nayi bat ki link tweet ki), uspe 1 million clicks ek second me aate hain. Agar 1 million baar Database se poocha gaya, toh NoSQL bhi crash ho jayega. Hum **Redis (In-Memory Cache)** use karenge. Viral short link aur uska long link hum Redis RAM me save kar lenge. Jab click aayega, Redis 1 millisecond me redirect kar dega, Database ko hit hi nahi karna padega!</span>
+
+```mermaid
+graph TD
+    User[User clicks bit.ly/aBc3] --> API[Node.js API]
+    API -->|1. Check Cache| Redis[(Redis RAM)]
+    Redis -.->|Cache Hit: Fast Redirect| User
+    API -->|2. Cache Miss: Check DB| DB[(MongoDB)]
+    DB -->|Return Long URL| API
+    API -.->|Redirect| User
+```
+
+##### Scenario 2: Design a Pastebin
+**The Problem:** <span class="hinglish">User website par aakar 10,000 lines ka text ya code paste karta hai, aur usko ek link milti hai (jaise `pastebin.com/xyz123`). Dusre users us link pe jake wo text padh sakte hain.</span>
+
+**The Architecture:**
+1. **The Text Storage Problem (BLOBs):** <span class="hinglish">Ek normal Junior developer wo 10,000 lines ka text MySQL ya MongoDB me save kar dega. Problem ye hai ki kuch hi din me database ka size 500GB cross kar jayega aur wo super slow ho jayega. Relational Databases lambe text blobs store karne ke liye nahi bane hain, unka table scan bohot slow ho jata hai!</span>
+2. **Object Storage (S3):** <span class="hinglish">Senior engineers text ko database me save nahi karte. Jab user text paste karta hai, Node.js us text ko ek `.txt` file banata hai aur **AWS S3 Bucket** me daal deta hai! S3 us file ko ek sasta aur fast URL deta hai (e.g., `s3://pastebin-bucket/xyz123.txt`). S3 me aap Petabytes ka data rakh sakte ho bina slow hue.</span>
+3. **The Relational Database:** <span class="hinglish">MySQL me hum sirf user ka naam, date, chhota title, aur us **S3 link ka URL** save karte hain. Database ekdum chhota (kuch Megabytes ka) aur lightning-fast rehta hai!</span>
+4. **Scaling Reads:** <span class="hinglish">Jab koi dusra user wo pastebin link dekhta hai, toh frontend React seedha AWS S3 se wo `.txt` file download karke dikha deta hai. Aapke Node.js backend aur MySQL Database par bilkul zero load padta hai! Is tarah Pastebin saste me lakho users ko handle kar leta hai.</span>
+
+```mermaid
+graph TD
+    User[User uploads 10k lines text] --> API[Node.js API]
+    API -->|1. Save text file| S3[AWS S3 Bucket]
+    S3 -->|Return s3-url| API
+    API -->|2. Save Metadata + s3-url| DB[(MySQL Database)]
+    
+    Viewer[Viewer requests paste] --> API2[Node.js API]
+    API2 -->|Query Metadata| DB
+    DB -->|Return s3-url| API2
+    API2 -->|Send url to frontend| Viewer
+    Viewer -.->|Download text directly| S3
+```
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configure marked to ignore mermaid blocks
+            const renderer = new marked.Renderer();
+            const originalCode = renderer.code.bind(renderer);
+            renderer.code = function(code, language, isEscaped) {
+                if (language === 'mermaid') {
+                    return `<code class="language-mermaid" style="display:none;">${code}</code>`;
+                }
+                return originalCode(code, language, isEscaped);
+            };
+
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content, { renderer: renderer });
+
+            mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+            document.querySelectorAll('code.language-mermaid').forEach((block, index) => {
+                const id = `mermaid-${index}`;
+                const source = block.textContent;
+                
+                const div = document.createElement('div');
+                div.className = 'mermaid-container';
+                div.id = id;
+                
+                block.replaceWith(div);
+                
+                mermaid.render(id + '-svg', source).then(result => {
+                    div.innerHTML = result.svg;
+                }).catch(err => {
+                    console.error(err);
+                    div.innerHTML = "Mermaid Syntax Error: " + err.message;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
