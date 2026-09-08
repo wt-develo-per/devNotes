@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mastery - Transitioning from Bootstrap to Tailwind CSS for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="09_FullStack_Production_SSR_and_Interview_Mastery.html" class="nav-btn">&larr; Previous: Production &amp; SSR</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="01_React_Mental_Model_JSX_and_Laravel_Vite_Setup.html" class="nav-btn">Start Over: Foundations &#10227;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Bootstrap to Tailwind Component Refactoring Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Bootstrap to Tailwind Component Refactoring Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Legacy Bootstrap HTML/CSS component se modern responsive Tailwind React component tak ka 6-step refactoring flow:
+        </p>
+
+        <div class="stepper-nav" id="bsNav">
+            <button class="step-chip active" onclick="showBsStep(0)">
+                <span class="step-num">01</span>
+                <span>Bootstrap Audit</span>
+            </button>
+            <button class="step-chip" onclick="showBsStep(1)">
+                <span class="step-num">02</span>
+                <span>Grid &amp; Flex</span>
+            </button>
+            <button class="step-chip" onclick="showBsStep(2)">
+                <span class="step-num">03</span>
+                <span>Spacing &amp; Shadows</span>
+            </button>
+            <button class="step-chip" onclick="showBsStep(3)">
+                <span class="step-num">04</span>
+                <span>Micro-Interactions</span>
+            </button>
+            <button class="step-chip" onclick="showBsStep(4)">
+                <span class="step-num">05</span>
+                <span>Dark Mode</span>
+            </button>
+            <button class="step-chip" onclick="showBsStep(5)">
+                <span class="step-num">06</span>
+                <span>React Component</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="bsContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchBsTab(event, 'tab-rosetta')">&#128214; Rosetta Stone (Dictionary)</button>
+            <button class="tab-btn" onclick="switchBsTab(event, 'tab-core-components')">&#127912; 4 Core Components Refactored</button>
+            <button class="tab-btn" onclick="switchBsTab(event, 'tab-tailwind-config')">&#9881;&#65039; tailwind.config.js for Laravel</button>
+            <button class="tab-btn" onclick="switchBsTab(event, 'tab-apply-trap')">&#9888;&#65039; The @apply Anti-Pattern</button>
+        </div>
+
+        <!-- Tab 1: Rosetta Stone -->
+        <div id="tab-rosetta" class="tab-panel active">
+            <h5>Bootstrap 5 to Tailwind CSS Translation Rosetta Stone</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Daily UI development mein use hone wale most frequent Bootstrap classes ka direct Tailwind replacement:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Bootstrap 5 Class</th>
+                        <th>Tailwind CSS Replacement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Layout Grid</strong></td>
+                        <td><code>.row</code> + <code>.col-md-6</code></td>
+                        <td><code>grid grid-cols-1 md:grid-cols-2 gap-6</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Flexbox</strong></td>
+                        <td><code>.d-flex .justify-content-between .align-items-center</code></td>
+                        <td><code>flex justify-between items-center</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Padding</strong></td>
+                        <td><code>.p-3</code> (16px) / <code>.py-2</code></td>
+                        <td><code>p-4</code> (16px) / <code>py-2</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Typography</strong></td>
+                        <td><code>.text-muted .fw-bold .fs-4</code></td>
+                        <td><code>text-slate-500 font-bold text-xl</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Buttons</strong></td>
+                        <td><code>.btn .btn-primary .btn-sm</code></td>
+                        <td><code>px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Visibility</strong></td>
+                        <td><code>.d-none .d-md-block</code></td>
+                        <td><code>hidden md:block</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Core Components Refactored -->
+        <div id="tab-core-components" class="tab-panel">
+            <h5>Component Refactoring: Bootstrap HTML vs Tailwind React</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Side-by-side comparison of a modern responsive Button with loading spinner:
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <strong style="color:#e11d48;">&#10060; Bootstrap HTML (Rigid, needs custom CSS):</strong>
+                    <pre><code class="language-html">&lt;button class="btn btn-primary btn-lg shadow-sm"&gt;
+    &lt;span class="spinner-border spinner-border-sm" role="status"&gt;&lt;/span&gt;
+    Save Changes
+&lt;/button&gt;</code></pre>
+                </div>
+                <div>
+                    <strong style="color:#16a34a;">&#9989; React + Tailwind Component (Clean Props API):</strong>
+                    <pre><code class="language-jsx">export function Button({ variant = 'primary', loading, children, ...props }) {
+    return (
+        &lt;button 
+            className={cn(
+                "inline-flex items-center justify-center px-4 py-2 font-medium rounded-xl transition-all focus:ring-2",
+                variant === 'primary' ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" : "bg-slate-100 text-slate-800"
+            )}
+            disabled={loading}
+            {...props}
+        &gt;
+            {loading && &lt;Spinner className="mr-2 h-4 w-4" /&gt;}
+            {children}
+        &lt;/button&gt;
+    );
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Tailwind Config for Laravel -->
+        <div id="tab-tailwind-config" class="tab-panel">
+            <h5>Step-by-Step Tailwind Installation &amp; tailwind.config.js for Laravel 11</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Terminal installation workflow and production configuration for scanning Blade templates, React JSX files, and custom theme tokens:
+            </p>
+            <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:14px; font-family:monospace; font-size:0.88rem; color:#38bdf8;">
+                # 1. Install Tailwind, PostCSS &amp; Autoprefixer<br>
+                <span style="color:#f8fafc;">npm install -D tailwindcss postcss autoprefixer</span><br><br>
+                # 2. Generate tailwind.config.js &amp; postcss.config.js<br>
+                <span style="color:#f8fafc;">npx tailwindcss init -p</span><br><br>
+                # 3. Add to resources/css/app.css: <br>
+                <span style="color:#a5b4fc;">@tailwind base; @tailwind components; @tailwind utilities;</span>
+            </div>
+            <pre><code class="language-javascript">import defaultTheme from 'tailwindcss/defaultTheme';
+import forms from '@tailwindcss/forms';
+import typography from '@tailwindcss/typography';
+
+export default {
+    darkMode: 'class', // Controlled via &lt;html class="dark"&gt;
+    content: [
+        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
+        './resources/views/**/*.blade.php',
+        './resources/js/**/*.jsx', // Essential for scanning React components!
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                brand: {
+                    50: '#eef2ff',
+                    600: '#4f46e5',
+                    700: '#4338ca',
+                }
+            }
+        },
+    },
+    plugins: [forms, typography],
+};</code></pre>
+        </div>
+
+        <!-- Tab 4: The @apply Anti-Pattern -->
+        <div id="tab-apply-trap" class="tab-panel">
+            <h5>Why Overusing @apply in React is an Anti-Pattern</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Don't recreate Bootstrap inside CSS files when building React applications:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Approach</th>
+                        <th>Code</th>
+                        <th>Drawback in React</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Overusing <code>@apply</code> in CSS &#10060;</strong></td>
+                        <td><code>.my-btn { @apply px-4 py-2 bg-blue-600 rounded; }</code></td>
+                        <td>Re-introduces CSS context switching; cannot pass dynamic React props like <code>variant="danger"</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>React Component Extraction &#9989;</strong></td>
+                        <td><code>&lt;Button variant="primary"&gt;</code></td>
+                        <td>Complete design freedom; single source of truth in JSX; 100% purged minimal CSS bundle.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="09_FullStack_Production_SSR_and_Interview_Mastery.html" class="nav-btn">&larr; Previous: Production &amp; SSR</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="01_React_Mental_Model_JSX_and_Laravel_Vite_Setup.html" class="nav-btn">Start Over: Foundations &#10227;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### React Mastery 10: Transitioning from Bootstrap to Tailwind CSS (Beginner to Advanced)
+
+> *"Component-Class thinking se Utility-First mastery tak — Full-Stack Laravel & React Developer Complete Migration Guide"*
+
+Agar aapne pichle 3 saalon mein Laravel projects banaye hain, to chances hain ki aapne **Bootstrap 4 ya 5** use kiya hoga:
+`<div class="container"><div class="row"><div class="col-md-6"><button class="btn btn-primary">Submit</button></div></div></div>`
+
+Lekin modern Laravel ecosystem (Laravel 9, 10, 11, Breeze, Jetstream, Filament) **100% Tailwind CSS-first** ho chuka hai. 
+
+Shuru mein Bootstrap developer ko Tailwind dekh kar lagta hai: *"Yeh to inline CSS jaisa ganda dikhta hai!"* Lekin ek baar jab aapka **Mental Model shift** hota hai, to aapko realize hota hai ki Tailwind se UI development 5x fast aur 100% customizable ho jaati hai bina ek bhi `.css` file khole!
+
+---
+
+#### 1. The Core Mental Model Shift
+
+| Dimension | **Bootstrap (Component-First)** | **Tailwind CSS (Utility-First)** |
+|---|---|---|
+| **Philosophy** | Pre-designed opinionated components (`.card`, `.btn-primary`, `.modal`) | Low-level atomic building blocks (`flex`, `p-4`, `rounded-xl`, `bg-blue-600`) |
+| **Customization** | Hard! CSS override file mein `!important` likhna padta hai | Trivial! Har utility class independently control hoti hai |
+| **Look & Feel** | "Har Bootstrap site ek jaisi dikhti hai" | Unique, bespoke, designer-grade look |
+| **Bundle Size** | Full CSS bundle shipped (~180KB+) chahe 10% classes use hui hon | Purged bundle! Production build mein sirf used classes aati hain (~12KB!) |
+| **In React Ecosystem** | Redundant! React components ke upar Bootstrap classes ka double layer | **Match made in heaven!** React UI structure banata hai, Tailwind visual styling |
+
+> **The Big Realization:** Bootstrap mein component abstraction **CSS classes** (`.card`, `.btn`) ke through hoti thi. React mein component abstraction **JavaScript components** (`<Card>`, `<Button>`) ke through hoti hai! Isliye React mein `.btn` class ki zaroorat hi nahi hai!
+
+---
+
+#### 2. Complete Step-by-Step Setup: Installing & Wiring Tailwind CSS in a Laravel + React Project
+
+Agar aap ek naye project mein ya existing Bootstrap project mein Tailwind setup kar rahe hain, to yahan zero se lekar production tak ka complete practical workflow hai:
+
+##### Step 1: Install Tailwind CSS, PostCSS & Autoprefixer
+Apne Laravel root directory ke terminal mein ye command run karein:
+```bash
+npm install -D tailwindcss postcss autoprefixer
+```
+- `tailwindcss`: Core compiler aur utility generation engine.
+- `postcss`: CSS toolchain jo Tailwind ke `@tailwind` directives ko process karta hai.
+- `autoprefixer`: Browser vendor prefixes (`-webkit-`, `-moz-`) automatically add karta hai.
+
+##### Step 2: Initialize Configuration Files
+```bash
+npx tailwindcss init -p
+```
+Yeh command aapke root directory mein 2 configuration files create karegi:
+1. `tailwind.config.js`
+2. `postcss.config.js`
+
+##### Step 3: Configure Content Scanning Paths (`tailwind.config.js`)
+> ⚠️ **The #1 Reason Tailwind Doesn't Work:** Agar aapke React JSX files ka path yahan configured nahi hai, to Tailwind unhe scan nahi karega aur build mein classes empty aayengi!
+
+```javascript
+import defaultTheme from 'tailwindcss/defaultTheme';
+import forms from '@tailwindcss/forms';
+import typography from '@tailwindcss/typography';
+
+/** @type {import('tailwindcss').Config} */
+export default {
+    darkMode: 'class', // Enables dark: utilities via <html class="dark">
+    content: [
+        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
+        './storage/framework/views/*.php',
+        './resources/views/**/*.blade.php',
+        './resources/js/**/*.jsx',  // <-- CRITICAL for React components!
+        './resources/js/**/*.js',
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                brand: {
+                    50: '#eef2ff',
+                    500: '#6366f1',
+                    600: '#4f46e5',
+                    700: '#4338ca',
+                },
+            },
+        },
+    },
+    plugins: [forms, typography],
+};
+```
+
+##### Step 4: Inject Tailwind Directives into `resources/css/app.css`
+Aapke `resources/css/app.css` file ke top par ye three directives add karein:
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Global Base Styles (Optional) */
+@layer base {
+    body {
+        @apply antialiased text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950;
+    }
+}
+```
+- `@tailwind base`: Preflight resets (margins 0, box-sizing border-box, typography normalization).
+- `@tailwind components`: Component classes.
+- `@tailwind utilities`: Saari atomic utility classes (`flex`, `p-4`, `text-indigo-600`).
+
+##### Step 5: Wire Vite Configuration (`vite.config.js`)
+Make sure `resources/css/app.css` is in Vite's input array:
+```javascript
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.jsx',
+            ],
+            refresh: true, // Auto-reloads browser on Blade/JSX edits!
+        }),
+        react(),
+    ],
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+        },
+    },
+});
+```
+
+##### Step 6: Include Vite in Master Blade Layout (`resources/views/app.blade.php`)
+```blade
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ config('app.name', 'ShopSphere') }}</title>
+
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+
+    <!-- Vite Scripts & Styles -->
+    @viteReactRefresh
+    @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+    @inertiaHead
+</head>
+<body class="font-sans antialiased bg-slate-950 text-slate-100">
+    @inertia
+</body>
+</html>
+```
+
+##### Step 7: Run Vite Development Server
+```bash
+npm run dev
+```
+Aur backend ke liye:
+```bash
+php artisan serve
+```
+
+---
+
+##### Step 8: Co-existence Strategy: Migrating an Existing Bootstrap Project Without Breaking It
+Agar aapke paas already ek legacy Bootstrap 5 project hai aur aap direct sab kuch ek din mein rewrite nahi kar sakte:
+
+1. **Approach A: Scoped Prefixing (`prefix: 'tw-'`)**
+   In `tailwind.config.js`:
+   ```javascript
+   export default {
+       prefix: 'tw-', // e.g. tw-flex, tw-p-4, tw-bg-blue-600
+       // ...
+   }
+   ```
+   *Benefit:* Bootstrap ka `.btn`, `.card`, `.modal` aur Tailwind ka CSS clash nahi hoga! Dono peacefully coexist karenge.
+2. **Approach B: Page-by-Page Migration (Recommended for Inertia.js)**
+   - Old Blade pages par Bootstrap CDN / assets include rakhein.
+   - Naye React / Inertia master layout (`app.blade.php`) par exclusively Tailwind include karein.
+
+---
+
+##### Step 9: Top 4 Beginner Setup Gotchas & How to Fix Them
+| Gotcha / Issue | Root Cause | Production Fix |
+|---|---|---|
+| **Classes not styling in React** | `content` path missing `./resources/js/**/*.jsx` | Add `'./resources/js/**/*.{js,jsx,ts,tsx}'` in `tailwind.config.js` |
+| **Dynamic classes broken (`bg-${color}-500`)** | PurgeCSS cannot evaluate JS template literals at build time | Use complete strings or lookup object: `const colors = { red: 'bg-red-500', blue: 'bg-blue-500' }` |
+| **Blank White Screen in React** | Missing `@viteReactRefresh` in Blade | Always put `@viteReactRefresh` before `@vite(...)` in `<head>` |
+| **Styles disappear in production build** | Unused classes purged by tree-shaking | Never dynamically concatenate class strings. Use `safelist` if dynamically injected. |
+
+---
+
+#### 3. The Rosetta Stone: Bootstrap to Tailwind Translation Dictionary
+
+##### A. Layout, Grid & Flexbox:
+| Concept | Bootstrap 5 | Tailwind CSS |
+|---|---|---|
+| **Container** | `.container` | `container mx-auto px-4` |
+| **Flex Row** | `.d-flex .flex-row` | `flex flex-row` |
+| **Flex Column** | `.d-flex .flex-column` | `flex flex-col` |
+| **Justify Between** | `.justify-content-between` | `justify-between` |
+| **Align Items Center** | `.align-items-center` | `items-center` |
+| **Flex Wrap** | `.flex-wrap` | `flex-wrap` |
+| **2-Column Grid** | `.row` + `.col-6` | `grid grid-cols-2 gap-4` |
+| **Responsive 3-Column** | `.col-12 .col-md-4` | `grid grid-cols-1 md:grid-cols-3 gap-6` |
+
+---
+
+##### B. Spacing & Sizing:
+> **Tailwind Spacing Scale:** $1\text{ unit} = 0.25\text{rem} = 4\text{px}$. So `p-4` $= 16\text{px}$, `m-6` $= 24\text{px}$.
+
+| Concept | Bootstrap 5 | Tailwind CSS |
+|---|---|---|
+| **Padding All Sides** | `.p-3` (16px) | `p-4` (16px) |
+| **Padding X (Left/Right)** | `.px-3` | `px-4` |
+| **Padding Y (Top/Bottom)**| `.py-3` | `py-4` |
+| **Margin Bottom** | `.mb-3` | `mb-4` (or `space-y-4` on parent!) |
+| **Center Horizontally** | `.mx-auto` | `mx-auto` |
+| **Width 100%** | `.w-100` | `w-full` |
+| **Height 100%** | `.h-100` | `h-full` |
+| **Screen Height** | `.vh-100` | `h-screen` |
+
+---
+
+##### C. Typography & Colors:
+| Concept | Bootstrap 5 | Tailwind CSS |
+|---|---|---|
+| **Font Bold** | `.fw-bold` | `font-bold` |
+| **Font Medium** | `.fw-semibold` | `font-semibold` |
+| **Text Muted** | `.text-muted` | `text-slate-500` (or `text-gray-500`) |
+| **Text Large** | `.fs-4` | `text-xl` |
+| **Text Centered** | `.text-center` | `text-center` |
+| **Primary Color** | `.text-primary`, `.bg-primary` | `text-blue-600`, `bg-blue-600` |
+| **Success Color** | `.text-success`, `.bg-success` | `text-emerald-600`, `bg-emerald-600` |
+| **Danger Color** | `.text-danger`, `.bg-danger` | `text-rose-600`, `bg-rose-600` |
+
+---
+
+#### 4. Responsive Design — The Mobile-First Paradigm
+
+Bootstrap mein aap `.col-12 .col-md-6 .col-lg-4` likhte the.
+Tailwind mein **Mobile-First Breakpoint Prefixes** use hote hain:
+
+```html
+<!-- Default: Mobile (< 640px)
+     sm: Tablet portrait (>= 640px)
+     md: Tablet landscape (>= 768px)
+     lg: Desktop (>= 1024px)
+     xl: Large screen (>= 1280px) -->
+
+<div class="w-full md:w-1/2 lg:w-1/3">
+    <!-- Mobile: 100% width, Tablet: 50% width, Desktop: 33.3% width -->
+</div>
+```
+
+##### 🌟 The Modern CSS Grid Approach (Superior to Bootstrap Rows):
+```html
+<!-- Bootstrap (Clunky row & col nesting): -->
+<div class="row g-4">
+    <div class="col-12 col-md-6 col-lg-3">Card 1</div>
+    <div class="col-12 col-md-6 col-lg-3">Card 2</div>
+    <div class="col-12 col-md-6 col-lg-3">Card 3</div>
+    <div class="col-12 col-md-6 col-lg-3">Card 4</div>
+</div>
+
+<!-- Tailwind (1 clean grid declaration on parent!): -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div>Card 1</div>
+    <div>Card 2</div>
+    <div>Card 3</div>
+    <div>Card 4</div>
+</div>
+```
+
+---
+
+#### 5. Interactive States, Pseudo-Classes & Dark Mode
+
+Bootstrap mein hover ya focus styles ke liye aapko custom CSS likhna padta tha. Tailwind mein sab kuch utility prefixes se hota hai:
+
+##### 1. Hover, Focus & Active:
+```html
+<button class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 focus:ring-4 focus:ring-indigo-300 transition-all">
+    Click Me
+</button>
+```
+
+##### 2. Group Hover (Impossible in Pure Bootstrap without CSS):
+Parent par hover hone par child ka color ya icon animate karna:
+
+```jsx
+<div className="group p-6 bg-white hover:bg-indigo-600 rounded-xl transition-colors shadow">
+    <h3 className="text-gray-900 group-hover:text-white font-bold">Project Title</h3>
+    <p className="text-gray-500 group-hover:text-indigo-100">Project details description...</p>
+    <span className="text-indigo-600 group-hover:text-white transition-transform group-hover:translate-x-2 inline-block">
+        Learn More &rarr;
+    </span>
+</div>
+```
+
+##### 3. Native Dark Mode:
+```html
+<div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800">
+    Automatically adapts to system dark mode or dark class toggle!
+</div>
+```
+
+---
+
+#### 5. Side-by-Side Component Refactoring (Bootstrap vs React + Tailwind)
+
+##### Component 1: The Modern Reusable Button
+
+###### ❌ The Bootstrap Way (`.btn .btn-primary`):
+```html
+<button class="btn btn-primary btn-lg shadow-sm">Submit</button>
+```
+
+###### ✅ The React + Tailwind Way (Clean Props API):
+```jsx
+// resources/js/Components/Button.jsx
+import { cn } from '@/Utils/cn';
+
+export default function Button({ 
+    variant = 'primary', 
+    size = 'md', 
+    loading = false, 
+    className, 
+    children, 
+    disabled, 
+    ...props 
+}) {
+    const baseStyles = "inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+
+    const variants = {
+        primary:   "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 shadow-sm hover:shadow",
+        secondary: "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-400",
+        danger:    "bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500",
+        outline:   "border border-slate-300 hover:bg-slate-50 text-slate-700 focus:ring-indigo-500",
+    };
+
+    const sizes = {
+        sm: "px-3 py-1.5 text-xs",
+        md: "px-4 py-2 text-sm",
+        lg: "px-6 py-3 text-base",
+    };
+
+    return (
+        <button 
+            disabled={disabled || loading} 
+            className={cn(baseStyles, variants[variant], sizes[size], className)}
+            {...props}
+        >
+            {loading && (
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+            )}
+            {children}
+        </button>
+    );
+}
+
+// Usage in Page:
+<Button variant="primary" size="md" loading={submitting}>Save Changes</Button>
+<Button variant="danger" size="sm" onClick={handleDelete}>Delete</Button>
+```
+
+---
+
+##### Component 2: Dashboard Card
+
+###### ❌ Bootstrap (`.card .card-body`):
+```html
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Total Revenue</h5>
+        <span class="badge bg-success">+12.5%</span>
+    </div>
+    <div class="card-body">
+        <h2 class="display-6 fw-bold">$48,290</h2>
+        <p class="text-muted mb-0">vs previous month</p>
+    </div>
+</div>
+```
+
+###### ✅ React + Tailwind CSS:
+```jsx
+export function StatCard({ title, value, change, trend = 'up' }) {
+    return (
+        <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    trend === 'up' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-700'
+                }`}>
+                    {change}
+                </span>
+            </div>
+            <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                {value}
+            </div>
+            <p className="text-xs text-slate-400 mt-1">Compared to previous billing cycle</p>
+        </div>
+    );
+}
+```
+
+---
+
+#### 6. The `@apply` Anti-Pattern in React
+
+Jab developers Bootstrap se aate hain, to unki purani aadat hoti hai CSS classes likhne ki. Wo `app.css` mein jaakar likhte hain:
+
+```css
+/* ❌ THE @APPLY ANTI-PATTERN IN REACT APPS: */
+.custom-card {
+    @apply p-6 bg-white rounded-xl shadow-md border border-gray-100;
+}
+.custom-card-header {
+    @apply font-bold text-lg text-gray-800 mb-2;
+}
+```
+
+##### Kyun Yeh React Mein Galti Hai?
+1. **Defeats the Purpose of Tailwind:** Aap wapas CSS file aur JSX file ke beech context switch karne lage.
+2. **Breaks Bundle Purging:** CSS selector names duplicate hote hain.
+3. **The React Way:** Component extract karein!
+   ```jsx
+   // ✅ REUSABLE REACT COMPONENT:
+   export function Card({ children, className }) {
+       return <div className={cn("p-6 bg-white rounded-xl shadow-md border border-gray-100", className)}>{children}</div>;
+   }
+   ```
+> **Rule:** `@apply` sirf tab use karein jab third-party un-controlled HTML (jaise Markdown rendered content ya third-party datepicker) ko style karna ho. Apne components ke liye React components use karein!
+
+---
+
+#### 7. Configuring Tailwind in Laravel 10/11 (`tailwind.config.js`)
+
+```javascript
+import defaultTheme from 'tailwindcss/defaultTheme';
+import forms from '@tailwindcss/forms';
+import typography from '@tailwindcss/typography';
+
+/** @type {import('tailwindcss').Config} */
+export default {
+    darkMode: 'class', // Enable class-based dark mode (<html class="dark">)
+    content: [
+        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
+        './storage/framework/views/*.php',
+        './resources/views/**/*.blade.php',
+        './resources/js/**/*.jsx', // Scans all React components!
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                brand: {
+                    50:  '#eef2ff',
+                    500: '#6366f1',
+                    600: '#4f46e5',
+                    700: '#4338ca',
+                }
+            }
+        },
+    },
+    plugins: [forms, typography],
+};
+```
+
+---
+
+#### 9. 3-Year Laravel Developer Migration Checklist
+
+1. 🚫 **Stop using `.container`, `.row`, `.col-*`:** Use `container mx-auto px-4` and modern `grid grid-cols-1 md:grid-cols-3 gap-6`.
+2. 📱 **Think Mobile-First:** Base classes bina prefix ke mobile ke liye hoti hain. Desktop styles ke liye `md:` aur `lg:` lagayein.
+3. 📦 **Extract React Components, Don't Use `@apply`:** Component reusable banana ho to `<Button />` ya `<Card />` JSX banayein.
+4. 🛠️ **Use `cn()` for Class Overrides:** Dynamic states ke liye `clsx` + `tailwind-merge` use karein taaki classes collide na hon.
+5. 🎨 **Leverage Arbitrary Values:** Special requirement ke liye custom CSS likhne ke bajaye arbitrary syntax use karein: `w-[320px]`, `top-[18px]`, `bg-[#0f172a]`.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const bsSteps = [
+            {
+                title: 'Step 1: Bootstrap 5 Legacy Audit',
+                level: 'Legacy HTML',
+                desc: 'Maan lijiye aapke paas ek Bootstrap 5 dashboard card hai with .card, .card-body, .row, .col-md-6, aur .badge bg-success. Yeh rigid opinionated design hai.',
+                code: '<!-- Bootstrap 5 -->\n<div class=\"card shadow-sm\">\n    <div class=\"card-body\">\n        <h5 class=\"card-title\">Revenue <span class=\"badge bg-success\">+12%</span></h5>\n        <h2 class=\"display-6\">$48,290</h2>\n    </div>\n</div>'
+            },
+            {
+                title: 'Step 2: Grid & Flexbox Modernization',
+                level: 'Tailwind Grid',
+                desc: 'Purane .row aur .col-md-6 ko replace karo Tailwind ke CSS Grid se: grid grid-cols-1 md:grid-cols-2 gap-6. Parent par 1 clean declaration!',
+                code: '<!-- Tailwind Modern Grid -->\n<div class=\"grid grid-cols-1 md:grid-cols-2 gap-6\">\n    <!-- Clean container children without nested row wrappers! -->\n</div>'
+            },
+            {
+                title: 'Step 3: Spacing, Borders & Box Shadows',
+                level: 'Box Model',
+                desc: '.card ko replace karo: p-6 bg-white rounded-2xl border border-slate-100 shadow-sm. Clean modern aesthetics without heavy CSS overrides.',
+                code: '<div class=\"p-6 bg-white rounded-2xl border border-slate-100 shadow-sm\">\n    <div class=\"flex justify-between items-center\">...</div>\n</div>'
+            },
+            {
+                title: 'Step 4: Interactive Micro-Animations',
+                level: 'Hover & Focus',
+                desc: 'Hover effects add karo jo Bootstrap mein custom CSS ke bina impossible the: hover:shadow-md hover:-translate-y-0.5 transition-all duration-200.',
+                code: '<div class=\"hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer\">\n    <!-- Smooth subtle lift on mouse hover! -->\n</div>'
+            },
+            {
+                title: 'Step 5: Dark Mode Class Layering',
+                level: 'Dark Theme',
+                desc: 'dark: prefix use karke system ya class-based dark mode layer karo: dark:bg-slate-800 dark:border-slate-700 dark:text-white.',
+                code: '<div class=\"bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700/60 text-slate-900 dark:text-white\">\n    <!-- Automatically adapts to dark theme! -->\n</div>'
+            },
+            {
+                title: 'Step 6: Pure React Component Abstraction',
+                level: 'Component API',
+                desc: 'Ise reusable React component mein convert karo with cn() helper aur props API (title, value, trend, change) taaki pure application mein 1 line se use ho sake.',
+                code: 'export function StatCard({ title, value, change, trend = \'up\' }) {\n    return (\n        <div className=\"p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm\">\n            <span className=\"text-sm text-slate-500\">{title}</span>\n            <h2 className=\"text-3xl font-bold mt-2\">{value}</h2>\n        </div>\n    );\n}'
+            }
+        ];
+
+        function showBsStep(index) {
+            document.querySelectorAll('#bsNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = bsSteps[index];
+            document.getElementById('bsContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-jsx">' + step.code + '</code></pre>';
+        }
+
+        showBsStep(0);
+
+        function switchBsTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

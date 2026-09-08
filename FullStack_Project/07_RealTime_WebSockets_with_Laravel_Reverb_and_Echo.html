@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSphere Pro - Module 07: Real-Time Live Updates with Laravel Reverb & Echo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="module-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="badge-pill">ShopSphere Pro</span>
+        <span class="badge-sub">Module 07</span>
+      </div>
+      <h1 class="header-title">Real-Time Live Updates with Laravel Reverb & Echo</h1>
+      <div class="header-actions">
+        <a href="../index.html" class="hub-btn">← Learning Hub</a>
+        <a href="06_Queue_Workers_PDF_Invoicing_and_Email_Notifications.html" class="nav-btn">← Previous Module</a>
+        <a href="08_Admin_Analytics_Dashboard_SingleScan_Queries_and_Charts.html" class="nav-btn">Next Module →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Interactive Stepper -->
+    <section class="lifecycle-stepper-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Real-Time Flow</div>
+        <h2>WebSockets & Reverb Broadcasting Lifecycle</h2>
+        <p>Follow the 6 foundational steps to replace heavy polling with event-driven WebSockets and reactive React Echo hooks.</p>
+      </div>
+      <div class="stepper-track">
+        
+    <div class="step-chip active" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-label">Polling Overhead Trap</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-label">Laravel Reverb Setup</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-label">Channel Authorization</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-label">Sanitized Event Broadcast</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(5)">
+      <span class="step-num">5</span>
+      <span class="step-label">React 18 Echo Hook</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(6)">
+      <span class="step-num">6</span>
+      <span class="step-label">Live Tracking Stepper</span>
+    </div>
+  
+      </div>
+      <div class="stepper-content-wrapper">
+        
+    <div id="step-content-1" class="step-body active" style="display:block;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">1. Polling Overhead Trap</h3>
+        <p class="step-desc-display">Why traditional 3-second HTTP polling exhausts database connections and creates 100,000 redundant requests per minute.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-2" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">2. Laravel Reverb Setup</h3>
+        <p class="step-desc-display">Configuring Laravel 11's high-speed Revolt-powered WebSocket server with native Redis pub/sub support.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-3" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">3. Channel Authorization</h3>
+        <p class="step-desc-display">Securing private order and vendor channels in routes/channels.php to strictly isolate cross-user customer data.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-4" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">4. Sanitized Event Broadcast</h3>
+        <p class="step-desc-display">Creating ShouldBroadcast events with isolated payload formatting to prevent leaking sensitive model attributes.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-5" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">5. React 18 Echo Hook</h3>
+        <p class="step-desc-display">Building a self-cleaning useEchoPrivateChannel custom hook that cleanly terminates zombie WebSocket listeners on unmount.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-6" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">6. Live Tracking Stepper</h3>
+        <p class="step-desc-display">Animating order status progression in real-time with pulse badges, status updates, and interactive audio notifications.</p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Interactive Architecture & Code Tabs -->
+    <section class="lab-tabs-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Architecture Lab</div>
+        <h2>Polling Benchmarks, Channel Security & Echo Hook Diffs</h2>
+        <p>Inspect server resource comparisons, broadcast event sanitization diffs, channel matrices, and hook memory management.</p>
+      </div>
+      <div class="tab-navigation">
+        
+    <button class="tab-btn active" onclick="switchTab('tab-poll-vs-ws')">Polling vs WebSockets</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-event-diff')">Broadcasting Event Code Diff</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-channels-matrix')">Channel Security Matrix</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-hook-diff')">React Echo Hook Code Diff</button>
+  
+      </div>
+      <div class="tab-content-wrapper">
+        
+    <div id="tab-poll-vs-ws" class="tab-pane active" style="display:block;">
+      
+      <h3>Resource Consumption for 5,000 Concurrent Shoppers</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>HTTP Polling (Every 3 Seconds)</th>
+            <th>Laravel Reverb WebSockets</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Requests / Minute</strong></td>
+            <td><strong>100,000 HTTP Requests/min</strong></td>
+            <td><strong>0 HTTP Requests</strong> (Single persistent connection)</td>
+          </tr>
+          <tr>
+            <td><strong>Database CPU Load</strong></td>
+            <td>88% - 95% (Continuous status querying)</td>
+            <td>&lt; 2% (Queries ONLY executed on actual state change)</td>
+          </tr>
+          <tr>
+            <td><strong>Event Latency</strong></td>
+            <td>Up to 3,000 ms (Depends on polling timer)</td>
+            <td><strong>&lt; 35 ms</strong> (True real-time instant push)</td>
+          </tr>
+          <tr>
+            <td><strong>Bandwidth Consumed</strong></td>
+            <td>~250 MB / minute</td>
+            <td>~1.2 MB / minute (Lightweight WebSocket frames)</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-event-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Leaky Model Broadcast vs Sanitized Enterprise Event</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Leaky Event (Exposes Raw Eloquent Model to Public Web)</h4>
+          <pre><code>class OrderUpdated implements ShouldBroadcast {
+    // Exposes entire order object including password hashes,
+    // billing addresses, and raw vendor commission calculations!
+    public $order;
+    
+    public function broadcastOn() {
+        return new Channel('orders'); // Public channel! Anyone can listen!
+    }
+}</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Sanitized Enterprise Event (Private Channels + Minimal Payload)</h4>
+          <pre><code>class OrderStatusUpdatedEvent implements ShouldBroadcast {
+    public function __construct(public Order $order) {
+        $this->onQueue('high');
+    }
+
+    public function broadcastOn(): array {
+        // Strict user-isolated private channel
+        return [new PrivateChannel("orders.{$this->order->id}")];
+    }
+
+    public function broadcastWith(): array {
+        // Whitelist exact fields sent over the wire
+        return [
+            'order_id' => $this->order->id,
+            'status' => $this->order->status,
+            'tracking_number' => $this->order->tracking_number,
+        ];
+    }
+}</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-channels-matrix" class="tab-pane " style="display:none;">
+      
+      <h3>Channel Scopes & Authorization Protocols</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Channel Type</th>
+            <th>Prefix</th>
+            <th>Authorization Method</th>
+            <th>Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Public Channel</strong></td>
+            <td><code>public-</code></td>
+            <td>None (Open to all visitors)</td>
+            <td>Flash sale countdown timers, general announcements</td>
+          </tr>
+          <tr>
+            <td><strong>Private Channel</strong></td>
+            <td><code>private-</code></td>
+            <td>Session Cookie via <code>/broadcasting/auth</code></td>
+            <td>Order tracking updates, customer notifications, vendor wallet alerts</td>
+          </tr>
+          <tr>
+            <td><strong>Presence Channel</strong></td>
+            <td><code>presence-</code></td>
+            <td>Session Cookie + User Identity Array</td>
+            <td>Live viewers count on product, vendor-customer real-time support chat</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-hook-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Zombie Listener Memory Leak vs Self-Cleaning Custom Hook</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Unmanaged Echo Listener (Zombie Listeners on Every Route Change)</h4>
+          <pre><code>useEffect(() => {
+    // Listens to channel but NEVER stops listening on unmount!
+    window.Echo.private(`orders.${orderId}`)
+        .listen('.order.updated', (e) => setOrder(e));
+    // Consequence: When user revisits page, 2x, 3x duplicate audio chimes!
+}, []);</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Self-Cleaning Hook (Zero Memory Leaks)</h4>
+          <pre><code>export function useEchoPrivateChannel(channelName, eventName, callback) {
+    const callbackRef = useRef(callback);
+    callbackRef.current = callback;
+
+    useEffect(() => {
+        const channel = window.Echo.private(channelName);
+        channel.listen(`.${eventName}`, (data) => callbackRef.current(data));
+
+        return () => {
+            // Clean teardown prevents duplicate listeners
+            channel.stopListening(`.${eventName}`);
+            window.Echo.leave(channelName);
+        };
+    }, [channelName, eventName]);
+}</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Markdown Documentation Container -->
+    <article class="markdown-article">
+      <div id="rendered-markdown"></div>
+    </article>
+  </main>
+
+  <!-- Hidden Pre-Loaded Markdown Content -->
+  <textarea id="markdown-content" style="display:none; white-space:pre;"># ShopSphere Pro - Module 07: Real-Time Live Updates with Laravel Reverb & Echo
+
+## 1. The Polling Anti-Pattern vs Real-Time WebSockets
+
+Jab customer checkout kar deta hai aur live order tracking screen par baithta hai, toh legacy applications me sabse ghatiya approach ye hoti hai: **HTTP Polling** (`setInterval(() => fetch(...), 3000)`).
+
+### Why HTTP Polling Kills E-Commerce Servers:
+Agar flash sale ke baad **5,000 users** live order tracking page par hain:
+- Har user har 3 second me `GET /api/orders/123/status` call karega.
+- Iska matlab **1,666 HTTP requests per second** aur **100,000 database queries per minute** sirf ye dekhne ke liye ki "kya order dispatch hua?"!
+- 99.8% polling requests me response identical (`"status": "processing"`) hota hai — pure network bandwidth aur database CPU ka absolute wastage!
+
+### ✅ The Modern Solution: Laravel Reverb
+Laravel 11 me introduce hua **Laravel Reverb** ek first-party, ultra-fast, asynchronous WebSocket server hai jo:
+- PHP 8.2+ event-loop (powered by Revolt) par chalta hai.
+- Ek single small server par **10,000+ concurrent persistent connections** handle karta hai.
+- Native **Redis Pub/Sub** support ke sath zero polling overhead par instantly events push karta hai!
+
+---
+
+## 2. Laravel Reverb Configuration & Environment Hardening
+
+### A. `.env` Configuration
+```env
+BROADCAST_CONNECTION=reverb
+
+REVERB_APP_ID=shopsphere_app
+REVERB_APP_KEY=shopsphere_key_98234723
+REVERB_APP_SECRET=shopsphere_sec_892348923
+REVERB_HOST="127.0.0.1"
+REVERB_PORT=8080
+REVERB_SCHEME=http
+
+# Client-side Vite access
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
+```
+
+### B. Starting the Reverb Server in Development & Supervisor Daemon
+```bash
+php artisan reverb:start --debug
+```
+
+---
+
+## 3. Channel Authorization Architecture (`routes/channels.php`)
+
+WebSockets me security sabse bada challenge hoti hai. Galti se bhi agar koi user dusre user ka order channel sunne lagega, toh sensitive PII (Customer Name, Shipping Address) leak ho jayega.
+
+Isliye hum **Private Channels** use karte hain jahan Laravel session cookie se user ko authenticate karta hai:
+
+```php
+<?php
+
+use App\Models\Order;
+use App\Models\User;
+use Illuminate\Support\Facades\Broadcast;
+
+// 1. Private Order Channel: Only the Buyer OR an Admin/Vendor can listen!
+Broadcast::channel('orders.{orderId}', function (User $user, int $orderId) {
+    $order = Order::find($orderId);
+
+    if (!$order) {
+        return false;
+    }
+
+    // Customer who placed order
+    if ($user->id === $order->user_id) {
+        return true;
+    }
+
+    // SuperAdmin can inspect any order
+    if ($user->hasRole('super_admin')) {
+        return true;
+    }
+
+    // Vendor whose product is in this order
+    if ($user->hasRole('vendor')) {
+        return $order->items()->whereHas('variant.product', function ($q) use ($user) {
+            $q->where('vendor_id', $user->vendorProfile?->id);
+        })->exists();
+    }
+
+    return false;
+});
+
+// 2. Private Vendor Dashboard Channel: Only this specific vendor
+Broadcast::channel('vendors.{vendorId}', function (User $user, int $vendorId) {
+    return $user->hasRole('vendor') && $user->vendorProfile?->id === (int) $vendorId;
+});
+
+// 3. Presence Channel: Active Users on a Flash Sale Product Page
+Broadcast::channel('product.live.{productId}', function (User $user, int $productId) {
+    return [
+        'id' => $user->id,
+        'name' => $user->name,
+    ];
+});
+```
+
+---
+
+## 4. The Broadcast Event Pipeline
+
+Aaiye dekhte hain ki order status update hone par real-time event kaise dispatch hota hai:
+
+```php
+<?php
+
+namespace App\Events;
+
+use App\Models\Order;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class OrderStatusUpdatedEvent implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public function __construct(public Order $order)
+    {
+        // Broadcast through background queue so HTTP worker is not slowed down
+        $this->onQueue('high');
+    }
+
+    /**
+     * Define which channels receive the broadcast
+     */
+    public function broadcastOn(): array
+    {
+        return [
+            // Channel for the customer
+            new PrivateChannel("orders.{$this->order->id}"),
+            // Channel for the vendor dashboard
+            new PrivateChannel("vendors.{$this->order->items->first()?->variant->product->vendor_id}"),
+        ];
+    }
+
+    /**
+     * Broadcast Event Name
+     */
+    public function broadcastAs(): string
+    {
+        return 'order.status.updated';
+    }
+
+    /**
+     * SANITIZED PAYLOAD: Never broadcast raw Eloquent models!
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'order_id' => $this->order->id,
+            'order_number' => $this->order->order_number,
+            'status' => $this->order->status, // 'processing', 'shipped', 'delivered'
+            'updated_at' => $this->order->updated_at->toIso8601String(),
+            'tracking_number' => $this->order->tracking_number ?? null,
+            'estimated_delivery' => $this->order->estimated_delivery_at?->format('d M, Y') ?? 'In 2-3 business days',
+        ];
+    }
+}
+```
+
+---
+
+## 5. React 18 Custom Laravel Echo Hook (`useEchoChannel`)
+
+React me WebSockets use karte waqt sabse badi problem hoti hai **Memory Leaks & Zombie Listeners**:
+Jab user page navigate karta hai, agar channel unmount par properly leave nahi hua, toh background me multiple duplicate event handlers create ho jate hain.
+
+### The Production Hook:
+```javascript
+import { useEffect, useRef } from 'react';
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+// Setup Global Echo Instance
+window.Pusher = Pusher;
+
+if (!window.Echo) {
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY,
+        wsHost: import.meta.env.VITE_REVERB_HOST,
+        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        enabledTransports: ['ws', 'wss'],
+    });
+}
+
+/**
+ * Clean lifecycle-managed Echo Channel Hook
+ */
+export function useEchoPrivateChannel(channelName, eventName, callback) {
+    const callbackRef = useRef(callback);
+    callbackRef.current = callback;
+
+    useEffect(() => {
+        if (!channelName) return;
+
+        const channel = window.Echo.private(channelName);
+
+        // Listen for the custom broadcast event
+        channel.listen(`.${eventName}`, (data) => {
+            if (callbackRef.current) {
+                callbackRef.current(data);
+            }
+        });
+
+        // Cleanup on unmount or channel change
+        return () => {
+            channel.stopListening(`.${eventName}`);
+            window.Echo.leave(channelName);
+        };
+    }, [channelName, eventName]);
+}
+```
+
+---
+
+## 6. Real-Time Order Tracking Component with Live Audio Chime
+
+```jsx
+import React, { useState } from 'react';
+import { useEchoPrivateChannel } from '@/Hooks/useEchoChannel';
+import { CheckCircle2, Clock, Truck, Package, Bell } from 'lucide-react';
+
+const steps = [
+    { key: 'pending', label: 'Order Placed', icon: Clock },
+    { key: 'processing', label: 'Processing & Packed', icon: Package },
+    { key: 'shipped', label: 'Out for Delivery', icon: Truck },
+    { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
+];
+
+export default function RealTimeOrderTracker({ initialOrder }) {
+    const [order, setOrder] = useState(initialOrder);
+    const [latestAlert, setLatestAlert] = useState(null);
+
+    // Audio chime sound on status change
+    const playNotificationChime = () => {
+        try {
+            const audio = new Audio('/audio/order_chime.mp3');
+            audio.play();
+        } catch (e) {
+            console.log('Audio autoplay prevented by browser');
+        }
+    };
+
+    // Listen to real-time Reverb WebSocket channel
+    useEchoPrivateChannel(`orders.${order.id}`, 'order.status.updated', (event) => {
+        setOrder(prev => ({
+            ...prev,
+            status: event.status,
+            tracking_number: event.tracking_number,
+        }));
+
+        setLatestAlert(`Order updated to: ${event.status.toUpperCase()}`);
+        playNotificationChime();
+    });
+
+    const currentStepIndex = steps.findIndex(s => s.key === order.status);
+
+    return (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                    <h3 className="text-lg font-bold text-white">Live Tracking: #{order.order_number}</h3>
+                    <p className="text-xs text-slate-400">WebSocket connected via Laravel Reverb</p>
+                </div>
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold bg-emerald-950/60 border border-emerald-800 px-3 py-1.5 rounded-full">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Real-Time Active</span>
+                </div>
+            </div>
+
+            {latestAlert && (
+                <div className="p-3.5 bg-indigo-950/50 border border-indigo-700 text-indigo-200 text-sm rounded-xl flex items-center gap-2 animate-bounce">
+                    <Bell size={18} />
+                    <span>{latestAlert}</span>
+                </div>
+            )}
+
+            {/* Stepper Progress Bar */}
+            <div className="grid grid-cols-4 gap-2 pt-4">
+                {steps.map((step, idx) => {
+                    const Icon = step.icon;
+                    const isDone = idx <= currentStepIndex;
+                    const isCurrent = idx === currentStepIndex;
+
+                    return (
+                        <div key={step.key} className="flex flex-col items-center text-center space-y-2">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 ${
+                                isDone 
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+                                    : 'bg-slate-800 text-slate-500 border border-slate-700'
+                            } ${isCurrent ? 'ring-4 ring-indigo-500/30' : ''}`}>
+                                <Icon size={22} />
+                            </div>
+                            <span className={`text-xs font-medium ${isDone ? 'text-white' : 'text-slate-500'}`}>
+                                {step.label}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+```
+</textarea>
+
+  <!-- Footer Navigation -->
+  <footer class="module-footer">
+    <div class="footer-container">
+      <a href="../index.html" class="hub-btn">← Learning Hub</a>
+      <div class="footer-nav">
+        <a href="06_Queue_Workers_PDF_Invoicing_and_Email_Notifications.html" class="nav-btn">← Previous: Module 06</a>
+        <a href="08_Admin_Analytics_Dashboard_SingleScan_Queries_and_Charts.html" class="nav-btn">Next: Module 08 →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Interactive Stepper Logic
+    function switchStep(stepNum) {
+      document.querySelectorAll('.step-chip').forEach(chip => chip.classList.remove('active'));
+      document.querySelectorAll('.step-body').forEach(body => {
+        body.classList.remove('active');
+        body.style.display = 'none';
+      });
+
+      const activeChip = document.querySelectorAll('.step-chip')[stepNum - 1];
+      if (activeChip) activeChip.classList.add('active');
+
+      const activeBody = document.getElementById('step-content-' + stepNum);
+      if (activeBody) {
+        activeBody.classList.add('active');
+        activeBody.style.display = 'block';
+      }
+    }
+
+    // Interactive Tabs Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+      });
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+
+      const activePane = document.getElementById(tabId);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.style.display = 'block';
+      }
+    }
+
+    // Render Markdown Content via Marked.js
+    document.addEventListener('DOMContentLoaded', () => {
+      const rawMarkdown = document.getElementById('markdown-content').value;
+      if (window.marked) {
+        document.getElementById('rendered-markdown').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('rendered-markdown').innerHTML = '<pre>' + rawMarkdown + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>

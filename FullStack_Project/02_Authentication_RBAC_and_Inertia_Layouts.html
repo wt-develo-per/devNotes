@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSphere Pro - Module 02: Multi-Guard Authentication, RBAC & Master Inertia Layouts</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="module-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="badge-pill">ShopSphere Pro</span>
+        <span class="badge-sub">Module 02</span>
+      </div>
+      <h1 class="header-title">Multi-Guard Authentication, RBAC & Master Inertia Layouts</h1>
+      <div class="header-actions">
+        <a href="../index.html" class="hub-btn">← Learning Hub</a>
+        <a href="01_Project_Architecture_Setup_and_Database_Schema.html" class="nav-btn">← Previous Module</a>
+        <a href="03_Product_Catalog_Filtering_and_Search.html" class="nav-btn">Next Module →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Interactive Stepper -->
+    <section class="lifecycle-stepper-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Auth & Layout Flow</div>
+        <h2>Enterprise Auth & Inertia Layout Lifecycle</h2>
+        <p>Master the 6 key architectural steps to establish multi-role RBAC, optimized shared props, and persistent layouts.</p>
+      </div>
+      <div class="stepper-track">
+        
+    <div class="step-chip active" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-label">Persona & RBAC Architecture</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-label">Spatie Gates & Middleware</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-label">Inertia Shared Props Engine</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-label">Persistent Layout Pattern</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(5)">
+      <span class="step-num">5</span>
+      <span class="step-label">Responsive Enterprise Layout</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(6)">
+      <span class="step-num">6</span>
+      <span class="step-label">Reactive Flash Toast Engine</span>
+    </div>
+  
+      </div>
+      <div class="stepper-content-wrapper">
+        
+    <div id="step-content-1" class="step-body active" style="display:block;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">1. Persona & RBAC Architecture</h3>
+        <p class="step-desc-display">Single users table + Spatie Roles & Permissions vs separate multi-guard tables (eliminating user duplication & session friction).</p>
+      </div>
+    </div>
+  
+    <div id="step-content-2" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">2. Spatie Gates & Middleware</h3>
+        <p class="step-desc-display">Defining granular permissions, creating seeders, and enforcing custom vendor status checks via EnsureVendorIsActive middleware.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-3" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">3. Inertia Shared Props Engine</h3>
+        <p class="step-desc-display">Injecting user credentials, role permissions, and flash messages globally using lazy closures inside HandleInertiaRequests.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-4" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">4. Persistent Layout Pattern</h3>
+        <p class="step-desc-display">Preserving React component state, audio/video playback, and sidebar scroll positions using the Component.layout paradigm.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-5" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">5. Responsive Enterprise Layout</h3>
+        <p class="step-desc-display">Building a Tailwind CSS dashboard with role-based navigation item filtering, user profile dropdowns, and mobile drawers.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-6" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">6. Reactive Flash Toast Engine</h3>
+        <p class="step-desc-display">Wiring session flash notifications (success, error, warning) to client-side toast alerts via React useEffect listeners.</p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Interactive Architecture & Code Tabs -->
+    <section class="lab-tabs-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Architecture Lab</div>
+        <h2>Deep-Dive Comparisons, Middleware Diffs & Matrices</h2>
+        <p>Inspect multi-guard trade-offs, lazy closure benchmarks, layout mounting diffs, and the role-based route matrix.</p>
+      </div>
+      <div class="tab-navigation">
+        
+    <button class="tab-btn active" onclick="switchTab('tab-auth-matrix')">Auth Architecture Matrix</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-middleware-diff')">Inertia Middleware Code Diff</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-layout-diff')">Persistent vs Standard Layout</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-role-matrix')">Route & Permission Matrix</button>
+  
+      </div>
+      <div class="tab-content-wrapper">
+        
+    <div id="tab-auth-matrix" class="tab-pane active" style="display:block;">
+      
+      <h3>Multi-Guard vs Single Table Spatie RBAC Architecture</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Design Dimension</th>
+            <th>Multi-Guard (Separate Admins, Vendors, Users)</th>
+            <th>Single Table + Spatie RBAC (ShopSphere Pro)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>User Duplication</strong></td>
+            <td>High: Same person needing admin + vendor access needs 2 emails</td>
+            <td>Zero: Single identity with multi-role assignment</td>
+          </tr>
+          <tr>
+            <td><strong>Social OAuth (Google/GitHub)</strong></td>
+            <td>Nightmare: Must map OAuth tokens across 3 guard tables</td>
+            <td>Clean: Single Socialite user link</td>
+          </tr>
+          <tr>
+            <td><strong>Inertia Shared Props</strong></td>
+            <td>Complex: Must detect active guard (<code>Auth::guard('vendor')->check()</code>)</td>
+            <td>Effortless: Standard <code>$request->user()</code> with roles array</td>
+          </tr>
+          <tr>
+            <td><strong>Permission Granularity</strong></td>
+            <td>Rigid: Guard-based binary checks</td>
+            <td>Dynamic: Granular permissions assignable on the fly</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-middleware-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Eager Evaluation Overhead vs Lazy Closure Optimization</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Naive Middleware (Eager DB Queries on EVERY Request)</h4>
+          <pre><code>public function share(Request $request): array {
+    return [
+        ...parent::share($request),
+        // Executes DB query on every request even when not authenticated!
+        'user' => $request->user()?->load('roles.permissions'),
+        // Runs count query even on asset/ping requests!
+        'cartCount' => Cart::where('user_id', Auth::id())->count(),
+    ];
+}</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Production-Hardened Middleware (Lazy Closures)</h4>
+          <pre><code>public function share(Request $request): array {
+    return [
+        ...parent::share($request),
+        // Wrapped in closure: Evaluated ONLY when page props are consumed
+        'auth' => [
+            'user' => fn () => $request->user() ? [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+                'roles' => $request->user()->getRoleNames(),
+                'permissions' => $request->user()->getAllPermissions()->pluck('name'),
+            ] : null,
+        ],
+        'cart_count' => fn () => $request->user() 
+            ? $request->user()->cartItems()->sum('quantity')
+            : count($request->session()->get('guest_cart', [])),
+    ];
+}</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-layout-diff" class="tab-pane " style="display:none;">
+      
+      <h3>React Layout Mounting Comparison</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Standard Component Wrapping (Remounts on Navigation)</h4>
+          <pre><code>// In Pages/Products/Index.jsx
+export default function ProductsIndex() {
+    return (
+        <AdminLayout>
+            <ProductTable />
+        </AdminLayout>
+    );
+}
+// Consequence: When navigating to Products/Create, AdminLayout unmounts,
+// sidebar scroll resets, mobile drawers flicker, and input states clear.</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Persistent Inertia Layout (Clean & Uninterrupted)</h4>
+          <pre><code>// In Pages/Products/Index.jsx
+export default function ProductsIndex() {
+    return <ProductTable />;
+}
+
+// Layout is defined on the function object
+ProductsIndex.layout = (page) => <AdminLayout title="Catalog">{page}</AdminLayout>;
+// Consequence: Inertia reconciles only the page contents!
+// Sidebar, theme states, audio streams, and search filters persist seamlessly.</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-role-matrix" class="tab-pane " style="display:none;">
+      
+      <h3>Role-Based Routing & Permission Matrix</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Route URI</th>
+            <th>Required Role</th>
+            <th>Required Permission</th>
+            <th>Middleware Chain</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/admin/dashboard</code></td>
+            <td><code>super_admin</code></td>
+            <td><code>view_system_analytics</code></td>
+            <td><code>auth, verified, role:super_admin</code></td>
+          </tr>
+          <tr>
+            <td><code>/admin/vendors</code></td>
+            <td><code>super_admin</code></td>
+            <td><code>manage_vendors</code></td>
+            <td><code>auth, verified, permission:manage_vendors</code></td>
+          </tr>
+          <tr>
+            <td><code>/vendor/products/create</code></td>
+            <td><code>vendor</code></td>
+            <td><code>create_products</code></td>
+            <td><code>auth, verified, role:vendor, EnsureVendorIsActive</code></td>
+          </tr>
+          <tr>
+            <td><code>/customer/orders</code></td>
+            <td><code>customer</code></td>
+            <td><code>place_orders</code></td>
+            <td><code>auth, verified</code></td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Markdown Documentation Container -->
+    <article class="markdown-article">
+      <div id="rendered-markdown"></div>
+    </article>
+  </main>
+
+  <!-- Hidden Pre-Loaded Markdown Content -->
+  <textarea id="markdown-content" style="display:none; white-space:pre;"># ShopSphere Pro - Module 02: Multi-Guard Authentication, Spatie RBAC & Master Inertia Layouts
+
+## 1. Multi-Persona Authentication Strategy: Single Table vs Multi-Guard
+
+Ek 3-year experienced full-stack architect ke samne sabse pehla design challenge hota hai: **Kya Admins, Vendors aur Customers ke liye 3 alag database tables (`admins`, `vendors`, `customers`) aur 3 alag Auth Guards banana chahiye, ya ek single `users` table with Spatie Roles & Permissions?**
+
+### The Architectural Trade-Off Analysis:
+1. **Multi-Table & Multi-Guard (`admins`, `vendors`, `users`):**
+   - *Problem:* User duplication! Agar ek vendor customer ban ke dusre vendor se shopping karna chahe, toh use naya email create karna padega. Password reset pipelines, Sanctum configurations aur social OAuth logins sab 3 baar duplicate hote hain.
+2. **Single Table + Spatie RBAC (Enterprise Standard):**
+   - *Solution:* Ek single `users` table. Har user ko specific **Roles** (`super_admin`, `vendor`, `customer`) aur granular **Permissions** (`manage_products`, `process_orders`, `view_analytics`) assign hote hain.
+   - User profile metadata polymorphic ya 1-to-1 extension table (`vendor_profiles`) me rehta hai.
+
+---
+
+## 2. Spatie Permission Setup & Custom Middleware Pipeline
+
+Laravel 11 me Spatie `laravel-permission` package enterprise role-based access control (RBAC) ka de facto standard hai.
+
+### A. Role & Permission Seeder
+```php
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use App\Models\User;
+
+class RoleAndPermissionSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // Reset cached roles and permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // 1. Create Granular Permissions
+        $permissions = [
+            // Admin permissions
+            'manage_vendors',
+            'view_system_analytics',
+            'manage_platform_settings',
+            
+            // Vendor permissions
+            'create_products',
+            'edit_products',
+            'view_vendor_orders',
+            'manage_inventory',
+            'request_payout',
+            
+            // Customer permissions
+            'place_orders',
+            'leave_reviews',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+
+        // 2. Define Roles and Assign Permissions
+        $superAdminRole = Role::findOrCreate('super_admin', 'web');
+        $superAdminRole->givePermissionTo(Permission::all());
+
+        $vendorRole = Role::findOrCreate('vendor', 'web');
+        $vendorRole->givePermissionTo([
+            'create_products',
+            'edit_products',
+            'view_vendor_orders',
+            'manage_inventory',
+            'request_payout',
+            'place_orders',
+        ]);
+
+        $customerRole = Role::findOrCreate('customer', 'web');
+        $customerRole->givePermissionTo([
+            'place_orders',
+            'leave_reviews',
+        ]);
+    }
+}
+```
+
+### B. Custom Middleware: `EnsureVendorIsActive`
+Vendor login toh kar sakta hai, lekin agar Admin ne uska store `suspended` ya `pending` rakha hai toh use product creation ya order fulfillment se block karna zaroori hai:
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class EnsureVendorIsActive
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->hasRole('vendor')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $profile = $user->vendorProfile;
+
+        if (!$profile || $profile->status !== 'active') {
+            return redirect()->route('vendor.onboarding')
+                ->with('warning', 'Your vendor store is pending admin verification.');
+        }
+
+        return $next($request);
+    }
+}
+```
+
+---
+
+## 3. High-Performance Inertia Shared Props (`HandleInertiaRequests`)
+
+Inertia.js me server-side data ko har page view me globally available karane ke liye `HandleInertiaRequests.php` middleware use hota hai. 
+
+> [!CAUTION]
+> **Production Gotcha: Eager vs Lazy Shared Props**
+> Agar aap shared props me `'user' => Auth::user()` ya `'cartCount' => Cart::count()` sidhe eager evaluate karenge, toh asset requests ya lightweight validation checks me bhi unnecessary database queries execute hongi. Hamesha **Lazy Closures (`fn () => ...`)** use karein!
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+use Tightenco\Ziggy\Ziggy;
+
+class HandleInertiaRequests extends Middleware
+{
+    protected $rootView = 'app';
+
+    public function version(Request $request): ?string
+    {
+        return parent::version($request);
+    }
+
+    public function share(Request $request): array
+    {
+        return [
+            ...parent::share($request),
+            
+            // Global App Identity
+            'app' => [
+                'name' => config('app.name'),
+                'currency' => 'INR',
+                'currency_symbol' => '₹',
+            ],
+
+            // Authenticated User with Roles & Granular Permissions
+            'auth' => [
+                'user' => fn () => $request->user()
+                    ? [
+                        'id' => $request->user()->id,
+                        'name' => $request->user()->name,
+                        'email' => $request->user()->email,
+                        'avatar' => $request->user()->avatar_url ?? null,
+                        'roles' => $request->user()->getRoleNames(),
+                        'permissions' => $request->user()->getAllPermissions()->pluck('name'),
+                        'vendor' => $request->user()->hasRole('vendor') ? [
+                            'id' => $request->user()->vendorProfile?->id,
+                            'store_name' => $request->user()->vendorProfile?->store_name,
+                            'status' => $request->user()->vendorProfile?->status,
+                        ] : null,
+                    ]
+                    : null,
+            ],
+
+            // Real-time Flash Notifications
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
+                'info' => fn () => $request->session()->get('info'),
+            ],
+
+            // Live Cart Count for Navbar
+            'cart_count' => fn () => $request->user() 
+                ? $request->user()->cartItems()->sum('quantity')
+                : (count($request->session()->get('guest_cart', []))),
+                
+            // Ziggy Client-side Named Route Helper
+            'ziggy' => fn () => [
+                ...(new Ziggy)->toArray(),
+                'location' => $request->url(),
+            ],
+        ];
+    }
+}
+```
+
+---
+
+## 4. React 18 Persistent Master Layout Architecture
+
+Inertia.js me agar aap normal React component me layout ko wrap karte hain:
+```jsx
+// ❌ WRONG: Standard Component Wrapping (Destroys & remounts Layout on every page navigate!)
+export default function Dashboard() {
+    return (
+        <AdminLayout>
+            <div>Dashboard Content</div>
+        </AdminLayout>
+    );
+}
+```
+Toh har page click par pura layout unmount aur re-mount hota hai, jisse:
+- Sidebar scroll position reset ho jati hai.
+- Video/Audio players band ho jate hain.
+- Search input ka local state lost ho jata hai.
+
+### ✅ The Enterprise Solution: `Component.layout`
+```jsx
+import AdminLayout from '@/Layouts/AdminLayout';
+
+export default function Dashboard({ metrics }) {
+    return (
+        <div className="space-y-6">
+            <h1 className="text-2xl font-bold text-slate-800">Executive Overview</h1>
+            {/* Dashboard widgets */}
+        </div>
+    );
+}
+
+// Persistent Layout declaration: React keeps the layout alive!
+Dashboard.layout = (page) => <AdminLayout title="Vendor Dashboard">{page}</AdminLayout>;
+```
+
+---
+
+## 5. Enterprise `AdminLayout.jsx` Implementation
+
+Aaiye ek clean, responsive, dark-mode ready enterprise master layout likhte hain:
+
+```jsx
+import React, { useState } from 'react';
+import { usePage, Link } from '@inertiajs/react';
+import { 
+    LayoutDashboard, 
+    ShoppingBag, 
+    Users, 
+    Layers, 
+    CreditCard, 
+    Settings, 
+    LogOut, 
+    Menu, 
+    X, 
+    Bell 
+} from 'lucide-react';
+import FlashToastListener from '@/Components/FlashToastListener';
+
+export default function AdminLayout({ children, title = 'ShopSphere Admin' }) {
+    const { auth } = usePage().props;
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    const navItems = [
+        { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard, permission: 'view_system_analytics' },
+        { label: 'Vendors', href: '/admin/vendors', icon: Users, permission: 'manage_vendors' },
+        { label: 'Catalog Products', href: '/admin/products', icon: ShoppingBag, permission: 'create_products' },
+        { label: 'Categories', href: '/admin/categories', icon: Layers, permission: 'manage_platform_settings' },
+        { label: 'Settlements & Payouts', href: '/admin/payouts', icon: CreditCard, permission: 'manage_platform_settings' },
+        { label: 'Settings', href: '/admin/settings', icon: Settings, permission: 'manage_platform_settings' },
+    ];
+
+    // Check if user has permission
+    const canAccess = (perm) => {
+        if (!perm) return true;
+        return auth.user?.permissions?.includes(perm) || auth.user?.roles?.includes('super_admin');
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-900 text-slate-100 flex">
+            <FlashToastListener />
+
+            {/* Mobile Sidebar Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar Navigation */}
+            <aside className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-slate-950 border-r border-slate-800 flex flex-col transition-transform duration-300 ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+            }`}>
+                <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+                            S
+                        </div>
+                        <span className="font-bold text-lg text-white tracking-wide">ShopSphere</span>
+                    </div>
+                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+                    {navItems.filter(item => canAccess(item.permission)).map((item) => {
+                        const Icon = item.icon;
+                        const isActive = window.location.pathname.startsWith(item.href);
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                    isActive 
+                                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
+                                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900'
+                                }`}
+                            >
+                                <Icon size={18} />
+                                <span>{item.label}</span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* User Session Footer */}
+                <div className="p-4 border-t border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-semibold text-slate-300">
+                            {auth.user?.name?.charAt(0) || 'U'}
+                        </div>
+                        <div className="truncate">
+                            <p className="text-sm font-medium text-slate-200 truncate">{auth.user?.name}</p>
+                            <p className="text-xs text-slate-500 truncate">{auth.user?.roles?.[0] || 'Member'}</p>
+                        </div>
+                    </div>
+                    <Link 
+                        href="/logout" 
+                        method="post" 
+                        as="button" 
+                        className="text-slate-400 hover:text-rose-400 transition-colors p-1.5 rounded-lg hover:bg-slate-900"
+                    >
+                        <LogOut size={18} />
+                    </Link>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+                {/* Header Navbar */}
+                <header className="h-16 bg-slate-950/80 backdrop-blur border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-30">
+                    <button 
+                        onClick={() => setSidebarOpen(true)}
+                        className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900"
+                    >
+                        <Menu size={20} />
+                    </button>
+
+                    <h2 className="text-base font-semibold text-slate-200 hidden sm:block">{title}</h2>
+
+                    <div className="flex items-center gap-4">
+                        <button className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-900 transition-colors">
+                            <Bell size={18} />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-500" />
+                        </button>
+                    </div>
+                </header>
+
+                {/* Page Content Injection */}
+                <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+                    {children}
+                </main>
+            </div>
+        </div>
+    );
+}
+```
+
+---
+
+## 6. Flash Toast Notification Engine
+
+Laravel Controller se:
+```php
+return redirect()->back()->with('success', 'Vendor profile approved successfully!');
+```
+Inertia React me `FlashToastListener.jsx` component session messages ko listen karta hai:
+
+```jsx
+import { useEffect } from 'react';
+import { usePage } from '@inertiajs/react';
+import toast, { Toaster } from 'react-hot-toast';
+
+export default function FlashToastListener() {
+    const { flash } = usePage().props;
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success, {
+                style: { background: '#0f172a', color: '#f8fafc', border: '1px solid #334155' },
+            });
+        }
+        if (flash?.error) {
+            toast.error(flash.error, {
+                style: { background: '#0f172a', color: '#f8fafc', border: '1px solid #e11d48' },
+            });
+        }
+        if (flash?.warning) {
+            toast(flash.warning, {
+                icon: '⚠️',
+                style: { background: '#0f172a', color: '#f8fafc', border: '1px solid #f59e0b' },
+            });
+        }
+    }, [flash]);
+
+    return <Toaster position="top-right" reverseOrder={false} />;
+}
+```
+</textarea>
+
+  <!-- Footer Navigation -->
+  <footer class="module-footer">
+    <div class="footer-container">
+      <a href="../index.html" class="hub-btn">← Learning Hub</a>
+      <div class="footer-nav">
+        <a href="01_Project_Architecture_Setup_and_Database_Schema.html" class="nav-btn">← Previous: Module 01</a>
+        <a href="03_Product_Catalog_Filtering_and_Search.html" class="nav-btn">Next: Module 03 →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Interactive Stepper Logic
+    function switchStep(stepNum) {
+      document.querySelectorAll('.step-chip').forEach(chip => chip.classList.remove('active'));
+      document.querySelectorAll('.step-body').forEach(body => {
+        body.classList.remove('active');
+        body.style.display = 'none';
+      });
+
+      const activeChip = document.querySelectorAll('.step-chip')[stepNum - 1];
+      if (activeChip) activeChip.classList.add('active');
+
+      const activeBody = document.getElementById('step-content-' + stepNum);
+      if (activeBody) {
+        activeBody.classList.add('active');
+        activeBody.style.display = 'block';
+      }
+    }
+
+    // Interactive Tabs Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+      });
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+
+      const activePane = document.getElementById(tabId);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.style.display = 'block';
+      }
+    }
+
+    // Render Markdown Content via Marked.js
+    document.addEventListener('DOMContentLoaded', () => {
+      const rawMarkdown = document.getElementById('markdown-content').value;
+      if (window.marked) {
+        document.getElementById('rendered-markdown').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('rendered-markdown').innerHTML = '<pre>' + rawMarkdown + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>

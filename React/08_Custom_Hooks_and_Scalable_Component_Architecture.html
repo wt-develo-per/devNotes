@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mastery - Custom Hooks, Component Architecture &amp; TypeScript</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="07_Decoupled_SPA_Laravel_Sanctum_and_WebSockets.html" class="nav-btn">&larr; Previous: Sanctum &amp; WebSockets</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="09_FullStack_Production_SSR_and_Interview_Mastery.html" class="nav-btn">Next: Production, SSR &amp; Interviews &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Custom Hook Extraction & Compound Architecture Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Custom Hook Extraction &amp; Compound Architecture Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Duplicated boilerplate se lekar reusable custom hook aur compound component tak ka 6-step engineering protocol:
+        </p>
+
+        <div class="stepper-nav" id="hookNav">
+            <button class="step-chip active" onclick="showHookStep(0)">
+                <span class="step-num">01</span>
+                <span>Duplication Audit</span>
+            </button>
+            <button class="step-chip" onclick="showHookStep(1)">
+                <span class="step-num">02</span>
+                <span>Hook Extraction</span>
+            </button>
+            <button class="step-chip" onclick="showHookStep(2)">
+                <span class="step-num">03</span>
+                <span>1-Line Refactor</span>
+            </button>
+            <button class="step-chip" onclick="showHookStep(3)">
+                <span class="step-num">04</span>
+                <span>Bloat Diagnosis</span>
+            </button>
+            <button class="step-chip" onclick="showHookStep(4)">
+                <span class="step-num">05</span>
+                <span>Compound Slots</span>
+            </button>
+            <button class="step-chip" onclick="showHookStep(5)">
+                <span class="step-num">06</span>
+                <span>TypeScript Types</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="hookContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchHookTab(event, 'tab-hook-lib')">&#129693; Custom Hooks Library</button>
+            <button class="tab-btn" onclick="switchHookTab(event, 'tab-compound')">&#129513; Compound Component</button>
+            <button class="tab-btn" onclick="switchHookTab(event, 'tab-typescript')">&#128216; TypeScript &amp; DTOs</button>
+            <button class="tab-btn" onclick="switchHookTab(event, 'tab-tailwind-cn')">&#127912; Tailwind cn() Utility</button>
+        </div>
+
+        <!-- Tab 1: Custom Hooks Library -->
+        <div id="tab-hook-lib" class="tab-panel active">
+            <h5>Production Custom Hooks Library for Full-Stack Laravel Apps</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Encapsulate stateful logic into reusable pure functions:
+            </p>
+            <pre><code class="language-jsx">// 1. useDebounce:
+export function useDebounce(value, delay = 400) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+        const timer = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+    return debounced;
+}
+
+// 2. useLocalStorage:
+export function useLocalStorage(key, initial) {
+    const [val, setVal] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(key)) ?? initial; }
+        catch { return initial; }
+    });
+    useEffect(() => {
+        localStorage.setItem(key, JSON.stringify(val));
+    }, [key, val]);
+    return [val, setVal];
+}</code></pre>
+        </div>
+
+        <!-- Tab 2: Compound Component -->
+        <div id="tab-compound" class="tab-panel">
+            <h5>Compound Component Pattern (Dropdown / Modal)</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Give consumers structural flexibility without passing 20 props:
+            </p>
+            <pre><code class="language-jsx">const DropdownContext = createContext(null);
+
+export function Dropdown({ children }) {
+    const [open, setOpen] = useState(false);
+    return (
+        &lt;DropdownContext.Provider value={{ open, toggle: () =&gt; setOpen(p =&gt; !p), close: () =&gt; setOpen(false) }}&gt;
+            &lt;div className="relative inline-block"&gt;{children}&lt;/div&gt;
+        &lt;/DropdownContext.Provider&gt;
+    );
+}
+
+Dropdown.Trigger = ({ children }) => {
+    const { toggle } = useContext(DropdownContext);
+    return &lt;div onClick={toggle}&gt;{children}&lt;/div&gt;;
+};
+
+Dropdown.Menu = ({ children }) => {
+    const { open } = useContext(DropdownContext);
+    if (!open) return null;
+    return &lt;div className="absolute right-0 mt-2 w-48 bg-white border shadow-lg rounded"&gt;{children}&lt;/div&gt;;
+};</code></pre>
+        </div>
+
+        <!-- Tab 3: TypeScript -->
+        <div id="tab-typescript" class="tab-panel">
+            <h5>TypeScript Props &amp; Laravel Eloquent DTOs</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Strict type contracts between Laravel API / Inertia responses and React:
+            </p>
+            <pre><code class="language-typescript">export interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: 'admin' | 'editor' | 'viewer';
+}
+
+export interface PaginatedData&lt;T&gt; {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+}
+
+interface UserIndexProps {
+    users: PaginatedData&lt;User&gt;;
+    filters: { search?: string; role?: string };
+}
+
+export default function UserIndex({ users, filters }: UserIndexProps) {
+    // 100% Type-safe access with autocomplete!
+    return &lt;h1&gt;Total users: {users.total}&lt;/h1&gt;;
+}</code></pre>
+        </div>
+
+        <!-- Tab 4: Tailwind cn -->
+        <div id="tab-tailwind-cn" class="tab-panel">
+            <h5>Tailwind cn() Helper (clsx + tailwind-merge)</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Eliminate Tailwind class specificity collisions when overriding styles:
+            </p>
+            <pre><code class="language-javascript">import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs) {
+    return twMerge(clsx(inputs));
+}
+
+// Without cn(): "p-4 p-2" -> conflicting order in CSS determines size!
+// With cn():    cn('p-4', 'p-2') -> correctly resolves to "p-2"!</code></pre>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="07_Decoupled_SPA_Laravel_Sanctum_and_WebSockets.html" class="nav-btn">&larr; Previous: Sanctum &amp; WebSockets</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="09_FullStack_Production_SSR_and_Interview_Mastery.html" class="nav-btn">Next: Production, SSR &amp; Interviews &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### React Mastery 8: Custom Hooks, Scalable Component Architecture & TypeScript
+
+> *"Clean code, reusable logic extraction, Compound Components, aur PHP 8+ jaisi Strict Type Safety"*
+
+Jab aap Laravel backend mein code likhte hain, to duplicated database logic ko aap **Traits, Service Classes, ya Repositories** mein extract karte hain.
+React frontend mein jab wahi stateful logic (e.g. debouncing, localStorage sync, WebSocket channels, permission checks) 4 alag-alag components mein repeat hoti hai, to use **Custom Hooks** mein extract kiya jaata hai!
+
+Is module mein hum master karenge:
+1. **Custom Hooks ka Mental Model** — React ka Service / Trait pattern
+2. **5 Essential Custom Hooks for Laravel Full-Stack Apps** (`useDebounce`, `useLocalStorage`, `useEchoChannel`, `usePermission`, `usePagination`)
+3. **Compound Component Pattern** — Monolithic 20-props components ko clean modular slots mein todna
+4. **TypeScript for PHP 8+ Developers** — Typing Props, Inertia Page Props, aur Eloquent Resource DTOs
+5. **Tailwind CSS `cn()` Utility & Headless UI** — Clean conditional classes without conflicts
+
+---
+
+#### 1. Custom Hooks — React ka "PHP Trait"
+
+Custom Hook ek aisi JavaScript function hoti hai jiska naam `use` se shuru hota hai (e.g. `useDebounce`, `useCart`) aur jiske andar aap doosre React hooks (`useState`, `useEffect`, `useRef`) ko call kar sakte hain.
+
+> **Golden Rule:** Custom Hook **Logic (Code)** share karta hai, **Data (State)** share nahi karta! Agar 3 components `useDebounce` call karenge, to teeno ke paas apni separate isolated state hogi.
+
+---
+
+#### 2. The 5 Essential Custom Hooks Every Laravel Developer Needs
+
+##### 1. `useDebounce(value, delay)` — Keystroke Optimizer:
+User search input type kar raha ho ya dynamic filter sliders move kar raha ho, API ko bar-bar trigger hone se bachana:
+
+```jsx
+// resources/js/Hooks/useDebounce.js
+import { useState, useEffect } from 'react';
+
+export function useDebounce(value, delay = 400) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => clearTimeout(timer); // Cancel if value changes before delay
+    }, [value, delay]);
+
+    return debouncedValue;
+}
+
+// Usage in any Component:
+const [search, setSearch] = useState('');
+const debouncedSearch = useDebounce(search, 400);
+
+useEffect(() => {
+    if (debouncedSearch) fetchFromLaravel(debouncedSearch);
+}, [debouncedSearch]); // Runs ONLY when user stops typing for 400ms!
+```
+
+---
+
+##### 2. `useLocalStorage(key, initialValue)` — Browser Storage Sync:
+State ko automatic `localStorage` ke sath synchronize karna:
+
+```jsx
+// resources/js/Hooks/useLocalStorage.js
+import { useState, useEffect } from 'react';
+
+export function useLocalStorage(key, initialValue) {
+    const [value, setValue] = useState(() => {
+        try {
+            const item = window.localStorage.getItem(key);
+            return item ? JSON.parse(item) : initialValue;
+        } catch {
+            return initialValue;
+        }
+    });
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.error('Failed to save to localStorage', e);
+        }
+    }, [key, value]);
+
+    return [value, setValue];
+}
+
+// Usage:
+const [theme, setTheme] = useLocalStorage('app_theme', 'dark');
+```
+
+---
+
+##### 3. `useEchoChannel(channel, event, callback)` — Declarative WebSockets:
+WebSocket listeners ka registration aur cleanup 1 line mein:
+
+```jsx
+// resources/js/Hooks/useEchoChannel.js
+import { useEffect } from 'react';
+import { echo } from '@/echo';
+
+export function useEchoChannel(channelName, eventName, callback) {
+    useEffect(() => {
+        if (!channelName || !eventName) return;
+
+        const channel = echo.private(channelName);
+        channel.listen(eventName, callback);
+
+        // Automatic teardown on unmount or prop change:
+        return () => {
+            echo.leave(channelName);
+        };
+    }, [channelName, eventName, callback]);
+}
+
+// Usage in Order Component:
+useEchoChannel(`orders.${orderId}`, '.StatusUpdated', (e) => {
+    setStatus(e.newStatus);
+});
+```
+
+---
+
+##### 4. `usePermission(permission)` — Spatie Laravel Permissions in React:
+```jsx
+// resources/js/Hooks/usePermission.js
+import { usePage } from '@inertiajs/react';
+
+export function usePermission(permission) {
+    const { auth } = usePage().props;
+    const permissions = auth.user?.permissions || [];
+    
+    // Super-admin has all access, or check specific permission:
+    return auth.user?.role === 'super-admin' || permissions.includes(permission);
+}
+
+// Usage:
+const canDeleteUsers = usePermission('delete-users');
+{canDeleteUsers && <button className="btn-danger">Delete User</button>}
+```
+
+---
+
+#### 3. The Compound Component Pattern
+
+Jab aap ek component banate hain (e.g. `<Modal>` ya `<Dropdown>`), to shuru mein wo simple hota hai. Lekin kuch mahino baad usme 20 props jud jaate hain:
+`<Dropdown title="Actions" showArrow={true} align="right" items={items} onItemClick={...} headerSlot={...} />`
+
+Iska maintainable solution hai **Compound Components** (Jaise HTML ka `<select>` aur `<option>` sath kaam karte hain):
+
+##### Implementation with React Context:
+```jsx
+// resources/js/Components/Dropdown.jsx
+import React, { useState, createContext, useContext } from 'react';
+
+const DropdownContext = createContext(null);
+
+export default function Dropdown({ children }) {
+    const [open, setOpen] = useState(false);
+    const toggle = () => setOpen(prev => !prev);
+    const close = () => setOpen(false);
+
+    return (
+        <DropdownContext.Provider value={{ open, toggle, close }}>
+            <div className="relative inline-block text-left">{children}</div>
+        </DropdownContext.Provider>
+    );
+}
+
+Dropdown.Trigger = function Trigger({ children }) {
+    const { toggle } = useContext(DropdownContext);
+    return <div onClick={toggle} className="cursor-pointer">{children}</div>;
+};
+
+Dropdown.Content = function Content({ children, align = 'right' }) {
+    const { open } = useContext(DropdownContext);
+    if (!open) return null;
+
+    const alignClass = align === 'right' ? 'right-0' : 'left-0';
+    return (
+        <div className={`absolute ${alignClass} mt-2 w-48 rounded-md shadow-lg bg-white border z-50`}>
+            <div className="py-1">{children}</div>
+        </div>
+    );
+};
+
+Dropdown.Item = function Item({ children, onClick }) {
+    const { close } = useContext(DropdownContext);
+    return (
+        <button 
+            onClick={() => { onClick?.(); close(); }} 
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >
+            {children}
+        </button>
+    );
+};
+```
+
+##### Clean Consumption in Page:
+```jsx
+<Dropdown>
+    <Dropdown.Trigger>
+        <button className="btn-secondary">Options &#9662;</button>
+    </Dropdown.Trigger>
+    <Dropdown.Content align="right">
+        <Dropdown.Item onClick={handleEdit}>Edit User</Dropdown.Item>
+        <Dropdown.Item onClick={handleDelete}>Delete User</Dropdown.Item>
+    </Dropdown.Content>
+</Dropdown>
+```
+
+---
+
+#### 4. TypeScript in React for PHP 8+ Developers
+
+PHP 8 mein hum DTOs aur strict types use karte hain (`UserDTO`, `string`, `?int`).
+TypeScript React components ko wahi level of safety deta hai — **Props mismatch par compile time par hi red line dikh jati hai!**
+
+##### 1. Typing Eloquent Models & Props:
+```tsx
+// types/models.d.ts
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: 'admin' | 'manager' | 'customer';
+    created_at: string;
+    email_verified_at: string | null;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+}
+```
+
+##### 2. Typing Inertia Page Props:
+```tsx
+// resources/js/Pages/Users/Index.tsx
+import { PageProps } from '@/types';
+import { User, PaginatedResponse } from '@/types/models';
+
+interface UsersIndexProps extends PageProps {
+    users: PaginatedResponse<User>;
+    filters: { search?: string };
+}
+
+export default function Index({ users, filters }: UsersIndexProps) {
+    // TypeScript provides 100% autocomplete on users.data[0].email!
+    return (
+        <div>
+            <h1>Total Users: {users.total}</h1>
+        </div>
+    );
+}
+```
+
+---
+
+#### 5. Tailwind `cn()` Helper (clsx + tailwind-merge)
+
+Tailwind CSS mein conditional classes likhte waqt conflicting utilities (e.g. `p-4` vs `p-2`) overwrite nahi hote.
+Modern React projects mein `cn()` helper use hota hai:
+
+```bash
+npm install clsx tailwind-merge
+```
+
+```javascript
+// resources/js/Utils/cn.js
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs) {
+    return twMerge(clsx(inputs));
+}
+
+// Usage in Component:
+export function Button({ variant = 'primary', className, children, ...props }) {
+    return (
+        <button
+            className={cn(
+                'px-4 py-2 rounded-lg font-medium transition-colors',
+                variant === 'primary' && 'bg-blue-600 text-white hover:bg-blue-700',
+                variant === 'danger' && 'bg-red-600 text-white hover:bg-red-700',
+                className // Consumer overrides take precedence cleanly!
+            )}
+            {...props}
+        >
+            {children}
+        </button>
+    );
+}
+```
+
+---
+
+#### 6. 3-Year Laravel Developer Architecture Checklist
+
+1. 🪝 **Prefix Custom Hooks with `use`:** React lint rules verify karte hain ki hook rules follow ho rahe hain.
+2. 🧩 **Use Compound Components for Complex UI:** Modals, Tabs, Dropdowns ko compound pattern se banayein.
+3. 📘 **Type Inertia Page Props with TypeScript:** Server se aane wale data ke typos compile-time par pakdein.
+4. 🎨 **Use `cn()` for Tailwind Class Merging:** Conflicting margin/padding classes se bachein.
+5. 🛡️ **Clean Up Custom Hooks Internally:** `useEchoChannel` ya timers wale custom hooks ko unmount par khud cleanup karne dein.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const hookSteps = [
+            {
+                title: 'Step 1: Duplication Audit in Components',
+                level: 'Audit',
+                desc: 'Audit reveal karta hai ki ProductSearch, UserFilter, aur BlogSearch teeno alag-alag setTimeout timers aur debounce logic maintain kar rahe hain.',
+                code: '// Duplicated in 3 files:\nconst [val, setVal] = useState(\'\');\nuseEffect(() => { const t = setTimeout(...); return () => clearTimeout(t); }, [val]);'
+            },
+            {
+                title: 'Step 2: Extract useDebounce Custom Hook',
+                level: 'Hook Extraction',
+                desc: 'Stateful logic ko alag function mein extract karo jiska naam \'use\' se start ho. Hook clean value return karta hai aur unmount par timer cancel karta hai.',
+                code: 'export function useDebounce(value, delay = 400) {\n    const [debounced, setDebounced] = useState(value);\n    useEffect(() => {\n        const t = setTimeout(() => setDebounced(value), delay);\n        return () => clearTimeout(t);\n    }, [value, delay]);\n    return debounced;\n}'
+            },
+            {
+                title: 'Step 3: Refactor Consumers to Single Line',
+                level: 'Refactor',
+                desc: 'Sabhi components se 20 lines of timer code hata kar single hook call se replace karo: const debouncedQuery = useDebounce(query, 400).',
+                code: 'const [search, setSearch] = useState(\'\');\nconst debouncedSearch = useDebounce(search, 400);\n\nuseEffect(() => {\n    if (debouncedSearch) router.get(\'/users\', { search: debouncedSearch });\n}, [debouncedSearch]);'
+            },
+            {
+                title: 'Step 4: Monolithic Component Bloat Diagnosis',
+                level: 'UI Architecture',
+                desc: 'Modal component 18 props accept kar raha hai (showHeader, headerTitle, showFooter, confirmText, onConfirm, cancelText, etc.). Prop salad maintainable nahi rehta.',
+                code: '// Anti-pattern: Monolithic prop salad\n<Modal title=\"Edit\" showClose={true} confirmText=\"Save\" onConfirm={...} />'
+            },
+            {
+                title: 'Step 5: Compound Components Refactoring',
+                level: 'Compound Pattern',
+                desc: 'Modal ko sub-components mein break karo (Modal.Header, Modal.Body, Modal.Footer). Shared visibility state Context API se internally manage hoti hai.',
+                code: '<Modal open={isOpen} onClose={close}>\n    <Modal.Header>Edit User</Modal.Header>\n    <Modal.Body><UserForm /></Modal.Body>\n    <Modal.Footer><button onClick={close}>Cancel</button></Modal.Footer>\n</Modal>'
+            },
+            {
+                title: 'Step 6: TypeScript Strict Contracts',
+                level: 'Type Safety',
+                desc: 'Props, API responses, aur Inertia page props par TypeScript interfaces bind karo taaki PHP backend aur React frontend ke beech 100% type safety ensure ho.',
+                code: 'interface UserCardProps {\n    user: User;\n    onDelete: (id: number) => void;\n}\nexport function UserCard({ user, onDelete }: UserCardProps) { ... }'
+            }
+        ];
+
+        function showHookStep(index) {
+            document.querySelectorAll('#hookNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = hookSteps[index];
+            document.getElementById('hookContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-javascript">' + step.code + '</code></pre>';
+        }
+
+        showHookStep(0);
+
+        function switchHookTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

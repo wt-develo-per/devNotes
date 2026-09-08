@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mastery - Mental Model, JSX & Laravel Vite Setup for PHP Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="../index.html" class="nav-btn">&larr; Learning Hub</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="02_State_Management_and_Controlled_Forms.html" class="nav-btn">Next: State &amp; Controlled Forms &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Blade to React Transformation Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Blade to React Transformation Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Traditional server-rendered Blade template se modern declarative React component tak ka 6-step refactoring workflow:
+        </p>
+
+        <div class="stepper-nav" id="transformNav">
+            <button class="step-chip active" onclick="showTransformStep(0)">
+                <span class="step-num">01</span>
+                <span>Blade Analysis</span>
+            </button>
+            <button class="step-chip" onclick="showTransformStep(1)">
+                <span class="step-num">02</span>
+                <span>Component Wrapper</span>
+            </button>
+            <button class="step-chip" onclick="showTransformStep(2)">
+                <span class="step-num">03</span>
+                <span>JSX Attributes</span>
+            </button>
+            <button class="step-chip" onclick="showTransformStep(3)">
+                <span class="step-num">04</span>
+                <span>List &amp; Condition</span>
+            </button>
+            <button class="step-chip" onclick="showTransformStep(4)">
+                <span class="step-num">05</span>
+                <span>Vite Integration</span>
+            </button>
+            <button class="step-chip" onclick="showTransformStep(5)">
+                <span class="step-num">06</span>
+                <span>Mount &amp; Hydrate</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="transformContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchReactTab(event, 'tab-matrix')">&#128260; Blade vs JSX Matrix</button>
+            <button class="tab-btn" onclick="switchReactTab(event, 'tab-vite')">&#9889; Laravel Vite Setup</button>
+            <button class="tab-btn" onclick="switchReactTab(event, 'tab-composition')">&#129513; Props &amp; Children</button>
+            <button class="tab-btn" onclick="switchReactTab(event, 'tab-keys')">&#128273; Key Prop Gotchas</button>
+        </div>
+
+        <!-- Tab 1: Blade vs JSX Matrix -->
+        <div id="tab-matrix" class="tab-panel active">
+            <h5>Blade Directives vs React JSX Syntax Translation Matrix</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Agar aap Blade likhte hain, to React mein same functionality likhne ka cheat-sheet:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Concept</th>
+                        <th>Laravel Blade Syntax</th>
+                        <th>React JSX Equivalent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Variable Interpolation</strong></td>
+                        <td><code>{{ $user->name }}</code></td>
+                        <td><code>{user.name}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Raw HTML Output</strong></td>
+                        <td><code>{!! $htmlContent !!}</code></td>
+                        <td><code>dangerouslySetInnerHTML={{ __html: htmlContent }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Conditionals (If / Else)</strong></td>
+                        <td><code>@if($isAdmin) ... @else ... @endif</code></td>
+                        <td><code>{isAdmin ? &lt;AdminBadge /&gt; : &lt;UserBadge /&gt;}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Short-circuit Check</strong></td>
+                        <td><code>@isset($user) &lt;div&gt;...&lt;/div&gt; @endisset</code></td>
+                        <td><code>{user &amp;&amp; &lt;div&gt;...&lt;/div&gt;}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Looping / Lists</strong></td>
+                        <td><code>@foreach($items as $item) ... @endforeach</code></td>
+                        <td><code>{items.map(item =&gt; &lt;Item key={item.id} {...item} /&gt;)}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>CSS Classes</strong></td>
+                        <td><code>class="btn {{ $active ? 'active' : '' }}"</code></td>
+                        <td><code>className={&#96;btn ${active ? 'active' : ''}&#96;}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Slots / Children</strong></td>
+                        <td><code>{{ $slot }}</code> or <code>&lt;x-slot:title&gt;</code></td>
+                        <td><code>{children}</code> prop or custom named props</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Laravel Vite Setup -->
+        <div id="tab-vite" class="tab-panel">
+            <h5>Laravel 10/11 Vite + React Configuration Blueprint</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Step-by-step production configuration files for Vite + React Fast Refresh:
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <strong style="color:var(--brand-purple);">vite.config.js:</strong>
+                    <pre><code class="language-javascript">import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: ['resources/css/app.css', 'resources/js/app.jsx'],
+            refresh: true,
+        }),
+        react(), // Required for React JSX HMR
+    ],
+});</code></pre>
+                </div>
+                <div>
+                    <strong style="color:var(--brand-purple);">welcome.blade.php:</strong>
+                    <pre><code class="language-html">&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;title&gt;Laravel React&lt;/title&gt;
+
+    {{-- 1. MUST put @viteReactRefresh FIRST --}}
+    @viteReactRefresh
+    {{-- 2. Include JS entrypoint --}}
+    @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="app" data-page="{{ json_encode($pageData) }}"&gt;&lt;/div&gt;
+&lt;/body&gt;</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Props & Children -->
+        <div id="tab-composition" class="tab-panel">
+            <h5>Component Composition &amp; Children Prop</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Blade components ke slots ki tarah React components ko compose karna:
+            </p>
+            <pre><code class="language-jsx">// Reusable Card Component with Header, Body & Footer slots:
+export function Card({ title, actionButton, children }) {
+    return (
+        &lt;div className="border border-slate-200 rounded-xl shadow-sm bg-white overflow-hidden"&gt;
+            &lt;div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center"&gt;
+                &lt;h3 className="font-semibold text-slate-800 text-base"&gt;{title}&lt;/h3&gt;
+                {actionButton}
+            &lt;/div&gt;
+            &lt;div className="p-5"&gt;{children}&lt;/div&gt;
+        &lt;/div&gt;
+    );
+}
+
+// Usage in Page:
+&lt;Card 
+    title="Customer Orders" 
+    actionButton={&lt;button className="btn-primary"&gt;+ New Order&lt;/button&gt;}
+&gt;
+    &lt;OrdersTable orders={orders} /&gt;
+&lt;/Card&gt;</code></pre>
+        </div>
+
+        <!-- Tab 4: Key Prop Gotchas -->
+        <div id="tab-keys" class="tab-panel">
+            <h5>The "Key Prop" Trap: Index vs Stable Unique ID</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Why array index as key breaks dynamic list updates:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Using <code>key={index}</code></th>
+                        <th>Using <code>key={item.id}</code></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Item Added to Top</strong></td>
+                        <td>Every existing item's index shifts (0 becomes 1). React re-renders EVERY row in the list!</td>
+                        <td>React detects old IDs are untouched, mounts ONLY the new item. Zero unnecessary DOM updates.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Item Deleted</strong></td>
+                        <td>Next item takes deleted item's index. Uncontrolled input values/checkboxes stay on the wrong row!</td>
+                        <td>React cleanly unmounts the exact DOM node associated with the deleted ID.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>List Re-sorted</strong></td>
+                        <td>React mutates content inside same DOM nodes instead of moving elements efficiently.</td>
+                        <td>React re-orders existing DOM nodes with minimal painting.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="../index.html" class="nav-btn">&larr; Learning Hub</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="02_State_Management_and_Controlled_Forms.html" class="nav-btn">Next: State &amp; Controlled Forms &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### React Mastery 1: React Mental Model, JSX & Laravel Vite Integration
+
+> *"Blade templates se React Virtual DOM tak ka safar — Kaise sochein ek React Developer ki tarah"*
+
+Ek traditional Laravel developer ke liye frontend ka matlab hota hai **Blade templates (`.blade.php`)**, jahan server har HTTP request par HTML render karke browser ko bhejta hai. Agar user kisi button par click kare, to ya to page refresh hota hai, ya fir aap jQuery / Axios se DOM element (`$('#cart-count').text(5)`) ko manually dhundh kar update karte hain.
+
+React mein sochna isse bilkul alag hai. React ka core formula hai:
+$$\text{UI} = f(\text{state})$$
+
+Aapko kabhi bhi DOM ko manually mutate nahi karna padta. Aap sirf data (state) change karte hain, aur React ka **Virtual DOM Engine** khud pata lagata hai ki screen par kaunsa chhota sa tukda update hona chahiye!
+
+---
+
+#### 1. Mental Model Shift: Blade (Imperative) vs React (Declarative)
+
+##### Traditional Laravel Blade (Server-Side Rendered):
+```php
+{{-- resources/views/components/user-badge.blade.php --}}
+<div class="user-badge {{ $user->is_online ? 'bg-green' : 'bg-gray' }}">
+    <span>{{ $user->name }}</span>
+    @if($user->unread_notifications_count > 0)
+        <span class="pill" id="badge-count">{{ $user->unread_notifications_count }}</span>
+    @endif
+</div>
+```
+- **Limitation:** Agar background mein naya notification aaya, to Blade kuch nahi kar sakta. Aapko JavaScript se `#badge-count` DOM element manually select karke innerHTML update karna padega. Isko **Imperative Programming ("Kaise karo")** kehte hain.
+
+##### Modern React Component (Client-Side Reactive):
+```jsx
+// resources/js/Components/UserBadge.jsx
+export default function UserBadge({ user }) {
+    return (
+        <div className={`user-badge ${user.is_online ? 'bg-green' : 'bg-gray'}`}>
+            <span>{user.name}</span>
+            {user.unread_notifications_count > 0 && (
+                <span className="pill">{user.unread_notifications_count}</span>
+            )}
+        </div>
+    );
+}
+```
+- **Superpower:** Aap sirf `user` object ka data update karte ho. React ka **Diffing Algorithm** Virtual DOM mein purani tree aur nayi tree ko compare karta hai aur sirf `<span class="pill">` ko update karta hai — zero page reload, instant UI update! Isko **Declarative Programming ("Kya chahiye")** kehte hain.
+
+---
+
+#### 2. JSX Internals — Yeh HTML Nahi Hai!
+
+Bohot se developers sochte hain ki JSX HTML hai jo JavaScript ke andar likhi gayi hai. **Nahi!**
+
+JSX dar-asal ek syntax sugar hai jo compile hokar pure JavaScript function calls banta hai:
+
+##### JSX Code:
+```jsx
+const element = <h1 className="title" id="greeting">Hello Laravel!</h1>;
+```
+
+##### Compiled JavaScript (What Vite / Babel Actually Runs):
+```javascript
+import { jsx as _jsx } from "react/jsx-runtime";
+
+const element = _jsx("h1", {
+    className: "title",
+    id: "greeting",
+    children: "Hello Laravel!"
+});
+```
+
+##### Critical Differences from HTML / Blade:
+1. `class` $\rightarrow$ **`className`**: Kyunki JavaScript mein `class` ek reserved keyword hai.
+2. `for` $\rightarrow$ **`htmlFor`**: Form labels ke liye (`<label htmlFor="email">`).
+3. **Single Root Element (Fragments):** Ek component se hamesha sirf 1 parent element return hona chahiye. Agar extra `<div>` nahi chahiye to Fragment use karein: `<>...</>`.
+4. **Self-Closing Tags:** HTML mein `<input>` ya `<img>` close karna optional hota tha, JSX mein mandatory hai: `<input type="text" />`.
+5. **Inline Styles as Objects:** `style="color: red; font-size: 14px;"` ki jagah camelCase object pass hota hai:
+   ```jsx
+   <div style={{ color: 'red', fontSize: '14px', backgroundColor: '#f8fafc' }}>
+   ```
+
+---
+
+#### 3. Props & Component Composition — Blade `@props` vs React Props
+
+Laravel Blade component mein aap `@props(['status', 'title'])` use karte hain. React mein Props function arguments ki tarah aate hain.
+
+##### Props Destructuring with Default Values:
+```jsx
+// resources/js/Components/Alert.jsx
+export default function Alert({ 
+    type = 'info', 
+    title, 
+    dismissible = true, 
+    children 
+}) {
+    const badgeColors = {
+        success: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        error:   'bg-rose-100 text-rose-800 border-rose-300',
+        info:    'bg-sky-100 text-sky-800 border-sky-300',
+    };
+
+    return (
+        <div className={`border p-4 rounded-lg flex items-start ${badgeColors[type]}`}>
+            <div className="flex-1">
+                {title && <h4 className="font-bold text-lg mb-1">{title}</h4>}
+                <div className="text-sm">{children}</div>
+            </div>
+            {dismissible && (
+                <button className="text-gray-500 hover:text-gray-900">&times;</button>
+            )}
+        </div>
+    );
+}
+```
+
+##### Using Component & Passing Children:
+`children` React ka special prop hai jo Blade ke `$slot` ki tarah kaam karta hai:
+
+```jsx
+<Alert type="success" title="Order Placed!">
+    Your order <strong>#49201</strong> has been confirmed and sent to shipping.
+</Alert>
+```
+
+> **Golden Rule:** **Props are Read-Only (Immutable)!** Kabhi bhi child component ke andar `props.title = 'New'` mutate mat karein. Agar data badalna hai, to parent se state change aani chahiye.
+
+---
+
+#### 4. Conditional & List Rendering — The "Index as Key" Trap
+
+##### A. Conditional Rendering Patterns:
+```jsx
+// 1. Ternary Operator (If - Else):
+{isLoggedIn ? <UserMenu user={user} /> : <LoginButton />}
+
+// 2. Short-Circuit Logical AND (If only):
+{hasPermission && <AdminPanelButton />}
+
+// 3. Early Return (Guard Clause):
+function ProductDetails({ product }) {
+    if (!product) {
+        return <div className="spinner">Loading product...</div>;
+    }
+    return <h1>{product.name}</h1>;
+}
+```
+
+---
+
+##### B. List Rendering with `.map()`:
+Blade ke `@foreach($users as $user)` ko React mein array ke `.map()` method se replace kiya jaata hai:
+
+```jsx
+export default function UserList({ users }) {
+    return (
+        <ul className="divide-y">
+            {users.map((user) => (
+                <li key={user.id} className="p-3 flex justify-between">
+                    <span>{user.name}</span>
+                    <span className="badge">{user.role}</span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+```
+
+##### ⚠️ The Deadly "Index as Key" Bug:
+Kyun beginner developers ko `key={index}` use karne par gaaliyan padti hain?
+
+```jsx
+// ❌ DANGEROUS PATTERN:
+{items.map((item, index) => (
+    <TodoItem key={index} item={item} />
+))}
+```
+
+###### Why this breaks:
+- Agar aap list mein se item #2 delete karte hain, to item #3 ka index 2 ban jaata hai!
+- React sochta hai ki item #2 ka data change hua hai, delete nahi hua.
+- Agar us component ke paas internal input field ya checkbox tha, to checked status wrong item par chipak jayega!
+- **Rule:** Hamesha unique database ID use karein (`key={user.id}`).
+
+---
+
+#### 5. Setting Up React in Laravel 10/11 with Vite
+
+Modern Laravel (v10 & v11) built-in **Vite** ke sath aata hai. Laravel + React setup karne ka exact standard production protocol:
+
+##### Step 1: Install React Dependencies:
+```bash
+npm install react react-dom @vitejs/plugin-react
+```
+
+##### Step 2: Configure `vite.config.js`:
+```javascript
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: [
+                'resources/css/app.css', 
+                'resources/js/app.jsx'
+            ],
+            refresh: true,
+        }),
+        react(), // Enable React Fast Refresh
+    ],
+});
+```
+
+##### Step 3: Create React Entry Point (`resources/js/app.jsx`):
+```jsx
+import './bootstrap';
+import '../css/app.css';
+
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './Components/App';
+
+const container = document.getElementById('app');
+
+if (container) {
+    // Read initial data passed from Laravel Blade:
+    const initialData = container.dataset.page 
+        ? JSON.parse(container.dataset.page) 
+        : {};
+
+    const root = createRoot(container);
+    root.render(
+        <React.StrictMode>
+            <App initialData={initialData} />
+        </React.StrictMode>
+    );
+}
+```
+
+##### Step 4: Include in Blade (`resources/views/welcome.blade.php`):
+```html
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Laravel React App</title>
+
+    {{-- CRITICAL: @viteReactRefresh MUST be placed before @vite directive --}}
+    @viteReactRefresh
+    @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+</head>
+<body class="bg-gray-50">
+    {{-- Passing server-side PHP data into React container via data-page --}}
+    <div id="app" data-page="{{ json_encode(['appName' => config('app.name'), 'user' => auth()->user()]) }}"></div>
+</body>
+</html>
+```
+
+##### Step 5: Start Dev Server:
+```bash
+npm run dev
+php artisan serve
+```
+
+---
+
+#### 6. 3-Year Laravel Developer Golden Rules for React
+
+1. 🚫 **Never mutate DOM directly:** React app ke andar `document.querySelector` ya `$('#btn').click()` mat chalayein.
+2. 🔒 **Props are read-only:** Child component kabhi bhi props modify nahi karega.
+3. 🔑 **Always use stable Unique IDs for keys:** Array index ko `key` banana strictly avoid karein.
+4. ⚡ **Always place `@viteReactRefresh` first:** Blade template mein `@vite` se theek upar `@viteReactRefresh` hona mandatory hai, warna HMR (Hot Module Replacement) fail ho jayega!
+5. 🧩 **Fragment `<>...</>` use karein:** Unnecessary extra `<div>` wrapper DOM bloat se bachein.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const transformSteps = [
+            {
+                title: 'Step 1: Traditional Blade Component Analysis',
+                level: 'Blade Template',
+                desc: 'Maan lijiye aapke paas ek user-card.blade.php hai. Yeh server-side PHP evaluation karta hai, @props directive use karta hai, aur HTML string return karta hai.',
+                code: '{{-- resources/views/components/user-card.blade.php --}}\n@props([\"user\", \"showBadge\" => true])\n<div class=\"card\">\n    <h3>{{ $user->name }}</h3>\n    @if($showBadge)\n        <span class=\"badge\">{{ $user->role }}</span>\n    @endif\n</div>'
+            },
+            {
+                title: 'Step 2: Function Component & Props Destructuring',
+                level: 'React Component',
+                desc: 'Isko React function component mein convert karo. Blade ke @props ki jagah standard JavaScript object destructuring aayegi with default values.',
+                code: '// resources/js/Components/UserCard.jsx\nexport default function UserCard({\n    user,\n    showBadge = true\n}) {\n    // Component logic yahan aati hai\n}'
+            },
+            {
+                title: 'Step 3: JSX Attribute & Expression Conversion',
+                level: 'JSX Syntax',
+                desc: 'HTML attribute class ko className mein badlo. Blade double curly braces {{ }} ko single curly braces { } mein badlo jahan direct JS object properties access hoti hain.',
+                code: 'return (\n    <div className=\"card\">\n        <h3>{user.name}</h3>\n        {showBadge && <span className=\"badge\">{user.role}</span>}\n    </div>\n);'
+            },
+            {
+                title: 'Step 4: List Looping with .map() & Unique Key',
+                level: 'List Rendering',
+                desc: 'Agar parent view mein users ki list render karni hai, to Blade ke @foreach($users as $user) ko JavaScript ke users.map() se replace karo aur unique key={user.id} lagao.',
+                code: 'export default function UserList({ users }) {\n    return (\n        <div className=\"grid grid-cols-3 gap-4\">\n            {users.map(user => (\n                <UserCard key={user.id} user={user} />\n            ))}\n        </div>\n    );\n}'
+            },
+            {
+                title: 'Step 5: Laravel Vite Plugin Configuration',
+                level: 'Vite Config',
+                desc: 'vite.config.js mein @vitejs/plugin-react add karo taaki JSX transpilation aur Fast Refresh (HMR) enable ho sake.',
+                code: 'import { defineConfig } from \'vite\';\nimport laravel from \'laravel-vite-plugin\';\nimport react from \'@vitejs/plugin-react\';\n\nexport default defineConfig({\n    plugins: [\n        laravel([\'resources/css/app.css\', \'resources/js/app.jsx\']),\n        react(),\n    ],\n});'
+            },
+            {
+                title: 'Step 6: Mount into Blade Root Container',
+                level: 'Mounting',
+                desc: 'Blade view mein #app div create karo aur ReactDOM.createRoot se component mount karo. Server-side PHP data ko data attributes ke through seamlessly inject karo.',
+                code: 'import { createRoot } from \'react-dom/client\';\nimport UserList from \'./Components/UserList\';\n\nconst el = document.getElementById(\'app\');\nif (el) {\n    const initialUsers = JSON.parse(el.dataset.users || \'[]\');\n    createRoot(el).render(<UserList users={initialUsers} />);\n}'
+            }
+        ];
+
+        function showTransformStep(index) {
+            document.querySelectorAll('#transformNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = transformSteps[index];
+            document.getElementById('transformContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-jsx">' + step.code + '</code></pre>';
+        }
+
+        showTransformStep(0);
+
+        function switchReactTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mastery - State Management & Controlled Forms for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="01_React_Mental_Model_JSX_and_Laravel_Vite_Setup.html" class="nav-btn">&larr; Previous: Mental Model &amp; Setup</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="03_Component_Lifecycle_and_useEffect_Deep_Dive.html" class="nav-btn">Next: Lifecycle &amp; useEffect &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Controlled Form & Laravel 422 Error Handling Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Controlled Form &amp; Laravel 422 Validation Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            User keystroke se lekar Laravel FormRequest validation failure handling aur state reset tak ka 6-step reactive flow:
+        </p>
+
+        <div class="stepper-nav" id="formNav">
+            <button class="step-chip active" onclick="showFormStep(0)">
+                <span class="step-num">01</span>
+                <span>State Init</span>
+            </button>
+            <button class="step-chip" onclick="showFormStep(1)">
+                <span class="step-num">02</span>
+                <span>Generic Change</span>
+            </button>
+            <button class="step-chip" onclick="showFormStep(2)">
+                <span class="step-num">03</span>
+                <span>Submit &amp; Axios</span>
+            </button>
+            <button class="step-chip" onclick="showFormStep(3)">
+                <span class="step-num">04</span>
+                <span>422 Catch</span>
+            </button>
+            <button class="step-chip" onclick="showFormStep(4)">
+                <span class="step-num">05</span>
+                <span>Inline Feedback</span>
+            </button>
+            <button class="step-chip" onclick="showFormStep(5)">
+                <span class="step-num">06</span>
+                <span>Keystroke Clear</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="formContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchFormTab(event, 'tab-immutability')">&#128203; Immutability Cheatsheet</button>
+            <button class="tab-btn" onclick="switchFormTab(event, 'tab-errors')">&#128737;&#65039; Laravel 422 Error Mapper</button>
+            <button class="tab-btn" onclick="switchFormTab(event, 'tab-debounce')">&#9201;&#65039; Debounced Live Search</button>
+            <button class="tab-btn" onclick="switchFormTab(event, 'tab-fullform')">&#127915; Production Form Template</button>
+        </div>
+
+        <!-- Tab 1: Immutability Cheatsheet -->
+        <div id="tab-immutability" class="tab-panel active">
+            <h5>State Immutability: Objects &amp; Arrays in React</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                React relies on reference changes (<code>Object.is</code>). Mutating state in-place will NEVER trigger a re-render:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th>&#10060; Deadly Mutation (No Re-render)</th>
+                        <th>&#9989; Safe Immutable Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Object Property</strong></td>
+                        <td><code>user.name = 'Pankaj'; setUser(user);</code></td>
+                        <td><code>setUser(prev =&gt; ({ ...prev, name: 'Pankaj' }));</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Add to Array</strong></td>
+                        <td><code>items.push(newItem); setItems(items);</code></td>
+                        <td><code>setItems(prev =&gt; [...prev, newItem]);</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delete from Array</strong></td>
+                        <td><code>items.splice(idx, 1); setItems(items);</code></td>
+                        <td><code>setItems(prev =&gt; prev.filter(i =&gt; i.id !== id));</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Update Array Item</strong></td>
+                        <td><code>items[0].status = 'done';</code></td>
+                        <td><code>setItems(prev =&gt; prev.map(i =&gt; i.id === id ? { ...i, status: 'done' } : i));</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Laravel 422 Error Mapper -->
+        <div id="tab-errors" class="tab-panel">
+            <h5>Laravel FormRequest 422 Response Structure &amp; Mapping</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Laravel validation errors are returned as keyed arrays: <code>{ "errors": { "field": ["Message 1"] } }</code>:
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <strong style="color:var(--brand-purple);">Laravel FormRequest JSON:</strong>
+                    <pre><code class="language-json">{
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": [
+      "The email has already been taken."
+    ],
+    "password": [
+      "The password must be at least 8 characters."
+    ]
+  }
+}</code></pre>
+                </div>
+                <div>
+                    <strong style="color:var(--brand-purple);">React Catch &amp; Render Pattern:</strong>
+                    <pre><code class="language-jsx">try {
+    await axios.post('/api/register', formData);
+} catch (error) {
+    if (error.response?.status === 422) {
+        // Map directly to errors state object:
+        setErrors(error.response.data.errors);
+    }
+}
+
+// In JSX template:
+{errors.email && (
+    &lt;span className="text-red-500 text-sm"&gt;
+        {errors.email[0]}
+    &lt;/span&gt;
+)}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Debounced Live Search -->
+        <div id="tab-debounce" class="tab-panel">
+            <h5>Debounced Search Against Laravel Database</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Stop firing 10 queries on 10 keystrokes. Wait 400ms after user stops typing:
+            </p>
+            <pre><code class="language-jsx">const debounceRef = useRef(null);
+
+const handleSearch = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+
+    // Cancel previously queued API call:
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!val.trim()) {
+        setResults([]);
+        return;
+    }
+
+    // Schedule API call after 400ms idle:
+    debounceRef.current = setTimeout(async () => {
+        setIsSearching(true);
+        const res = await axios.get(&#96;/api/products?search=${encodeURIComponent(val)}&#96;);
+        setResults(res.data.data);
+        setIsSearching(false);
+    }, 400);
+};</code></pre>
+        </div>
+
+        <!-- Tab 4: Full Form Template -->
+        <div id="tab-fullform" class="tab-panel">
+            <h5>Production-Ready Controlled Form Component</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Complete clean architecture template with loading spinner, validation errors, and disabled submit state:
+            </p>
+            <pre><code class="language-jsx">export default function UserForm() {
+    const [form, setForm] = useState({ name: '', email: '', role: 'user' });
+    const [errors, setErrors] = useState({});
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+        // Clean error as user types:
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await axios.post('/api/users', form);
+            alert('Saved successfully!');
+        } catch (err) {
+            if (err.response?.status === 422) setErrors(err.response.data.errors);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        &lt;form onSubmit={handleSubmit}&gt;
+            &lt;input name="name" value={form.name} onChange={handleChange} /&gt;
+            {errors.name && &lt;p className="error"&gt;{errors.name[0]}&lt;/p&gt;}
+            &lt;button disabled={submitting}&gt;{submitting ? 'Saving...' : 'Save'}&lt;/button&gt;
+        &lt;/form&gt;
+    );
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="01_React_Mental_Model_JSX_and_Laravel_Vite_Setup.html" class="nav-btn">&larr; Previous: Mental Model &amp; Setup</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="03_Component_Lifecycle_and_useEffect_Deep_Dive.html" class="nav-btn">Next: Lifecycle &amp; useEffect &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### React Mastery 2: State Management & Controlled Forms in Laravel Ecosystem
+
+> *"User input handle karna, state immutability, aur Laravel 422 validation errors seamlessly display karna"*
+
+Laravel Blade mein form submission bohot straightforward hota hai: `<form action="/users" method="POST">`, submit button dabaane par browser full page reload karta hai, aur Laravel redirect back karke `@error('email')` bag inject kar deta hai.
+
+React mein form handling **in-memory reactive state** ke through hoti hai — **zero page reload, instant validation feedback, dynamic disable states, aur real-time debounced searches**.
+
+Is module mein hum seekhenge:
+1. **`useState` Deep Dive** — State updates asynchronous kyun hote hain aur Functional Updates ka role
+2. **State Immutability Rules** — Objects aur Arrays ko safely update karna bina reference mutate kiye
+3. **Controlled Form Inputs Pattern** — Single dynamic `handleChange` function for 10+ inputs
+4. **Handling Laravel 422 Validation Errors** — FormRequest JSON errors ko React state mein map karna
+5. **Debounced Live Search** — Laravel database ko keystroke hammering se bachaana
+6. **Double-Submit Prevention & Loading Spinners** — Production checkout & save UX
+
+---
+
+#### 1. `useState` Internals — React's Memory
+
+Component ke re-render hone par regular JavaScript variables reset ho jaate hain. `useState` React ka special hook hai jo component renders ke beech **data persist** karta hai.
+
+##### Syntax & Mental Model:
+```jsx
+const [count, setCount] = useState(0);
+```
+
+##### ⚠️ Gotcha #1: State Updates Are Asynchronous (Batched)!
+Bohot saare backend developers yeh mistake karte hain:
+
+```jsx
+// ❌ WRONG EXPECTATION:
+function handleIncrement() {
+    setCount(count + 1);
+    console.log(count); // Prints OLD value! (0 instead of 1)
+}
+```
+###### Why?
+React performance optimize karne ke liye state updates ko **batch** karta hai aur micro-task queue mein schedule karta hai. Current execution context mein `count` wahi constant rehta hai jo render ke time tha!
+
+##### ⚠️ Gotcha #2: Sequential Updates Need Functional State:
+Agar aap ek hi handler mein multiple state updates karte hain:
+
+```jsx
+// ❌ FAILS (Only increments by 1!):
+setCount(count + 1); // 0 + 1 = 1
+setCount(count + 1); // 0 + 1 = 1
+setCount(count + 1); // 0 + 1 = 1
+
+// ✅ FUNCTIONAL UPDATE (Increments by 3 correctly!):
+setCount(prev => prev + 1); // receives 0 -> returns 1
+setCount(prev => prev + 1); // receives 1 -> returns 2
+setCount(prev => prev + 1); // receives 2 -> returns 3
+```
+
+---
+
+#### 2. The Golden Rule of State Immutability
+
+React pata kaise lagata hai ki component ko re-render karna hai? **Reference Equality (`Object.is`)** se!
+
+Agar aap existing object ya array ko directly mutate karte hain, to uska memory pointer same rehta hai. **React sochega ki kuch change hi nahi hua, aur UI render NAHI hogi!**
+
+```jsx
+// ❌ MUTATION DISASTER (No re-render!):
+const [user, setUser] = useState({ name: 'Pankaj', role: 'Dev' });
+user.name = 'Pankaj Tomar'; // Mutated original object directly!
+setUser(user); // Same memory reference! React skips re-render!
+
+// ✅ IMMUTABLE UPDATE (Shallow Copy with Spread):
+setUser(prev => ({
+    ...prev,
+    name: 'Pankaj Tomar' // Creates brand new object in memory!
+}));
+```
+
+##### Immutability Cheatsheet for Arrays:
+| Operation | ❌ Mutating (DO NOT USE) | ✅ Immutable (React Friendly) |
+|---|---|---|
+| **Add Item** | `arr.push(newItem)` | `[...arr, newItem]` or `[newItem, ...arr]` |
+| **Remove Item** | `arr.splice(index, 1)` | `arr.filter(item => item.id !== targetId)` |
+| **Update Item** | `arr[index].name = 'X'` | `arr.map(item => item.id === targetId ? { ...item, name: 'X' } : item)` |
+| **Sort / Reverse** | `arr.sort()` | `[...arr].sort()` (Sort on a copy!) |
+
+---
+
+#### 3. Controlled Form Components Pattern
+
+Blade mein input value DOM khud maintain karta tha. React mein input ka value **React state** ke control mein hota hai — isko **Controlled Component** kehte hain.
+
+##### The Scalable Multi-Input Handler:
+Har input ke liye alag `handleEmailChange`, `handlePasswordChange` likhne ke bajaye single reusable handler use karein:
+
+```jsx
+import React, { useState } from 'react';
+
+export default function RegisterForm() {
+    // 1. Single form state object:
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'developer',
+        agree_terms: false,
+    });
+
+    // 2. Generic Input Handler using input "name" attribute:
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    return (
+        <form className="space-y-4">
+            <input 
+                type="text" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleChange} 
+                placeholder="Full Name" 
+            />
+            <input 
+                type="email" 
+                name="email" 
+                value={formData.email} 
+                onChange={handleChange} 
+                placeholder="Email Address" 
+            />
+            <select name="role" value={formData.role} onChange={handleChange}>
+                <option value="developer">Developer</option>
+                <option value="designer">Designer</option>
+            </select>
+            <input 
+                type="checkbox" 
+                name="agree_terms" 
+                checked={formData.agree_terms} 
+                onChange={handleChange} 
+            />
+        </form>
+    );
+}
+```
+
+---
+
+#### 4. Handling Laravel Validation Errors (HTTP 422)
+
+Jab aapka Laravel backend FormRequest validation fail karta hai:
+
+```php
+// app/Http/Requests/StoreUserRequest.php
+public function rules(): array
+{
+    return [
+        'name'     => ['required', 'string', 'max:255'],
+        'email'    => ['required', 'email', 'unique:users,email'],
+        'password' => ['required', 'string', 'min:8'],
+    ];
+}
+```
+
+Laravel ek `422 Unprocessable Content` response bhejta hai:
+```json
+{
+  "message": "The email has already been taken.",
+  "errors": {
+    "email": ["The email has already been taken."],
+    "password": ["The password field must be at least 8 characters."]
+  }
+}
+```
+
+##### In React: Capturing & Mapping Laravel Errors:
+```jsx
+import React, { useState } from 'react';
+import axios from 'axios';
+
+export default function UserCreateForm() {
+    const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        
+        // 1. Update field value:
+        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // 2. Pro Tip: Clear error for this specific field as user types!
+        if (errors[name]) {
+            setErrors(prev => {
+                const updated = { ...prev };
+                delete updated[name];
+                return updated;
+            });
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // Stop traditional page refresh!
+        setLoading(true);
+        setErrors({});
+        setSuccessMessage('');
+
+        try {
+            const response = await axios.post('/api/users', formData);
+            setSuccessMessage('User registered successfully!');
+            setFormData({ name: '', email: '', password: '' }); // Reset form
+        } catch (error) {
+            // Check if response is Laravel 422 validation error:
+            if (error.response && error.response.status === 422) {
+                setErrors(error.response.data.errors);
+            } else {
+                alert('Something went wrong on the server.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md">
+            {successMessage && (
+                <div className="p-3 mb-4 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">
+                    {successMessage}
+                </div>
+            )}
+
+            {/* Email Field */}
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input 
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full p-2 border rounded ${errors.email ? 'border-rose-500 bg-rose-50' : 'border-gray-300'}`}
+                />
+                {/* Laravel Validation Error Message: */}
+                {errors.email && (
+                    <p className="mt-1 text-sm text-rose-600 font-medium">
+                        {errors.email[0]}
+                    </p>
+                )}
+            </div>
+
+            <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded flex justify-center items-center disabled:opacity-50"
+            >
+                {loading ? 'Registering...' : 'Register User'}
+            </button>
+        </form>
+    );
+}
+```
+
+---
+
+#### 5. Debounced Search Input (Protecting Laravel Server from Hammering)
+
+E-commerce ya admin search bars mein jab user type karta hai, to beginner developers `onChange` par seedha API call trigger kar dete hain.
+Agar user "MacBook Pro" type kare, to **11 API requests** MySQL database par ek sath fire ho jaayengi!
+
+##### The Debounce Solution:
+User ke typing band karne ke baad 300-500ms wait karke sirf 1 final API request bhejna:
+
+```jsx
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+
+export default function UserSearchBar() {
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState([]);
+    const [searching, setSearching] = useState(false);
+    
+    // Store timer in ref across renders:
+    const debounceTimer = useRef(null);
+
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setQuery(value);
+
+        // Clear previous pending timer:
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+
+        if (!value.trim()) {
+            setResults([]);
+            return;
+        }
+
+        // Set new timer: Call API only after 400ms of inactivity!
+        debounceTimer.current = setTimeout(async () => {
+            setSearching(true);
+            try {
+                const res = await axios.get(`/api/users/search?q=${encodeURIComponent(value)}`);
+                setResults(res.data.data);
+            } catch (err) {
+                console.error('Search failed', err);
+            } finally {
+                setSearching(false);
+            }
+        }, 400);
+    };
+
+    return (
+        <div className="relative">
+            <input 
+                type="text" 
+                value={query} 
+                onChange={handleSearchChange} 
+                placeholder="Search users by name or email..." 
+                className="w-full p-3 border rounded-lg"
+            />
+            {searching && <span className="absolute right-3 top-3 text-sm text-gray-400">Searching...</span>}
+            
+            {results.length > 0 && (
+                <ul className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {results.map(u => (
+                        <li key={u.id} className="p-3 hover:bg-gray-50 border-b last:border-b-0">
+                            <strong>{u.name}</strong> ({u.email})
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+```
+
+---
+
+#### 6. Double-Submit Protection & UX Polish
+
+Production e-commerce apps mein jab user "Pay Now" ya "Place Order" click karta hai:
+1. Button ko immediately `disabled={loading}` karein
+2. Button text ko spinner ya "Processing..." se replace karein
+3. State reset karein jab modal dismiss ya submit complete ho
+
+```jsx
+<button 
+    type="submit" 
+    disabled={isSubmitting}
+    className="btn-primary flex items-center justify-center gap-2"
+>
+    {isSubmitting ? (
+        <>
+            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span>Processing Order...</span>
+        </>
+    ) : (
+        <span>Confirm Order & Pay</span>
+    )}
+</button>
+```
+
+---
+
+#### 7. 3-Year Laravel Developer Form Checklist
+
+1. 🎯 **Single State Object for Forms:** 10 alag `useState` bananey ki jagah 1 single `formData` object aur generic `[name]: value` handler use karein.
+2. 🧹 **Clear Errors on Keystroke:** User jab field rectify karna shuru kare, to us field ka error state se delete kar dein.
+3. 🛑 **Always `e.preventDefault()`:** Form submit hone par full page reload rokna mat bhooliye.
+4. ⏱️ **Debounce Search & Filters:** Live search inputs par hamesha 300-500ms debounce lagayein.
+5. 🛡️ **Always Disable Submit on `loading`:** Database mein duplicate transactions aur race conditions se bachein.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const formSteps = [
+            {
+                title: 'Step 1: State Initialization',
+                level: 'Component State',
+                desc: 'Single unified state object define karo jisme saare form fields initial empty values ke sath defined hon, aur sath mein errors aur loading boolean state rakhein.',
+                code: 'const [formData, setFormData] = useState({\n    name: \'\',\n    email: \'\',\n    password: \'\',\n});\nconst [errors, setErrors] = useState({});\nconst [loading, setLoading] = useState(false);'
+            },
+            {
+                title: 'Step 2: Generic Controlled Change Handler',
+                level: 'Event Handler',
+                desc: 'Input ke name attribute ko dynamic key ki tarah use karke state update karo. React ka value={formData[name]} DOM input ke sath 100% synchronized rehta hai.',
+                code: 'const handleChange = (e) => {\n    const { name, value } = e.target;\n    setFormData(prev => ({\n        ...prev,\n        [name]: value\n    }));\n};'
+            },
+            {
+                title: 'Step 3: Form Submission & Axios Request',
+                level: 'HTTP Request',
+                desc: 'e.preventDefault() se browser reload roko, loading=true karo (submit button disable karne ke liye), aur Axios se Laravel REST endpoint par POST request bhejo.',
+                code: 'const handleSubmit = async (e) => {\n    e.preventDefault();\n    setLoading(true);\n    setErrors({});\n    try {\n        await axios.post(\'/api/users\', formData);\n        // Success logic...\n    } catch (err) {\n        // Error handling in next step...\n    }\n};'
+            },
+            {
+                title: 'Step 4: Catch Laravel 422 Validation Failure',
+                level: 'Error Ingestion',
+                desc: 'Laravel FormRequest validation fail hone par HTTP 422 status bhejta hai. Catch block mein error.response.data.errors ko extract karke React errors state mein store karo.',
+                code: '} catch (error) {\n    if (error.response && error.response.status === 422) {\n        setErrors(error.response.data.errors);\n    } else {\n        console.error(\'Server 500 error\', error);\n    }\n} finally {\n    setLoading(false);\n}'
+            },
+            {
+                title: 'Step 5: Inline Error Rendering & Border Highlighting',
+                level: 'UI Feedback',
+                desc: 'Input box par conditional class lagao (agar error hai to border-rose-500), aur theek neeche first validation message render karo using errors[field][0].',
+                code: '<input \n    name=\"email\"\n    value={formData.email}\n    onChange={handleChange}\n    className={errors.email ? \'border-rose-500 bg-rose-50\' : \'border-slate-300\'}\n/>\n{errors.email && <p className=\"text-rose-600 text-sm\">{errors.email[0]}</p>}'
+            },
+            {
+                title: 'Step 6: Keystroke Error Auto-Clear',
+                level: 'UX Polish',
+                desc: 'Jaise hi user galat field mein typing shuru karta hai, turant handleChange ke andar us field ka error state se remove kar do taaki real-time responsive UX mile.',
+                code: 'const handleChange = (e) => {\n    const { name, value } = e.target;\n    setFormData(prev => ({ ...prev, [name]: value }));\n    if (errors[name]) {\n        setErrors(prev => {\n            const next = { ...prev };\n            delete next[name];\n            return next;\n        });\n    }\n};'
+            }
+        ];
+
+        function showFormStep(index) {
+            document.querySelectorAll('#formNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = formSteps[index];
+            document.getElementById('formContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-jsx">' + step.code + '</code></pre>';
+        }
+
+        showFormStep(0);
+
+        function switchFormTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

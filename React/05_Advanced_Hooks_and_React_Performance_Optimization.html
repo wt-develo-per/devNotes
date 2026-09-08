@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mastery - Advanced Hooks &amp; Performance Optimization for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="04_Inertia_React_FullStack_Laravel_Monolith.html" class="nav-btn">&larr; Previous: Inertia.js Monolith</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="06_Global_State_Management_Context_and_Zustand.html" class="nav-btn">Next: Global State (Zustand &amp; Context) &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Performance Diagnostics & 60 FPS Optimization Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Performance Diagnostics &amp; 60 FPS Optimization Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Typing lag aur heavy table freezes se silky-smooth 60 FPS rendering tak ka 6-step engineering protocol:
+        </p>
+
+        <div class="stepper-nav" id="perfNav">
+            <button class="step-chip active" onclick="showPerfStep(0)">
+                <span class="step-num">01</span>
+                <span>Profiler Diagnosis</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(1)">
+                <span class="step-num">02</span>
+                <span>State Colocation</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(2)">
+                <span class="step-num">03</span>
+                <span>useMemo Cache</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(3)">
+                <span class="step-num">04</span>
+                <span>useCallback Pointer</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(4)">
+                <span class="step-num">05</span>
+                <span>React.memo Shield</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(5)">
+                <span class="step-num">06</span>
+                <span>Lazy Code-Split</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="perfContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchPerfTab(event, 'tab-compare')">&#9878;&#65039; useMemo vs useCallback</button>
+            <button class="tab-btn" onclick="switchPerfTab(event, 'tab-memo-bench')">&#9889; React.memo Benchmark</button>
+            <button class="tab-btn" onclick="switchPerfTab(event, 'tab-splitting')">&#128230; Code Splitting &amp; Suspense</button>
+            <button class="tab-btn" onclick="switchPerfTab(event, 'tab-colocation')">&#129504; State Colocation Pattern</button>
+        </div>
+
+        <!-- Tab 1: useMemo vs useCallback -->
+        <div id="tab-compare" class="tab-panel active">
+            <h5>useMemo vs useCallback — Never Confuse Again</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Both memoize values, but their target data types and use-cases are fundamentally different:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Criteria</th>
+                        <th><code>useMemo(() =&gt; fn(), [deps])</code></th>
+                        <th><code>useCallback(fn, [deps])</code></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>What it returns</strong></td>
+                        <td>The <strong>calculated result</strong> of calling the function (number, array, object)</td>
+                        <td>The <strong>function instance itself</strong> (function definition pointer)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Primary Purpose</strong></td>
+                        <td>Skipping expensive recalculations on every render cycle</td>
+                        <td>Preserving stable function references passed down as props</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Typical Laravel Scenario</strong></td>
+                        <td>Complex invoice calculations, filtering 5,000 products by search query</td>
+                        <td><code>handleDelete</code>, <code>handleSelect</code> passed to memoized table row components</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Premature Optimization Risk</strong></td>
+                        <td>Wrapping simple math: overhead of tracking deps is slower than calculation</td>
+                        <td>Wrapping handlers passed to native DOM elements (<code>&lt;button onClick={cb}&gt;</code> doesn't need memo)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: React.memo Benchmark -->
+        <div id="tab-memo-bench" class="tab-panel">
+            <h5>React.memo Benchmark: Rendering 1,000 Table Rows</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Comparison when typing 1 character in a search bar placed above 1,000 user rows:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Implementation</th>
+                        <th>Rows Re-rendered on 1 Keystroke</th>
+                        <th>Render Duration</th>
+                        <th>FPS Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Without React.memo</strong></td>
+                        <td>1,000 rows re-render from scratch &#10060;</td>
+                        <td>~128 ms</td>
+                        <td>Drops to ~12 FPS (Noticeable typing lag)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>React.memo (broken by inline fn)</strong></td>
+                        <td>1,000 rows re-render (shallow check fails) &#10060;</td>
+                        <td>~135 ms</td>
+                        <td>Worst (memo overhead + re-render)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>React.memo + useCallback</strong></td>
+                        <td><strong>0 untouched rows re-render &#9989;</strong></td>
+                        <td><strong>~2.4 ms ⚡</strong></td>
+                        <td><strong>Constant 60 FPS (Silky smooth)</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 3: Code Splitting & Suspense -->
+        <div id="tab-splitting" class="tab-panel">
+            <h5>Bundle Size Optimization with React.lazy() &amp; Vite</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Reduce initial <code>app.js</code> from 2.5MB down to 250KB by on-demand loading heavy third-party modules:
+            </p>
+            <pre><code class="language-jsx">import React, { Suspense, useState } from 'react';
+
+// Vite compiles this into a separate chunk: "RichTextEditor-[hash].js"
+const RichTextEditor = React.lazy(() => import('@/Components/RichTextEditor'));
+
+export default function ArticleForm() {
+    const [editorOpen, setEditorOpen] = useState(false);
+
+    return (
+        &lt;div&gt;
+            &lt;button onClick={() => setEditorOpen(true)}&gt;Open Full Editor&lt;/button&gt;
+
+            {editorOpen && (
+                &lt;Suspense fallback={&lt;div className="skeleton"&gt;Loading Editor Engine...&lt;/div&gt;}&gt;
+                    &lt;RichTextEditor /&gt;
+                &lt;/Suspense&gt;
+            )}
+        &lt;/div&gt;
+    );
+}</code></pre>
+        </div>
+
+        <!-- Tab 4: State Colocation Pattern -->
+        <div id="tab-colocation" class="tab-panel">
+            <h5>State Colocation — The Zero-Hook Architectural Fix</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Before reaching for <code>useMemo</code> or <code>useCallback</code>, ask: <em>"Is this state lifted unnecessarily high?"</em>
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:12px;">
+                    <strong style="color:#e11d48;">&#10060; Bad (State at Top of Tree):</strong>
+                    <pre style="margin-top:6px; font-size:0.85rem;"><code class="language-jsx">function Page() {
+    // Keystroke here re-renders Chart & Table!
+    const [query, setQuery] = useState('');
+    return (
+        &lt;&gt;
+            &lt;input value={query} onChange={...} /&gt;
+            &lt;HeavyChart /&gt;
+            &lt;HeavyTable /&gt;
+        &lt;/&gt;
+    );
+}</code></pre>
+                </div>
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px;">
+                    <strong style="color:#16a34a;">&#9989; Pro (State Pushed Down):</strong>
+                    <pre style="margin-top:6px; font-size:0.85rem;"><code class="language-jsx">function SearchBox({ onSearch }) {
+    // Only SearchBox re-renders on typing!
+    const [query, setQuery] = useState('');
+    return &lt;input value={query} onChange={...} /&gt;;
+}
+
+function Page() {
+    return (
+        &lt;&gt;
+            &lt;SearchBox onSearch={filterTable} /&gt;
+            &lt;HeavyChart /&gt; {/* ZERO re-renders! */}
+            &lt;HeavyTable /&gt;
+        &lt;/&gt;
+    );
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="04_Inertia_React_FullStack_Laravel_Monolith.html" class="nav-btn">&larr; Previous: Inertia.js Monolith</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="06_Global_State_Management_Context_and_Zustand.html" class="nav-btn">Next: Global State (Zustand &amp; Context) &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### React Mastery 5: Advanced Hooks & React Performance Optimization
+
+> *"App lag kar rahi hai, typing slow hai — Component re-renders kaise identify karein aur 60 FPS performance kaise achieve karein?"*
+
+Backend developers jab React likhna shuru karte hain, to unka code shuru mein kaam karta hai. Lekin jaise hi application badi hoti hai — 1,000 rows wali table, complex billing calculator, ya analytics charts — UI lag karne lagti hai. Input box mein type karte waqt characters delay hokar aate hain.
+
+Is module mein hum master karenge:
+1. **Kyun Re-render Hota Hai Component?** — React's Re-render Lifecycle
+2. **`useMemo`** — Heavy calculations ko cache karna vs Premature Optimization ka trap
+3. **`useCallback`** — Function reference stability aur child re-render prevention
+4. **`React.memo`** — Pure Component memoization for large lists and tables
+5. **State Colocation Pattern** — The zero-hook performance secret
+6. **Code-Splitting with `React.lazy()` & `<Suspense>`** — 2MB bundle ko lightweight chunks mein todna
+
+---
+
+#### 1. React's Re-render Mechanics — The Real Culprit
+
+React mein component kab re-render hota hai? Sirf 3 reasons se:
+1. **Apna State Badalna:** `useState` ka setter function call hua.
+2. **Parent Component ka Re-render Hona:** Jab bhi Parent re-render hota hai, **by default uske saare Children bhi re-render hote hain** — bhale hi unke props change na hue hon!
+3. **Subscribed Context ka Badalna:** `useContext` ki value update hui.
+
+##### The "Typing Lag" Problem in Laravel Apps:
+Maan lijiye aapke page par ek search input hai aur neeche 1,000 users ki table hai.
+
+```jsx
+export default function UsersDashboard({ users }) {
+    const [search, setSearch] = useState('');
+
+    // Jab user search box mein 1 letter type karta hai:
+    // 1. search state updates
+    // 2. UsersDashboard re-renders
+    // 3. ALL 1,000 UserRow components re-render from scratch!
+    // 4. Screen drops to 15 FPS -> Severe UI Lag!
+}
+```
+
+---
+
+#### 2. `useMemo` — Heavy Computations Caching
+
+`useMemo` kisi expensive calculation ke result ko memory mein cache (memoize) karta hai, aur use tabhi dobara calculate karta hai jab uski **dependencies badalti hain**.
+
+##### Syntax:
+```jsx
+const memoizedValue = useMemo(() => {
+    return computeExpensiveValue(a, b);
+}, [a, b]);
+```
+
+##### Real Laravel Scenario: Client-Side Filter & Tax Calculation:
+```jsx
+import React, { useState, useMemo } from 'react';
+
+export default function ProductCatalog({ products }) {
+    const [search, setSearch] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+
+    // 5,000 products ko filter & sort karna expensive operation hai:
+    const filteredProducts = useMemo(() => {
+        console.log('Filtering 5,000 products...'); // Only runs when search/category changes!
+        return products
+            .filter(p => {
+                const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase());
+                const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
+                return matchesSearch && matchesCat;
+            })
+            .sort((a, b) => b.sales_count - a.sales_count);
+    }, [products, search, selectedCategory]);
+
+    return (
+        <div>
+            {/* Inputs... */}
+            <ProductList items={filteredProducts} />
+        </div>
+    );
+}
+```
+
+##### ⚠️ The Premature Optimization Trap:
+Junior devs har jagah `useMemo` chipka dete hain:
+```jsx
+// ❌ SENSELESS OVERHEAD (Worse performance!):
+const fullName = useMemo(() => `${user.first_name} ${user.last_name}`, [user]);
+```
+###### Why?
+Simple string concatenation ya basic math karna `useMemo` hook ke dependency array comparison se 10x faster hota hai. `useMemo` sirf tab use karein jab calculation noticeable time (> 1-2ms) leti ho ya complex nested loops/array transforms hon.
+
+---
+
+#### 3. `useCallback` — Function Reference Equality
+
+JavaScript mein functions objects hote hain. **Har render par function ka naya memory address banta hai!**
+
+```javascript
+// Render 1:
+const fn1 = () => console.log('hello'); // Memory: 0x001
+
+// Render 2:
+const fn2 = () => console.log('hello'); // Memory: 0x002
+
+fn1 === fn2; // FALSE! Reference equality fails!
+```
+
+Agar aap kisi child component ko function pass karte hain:
+`<UserRow user={u} onDelete={handleDelete} />`
+Har render par `handleDelete` naya pointer banta hai, isliye child component sochega ki prop change ho gaya hai!
+
+##### Solution: `useCallback`
+`useCallback` render cycles ke beech **same function memory pointer** preserve karta hai:
+
+```jsx
+import React, { useState, useCallback } from 'react';
+import { router } from '@inertiajs/react';
+
+export default function UserManagement() {
+    const [users, setUsers] = useState([...]);
+
+    // Stable function reference that NEVER changes across renders:
+    const handleDelete = useCallback((userId) => {
+        if (confirm('Are you sure?')) {
+            router.delete(`/users/${userId}`);
+        }
+    }, []); // Empty deps = same function instance forever
+
+    return (
+        <ul>
+            {users.map(user => (
+                <UserRow key={user.id} user={user} onDelete={handleDelete} />
+            ))}
+        </ul>
+    );
+}
+```
+
+---
+
+#### 4. `React.memo` — Pure Component Shield
+
+By default, parent re-render hone par child hamesha re-render hota hai. `React.memo` ek Higher-Order Component (HOC) hai jo child component ko wrap karta hai aur uske props ka **Shallow Comparison** karta hai.
+
+**Agar props change nahi hue, to React child component ka re-render completely skip kar deta hai!**
+
+```jsx
+// resources/js/Components/UserRow.jsx
+import React from 'react';
+
+function UserRow({ user, onDelete }) {
+    console.log(`Rendered User #${user.id}`);
+    return (
+        <li className="p-3 flex justify-between border-b">
+            <span>{user.name} ({user.email})</span>
+            <button onClick={() => onDelete(user.id)} className="text-red-500">
+                Delete
+            </button>
+        </li>
+    );
+}
+
+// Wrap in React.memo:
+export default React.memo(UserRow);
+```
+
+##### ⚠️ The Deadly Mistake: `React.memo` Without `useCallback`
+Agar aapne `UserRow` par `React.memo` laga diya, lekin parent mein `onDelete={() => handleDelete(user.id)}` inline pass kar diya, to **`React.memo` fail ho jaayega** kyunki inline function har render par naya reference banayega!
+> **Formula:** `React.memo` + `useCallback` = 100% Guaranteed Re-render Protection!
+
+---
+
+#### 5. State Colocation — The Zero-Hook Performance Secret
+
+90% performance problems `useMemo` ya `useCallback` ke bina sirf **State ko sahi jagah rakhne (Colocation)** se solve ho jaati hain.
+
+##### The Mistake (State Lifted Too High):
+```jsx
+// ❌ WRONG: Search state at the top of the whole page:
+export default function Dashboard() {
+    const [search, setSearch] = useState(''); // When this changes, EVERYTHING re-renders!
+    return (
+        <div>
+            <input value={search} onChange={e => setSearch(e.target.value)} />
+            <HeavyAnalyticsWidget />
+            <HeavyTableWidget />
+        </div>
+    );
+}
+```
+
+##### The Solution (Push State Down into Child):
+Search state ko sirf Search component ke andar band kar do:
+
+```jsx
+// ✅ OPTIMIZED: Search state localized inside child:
+function SearchBox({ onSearch }) {
+    const [query, setQuery] = useState(''); // Only SearchBox re-renders on typing!
+    return (
+        <input 
+            value={query} 
+            onChange={e => {
+                setQuery(e.target.value);
+                onSearch(e.target.value);
+            }} 
+        />
+    );
+}
+
+export default function Dashboard() {
+    return (
+        <div>
+            <SearchBox onSearch={val => applySearchFilter(val)} />
+            <HeavyAnalyticsWidget /> {/* NEVER re-renders while typing! */}
+            <HeavyTableWidget />
+        </div>
+    );
+}
+```
+
+---
+
+#### 6. Code-Splitting with `React.lazy()` & `<Suspense>`
+
+Jab aap Laravel app mein heavy libraries use karte hain (Chart.js, Rich Text Editor, PDF viewer, ApexCharts), to `app.js` bundle size 2MB+ ho jaata hai. Initial page load par user ka browser freeze ho jaata hai.
+
+`React.lazy()` component ko tabhi download karta hai jab screen par uski zaroorat ho:
+
+```jsx
+import React, { Suspense, useState } from 'react';
+
+// 1. Dynamic Lazy Import (Separate JS chunk generated by Vite):
+const HeavySalesChart = React.lazy(() => import('@/Components/HeavySalesChart'));
+const RichTextEditor  = React.lazy(() => import('@/Components/RichTextEditor'));
+
+export default function AnalyticsPage() {
+    const [showChart, setShowChart] = useState(false);
+
+    return (
+        <div className="p-6">
+            <h1>Analytics Dashboard</h1>
+            <button onClick={() => setShowChart(true)}>View Interactive Charts</button>
+
+            {/* 2. Suspense provides skeleton loader while JS chunk downloads */}
+            {showChart && (
+                <Suspense fallback={<div className="skeleton-loader">Downloading chart module...</div>}>
+                    <HeavySalesChart />
+                </Suspense>
+            )}
+        </div>
+    );
+}
+```
+
+---
+
+#### 7. 3-Year Laravel Developer Performance Optimization Rules
+
+1. 🎯 **First Colocate State, Then Memoize:** Pehle state ko niche component mein push karein. 80% lag wahi theek ho jaata hai.
+2. ⚡ **`useMemo` for Expensive Array Operations:** 1,000+ items par multiple `.filter().sort().reduce()` karte waqt `useMemo` lagayein.
+3. 🔗 **Pair `React.memo` with `useCallback`:** Child table rows par `React.memo` lagane par parent handlers ko `useCallback` se wrap karna mandatory hai.
+4. 📦 **Lazy Load Modals & Charts:** Rich text editors aur charts ko `React.lazy()` se code-split karein.
+5. 🔍 **Verify with React DevTools Profiler:** Kahi bhi andhe mein optimize mat karein — Profiler se check karein ki kaunsa component unnecessary re-render ho raha hai.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const perfSteps = [
+            {
+                title: 'Step 1: Profiler Diagnosis & Waste Identification',
+                level: 'Diagnosis',
+                desc: 'React DevTools Profiler record karo. User search box mein ek letter type karta hai aur flamegraph mein red boxes dikhte hain: 1000 TableRow components unnecessary re-render ho rahe hain.',
+                code: '// DevTools Profiler: \"Why did UserRow render?\"\n// Result: \"Parent UsersDashboard re-rendered\", \"Props changed: onDelete\"'
+            },
+            {
+                title: 'Step 2: State Colocation (Zero-Hook Fix)',
+                level: 'Architecture',
+                desc: 'Search query state ko top-level page component se hata kar dedicated <SearchInput> child component mein push down karo. Ab har keystroke par sirf chhota input re-render hota hai.',
+                code: 'function SearchInput({ onSearch }) {\n    const [val, setVal] = useState(\'\');\n    // Only this component re-renders while typing!\n    return <input value={val} onChange={e => { setVal(e.target.value); onSearch(e.target.value); }} />;\n}'
+            },
+            {
+                title: 'Step 3: useMemo for Expensive Filter & Sort',
+                level: 'Computation',
+                desc: '5,000 products ko multi-column sort aur category filter karne ka calculation useMemo mein wrap karo taaki yeh sirf query ya dataset badalne par hi execute ho.',
+                code: 'const filteredItems = useMemo(() => {\n    return products.filter(p => p.active && p.price <= maxPrice).sort((a, b) => b.sales - a.sales);\n}, [products, maxPrice]);'
+            },
+            {
+                title: 'Step 4: useCallback for Action Handlers',
+                level: 'Reference Stability',
+                desc: 'Table rows ko pass hone wale action handlers (e.g. onDelete, onStatusChange) ko useCallback se wrap karo taaki render cycles ke beech same memory pointer barkaraar rahe.',
+                code: 'const handleDelete = useCallback((id) => {\n    router.delete("/users/" + id, { preserveScroll: true });\n}, []); // Empty dependencies = Stable function reference forever'
+            },
+            {
+                title: 'Step 5: React.memo on Pure Child Rows',
+                level: 'Component Memo',
+                desc: 'TableRow component ko React.memo se wrap karo. Ab React props ka shallow comparison karega aur un-changed rows ka rendering completely skip kar dega (128ms -> 2.4ms!).',
+                code: 'const TableRow = React.memo(function TableRow({ user, onDelete }) {\n    return <tr><td>{user.name}</td><td><button onClick={() => onDelete(user.id)}>Delete</button></td></tr>;\n});'
+            },
+            {
+                title: 'Step 6: Code-Splitting with React.lazy & Suspense',
+                level: 'Bundle Optimization',
+                desc: 'Heavy charting engines (Chart.js / ApexCharts) aur WYSIWYG editors ko React.lazy se separate JS chunk mein split karo taaki initial page bundle 2.5MB se 250KB ho sake.',
+                code: 'const AnalyticsChart = React.lazy(() => import(\'@/Components/AnalyticsChart\'));\n\n{showChart && (\n    <Suspense fallback={<div>Loading chart engine...</div>}>\n        <AnalyticsChart data={analytics} />\n    </Suspense>\n)}'
+            }
+        ];
+
+        function showPerfStep(index) {
+            document.querySelectorAll('#perfNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = perfSteps[index];
+            document.getElementById('perfContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-jsx">' + step.code + '</code></pre>';
+        }
+
+        showPerfStep(0);
+
+        function switchPerfTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

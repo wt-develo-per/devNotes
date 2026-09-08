@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSphere Pro - Module 05: Payment Gateway Integration & Webhook Mastery</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="module-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="badge-pill">ShopSphere Pro</span>
+        <span class="badge-sub">Module 05</span>
+      </div>
+      <h1 class="header-title">Payment Gateway Integration (Stripe/Razorpay) & Webhook Mastery</h1>
+      <div class="header-actions">
+        <a href="../index.html" class="hub-btn">← Learning Hub</a>
+        <a href="04_Shopping_Cart_and_Pessimistic_Stock_Locking.html" class="nav-btn">← Previous Module</a>
+        <a href="06_Queue_Workers_PDF_Invoicing_and_Email_Notifications.html" class="nav-btn">Next Module →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Interactive Stepper -->
+    <section class="lifecycle-stepper-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Payment Flow</div>
+        <h2>Payment Intent, 3D Secure & Webhook Lifecycle</h2>
+        <p>Explore the 6 robust steps to process server-side payments, mount tokenized React elements, and verify signatures.</p>
+      </div>
+      <div class="stepper-track">
+        
+    <div class="step-chip active" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-label">Client vs Server Trust</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-label">PaymentIntent Initialization</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-label">React 18 Elements Mount</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-label">Webhook CSRF Exemption</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(5)">
+      <span class="step-num">5</span>
+      <span class="step-label">Cryptographic Verification</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(6)">
+      <span class="step-num">6</span>
+      <span class="step-label">Idempotent Deduplication</span>
+    </div>
+  
+      </div>
+      <div class="stepper-content-wrapper">
+        
+    <div id="step-content-1" class="step-body active" style="display:block;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">1. Client vs Server Trust</h3>
+        <p class="step-desc-display">Why trusting client-side frontend redirects for payment confirmation leads to severe fraud and lost order updates.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-2" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">2. PaymentIntent Initialization</h3>
+        <p class="step-desc-display">Calculating exact amounts strictly on the server and issuing cryptographic clientSecrets with metadata.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-3" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">3. React 18 Elements Mount</h3>
+        <p class="step-desc-display">Embedding tokenized Stripe/Razorpay iframes with dark mode styling and handling 3D Secure OTP verification.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-4" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">4. Webhook CSRF Exemption</h3>
+        <p class="step-desc-display">Exempting payment provider callback endpoints in Laravel 11 bootstrap/app.php middleware configuration.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-5" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">5. Cryptographic Verification</h3>
+        <p class="step-desc-display">Verifying incoming payload authenticity using Stripe-Signature headers and shared endpoint secrets.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-6" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">6. Idempotent Deduplication</h3>
+        <p class="step-desc-display">Recording webhook event IDs in a dedicated ledger table to cleanly ignore gateway retry storms inside transactions.</p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Interactive Architecture & Code Tabs -->
+    <section class="lab-tabs-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Architecture Lab</div>
+        <h2>Signature Verification, Idempotency Matrices & Retry Benchmarks</h2>
+        <p>Inspect security trade-offs, signed webhook code diffs, idempotency database structures, and retry simulations.</p>
+      </div>
+      <div class="tab-navigation">
+        
+    <button class="tab-btn active" onclick="switchTab('tab-flow')">Payment Architecture Flow</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-webhook-diff')">Webhook Handler Code Diff</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-idempotency-matrix')">Idempotency Ledger Matrix</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-retry-storm')">Gateway Retry Storm Benchmark</button>
+  
+      </div>
+      <div class="tab-content-wrapper">
+        
+    <div id="tab-flow" class="tab-pane active" style="display:block;">
+      
+      <h3>Payment Confirmation Security Comparison</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Security Dimension</th>
+            <th>Client-Side Confirmation (Naive)</th>
+            <th>Server Webhook Confirmation (ShopSphere Pro)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tab Closure / Dead Battery</strong></td>
+            <td>❌ Order lost! Money cut from customer, order stays unpaid</td>
+            <td>✅ Webhook arrives server-to-server. Order marked paid instantly</td>
+          </tr>
+          <tr>
+            <td><strong>Fraud Resistance</strong></td>
+            <td>❌ Zero: Attacker can spoof <code>POST /confirm</code> with fake ID</td>
+            <td>✅ 100%: Cryptographic HMAC-SHA256 signature verification</td>
+          </tr>
+          <tr>
+            <td><strong>Retry Handling</strong></td>
+            <td>❌ No retry mechanism if customer internet drops</td>
+            <td>✅ Gateway retries webhook up to 72 hours automatically</td>
+          </tr>
+          <tr>
+            <td><strong>Vendor Settlement</strong></td>
+            <td>⚠️ Vulnerable to duplicate wallet credits</td>
+            <td>✅ Atomic <code>DB::transaction()</code> guarantees single settlement</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-webhook-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Unsigned Vulnerable Webhook vs Production Idempotent Handler</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Vulnerable Webhook (Unsigned & Non-Idempotent)</h4>
+          <pre><code>public function handle(Request $request) {
+    // 1. Accepts any unverified POST payload from the internet!
+    $data = $request->all();
+    
+    // 2. Marks order paid without checking if already processed!
+    $order = Order::find($data['order_id']);
+    $order->status = 'paid';
+    $order->save();
+    
+    // 3. Duplicate gateway retries will credit vendor wallet 5 times!
+    $order->vendor->increment('balance', $order->total);
+}</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Production-Hardened Webhook (Signed & Idempotent)</h4>
+          <pre><code>public function handle(Request $request) {
+    // 1. Verify cryptographic signature
+    $event = Webhook::constructEvent(
+        $request->getContent(), 
+        $request->header('Stripe-Signature'), 
+        config('services.stripe.webhook_secret')
+    );
+
+    // 2. Idempotency guard: Return 200 if already processed
+    if (WebhookCall::where('external_event_id', $event->id)->where('status', 'processed')->exists()) {
+        return response('Already Processed', 200);
+    }
+
+    // 3. Atomic execution with row-level locks
+    DB::transaction(fn () => $this->settleOrder($event));
+    return response('Handled', 200);
+}</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-idempotency-matrix" class="tab-pane " style="display:none;">
+      
+      <h3>Webhook Deduplication Ledger Schema</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Index</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>external_event_id</code></td>
+            <td>VARCHAR(128)</td>
+            <td>UNIQUE</td>
+            <td>Stripe/Razorpay event ID (e.g. <code>evt_3NzQ4k2eZvKYlo2C01...</code>)</td>
+          </tr>
+          <tr>
+            <td><code>provider</code></td>
+            <td>VARCHAR(32)</td>
+            <td>INDEX</td>
+            <td>Gateway identifier: <code>stripe</code>, <code>razorpay</code></td>
+          </tr>
+          <tr>
+            <td><code>event_type</code></td>
+            <td>VARCHAR(64)</td>
+            <td>INDEX</td>
+            <td>Action trigger: <code>payment_intent.succeeded</code>, <code>charge.refunded</code></td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>ENUM</td>
+            <td>INDEX</td>
+            <td>Execution state: <code>pending</code>, <code>processed</code>, <code>failed</code></td>
+          </tr>
+          <tr>
+            <td><code>payload</code></td>
+            <td>JSON</td>
+            <td>NONE</td>
+            <td>Full raw event snapshot for auditing & replay debugging</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-retry-storm" class="tab-pane " style="display:none;">
+      
+      <h3>Gateway Retry Storm Simulation (10 Duplicate Webhook Deliveries)</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Delivery Attempt</th>
+            <th>Naive Handler Action</th>
+            <th>Idempotent Handler Action</th>
+            <th>System State</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Attempt #1 (T = 0s)</strong></td>
+            <td>Marks Paid, Credits ₹1,000 to Vendor</td>
+            <td>Inserts Ledger, Marks Paid, Credits ₹1,000</td>
+            <td>Balance: ₹1,000</td>
+          </tr>
+          <tr>
+            <td><strong>Attempt #2 (T = 5s)</strong></td>
+            <td>Credits another ₹1,000 to Vendor! ❌</td>
+            <td>Finds <code>processed</code> in Ledger. Returns 200 OK ✅</td>
+            <td>Balance: ₹1,000</td>
+          </tr>
+          <tr>
+            <td><strong>Attempt #3 (T = 25s)</strong></td>
+            <td>Credits another ₹1,000 to Vendor! ❌</td>
+            <td>Returns 200 OK immediately (0.2 ms) ✅</td>
+            <td>Balance: ₹1,000</td>
+          </tr>
+          <tr>
+            <td><strong>Final Outcome</strong></td>
+            <td><strong>Vendor balance over-credited by ₹9,000!</strong></td>
+            <td><strong>Exact ₹1,000 balance preserved (Zero Over-Credit)</strong></td>
+            <td>100% Financial Accuracy</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Markdown Documentation Container -->
+    <article class="markdown-article">
+      <div id="rendered-markdown"></div>
+    </article>
+  </main>
+
+  <!-- Hidden Pre-Loaded Markdown Content -->
+  <textarea id="markdown-content" style="display:none; white-space:pre;"># ShopSphere Pro - Module 05: Payment Gateway Integration (Stripe/Razorpay) & Webhook Mastery
+
+## 1. The Fatal Flaw of Client-Side Payment Confirmation
+
+Kayi junior developers payment integrate karte waqt sabse badi security galti ye karte hain:
+
+```javascript
+// ❌ CATASTROPHIC VULNERABILITY: Client-side Order Confirmation!
+const handlePayment = async () => {
+    const result = await stripe.confirmPayment({ ... });
+    
+    // IF USER CLOSES TAB, PHONE DIES, OR NETWORK DROPS -> ORDER NEVER MARKED PAID!
+    // ALSO: A hacker can intercept this with Postman and trigger /order/mark-paid with a fake ID!
+    if (result.paymentIntent.status === 'succeeded') {
+        router.post('/orders/confirm-payment', { payment_id: result.paymentIntent.id });
+    }
+};
+```
+
+### Why Client-Side Confirmation Fails in Production:
+1. **Network Drops & Tab Closure:** Agar user ka internet drop ho gaya ya usne 3D Secure OTP submit karne ke baad tab close kar di, toh gateway par paise cut gaye, lekin aapke database me order hamesha `pending` rahega!
+2. **Fraud & Spoofing:** Agar payment confirmation client-side HTTP request se ho rahi hai, toh koi bhi attacker bina payment kiye `POST /orders/confirm-payment` call karke order confirm karwa sakta hai.
+
+### ✅ The Golden Rule of Enterprise Payments:
+**Frontend sirf payment UI collect karta hai. Order ka status `paid` ONLY AND ONLY cryptographically verified server-to-server WEBHOOK se change hota hai!**
+
+---
+
+## 2. Server-Side PaymentIntent Initialization
+
+ShopSphere Pro me cart amount ko hamesha **Server-Side calculate** kiya jata hai. Kabhi bhi frontend se `amount: 4999` trust nahi kiya jata!
+
+```php
+<?php
+
+namespace App\Http\Controllers\Checkout;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Stripe\PaymentIntent;
+use Stripe\Stripe;
+
+class PaymentIntentController extends Controller
+{
+    public function create(Request $request, Order $order): JsonResponse
+    {
+        // 1. Authorize that this order belongs to the authenticated customer
+        $this->authorize('view', $order);
+
+        if ($order->payment_status === 'paid') {
+            return response()->json(['error' => 'Order is already paid.'], 400);
+        }
+
+        Stripe::setApiKey(config('services.stripe.secret'));
+
+        // 2. Amount in Cents / Paise (e.g. ₹1,499.00 = 149900 paise)
+        $amountInPaise = (int) ($order->total_amount * 100);
+
+        // 3. Create Stripe PaymentIntent with immutable metadata
+        $paymentIntent = PaymentIntent::create([
+            'amount' => $amountInPaise,
+            'currency' => 'inr',
+            'automatic_payment_methods' => ['enabled' => true],
+            'metadata' => [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'customer_email' => $order->user->email,
+            ],
+            'description' => "ShopSphere Pro Order #{$order->order_number}",
+        ]);
+
+        // 4. Save Payment Intent ID to order
+        $order->update([
+            'payment_intent_id' => $paymentIntent->id,
+            'payment_gateway' => 'stripe',
+        ]);
+
+        return response()->json([
+            'clientSecret' => $paymentIntent->client_secret,
+            'publishableKey' => config('services.stripe.key'),
+        ]);
+    }
+}
+```
+
+---
+
+## 3. React 18 Stripe Elements Checkout Component
+
+Modern React applications me raw credit card input fields store karna strict PCI-DSS violations create karta hai. Hum **Stripe Elements** use karte hain jahan card details Stripe ke secure iFrames me tokenize hoti hain:
+
+```jsx
+import React, { useState } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Lock, AlertCircle, CheckCircle } from 'lucide-react';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+function CheckoutForm({ order }) {
+    const stripe = useStripe();
+    const elements = useElements();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!stripe || !elements) return;
+
+        setIsProcessing(true);
+        setErrorMessage(null);
+
+        const { error } = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                // Return URL after 3D Secure authentication completes
+                return_url: `${window.location.origin}/orders/${order.id}/processing`,
+            },
+        });
+
+        // This only executes if immediate client validation failed
+        if (error) {
+            setErrorMessage(error.message);
+            setIsProcessing(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <PaymentElement 
+                options={{
+                    theme: 'night',
+                    variables: {
+                        colorPrimary: '#6366f1',
+                        colorBackground: '#0f172a',
+                        colorText: '#f8fafc',
+                    }
+                }} 
+            />
+
+            {errorMessage && (
+                <div className="p-3.5 bg-rose-950/50 border border-rose-800 text-rose-300 text-sm rounded-xl flex items-center gap-2">
+                    <AlertCircle size={18} />
+                    <span>{errorMessage}</span>
+                </div>
+            )}
+
+            <button
+                type="submit"
+                disabled={!stripe || isProcessing}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all"
+            >
+                <Lock size={18} />
+                <span>{isProcessing ? 'Verifying 3D Secure...' : `Pay ₹${order.total_amount}`}</span>
+            </button>
+        </form>
+    );
+}
+
+export default function StripeCheckoutWrapper({ clientSecret, order }) {
+    return (
+        <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <CheckoutForm order={order} />
+        </Elements>
+    );
+}
+```
+
+---
+
+## 4. CSRF Exemption & Cryptographic Signature Verification
+
+Stripe webhooks server-to-server POST requests bhejta hai. Laravel me do critical configurations zaroori hain:
+
+### A. CSRF Token Exemption (`bootstrap/app.php` in Laravel 11)
+```php
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware) {
+        // Exempt payment webhooks from CSRF checks
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/stripe',
+            'webhooks/razorpay',
+        ]);
+    })
+    ->create();
+```
+
+### B. Cryptographic Signature Verification & Idempotency Table
+Aapke webhook secret (`whsec_...`) ka use karke Stripe har request ke header me `Stripe-Signature` bhejta hai. Agar signature match nahi karta toh request seedhe reject ho jaati hai.
+
+---
+
+## 5. Production-Grade Idempotent Webhook Handler
+
+Webhook retry storm ke waqt Stripe same event ko 5-10 baar bhej sakta hai. Agar aapne idempotency implement nahi ki toh customer ko 5 invoices jayengi aur vendor wallet multiple times credit ho jayega!
+
+```php
+<?php
+
+namespace App\Http\Controllers\Webhooks;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\WebhookCall;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Stripe\Exception\SignatureVerificationException;
+use Stripe\Webhook;
+
+class StripeWebhookController extends Controller
+{
+    public function handle(Request $request): Response
+    {
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
+        $endpointSecret = config('services.stripe.webhook_secret');
+
+        // 1. Verify Cryptographic Signature
+        try {
+            $event = Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
+        } catch (SignatureVerificationException $e) {
+            Log::error('Stripe Webhook Signature Verification Failed: ' . $e->getMessage());
+            return response('Invalid Signature', 400);
+        }
+
+        // 2. IDEMPOTENCY CHECK: Guard against duplicate event deliveries
+        $existingCall = WebhookCall::where('external_event_id', $event->id)->first();
+        if ($existingCall && $existingCall->status === 'processed') {
+            Log::info("Stripe Webhook {$event->id} already processed. Returning 200 OK.");
+            return response('Already Processed', 200);
+        }
+
+        // 3. Log incoming webhook call
+        $webhookCall = WebhookCall::updateOrCreate(
+            ['external_event_id' => $event->id],
+            [
+                'provider' => 'stripe',
+                'event_type' => $event->type,
+                'payload' => $event->data->toArray(),
+                'status' => 'pending',
+            ]
+        );
+
+        // 4. Handle Specific Event Types
+        if ($event->type === 'payment_intent.succeeded') {
+            $paymentIntent = $event->data->object;
+            $orderId = $paymentIntent->metadata->order_id ?? null;
+
+            if ($orderId) {
+                $this->processOrderPayment($orderId, $paymentIntent);
+            }
+        }
+
+        // 5. Mark webhook call as successfully processed
+        $webhookCall->update(['status' => 'processed']);
+
+        return response('Webhook Handled', 200);
+    }
+
+    protected function processOrderPayment(int $orderId, object $paymentIntent): void
+    {
+        DB::transaction(function () use ($orderId, $paymentIntent) {
+            $order = Order::where('id', $orderId)->lockForUpdate()->first();
+
+            if (!$order) {
+                Log::warning("Webhook received for unknown order ID: {$orderId}");
+                return;
+            }
+
+            // If order is already paid, do not re-process
+            if ($order->payment_status === 'paid') {
+                return;
+            }
+
+            // Update Order State
+            $order->update([
+                'payment_status' => 'paid',
+                'status' => 'processing',
+                'paid_at' => now(),
+            ]);
+
+            // Create Transaction Ledger Record
+            DB::table('payment_transactions')->insert([
+                'order_id' => $order->id,
+                'transaction_id' => $paymentIntent->id,
+                'gateway' => 'stripe',
+                'amount' => $order->total_amount,
+                'currency' => 'INR',
+                'payment_method' => $paymentIntent->payment_method_types[0] ?? 'card',
+                'status' => 'success',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Credit Vendor Wallet Balances (Splitting Vendor Shares)
+            foreach ($order->items as $item) {
+                $vendorProfile = $item->variant->product->vendor;
+                $vendorShare = $item->subtotal * (1 - ($vendorProfile->commission_rate / 100));
+                
+                $vendorProfile->increment('wallet_balance', $vendorShare);
+            }
+
+            // Dispatch Async Job to generate PDF & send transactional confirmation email
+            // (Covered deeply in Module 06)
+            \App\Events\OrderPaymentCompleted::dispatch($order);
+        });
+    }
+}
+```
+
+---
+
+## 6. The Webhook Deduplication Ledger Schema
+
+```php
+Schema::create('webhook_calls', function (Blueprint $table) {
+    $table->id();
+    $table->string('provider', 32); // 'stripe', 'razorpay'
+    $table->string('external_event_id', 128)->unique(); // e.g. 'evt_1Oxxx...'
+    $table->string('event_type', 64);   // 'payment_intent.succeeded'
+    $table->json('payload');
+    $table->enum('status', ['pending', 'processed', 'failed'])->default('pending');
+    $table->timestamps();
+
+    $table->index(['provider', 'status']);
+});
+```
+</textarea>
+
+  <!-- Footer Navigation -->
+  <footer class="module-footer">
+    <div class="footer-container">
+      <a href="../index.html" class="hub-btn">← Learning Hub</a>
+      <div class="footer-nav">
+        <a href="04_Shopping_Cart_and_Pessimistic_Stock_Locking.html" class="nav-btn">← Previous: Module 04</a>
+        <a href="06_Queue_Workers_PDF_Invoicing_and_Email_Notifications.html" class="nav-btn">Next: Module 06 →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Interactive Stepper Logic
+    function switchStep(stepNum) {
+      document.querySelectorAll('.step-chip').forEach(chip => chip.classList.remove('active'));
+      document.querySelectorAll('.step-body').forEach(body => {
+        body.classList.remove('active');
+        body.style.display = 'none';
+      });
+
+      const activeChip = document.querySelectorAll('.step-chip')[stepNum - 1];
+      if (activeChip) activeChip.classList.add('active');
+
+      const activeBody = document.getElementById('step-content-' + stepNum);
+      if (activeBody) {
+        activeBody.classList.add('active');
+        activeBody.style.display = 'block';
+      }
+    }
+
+    // Interactive Tabs Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+      });
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+
+      const activePane = document.getElementById(tabId);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.style.display = 'block';
+      }
+    }
+
+    // Render Markdown Content via Marked.js
+    document.addEventListener('DOMContentLoaded', () => {
+      const rawMarkdown = document.getElementById('markdown-content').value;
+      if (window.marked) {
+        document.getElementById('rendered-markdown').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('rendered-markdown').innerHTML = '<pre>' + rawMarkdown + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>

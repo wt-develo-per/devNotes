@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSphere Pro - Module 06: Background Queues, Redis Horizon & Dynamic PDF Invoicing</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="module-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="badge-pill">ShopSphere Pro</span>
+        <span class="badge-sub">Module 06</span>
+      </div>
+      <h1 class="header-title">Background Queues, Redis Horizon & Dynamic PDF Invoicing</h1>
+      <div class="header-actions">
+        <a href="../index.html" class="hub-btn">← Learning Hub</a>
+        <a href="05_Stripe_Razorpay_Payment_Gateway_and_Webhooks.html" class="nav-btn">← Previous Module</a>
+        <a href="07_RealTime_WebSockets_with_Laravel_Reverb_and_Echo.html" class="nav-btn">Next Module →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Interactive Stepper -->
+    <section class="lifecycle-stepper-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Queue Flow</div>
+        <h2>Asynchronous Job & Invoice PDF Lifecycle</h2>
+        <p>Follow the 6 progressive steps to process heavy PDF invoices in background queues without freezing HTTP workers.</p>
+      </div>
+      <div class="stepper-track">
+        
+    <div class="step-chip active" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-label">Thread Starvation Danger</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-label">Event-Driven Queues</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-label">Queued PDF Rendering</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-label">Private Storage & Signed URLs</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(5)">
+      <span class="step-num">5</span>
+      <span class="step-label">Exponential Backoff Retries</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(6)">
+      <span class="step-num">6</span>
+      <span class="step-label">Redis Horizon Supervision</span>
+    </div>
+  
+      </div>
+      <div class="stepper-content-wrapper">
+        
+    <div id="step-content-1" class="step-body active" style="display:block;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">1. Thread Starvation Danger</h3>
+        <p class="step-desc-display">Why synchronous PDF rendering and SMTP connections freeze PHP-FPM workers, leading to 504 Gateway Timeouts under load.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-2" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">2. Event-Driven Queues</h3>
+        <p class="step-desc-display">Decoupling order checkout by firing OrderPaymentCompleted and dispatching background ShouldQueue listeners in 15ms.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-3" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">3. Queued PDF Rendering</h3>
+        <p class="step-desc-display">Generating tax-compliant DomPDF invoices inside an isolated Redis queue with dedicated memory and worker allocations.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-4" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">4. Private Storage & Signed URLs</h3>
+        <p class="step-desc-display">Storing invoices in secure non-public disks and issuing 30-minute HMAC cryptographically signed temporary download routes.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-5" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">5. Exponential Backoff Retries</h3>
+        <p class="step-desc-display">Handling network glitches and S3 timeouts using progressive backoff delays (15s, 1m, 5m, 15m) before failing.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-6" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">6. Redis Horizon Supervision</h3>
+        <p class="step-desc-display">Auto-balancing worker pools, monitoring job throughput, and isolating heavy PDF queues from high-speed email notifications.</p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Interactive Architecture & Code Tabs -->
+    <section class="lab-tabs-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Architecture Lab</div>
+        <h2>Performance Benchmarks, Queue Isolation & Backoff Retries</h2>
+        <p>Inspect thread starvation benchmarks, job architecture diffs, Horizon queue pool configurations, and retry timelines.</p>
+      </div>
+      <div class="tab-navigation">
+        
+    <button class="tab-btn active" onclick="switchTab('tab-perf')">Sync vs Async Performance</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-job-diff')">Job Architecture Code Diff</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-horizon-config')">Horizon Queue Isolation</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-retry-timeline')">Exponential Backoff Radar</button>
+  
+      </div>
+      <div class="tab-content-wrapper">
+        
+    <div id="tab-perf" class="tab-pane active" style="display:block;">
+      
+      <h3>Checkout Response Time & Worker Utilization (100 Concurrent Checkouts)</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Architecture Dimension</th>
+            <th>Synchronous Execution (Direct in Request)</th>
+            <th>Asynchronous Redis Queue (ShopSphere Pro)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>HTTP Response Latency</strong></td>
+            <td><strong>5,200 ms</strong> (User waits 5+ seconds!)</td>
+            <td><strong>18 ms</strong> (Instantaneous SPA redirect)</td>
+          </tr>
+          <tr>
+            <td><strong>PHP-FPM Worker Pool</strong></td>
+            <td>100% Saturation (All 50 workers frozen)</td>
+            <td>5% Worker Utilization (Requests immediately released)</td>
+          </tr>
+          <tr>
+            <td><strong>Catalog Browsers</strong></td>
+            <td>❌ Blocked with <strong>HTTP 504 Timeout</strong></td>
+            <td>✅ Smooth 60fps browsing unaffected</td>
+          </tr>
+          <tr>
+            <td><strong>Failure Recovery</strong></td>
+            <td>If SMTP fails, order rolls back or shows error</td>
+            <td>Job automatically retries in background without user impact</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-job-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Synchronous Controller Code vs Production Queued Job</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Synchronous Controller (Blocks Web Worker)</h4>
+          <pre><code>public function completeOrder(Order $order) {
+    // 1. Blocks user for 3 seconds while rendering PDF
+    $pdf = Pdf::loadView('invoice', compact('order'));
+    
+    // 2. Blocks user for another 2 seconds on SMTP network call
+    Mail::to($order->email)->send(new InvoiceMail($pdf));
+    
+    // Total latency: 5+ seconds!
+    return redirect()->route('order.success');
+}</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Asynchronous Event + Job (15ms Instant Return)</h4>
+          <pre><code>public function completeOrder(Order $order) {
+    // 1. Marks order paid in DB transaction
+    $order->update(['payment_status' => 'paid']);
+
+    // 2. Dispatches event and immediately returns!
+    OrderPaymentCompleted::dispatch($order);
+
+    // Total latency: 15 milliseconds!
+    return redirect()->route('order.success');
+}
+// Listener runs in background: GenerateOrderInvoicePdfJob::dispatch($order)->onQueue('invoices');</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-horizon-config" class="tab-pane " style="display:none;">
+      
+      <h3>Redis Horizon Queue Allocation Strategy</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Queue Name</th>
+            <th>Workload Type</th>
+            <th>Timeout</th>
+            <th>Memory Allocation</th>
+            <th>Worker Priority</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>high</code></td>
+            <td>Real-time notifications, WebSockets events</td>
+            <td>30s</td>
+            <td>64 MB</td>
+            <td>Priority 1 (Highest)</td>
+          </tr>
+          <tr>
+            <td><code>emails</code></td>
+            <td>Transactional emails (SES, Resend SMTP)</td>
+            <td>60s</td>
+            <td>128 MB</td>
+            <td>Priority 2</td>
+          </tr>
+          <tr>
+            <td><code>invoices</code></td>
+            <td>Heavy DomPDF / Browsershot invoice rendering</td>
+            <td>180s</td>
+            <td><strong>256 MB</strong></td>
+            <td>Priority 3 (Isolated Pool)</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-retry-timeline" class="tab-pane " style="display:none;">
+      
+      <h3>Job Failure & Exponential Backoff Trace</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Attempt</th>
+            <th>Trigger Delay</th>
+            <th>Simulated Failure</th>
+            <th>Action Taken</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Attempt #1</strong></td>
+            <td>T = 0s (Instant)</td>
+            <td>S3 Connection Timeout</td>
+            <td>Job released back to Redis with 15s delay</td>
+          </tr>
+          <tr>
+            <td><strong>Attempt #2</strong></td>
+            <td>T = 15s</td>
+            <td>S3 Rate Limit Exceeded</td>
+            <td>Job released back to Redis with 60s delay</td>
+          </tr>
+          <tr>
+            <td><strong>Attempt #3</strong></td>
+            <td>T = 75s</td>
+            <td>S3 Restored Successfully</td>
+            <td>PDF Saved, Job marked Completed ✅</td>
+          </tr>
+          <tr>
+            <td><strong>Fallback (If #4 Fails)</strong></td>
+            <td>T = 375s</td>
+            <td>Persistent Outage</td>
+            <td>Triggers <code>failed()</code> hook, logs to <code>failed_jobs</code>, alerts Slack 🚨</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Markdown Documentation Container -->
+    <article class="markdown-article">
+      <div id="rendered-markdown"></div>
+    </article>
+  </main>
+
+  <!-- Hidden Pre-Loaded Markdown Content -->
+  <textarea id="markdown-content" style="display:none; white-space:pre;"># ShopSphere Pro - Module 06: Background Queues, Redis Horizon & Dynamic PDF Invoicing
+
+## 1. The Synchronous Request Anti-Pattern (PHP-FPM Thread Starvation)
+
+Jab customer checkout complete karta hai, toh backend ko ye teen heavy tasks execute karne hote hain:
+1. **Dynamic PDF Invoice Generate Karna:** DomPDF ya Browsershot se HTML ko render karke PDF binary create karna (**1.5s - 3.5s & 35MB RAM**).
+2. **Transactional Email Send Karna:** SMTP socket connection open karke invoice attach karke email bhejna (**800ms - 2.0s**).
+3. **Vendor Ko Notification Dispatch Karna:** Push notification ya SMS trigger karna (**400ms**).
+
+### Agar Hum Inhe Synchronously Run Karein Toh Kya Hota Hai?
+```php
+// ❌ DISASTROUS SYNCHRONOUS FLOW: Freezes PHP-FPM for 5.5 Seconds!
+public function markPaid(Order $order) {
+    $order->update(['status' => 'paid']);
+    
+    // Request is BLOCKED waiting for PDF engine (2500ms)
+    $pdf = Pdf::loadView('invoices.order', ['order' => $order]);
+    
+    // Request is BLOCKED waiting for external SMTP server (1800ms)
+    Mail::to($order->user->email)->send(new OrderInvoiceMail($order, $pdf->output()));
+    
+    return response()->json(['success' => true]); // Customer waited 5+ seconds!
+}
+```
+
+### Production Consequence:
+- Agar flash sale me **50 customers** simultaneous payment complete karte hain, toh aapke server ke saare **PHP-FPM workers (`pm.max_children = 50`)** agle 5 seconds ke liye freeze ho jayenge!
+- Baaki users jo sirf catalog browse kar rahe the, unhe **HTTP 504 Gateway Timeout** error aane lagega!
+
+---
+
+## 2. Decoupled Event-Driven Queue Architecture
+
+Enterprise scale par order status update hote hi request **15 milliseconds** me return honi chahiye. Heavy processing ko background Redis queue me dispatch kiya jata hai:
+
+```text
+[Stripe Webhook] 
+       │
+       ▼ (15ms Response)
+[OrderPaymentCompleted Event]
+       │
+       ├───► [GenerateOrderInvoicePdf Job]  ──► (Queue: 'invoices')  ──► S3 Private Bucket
+       ├───► [SendCustomerConfirmationMail]  ──► (Queue: 'emails')    ──► AWS SES / Resend
+       └───► [NotifyVendorOrderReceived]     ──► (Queue: 'broadcast') ──► Laravel Reverb
+```
+
+---
+
+## 3. The Queued Invoice PDF Generation Job
+
+```php
+<?php
+
+namespace App\Jobs;
+
+use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
+
+class GenerateOrderInvoicePdfJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * Max retry attempts on failure
+     */
+    public int $tries = 4;
+
+    /**
+     * Exponential backoff in seconds: 15s, 1m, 5m, 15m
+     */
+    public array $backoff = [15, 60, 300, 900];
+
+    /**
+     * Timeout in seconds before worker aborts
+     */
+    public int $timeout = 120;
+
+    public function __construct(public Order $order)
+    {
+        // Route this heavy job to a dedicated 'invoices' queue
+        $this->onQueue('invoices');
+    }
+
+    public function handle(): void
+    {
+        Log::info("Generating PDF invoice for Order #{$this->order->order_number}");
+
+        // 1. Eager load all relational dependencies to prevent N+1 queries
+        $this->order->loadMissing([
+            'user:id,name,email',
+            'items.variant.product.vendor',
+            'transaction',
+        ]);
+
+        // 2. Render Blade template to PDF binary
+        $pdf = Pdf::loadView('invoices.order_template', [
+            'order' => $this->order,
+            'company' => config('company'),
+        ])->setPaper('a4', 'portrait');
+
+        $pdfBinary = $pdf->output();
+
+        // 3. Store in secure private storage (Not publicly accessible)
+        $storagePath = "invoices/{$this->order->created_at->format('Y/m')}/invoice-{$this->order->order_number}.pdf";
+        Storage::disk('private')->put($storagePath, $pdfBinary);
+
+        // 4. Update order with invoice file path
+        $this->order->update([
+            'invoice_path' => $storagePath,
+            'invoice_generated_at' => now(),
+        ]);
+
+        Log::info("Invoice saved successfully: {$storagePath}");
+
+        // 5. Dispatch Email sending job with attached PDF path
+        SendOrderConfirmationEmailJob::dispatch($this->order)->onQueue('emails');
+    }
+
+    /**
+     * Handle job failure (Circuit Breaker)
+     */
+    public function failed(?Throwable $exception): void
+    {
+        Log::critical("FATAL: Failed to generate invoice for Order #{$this->order->id}. Reason: " . $exception?->getMessage());
+        
+        // Notify DevSecOps on Slack / Discord
+        // Notification::route('slack', config('services.slack.webhook'))->notify(new JobFailedAlert($this->order, $exception));
+    }
+}
+```
+
+---
+
+## 4. Professional GST/Tax Compliant Blade Invoice Template
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tax Invoice - {{ $order->order_number }}</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; color: #1e293b; }
+        .invoice-header { border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .table th { background-color: #f1f5f9; padding: 8px; text-align: left; font-size: 11px; }
+        .table td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+        .text-right { text-align: right; }
+        .badge { background-color: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <table style="width: 100%;">
+            <tr>
+                <td>
+                    <h2 style="color: #4f46e5; margin: 0;">ShopSphere Pro</h2>
+                    <p style="margin: 3px 0; color: #64748b;">GSTIN: 27AAAAA0000A1Z5</p>
+                    <p style="margin: 3px 0; color: #64748b;">Tax Invoice / Cash Receipt</p>
+                </td>
+                <td class="text-right">
+                    <h3 style="margin: 0;">INVOICE #{{ $order->order_number }}</h3>
+                    <p style="margin: 3px 0;">Date: {{ $order->created_at->format('d M Y, h:i A') }}</p>
+                    <p style="margin: 3px 0;"><span class="badge">{{ strtoupper($order->payment_status) }}</span></p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Line Items Table -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item Description</th>
+                <th>SKU</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Tax (18%)</th>
+                <th class="text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($order->items as $item)
+            <tr>
+                <td>
+                    <strong>{{ $item->variant->product->title }}</strong>
+                    <br><small style="color: #64748b;">{{ json_encode($item->variant->attributes) }}</small>
+                </td>
+                <td style="font-family: monospace;">{{ $item->variant->sku }}</td>
+                <td class="text-right">₹{{ number_format($item->unit_price, 2) }}</td>
+                <td class="text-right">{{ $item->quantity }}</td>
+                <td class="text-right">₹{{ number_format($item->subtotal * 0.18, 2) }}</td>
+                <td class="text-right"><strong>₹{{ number_format($item->subtotal, 2) }}</strong></td>
+            </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-right"><strong>Grand Total (Inclusive of Taxes):</strong></td>
+                <td class="text-right" style="font-size: 14px; color: #4f46e5;">
+                    <strong>₹{{ number_format($order->total_amount, 2) }}</strong>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>
+```
+
+---
+
+## 5. Secure Temporary Signed Download URLs
+
+Invoices me sensitive customer details (Name, Address, Phone, Billing history) hoti hain, isliye inhe public folder me kabhi nahi rakha jata.
+
+Hum **Laravel Temporary Signed Routes** use karte hain jo cryptographic HMAC signature ke sath 30-minute expiry link generate karta hai:
+
+```php
+<?php
+
+namespace App\Http\Controllers\Customer;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class InvoiceDownloadController extends Controller
+{
+    /**
+     * Generate secure expiring signed link
+     */
+    public function getDownloadLink(Request $request, Order $order)
+    {
+        $this->authorize('view', $order);
+
+        if (!$order->invoice_path || !Storage::disk('private')->exists($order->invoice_path)) {
+            return response()->json(['error' => 'Invoice is being processed in background.'], 404);
+        }
+
+        // Generate signed URL valid for 30 minutes
+        $signedUrl = URL::temporarySignedRoute(
+            'invoices.download',
+            now()->addMinutes(30),
+            ['order' => $order->id]
+        );
+
+        return response()->json(['download_url' => $signedUrl]);
+    }
+
+    /**
+     * Stream private file using verified signature
+     */
+    public function download(Request $request, Order $order): StreamedResponse
+    {
+        // Validates HMAC signature and timestamp
+        if (! $request->hasValidSignature()) {
+            abort(403, 'This invoice download link has expired or is invalid.');
+        }
+
+        return Storage::disk('private')->download(
+            $order->invoice_path, 
+            "Invoice-{$order->order_number}.pdf"
+        );
+    }
+}
+```
+
+---
+
+## 6. Redis Horizon Dashboard Configuration (`config/horizon.php`)
+
+Laravel Horizon production me Redis queues ko manage karne ke liye dashboard, metric tracking aur auto-scaling provide karta hai:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            'connection' => 'redis',
+            'queue' => ['high', 'default', 'emails'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 3,
+            'maxProcesses' => 15,
+            'tries' => 3,
+            'timeout' => 60,
+        ],
+        'supervisor-heavy' => [
+            'connection' => 'redis',
+            'queue' => ['invoices'], // Isolated queue for CPU-intensive PDF rendering
+            'balance' => 'simple',
+            'processes' => 4,
+            'tries' => 4,
+            'timeout' => 180, // Extended timeout for PDF generation
+            'memory' => 256,  // 256MB allocated for DomPDF rendering
+        ],
+    ],
+],
+```
+</textarea>
+
+  <!-- Footer Navigation -->
+  <footer class="module-footer">
+    <div class="footer-container">
+      <a href="../index.html" class="hub-btn">← Learning Hub</a>
+      <div class="footer-nav">
+        <a href="05_Stripe_Razorpay_Payment_Gateway_and_Webhooks.html" class="nav-btn">← Previous: Module 05</a>
+        <a href="07_RealTime_WebSockets_with_Laravel_Reverb_and_Echo.html" class="nav-btn">Next: Module 07 →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Interactive Stepper Logic
+    function switchStep(stepNum) {
+      document.querySelectorAll('.step-chip').forEach(chip => chip.classList.remove('active'));
+      document.querySelectorAll('.step-body').forEach(body => {
+        body.classList.remove('active');
+        body.style.display = 'none';
+      });
+
+      const activeChip = document.querySelectorAll('.step-chip')[stepNum - 1];
+      if (activeChip) activeChip.classList.add('active');
+
+      const activeBody = document.getElementById('step-content-' + stepNum);
+      if (activeBody) {
+        activeBody.classList.add('active');
+        activeBody.style.display = 'block';
+      }
+    }
+
+    // Interactive Tabs Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+      });
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+
+      const activePane = document.getElementById(tabId);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.style.display = 'block';
+      }
+    }
+
+    // Render Markdown Content via Marked.js
+    document.addEventListener('DOMContentLoaded', () => {
+      const rawMarkdown = document.getElementById('markdown-content').value;
+      if (window.marked) {
+        document.getElementById('rendered-markdown').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('rendered-markdown').innerHTML = '<pre>' + rawMarkdown + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>

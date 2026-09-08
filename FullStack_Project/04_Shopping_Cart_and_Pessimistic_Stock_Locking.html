@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSphere Pro - Module 04: Cart Engine, Zustand State & Pessimistic Concurrency Locking</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="module-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="badge-pill">ShopSphere Pro</span>
+        <span class="badge-sub">Module 04</span>
+      </div>
+      <h1 class="header-title">Cart Engine, Zustand State & Pessimistic Concurrency Locking</h1>
+      <div class="header-actions">
+        <a href="../index.html" class="hub-btn">← Learning Hub</a>
+        <a href="03_Product_Catalog_Filtering_and_Search.html" class="nav-btn">← Previous Module</a>
+        <a href="05_Stripe_Razorpay_Payment_Gateway_and_Webhooks.html" class="nav-btn">Next Module →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Interactive Stepper -->
+    <section class="lifecycle-stepper-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Concurrency Flow</div>
+        <h2>Cart Engine & Concurrency Locking Lifecycle</h2>
+        <p>Explore the 6 foundational steps to eliminate double-selling, manage hybrid carts, and prevent database deadlocks.</p>
+      </div>
+      <div class="stepper-track">
+        
+    <div class="step-chip active" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-label">Race Condition Anatomy</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-label">Pessimistic Row Locking</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-label">Deadlock Prevention</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-label">Hybrid Cart Engine</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(5)">
+      <span class="step-num">5</span>
+      <span class="step-label">Zustand State Management</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(6)">
+      <span class="step-num">6</span>
+      <span class="step-label">Interactive Slide-Out Drawer</span>
+    </div>
+  
+      </div>
+      <div class="stepper-content-wrapper">
+        
+    <div id="step-content-1" class="step-body active" style="display:block;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">1. Race Condition Anatomy</h3>
+        <p class="step-desc-display">How concurrent flash sale checkouts cause double-selling and negative inventory (-1) in standard Eloquent code.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-2" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">2. Pessimistic Row Locking</h3>
+        <p class="step-desc-display">Acquiring exclusive InnoDB row locks (SELECT ... FOR UPDATE) inside atomic transactions to isolate stock updates.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-3" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">3. Deadlock Prevention</h3>
+        <p class="step-desc-display">Sorting variant IDs ascending before locking to mathematically eliminate cyclical cross-transaction deadlock states.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-4" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">4. Hybrid Cart Engine</h3>
+        <p class="step-desc-display">Persisting guest items in localStorage and seamlessly merging with MySQL cart_items upon successful user login.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-5" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">5. Zustand State Management</h3>
+        <p class="step-desc-display">Building a reactive, persistent React 18 client store with optimistic updates and background Inertia server sync.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-6" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">6. Interactive Slide-Out Drawer</h3>
+        <p class="step-desc-display">Creating an animated Tailwind CSS cart drawer with instant quantity modifications, price computation, and checkout CTA.</p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Interactive Architecture & Code Tabs -->
+    <section class="lab-tabs-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Architecture Lab</div>
+        <h2>Concurrency Timelines, Deadlock Visualizer & Load Benchmarks</h2>
+        <p>Inspect concurrency race condition timelines, checkout action code diffs, deadlock visualizers, and load test benchmarks.</p>
+      </div>
+      <div class="tab-navigation">
+        
+    <button class="tab-btn active" onclick="switchTab('tab-timeline')">Concurrency Timeline</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-action-diff')">Checkout Action Diff</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-deadlock-visualizer')">Deadlock Prevention Visualizer</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-concurrency-benchmark')">Concurrency Benchmark</button>
+  
+      </div>
+      <div class="tab-content-wrapper">
+        
+    <div id="tab-timeline" class="tab-pane active" style="display:block;">
+      
+      <h3>Flash Sale Concurrency: Naive Race Condition vs Pessimistic Locking</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Timeline</th>
+            <th>Naive Eloquent (No Lock)</th>
+            <th>Pessimistic Locking (<code>lockForUpdate()</code>)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T = 0 ms</strong></td>
+            <td>Buyer 1 reads <code>stock_quantity = 1</code></td>
+            <td>Buyer 1 issues <code>SELECT ... FOR UPDATE</code>. Locks Row!</td>
+          </tr>
+          <tr>
+            <td><strong>T = 1 ms</strong></td>
+            <td>Buyer 2 reads <code>stock_quantity = 1</code> (Race condition!)</td>
+            <td>Buyer 2 issues <code>FOR UPDATE</code>. <strong>BLOCKED (Waits for Lock)</strong></td>
+          </tr>
+          <tr>
+            <td><strong>T = 12 ms</strong></td>
+            <td>Buyer 1 decrements stock to <code>0</code> and commits</td>
+            <td>Buyer 1 decrements stock to <code>0</code> and <code>COMMIT</code></td>
+          </tr>
+          <tr>
+            <td><strong>T = 13 ms</strong></td>
+            <td>Buyer 2 decrements stock to <code>-1</code>! (Double-Sold!)</td>
+            <td>Lock released. Buyer 2 acquires lock, reads <code>0</code> stock. <strong>ABORT 422!</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-action-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Vulnerable Checkout Controller vs Bulletproof Reservation Action</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Vulnerable Controller (Zero Concurrency Protection)</h4>
+          <pre><code>public function checkout(Request $request) {
+    foreach ($request->items as $item) {
+        $variant = ProductVariant::find($item['id']);
+        if ($variant->stock >= $item['qty']) {
+            $variant->decrement('stock', $item['qty']);
+        }
+    }
+    // High probability of overselling under simultaneous requests!
+}</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Production-Hardened Action (Sorted IDs + lockForUpdate)</h4>
+          <pre><code>DB::transaction(function () use ($items) {
+    // 1. Sort IDs to prevent cross-transaction deadlocks!
+    $sortedIds = collect($items)->pluck('variant_id')->sort()->all();
+
+    // 2. Acquire exclusive InnoDB row lock
+    $variants = ProductVariant::whereIn('id', $sortedIds)
+        ->lockForUpdate()
+        ->get()
+        ->keyBy('id');
+
+    // 3. Atomically verify and decrement
+    foreach ($items as $item) {
+        $v = $variants->get($item['variant_id']);
+        if ($v->stock_quantity < $item['quantity']) {
+            throw new InsufficientStockException("Out of stock: {$v->sku}");
+        }
+        $v->decrement('stock_quantity', $item['quantity']);
+    }
+});</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-deadlock-visualizer" class="tab-pane " style="display:none;">
+      
+      <h3>Cyclical Lock Deadlock vs Sorted Deterministic Order</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Transaction 1 (Cart: SKU 10 & 25)</th>
+            <th>Transaction 2 (Cart: SKU 25 & 10)</th>
+            <th>Database Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Unsorted Order (Deadlock)</strong></td>
+            <td>Locks <strong>#10</strong>, attempts to lock <strong>#25</strong></td>
+            <td>Locks <strong>#25</strong>, attempts to lock <strong>#10</strong></td>
+            <td>💥 <strong>DEADLOCK DETECTED!</strong> MySQL kills one worker with Error 1213.</td>
+          </tr>
+          <tr>
+            <td><strong>Sorted Order (Ascending)</strong></td>
+            <td>Locks <strong>#10</strong> first, then locks <strong>#25</strong></td>
+            <td>Attempts to lock <strong>#10</strong> first (Waits cleanly in queue)</td>
+            <td>✅ <strong>Zero Deadlocks!</strong> Pure linear execution without failures.</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-concurrency-benchmark" class="tab-pane " style="display:none;">
+      
+      <h3>Load Test: 100 Concurrent Shoppers Competing for 5 In-Stock Units</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Execution Strategy</th>
+            <th>Successful Orders</th>
+            <th>Oversell Errors</th>
+            <th>Final Stock Integrity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Standard Eloquent (No Lock)</strong></td>
+            <td><strong>23 Orders</strong> (Catastrophic!)</td>
+            <td>18 Oversellings</td>
+            <td>Negative Stock: <code>-18</code></td>
+          </tr>
+          <tr>
+            <td><strong>Optimistic Version Check</strong></td>
+            <td>5 Orders</td>
+            <td>0 Oversellings</td>
+            <td>Stock: <code>0</code> (95 Failed with Conflict)</td>
+          </tr>
+          <tr>
+            <td><strong>Pessimistic Sorted <code>FOR UPDATE</code></strong></td>
+            <td><strong>5 Orders</strong></td>
+            <td><strong>0 Oversellings</strong></td>
+            <td><strong>Stock: <code>0</code> (100% Data Integrity)</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Markdown Documentation Container -->
+    <article class="markdown-article">
+      <div id="rendered-markdown"></div>
+    </article>
+  </main>
+
+  <!-- Hidden Pre-Loaded Markdown Content -->
+  <textarea id="markdown-content" style="display:none; white-space:pre;"># ShopSphere Pro - Module 04: Cart Engine, Zustand State & Pessimistic Concurrency Locking
+
+## 1. The High-Concurrency E-Commerce Nightmare: Double-Selling Race Conditions
+
+Flash sale (e.g. *Big Billion Days* ya *Black Friday*) ke waqt ek high-demand product (jaise *iPhone 15 Pro*) ke warehouse me sirf **1 unit** bacha hai (`stock_quantity = 1`).
+
+Agar 2 users (User A aur User B) exact same millisecond par "Proceed to Checkout" click karte hain, toh standard naive Laravel code me kya hota hai?
+
+```php
+// ❌ NAIVE IMPLEMENTATION: Extreme Double-Selling Race Condition!
+public function checkout(Request $request)
+{
+    $variant = ProductVariant::find($request->variant_id);
+
+    // Both User A and User B execute this at T=0ms
+    // Both read: stock_quantity = 1
+    if ($variant->stock_quantity >= $request->quantity) {
+        
+        // Both enter this if block!
+        // User A decrements: stock becomes 0
+        // User B decrements: stock becomes -1 !
+        $variant->decrement('stock_quantity', $request->quantity);
+
+        Order::create([...]); // 2 Orders created for 1 physical unit!
+    }
+}
+```
+
+### Real-World Business Consequence:
+- Dono customers ke credit cards charge ho jaate hain.
+- Warehouse ke paas sirf 1 item hai. Ek customer ko cancellation email bhejni padti hai, brand reputation tabah ho jaati hai, aur refund chargeback penalties lagti hain!
+
+---
+
+## 2. Pessimistic Row Locking (`SELECT ... FOR UPDATE`)
+
+Database concurrency solve karne ke liye relational database me 2 strategies hoti hain:
+1. **Optimistic Locking:** Har row me `version` column rakhna. Agar version badal gaya toh update fail ho jata hai. (Low conflict scenarios ke liye accha hai).
+2. **Pessimistic Locking (`lockForUpdate`):** High-traffic e-commerce flash sales ke liye **Pessimistic Locking** mandatory hai.
+
+Jab Transaction A kisi row ko `SELECT ... FOR UPDATE` se read karta hai, toh InnoDB us row par **Exclusive Lock (X-Lock)** laga deta hai. Transaction B jab tak wait karega jab tak Transaction A `COMMIT` ya `ROLLBACK` na kar de!
+
+### Production-Grade Stock Reservation Action:
+```php
+<?php
+
+namespace App\Actions\Cart;
+
+use App\Models\ProductVariant;
+use App\Exceptions\InsufficientStockException;
+use Illuminate\Support\Facades\DB;
+
+class ReserveStockAction
+{
+    /**
+     * Atomically lock and reserve inventory for checkout
+     * 
+     * @param array $cartItems [['variant_id' => 12, 'quantity' => 2], ...]
+     * @throws InsufficientStockException
+     */
+    public function execute(array $cartItems): void
+    {
+        // 1. Critical: Sort variant IDs to prevent database deadlocks!
+        $sortedItems = collect($cartItems)->sortBy('variant_id')->values()->all();
+        $variantIds = array_column($sortedItems, 'variant_id');
+
+        DB::transaction(function () use ($sortedItems, $variantIds) {
+            
+            // 2. Fetch variants with exclusive InnoDB row lock (FOR UPDATE)
+            $lockedVariants = ProductVariant::whereIn('id', $variantIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // 3. Verify stock availability under lock isolation
+            foreach ($sortedItems as $item) {
+                $variant = $lockedVariants->get($item['variant_id']);
+
+                if (!$variant) {
+                    throw new InsufficientStockException("Product variant #{$item['variant_id']} not found.");
+                }
+
+                if ($variant->stock_quantity < $item['quantity']) {
+                    throw new InsufficientStockException(
+                        "Insufficient stock for {$variant->sku}. Available: {$variant->stock_quantity}, Requested: {$item['quantity']}"
+                    );
+                }
+            }
+
+            // 4. Atomically decrement stock
+            foreach ($sortedItems as $item) {
+                $variant = $lockedVariants->get($item['variant_id']);
+                $variant->decrement('stock_quantity', $item['quantity']);
+
+                // 5. Create immutable inventory audit log
+                DB::table('inventory_transactions')->insert([
+                    'product_variant_id' => $variant->id,
+                    'quantity_change' => -$item['quantity'],
+                    'type' => 'checkout_reservation',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+    }
+}
+```
+
+---
+
+## 3. The Deadlock Trap & Deterministic ID Sorting
+
+Kayi developers `lockForUpdate()` use karte hain lekin flash sales me unki application `Deadlock found when trying to get lock; try restarting transaction` throw karke crash ho jaati hai. Aisa kyun hota hai?
+
+### The Deadlock Scenario:
+- **Customer 1 Cart:** Item A (ID: 10) + Item B (ID: 25)
+- **Customer 2 Cart:** Item B (ID: 25) + Item A (ID: 10)
+
+1. *T=1ms:* Customer 1 transaction locks **Item 10**.
+2. *T=2ms:* Customer 2 transaction locks **Item 25**.
+3. *T=3ms:* Customer 1 tries to lock **Item 25** (Blocked! Must wait for Customer 2).
+4. *T=4ms:* Customer 2 tries to lock **Item 10** (Blocked! Must wait for Customer 1).
+5. **CYCLE CREATED!** Dono ek dusre ka wait kar rahe hain. MySQL deadlock detector triggers and kills one transaction!
+
+### ✅ The Mathematical Solution:
+Always **sort IDs ascending** before calling `whereIn()` or locking:
+```php
+$sortedItems = collect($cartItems)->sortBy('variant_id')->values()->all();
+```
+Jab saare concurrent processes resources ko strictly **ascending order (10 -> 25)** me lock karenge, toh cyclical dependency banana mathematically impossible ho jata hai!
+
+---
+
+## 4. Hybrid Cart Architecture (Guest LocalStorage + Authenticated DB Sync)
+
+ShopSphere Pro me customers bina login kiye shopping shuru kar sakte hain:
+
+1. **Guest Mode:** React me Zustand store items ko browser ke `localStorage` me persist karta hai. Fast, instantaneous zero-network overhead!
+2. **Login Event:** Jaise hi user login karta hai (`Login` event trigger), Laravel listener guest cart items ko database ke `cart_items` table ke sath atomically merge karta hai:
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Models\CartItem;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Session;
+
+class SyncGuestCartWithDatabase
+{
+    public function handle(Login $event): void
+    {
+        $user = $event->user;
+        $guestCart = Session::get('guest_cart', []);
+
+        if (empty($guestCart)) {
+            return;
+        }
+
+        foreach ($guestCart as $variantId => $guestItem) {
+            $existingDbItem = CartItem::where('user_id', $user->id)
+                ->where('product_variant_id', $variantId)
+                ->first();
+
+            if ($existingDbItem) {
+                // Merge quantity up to maximum stock
+                $existingDbItem->increment('quantity', $guestItem['quantity']);
+            } else {
+                CartItem::create([
+                    'user_id' => $user->id,
+                    'product_variant_id' => $variantId,
+                    'quantity' => $guestItem['quantity'],
+                    'price_snapshot' => $guestItem['price'],
+                ]);
+            }
+        }
+
+        // Clear guest session cart
+        Session::forget('guest_cart');
+    }
+}
+```
+
+---
+
+## 5. Client-Side Zustand Cart Store with Optimistic UI in React 18
+
+Zustand modern React applications me Redux se 10x light-weight aur simple global state management provide karta hai:
+
+```javascript
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { router } from '@inertiajs/react';
+
+export const useCartStore = create(
+    persist(
+        (set, get) => ({
+            items: [],
+            isDrawerOpen: false,
+
+            openDrawer: () => set({ isDrawerOpen: true }),
+            closeDrawer: () => set({ isDrawerOpen: false }),
+
+            // Optimistic Add to Cart
+            addItem: (variant, quantity = 1) => {
+                const currentItems = get().items;
+                const existingIndex = currentItems.findIndex(i => i.variantId === variant.id);
+
+                let updatedItems;
+                if (existingIndex > -1) {
+                    updatedItems = currentItems.map((item, idx) => 
+                        idx === existingIndex 
+                            ? { ...item, quantity: item.quantity + quantity }
+                            : item
+                    );
+                } else {
+                    updatedItems = [
+                        ...currentItems,
+                        {
+                            variantId: variant.id,
+                            productId: variant.product_id,
+                            title: variant.product.title,
+                            sku: variant.sku,
+                            price: parseFloat(variant.price),
+                            attributes: variant.attributes,
+                            quantity,
+                        }
+                    ];
+                }
+
+                set({ items: updatedItems, isDrawerOpen: true });
+
+                // Sync with server in background
+                router.post('/cart/sync', { items: updatedItems }, {
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            },
+
+            removeItem: (variantId) => {
+                const updatedItems = get().items.filter(i => i.variantId !== variantId);
+                set({ items: updatedItems });
+
+                router.post('/cart/remove', { variant_id: variantId }, {
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            },
+
+            getTotalPrice: () => {
+                return get().items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            },
+
+            getItemCount: () => {
+                return get().items.reduce((sum, item) => sum + item.quantity, 0);
+            },
+        }),
+        {
+            name: 'shopsphere_cart_storage', // LocalStorage key
+        }
+    )
+);
+```
+
+---
+
+## 6. Slide-Out Slide Cart Drawer Component
+
+```jsx
+import React from 'react';
+import { useCartStore } from '@/Stores/useCartStore';
+import { X, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+
+export default function SlideCartDrawer() {
+    const { items, isDrawerOpen, closeDrawer, removeItem, getTotalPrice, getItemCount } = useCartStore();
+
+    if (!isDrawerOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+            <div 
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                onClick={closeDrawer}
+            />
+
+            <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+                <div className="w-screen max-w-md bg-slate-900 border-l border-slate-800 flex flex-col shadow-2xl">
+                    {/* Header */}
+                    <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <ShoppingBag className="text-indigo-400" size={22} />
+                            <h2 className="text-lg font-bold text-white">Your Cart ({getItemCount()})</h2>
+                        </div>
+                        <button onClick={closeDrawer} className="text-slate-400 hover:text-white p-1 rounded-lg">
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    {/* Cart Items List */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        {items.length === 0 ? (
+                            <div className="text-center py-16 text-slate-500">
+                                <p>Your shopping cart is empty.</p>
+                            </div>
+                        ) : (
+                            items.map((item) => (
+                                <div key={item.variantId} className="flex gap-4 p-3.5 bg-slate-850 rounded-xl border border-slate-800">
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-white text-sm">{item.title}</h4>
+                                        <p className="text-xs text-indigo-400 font-mono mt-0.5">{item.sku}</p>
+                                        <div className="flex items-center justify-between mt-2">
+                                            <span className="text-sm font-bold text-slate-200">₹{item.price} × {item.quantity}</span>
+                                            <button 
+                                                onClick={() => removeItem(item.variantId)}
+                                                className="text-slate-500 hover:text-rose-400 p-1"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Footer / Checkout CTA */}
+                    {items.length > 0 && (
+                        <div className="p-6 border-t border-slate-800 space-y-4">
+                            <div className="flex justify-between text-base font-bold text-white">
+                                <span>Subtotal:</span>
+                                <span>₹{getTotalPrice().toFixed(2)}</span>
+                            </div>
+                            <Link
+                                href="/checkout"
+                                onClick={closeDrawer}
+                                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-colors"
+                            >
+                                <span>Proceed to Checkout</span>
+                                <ArrowRight size={18} />
+                            </Link>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+</textarea>
+
+  <!-- Footer Navigation -->
+  <footer class="module-footer">
+    <div class="footer-container">
+      <a href="../index.html" class="hub-btn">← Learning Hub</a>
+      <div class="footer-nav">
+        <a href="03_Product_Catalog_Filtering_and_Search.html" class="nav-btn">← Previous: Module 03</a>
+        <a href="05_Stripe_Razorpay_Payment_Gateway_and_Webhooks.html" class="nav-btn">Next: Module 05 →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Interactive Stepper Logic
+    function switchStep(stepNum) {
+      document.querySelectorAll('.step-chip').forEach(chip => chip.classList.remove('active'));
+      document.querySelectorAll('.step-body').forEach(body => {
+        body.classList.remove('active');
+        body.style.display = 'none';
+      });
+
+      const activeChip = document.querySelectorAll('.step-chip')[stepNum - 1];
+      if (activeChip) activeChip.classList.add('active');
+
+      const activeBody = document.getElementById('step-content-' + stepNum);
+      if (activeBody) {
+        activeBody.classList.add('active');
+        activeBody.style.display = 'block';
+      }
+    }
+
+    // Interactive Tabs Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+      });
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+
+      const activePane = document.getElementById(tabId);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.style.display = 'block';
+      }
+    }
+
+    // Render Markdown Content via Marked.js
+    document.addEventListener('DOMContentLoaded', () => {
+      const rawMarkdown = document.getElementById('markdown-content').value;
+      if (window.marked) {
+        document.getElementById('rendered-markdown').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('rendered-markdown').innerHTML = '<pre>' + rawMarkdown + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>

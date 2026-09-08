@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSphere Pro - Module 03: Vendor Product Management, SKU Variations & Fast Search</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="module-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="badge-pill">ShopSphere Pro</span>
+        <span class="badge-sub">Module 03</span>
+      </div>
+      <h1 class="header-title">Vendor Product Management, SKU Variations & Fast Search</h1>
+      <div class="header-actions">
+        <a href="../index.html" class="hub-btn">← Learning Hub</a>
+        <a href="02_Authentication_RBAC_and_Inertia_Layouts.html" class="nav-btn">← Previous Module</a>
+        <a href="04_Shopping_Cart_and_Pessimistic_Stock_Locking.html" class="nav-btn">Next Module →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Interactive Stepper -->
+    <section class="lifecycle-stepper-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Catalog Flow</div>
+        <h2>Product Catalog, SKU & Search Lifecycle</h2>
+        <p>Follow the 6 progressive steps to build multi-attribute SKU matrices, WebP image pipelines, and debounced search.</p>
+      </div>
+      <div class="stepper-track">
+        
+    <div class="step-chip active" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-label">Parent-Child SKU Pattern</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-label">Cartesian SKU Generator</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-label">MediaLibrary WebP Pipeline</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-label">Dedicated Filter Pipeline</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(5)">
+      <span class="step-num">5</span>
+      <span class="step-label">MySQL 8 Fulltext Search</span>
+    </div>
+  
+    <div class="step-chip " onclick="switchStep(6)">
+      <span class="step-num">6</span>
+      <span class="step-label">Inertia Partial Reloads</span>
+    </div>
+  
+      </div>
+      <div class="stepper-content-wrapper">
+        
+    <div id="step-content-1" class="step-body active" style="display:block;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">1. Parent-Child SKU Pattern</h3>
+        <p class="step-desc-display">Separating master catalog metadata (title, category) from physical purchasable variants (SKU, price, stock, JSON attributes).</p>
+      </div>
+    </div>
+  
+    <div id="step-content-2" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">2. Cartesian SKU Generator</h3>
+        <p class="step-desc-display">Computing dynamic variant combinations (Color x Size x Storage) in React and pre-populating inventory matrix tables.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-3" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">3. MediaLibrary WebP Pipeline</h3>
+        <p class="step-desc-display">Handling multipart image uploads and generating responsive thumbnails, catalog cards, and zoom crops via background queues.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-4" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">4. Dedicated Filter Pipeline</h3>
+        <p class="step-desc-display">Refactoring messy controller logic into a clean ProductFilter class chaining category, stock, and price scopes.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-5" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">5. MySQL 8 Fulltext Search</h3>
+        <p class="step-desc-display">Leveraging MATCH() AGAINST() in BOOLEAN MODE for instant multi-word keyword search with zero full-table scan overhead.</p>
+      </div>
+    </div>
+  
+    <div id="step-content-6" class="step-body " style="display:none;">
+      <div class="step-header-box">
+        <h3 class="step-title-display">6. Inertia Partial Reloads</h3>
+        <p class="step-desc-display">Implementing debounced search with preserveState and only:['products'], delivering instantaneous SPA filter updates.</p>
+      </div>
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Interactive Architecture & Code Tabs -->
+    <section class="lab-tabs-card">
+      <div class="card-header">
+        <div class="card-tag">Interactive Architecture Lab</div>
+        <h2>Cartesian SKU Matrices, Fulltext Benchmarks & Inertia Options</h2>
+        <p>Inspect Cartesian product algorithms, filter pipeline code diffs, fulltext index benchmarks, and partial reload options.</p>
+      </div>
+      <div class="tab-navigation">
+        
+    <button class="tab-btn active" onclick="switchTab('tab-cartesian')">Cartesian Matrix Lab</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-filter-diff')">Filter Architecture Code Diff</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-fulltext-benchmark')">Fulltext Search Benchmark</button>
+  
+    <button class="tab-btn " onclick="switchTab('tab-inertia-matrix')">Inertia Navigation Matrix</button>
+  
+      </div>
+      <div class="tab-content-wrapper">
+        
+    <div id="tab-cartesian" class="tab-pane active" style="display:block;">
+      
+      <h3>Dynamic SKU Generation: Color x Size Matrix</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Variant Combination</th>
+            <th>Generated SKU</th>
+            <th>Attributes JSON Payload</th>
+            <th>Default Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Midnight Black / S</td>
+            <td><code>SHIRT-BLK-S</code></td>
+            <td><code>{"color": "Midnight Black", "size": "S"}</code></td>
+            <td>15 Units</td>
+          </tr>
+          <tr>
+            <td>Midnight Black / M</td>
+            <td><code>SHIRT-BLK-M</code></td>
+            <td><code>{"color": "Midnight Black", "size": "M"}</code></td>
+            <td>25 Units</td>
+          </tr>
+          <tr>
+            <td>Alpine White / S</td>
+            <td><code>SHIRT-WHT-S</code></td>
+            <td><code>{"color": "Alpine White", "size": "S"}</code></td>
+            <td>10 Units</td>
+          </tr>
+          <tr>
+            <td>Alpine White / L</td>
+            <td><code>SHIRT-WHT-L</code></td>
+            <td><code>{"color": "Alpine White", "size": "L"}</code></td>
+            <td>20 Units</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-filter-diff" class="tab-pane " style="display:none;">
+      
+      <h3>Controller Bloat vs Clean Pipeline Pattern</h3>
+      <div class="code-diff">
+        <div class="diff-block bad">
+          <h4>❌ Messy Controller Filter (Unmaintainable & Brittle)</h4>
+          <pre><code>public function index(Request $request) {
+    $query = Product::query();
+    if ($request->has('search')) {
+        $query->where('title', 'like', '%'.$request->search.'%');
+    }
+    if ($request->has('cat')) {
+        $query->where('category_id', $request->cat);
+    }
+    if ($request->has('min')) {
+        $query->where('base_price', '>=', $request->min);
+    }
+    // 50 lines of duplicate if-else checks in every listing method!
+    return Inertia::render('Catalog', ['items' => $query->get()]);
+}</code></pre>
+        </div>
+        <div class="diff-block good">
+          <h4>✅ Dedicated Filter Pipeline (Reusable & Testable)</h4>
+          <pre><code>// In ProductCatalogController.php
+public function index(Request $request, ProductFilter $filter): Response {
+    $products = Product::query()
+        ->where('is_active', true)
+        ->with(['category:id,name', 'vendor:id,store_name', 'variants'])
+        ->tap(fn ($q) => $filter->apply($q))
+        ->paginate(12)
+        ->withQueryString();
+
+    return Inertia::render('Storefront/Catalog/Index', [
+        'products' => $products,
+        'filters' => $request->all(['search', 'category', 'min_price', 'sort']),
+    ]);
+}</code></pre>
+        </div>
+      </div>
+    
+    </div>
+  
+    <div id="tab-fulltext-benchmark" class="tab-pane " style="display:none;">
+      
+      <h3>MySQL 8 Fulltext MATCH AGAINST vs LIKE '%term%' (150,000 Products)</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Search Strategy</th>
+            <th>Query Type</th>
+            <th>Execution Time (150k Rows)</th>
+            <th>Explain Plan Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Naive Wildcard</strong><br><code>WHERE title LIKE '%nike shoes%'</code></td>
+            <td>Full Table Scan</td>
+            <td><strong>642.8 ms</strong> (Severe CPU spike)</td>
+            <td><code>type: ALL, rows: 150000</code> (Bypasses B-Tree index)</td>
+          </tr>
+          <tr>
+            <td><strong>Prefix Wildcard</strong><br><code>WHERE title LIKE 'nike%'</code></td>
+            <td>Range Scan</td>
+            <td>38.2 ms</td>
+            <td><code>type: range, key: title_idx</code> (Cannot find middle words)</td>
+          </tr>
+          <tr>
+            <td><strong>MySQL 8 Fulltext</strong><br><code>WHERE MATCH(title, summary) AGAINST('nike*' IN BOOLEAN MODE)</code></td>
+            <td>Inverted Index Scan</td>
+            <td><strong>1.9 ms</strong> (⚡ Blazing Fast)</td>
+            <td><code>type: fulltext, key: products_fulltext_idx</code></td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+    <div id="tab-inertia-matrix" class="tab-pane " style="display:none;">
+      
+      <h3>Inertia.js Navigation Parameters for High-Performance Filters</h3>
+      <table class="benchmark-table">
+        <thead>
+          <tr>
+            <th>Option Key</th>
+            <th>Recommended Value</th>
+            <th>Architectural Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>preserveState</code></td>
+            <td><code>true</code></td>
+            <td>Prevents React component state (e.g. search input focus, slider position) from resetting.</td>
+          </tr>
+          <tr>
+            <td><code>preserveScroll</code></td>
+            <td><code>true</code></td>
+            <td>Prevents the browser window from jumping back to top (0,0) when updating filter results.</td>
+          </tr>
+          <tr>
+            <td><code>replace</code></td>
+            <td><code>true</code></td>
+            <td>Replaces current history entry instead of pushing a new history state for every keystroke.</td>
+          </tr>
+          <tr>
+            <td><code>only</code></td>
+            <td><code>['products']</code></td>
+            <td>Partial reload: Tells Laravel to evaluate and transmit ONLY the 'products' prop, skipping layout props.</td>
+          </tr>
+        </tbody>
+      </table>
+    
+    </div>
+  
+      </div>
+    </section>
+
+    <!-- Markdown Documentation Container -->
+    <article class="markdown-article">
+      <div id="rendered-markdown"></div>
+    </article>
+  </main>
+
+  <!-- Hidden Pre-Loaded Markdown Content -->
+  <textarea id="markdown-content" style="display:none; white-space:pre;"># ShopSphere Pro - Module 03: Vendor Product Management, SKU Variations & Fast Search
+
+## 1. Multi-Attribute SKU & Variant Architecture (Cartesian Product Problem)
+
+Ek real-world e-commerce platform me koi bhi product simple `product_name` aur `price` nahi hota. Ek t-shirt ke multiple colors (*Red, Navy Blue, Olive*) aur multiple sizes (*S, M, L, XL*) ho sakte hain. Iska matlab 3 colors × 4 sizes = **12 distinct purchasable SKUs**!
+
+Agar hum isko naively single table me store karenge:
+- Har color/size ke liye naya product create karna padega (Duplicate descriptions, SEO cannibalization).
+- Stock tracking disaster ban jayega.
+
+### The Enterprise Solution: Parent-Child SKU Pattern
+1. **`products` (Parent Entity):** Holds common metadata (Title, Slug, Category, Vendor, Brand, Description, Base Price, Master Media Gallery).
+2. **`product_variants` (Physical Child SKUs):** Holds SKU code (`TSHIRT-RED-XL`), Variant-specific Price, Stock Quantity, Barcode, aur JSON attributes:
+```json
+{
+  "color": "Navy Blue",
+  "size": "XL",
+  "material": "100% Combed Cotton"
+}
+```
+
+---
+
+## 2. Dynamic Variant Generator Algorithm in React 18
+
+Jab vendor product form me attributes add karta hai (Attributes: `Color: [Red, Blue]`, `Size: [M, L]`), frontend ko dynamically **Cartesian Product** calculate karke variant matrix table render karni chahiye:
+
+```javascript
+// Utility: Cartesian Product of Arrays in Javascript
+export function generateCartesianProduct(attributes) {
+    // attributes = [{ name: 'Color', values: ['Red', 'Blue'] }, { name: 'Size', values: ['M', 'L'] }]
+    return attributes.reduce((acc, attribute) => {
+        if (!attribute.values || attribute.values.length === 0) return acc;
+        if (acc.length === 0) {
+            return attribute.values.map(val => ({ [attribute.name]: val }));
+        }
+        const result = [];
+        acc.forEach(item => {
+            attribute.values.forEach(val => {
+                result.push({ ...item, [attribute.name]: val });
+            });
+        });
+        return result;
+    }, []);
+}
+```
+
+### React Form State Management for SKUs:
+```jsx
+import React, { useState, useMemo } from 'react';
+import { useForm } from '@inertiajs/react';
+import { generateCartesianProduct } from '@/Utils/variantGenerator';
+
+export default function VariantMatrixStep({ basePrice, productSlug }) {
+    const [attributeGroups, setAttributeGroups] = useState([
+        { name: 'Color', values: ['Midnight Black', 'Alpine White'] },
+        { name: 'Storage', values: ['128GB', '256GB'] },
+    ]);
+
+    // Compute generated SKUs on attribute change
+    const generatedVariants = useMemo(() => {
+        const combinations = generateCartesianProduct(attributeGroups);
+        return combinations.map((combo, index) => {
+            const skuSuffix = Object.values(combo).join('-').toUpperCase().replace(/\s+/g, '');
+            return {
+                sku: `${productSlug || 'PROD'}-${skuSuffix}`,
+                price: basePrice || '0.00',
+                stock_quantity: 10,
+                attributes: combo,
+            };
+        });
+    }, [attributeGroups, basePrice, productSlug]);
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-slate-200">Generated SKU Variants ({generatedVariants.length})</h3>
+            <table className="w-full text-sm text-left text-slate-300">
+                <thead className="bg-slate-800 text-slate-400">
+                    <tr>
+                        <th className="p-3">SKU</th>
+                        <th className="p-3">Attributes</th>
+                        <th className="p-3">Price (₹)</th>
+                        <th className="p-3">Stock Quantity</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                    {generatedVariants.map((variant, idx) => (
+                        <tr key={idx} className="hover:bg-slate-850">
+                            <td className="p-3 font-mono text-indigo-400">{variant.sku}</td>
+                            <td className="p-3">
+                                {Object.entries(variant.attributes).map(([k, v]) => (
+                                    <span key={k} className="inline-block bg-slate-800 px-2 py-0.5 rounded mr-1 text-xs">
+                                        {k}: <strong>{v}</strong>
+                                    </span>
+                                ))}
+                            </td>
+                            <td className="p-3">
+                                <input 
+                                    type="number" 
+                                    defaultValue={variant.price}
+                                    className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-24 text-white" 
+                                />
+                            </td>
+                            <td className="p-3">
+                                <input 
+                                    type="number" 
+                                    defaultValue={variant.stock_quantity}
+                                    className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-20 text-white" 
+                                />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+```
+
+---
+
+## 3. High-Performance Spatie MediaLibrary Image Pipeline
+
+E-commerce images ko bina resize kiye serve karna page speed ka sabse bada killer hota hai. Hum **Spatie MediaLibrary** use karte hain jo uploaded original images ko automatically multiple responsive WebP variants me convert karta hai:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Product extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('gallery')
+             ->useDisk('public')
+             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        // 1. Instant Catalog Thumbnail
+        $this->addMediaConversion('thumb')
+             ->width(200)
+             ->height(200)
+             ->format('webp')
+             ->quality(80)
+             ->nonQueued(); // Fast synchronous generation
+
+        // 2. High-Res Catalog Card
+        $this->addMediaConversion('card')
+             ->width(600)
+             ->height(600)
+             ->format('webp')
+             ->quality(85)
+             ->queued(); // Heavy conversion sent to Redis queue
+
+        // 3. Ultra-Zoom Modal
+        $this->addMediaConversion('zoom')
+             ->width(1600)
+             ->height(1600)
+             ->format('webp')
+             ->quality(90)
+             ->queued();
+    }
+}
+```
+
+---
+
+## 4. Enterprise Filter Pipeline with Dedicated Scopes
+
+Aksar junior developers Controller ke andar 15-20 `if ($request->has('...'))` statements likh dete hain, jisse controller unmaintainable ban jata hai.
+
+Hum **Dedicated Query Filter Pipeline Pattern** use karte hain:
+
+```php
+<?php
+
+namespace App\Filters;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+
+class ProductFilter
+{
+    protected Request $request;
+    protected Builder $builder;
+
+    public function __construct(Request $request)
+    {
+        $this->request = $request;
+    }
+
+    public function apply(Builder $builder): Builder
+    {
+        $this->builder = $builder;
+
+        foreach ($this->filters() as $filter => $value) {
+            if (method_exists($this, $filter) && filled($value)) {
+                $this->$filter($value);
+            }
+        }
+
+        return $this->builder;
+    }
+
+    protected function filters(): array
+    {
+        return $this->request->only([
+            'search', 
+            'category', 
+            'vendor_id', 
+            'min_price', 
+            'max_price', 
+            'in_stock', 
+            'sort'
+        ]);
+    }
+
+    // 1. MySQL 8 Fulltext Search Filter
+    protected function search(string $value): void
+    {
+        // Use Boolean Fulltext index created in Module 01
+        $this->builder->whereRaw(
+            "MATCH(title, summary) AGAINST(? IN BOOLEAN MODE)", 
+            [$value . '*']
+        );
+    }
+
+    // 2. Category Slug Filter
+    protected function category(string $slug): void
+    {
+        $this->builder->whereHas('category', function (Builder $q) use ($slug) {
+            $q->where('slug', $slug);
+        });
+    }
+
+    // 3. Price Range Filtering on Base Price
+    protected function min_price(float|int $price): void
+    {
+        $this->builder->where('base_price', '>=', $price);
+    }
+
+    protected function max_price(float|int $price): void
+    {
+        $this->builder->where('base_price', '<=', $price);
+    }
+
+    // 4. In-Stock Filter across variants
+    protected function in_stock(bool|string $inStock): void
+    {
+        if (filter_var($inStock, FILTER_VALIDATE_BOOLEAN)) {
+            $this->builder->whereHas('variants', function (Builder $q) {
+                $q->where('stock_quantity', '>', 0);
+            });
+        }
+    }
+
+    // 5. Sorting Rules
+    protected function sort(string $sortRule): void
+    {
+        match ($sortRule) {
+            'price_asc' => $this->builder->orderBy('base_price', 'asc'),
+            'price_desc' => $this->builder->orderBy('base_price', 'desc'),
+            'newest' => $this->builder->orderBy('created_at', 'desc'),
+            default => $this->builder->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc'),
+        };
+    }
+}
+```
+
+### Clean Controller Implementation:
+```php
+<?php
+
+namespace App\Http\Controllers\Storefront;
+
+use App\Filters\ProductFilter;
+use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class ProductCatalogController extends Controller
+{
+    public function index(Request $request, ProductFilter $filter): Response
+    {
+        $products = Product::query()
+            ->where('is_active', true)
+            ->with([
+                'category:id,name,slug',
+                'vendor:id,store_name,slug',
+                'variants:id,product_id,sku,price,stock_quantity',
+                'media',
+            ])
+            ->tap(fn ($query) => $filter->apply($query))
+            ->paginate(12)
+            ->withQueryString(); // Keep URL parameters in pagination links
+
+        return Inertia::render('Storefront/Catalog/Index', [
+            'products' => $products,
+            'categories' => Category::select('id', 'name', 'slug')->get(),
+            'filters' => $request->all(['search', 'category', 'min_price', 'max_price', 'sort']),
+        ]);
+    }
+}
+```
+
+---
+
+## 5. Reactive Debounced Search & Partial Reloads in React
+
+Inertia.js ka sabse powerful feature hai **Partial Reloads** (`only: ['products']`) aur **preserveState**:
+
+```jsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import debounce from 'lodash/debounce';
+
+export default function CatalogSearch({ initialSearch = '' }) {
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+
+    // Debounced search trigger (350ms delay)
+    const debouncedFilter = useCallback(
+        debounce((query) => {
+            router.get(
+                window.location.pathname,
+                { ...route().params, search: query || undefined, page: 1 },
+                {
+                    preserveState: true,  // Input focus aur component state preserve rahega
+                    preserveScroll: true, // Window scroll position nahi hilegi
+                    replace: true,        // Browser history pollution avoid karne ke liye
+                    only: ['products'],   // Server sirf 'products' prop return karega (Ultra Fast!)
+                }
+            );
+        }, 350),
+        []
+    );
+
+    const handleChange = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        debouncedFilter(value);
+    };
+
+    return (
+        <div className="relative">
+            <input
+                type="search"
+                value={searchTerm}
+                onChange={handleChange}
+                placeholder="Search products by title or keyword..."
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            />
+            {searchTerm && (
+                <button 
+                    onClick={() => { setSearchTerm(''); debouncedFilter(''); }}
+                    className="absolute right-3 top-3.5 text-xs text-slate-400 hover:text-white"
+                >
+                    Clear
+                </button>
+            )}
+        </div>
+    );
+}
+```
+</textarea>
+
+  <!-- Footer Navigation -->
+  <footer class="module-footer">
+    <div class="footer-container">
+      <a href="../index.html" class="hub-btn">← Learning Hub</a>
+      <div class="footer-nav">
+        <a href="02_Authentication_RBAC_and_Inertia_Layouts.html" class="nav-btn">← Previous: Module 02</a>
+        <a href="04_Shopping_Cart_and_Pessimistic_Stock_Locking.html" class="nav-btn">Next: Module 04 →</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Interactive Stepper Logic
+    function switchStep(stepNum) {
+      document.querySelectorAll('.step-chip').forEach(chip => chip.classList.remove('active'));
+      document.querySelectorAll('.step-body').forEach(body => {
+        body.classList.remove('active');
+        body.style.display = 'none';
+      });
+
+      const activeChip = document.querySelectorAll('.step-chip')[stepNum - 1];
+      if (activeChip) activeChip.classList.add('active');
+
+      const activeBody = document.getElementById('step-content-' + stepNum);
+      if (activeBody) {
+        activeBody.classList.add('active');
+        activeBody.style.display = 'block';
+      }
+    }
+
+    // Interactive Tabs Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+        pane.style.display = 'none';
+      });
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+
+      const activePane = document.getElementById(tabId);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.style.display = 'block';
+      }
+    }
+
+    // Render Markdown Content via Marked.js
+    document.addEventListener('DOMContentLoaded', () => {
+      const rawMarkdown = document.getElementById('markdown-content').value;
+      if (window.marked) {
+        document.getElementById('rendered-markdown').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('rendered-markdown').innerHTML = '<pre>' + rawMarkdown + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>
