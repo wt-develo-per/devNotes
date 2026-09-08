@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Indexing Deep Dive & Solving N+1 Problems</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="03_MySQL_Advanced_Queries_Joins_and_Window_Functions.html" class="nav-btn">&larr; Previous: Data Types & Schema</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="05_MySQL_Performance_Tuning_and_Server_Configuration.html" class="nav-btn">Next: Relationships & Joins &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: N+1 Detection and Fix Pipeline -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: N+1 Problem — Detection Se Fix Tak Ka Safar</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Blog posts page 8 seconds le rahi hai — N+1 kaise detect karein aur fix karein:
+        </p>
+
+        <div class="stepper-nav" id="n1Nav">
+            <button class="step-chip active" onclick="showN1Step(0)">
+                <span class="step-num">01</span>
+                <span>Slow Page Notice</span>
+            </button>
+            <button class="step-chip" onclick="showN1Step(1)">
+                <span class="step-num">02</span>
+                <span>Query Log Enable</span>
+            </button>
+            <button class="step-chip" onclick="showN1Step(2)">
+                <span class="step-num">03</span>
+                <span>N+1 Spotted</span>
+            </button>
+            <button class="step-chip" onclick="showN1Step(3)">
+                <span class="step-num">04</span>
+                <span>Eager Load Fix</span>
+            </button>
+            <button class="step-chip" onclick="showN1Step(4)">
+                <span class="step-num">05</span>
+                <span>EXPLAIN Check</span>
+            </button>
+            <button class="step-chip" onclick="showN1Step(5)">
+                <span class="step-num">06</span>
+                <span>Index Add + Verify</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="n1Content">
+            <!-- Dynamic Content populated by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Indexing Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchN1Tab(event, 'tab-explain')">🔬 EXPLAIN Output Guide</button>
+            <button class="tab-btn" onclick="switchN1Tab(event, 'tab-eager')">⚡ Eager Loading Patterns</button>
+            <button class="tab-btn" onclick="switchN1Tab(event, 'tab-composite')">🗂️ Composite Index Rules</button>
+            <button class="tab-btn" onclick="switchN1Tab(event, 'tab-telescope')">🔭 Telescope Profiling</button>
+        </div>
+
+        <!-- Tab 1: EXPLAIN Output Guide -->
+        <div id="tab-explain" class="tab-panel active">
+            <h5>EXPLAIN Output — Laravel Developer Ka Cheatsheet</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>EXPLAIN type</th>
+                        <th>Meaning</th>
+                        <th>Example Query</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>const</code></td>
+                        <td>Single row via PK or unique</td>
+                        <td><code>WHERE id = 1</code></td>
+                        <td>⭐⭐⭐⭐⭐ BEST</td>
+                    </tr>
+                    <tr>
+                        <td><code>eq_ref</code></td>
+                        <td>1 row per JOIN on unique FK</td>
+                        <td>JOIN on unique column</td>
+                        <td>⭐⭐⭐⭐⭐ EXCELLENT</td>
+                    </tr>
+                    <tr>
+                        <td><code>ref</code></td>
+                        <td>Multiple rows via non-unique index</td>
+                        <td><code>WHERE user_id = 42</code></td>
+                        <td>⭐⭐⭐⭐ GOOD</td>
+                    </tr>
+                    <tr>
+                        <td><code>range</code></td>
+                        <td>Index range scan</td>
+                        <td><code>WHERE price BETWEEN 100 AND 500</code></td>
+                        <td>⭐⭐⭐ OK</td>
+                    </tr>
+                    <tr>
+                        <td><code>index</code></td>
+                        <td>Full index scan (no filter)</td>
+                        <td>ORDER BY indexed col</td>
+                        <td>⭐⭐ MEDIOCRE</td>
+                    </tr>
+                    <tr>
+                        <td><code>ALL</code></td>
+                        <td>Full table scan — NO index used!</td>
+                        <td><code>WHERE non_indexed_col = x</code></td>
+                        <td>❌ DANGER — Add index!</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <h5>EXPLAIN Extra Column — Warning Signs</h5>
+            <table class="data-table">
+                <thead>
+                    <tr><th>Extra Value</th><th>Meaning</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Using index</code></td><td>Covering index — table read nahi hua</td><td>✅ Perfect!</td></tr>
+                    <tr><td><code>Using where</code></td><td>WHERE filter applied after index</td><td>✅ Normal</td></tr>
+                    <tr><td><code>Using filesort</code></td><td>In-memory sort needed (no index for ORDER BY)</td><td>⚠️ Add index for sort column</td></tr>
+                    <tr><td><code>Using temporary</code></td><td>Temp table created (GROUP BY without index)</td><td>❌ Big problem — optimize!</td></tr>
+                    <tr><td><code>Using join buffer</code></td><td>JOIN ke liye no index on joined column</td><td>⚠️ Add FK index</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Eager Loading Patterns -->
+        <div id="tab-eager" class="tab-panel">
+            <h5>Eager Loading Patterns — Common Laravel Scenarios</h5>
+            <pre><code class="language-php">// PATTERN 1: Basic eager loading
+$posts = Post::with('user')->get();
+
+// PATTERN 2: Multiple relationships
+$posts = Post::with(['user', 'category', 'tags'])->get();
+
+// PATTERN 3: Nested relationships
+$posts = Post::with('user.profile')->get();      // user -> profile
+$posts = Post::with('comments.user')->get();     // comments -> each comment's user
+
+// PATTERN 4: Select specific columns from relationship
+$posts = Post::with('user:id,name,avatar')->get();  // Sirf 3 columns!
+// SQL: SELECT id, name, avatar FROM users WHERE id IN (...)
+
+// PATTERN 5: Conditional eager loading
+$posts = Post::with([
+    'comments' => function ($query) {
+        $query->where('approved', true)
+              ->latest()
+              ->limit(5);
+    }
+])->get();
+
+// PATTERN 6: withCount, withSum, withAvg (no N+1!)
+$users = User::withCount('posts')
+             ->withCount(['comments' => fn($q) => $q->where('approved', true)])
+             ->withSum('orders', 'total_amount')
+             ->get();
+// Access: $user->posts_count, $user->comments_count, $user->orders_sum_total_amount
+
+// PATTERN 7: Lazy Eager Loading (load after collection)
+$posts = Post::all();
+// ... some processing...
+if ($needsUsers) {
+    $posts->load('user');  // Load relationship on existing collection
+}
+
+// PATTERN 8: withExists — boolean check (memory efficient)
+$posts = Post::withExists('comments')->get();
+// $post->comments_exists = true/false (single JOIN, no subquery)
+
+// ANTI-PATTERN: Loop mein relationship access mat karo:
+foreach ($posts as $post) {
+    $post->user->name;      // N+1 if not eager loaded!
+    $post->comments->count(); // N+1! Use withCount() instead
+}</code></pre>
+        </div>
+
+        <!-- Tab 3: Composite Index Rules -->
+        <div id="tab-composite" class="tab-panel">
+            <h5>Composite Index — Leftmost Prefix Rule Practical Guide</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Index Definition</th>
+                        <th>Query WHERE Clause</th>
+                        <th>Index Used?</th>
+                        <th>Why?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="5"><code>(user_id, status, created_at)</code></td>
+                        <td><code>WHERE user_id = 1</code></td>
+                        <td>✅ Yes — partial</td>
+                        <td>Leftmost column present</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE user_id = 1 AND status = 'active'</code></td>
+                        <td>✅ Yes — partial</td>
+                        <td>First two columns present</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE user_id = 1 AND status = 'a' AND created_at > '...'</code></td>
+                        <td>✅ Yes — full</td>
+                        <td>All three columns present</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE status = 'active'</code></td>
+                        <td>❌ No</td>
+                        <td>Leftmost (user_id) missing</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE created_at > '2024-01-01'</code></td>
+                        <td>❌ No</td>
+                        <td>user_id AND status both missing</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <p style="color:var(--slate-700); font-size:0.9rem;">
+                <strong>Design tip:</strong> Composite index mein columns ko <em>selectivity (cardinality)</em> ke order mein rakho — jo column sabse zyada unique values rakhta ho wo pehle aana chahiye. Jaise <code>(user_id, status)</code> user_id high cardinality (unique per user) aur status low cardinality (few values), isliye user_id pehle theek hai.
+            </p>
+        </div>
+
+        <!-- Tab 4: Telescope Profiling -->
+        <div id="tab-telescope" class="tab-panel">
+            <h5>Laravel Telescope + Debugbar — N+1 Aur Slow Query Detection</h5>
+            <pre><code class="language-bash"># Install Telescope (local/staging only):
+composer require laravel/telescope --dev
+php artisan telescope:install
+php artisan migrate
+
+# Dashboard URL:
+# http://localhost:8000/telescope</code></pre>
+            <pre><code class="language-php">// config/telescope.php — Slow query threshold set karo:
+'slow_query_threshold' => 100, // 100ms se slow = flagged in dashboard
+
+// AppServiceProvider.php — Only local mein load karo:
+public function register(): void
+{
+    if ($this->app->environment('local', 'staging')) {
+        $this->app->register(TelescopeServiceProvider::class);
+    }
+}
+
+// Telescope Features For Laravel Devs:
+// Queries Tab:
+//   - Saari SQL queries with execution time
+//   - "Duplicate queries" warning = N+1 problem detected!
+//   - Slow queries highlighted in red
+// Requests Tab:
+//   - Total queries per request
+//   - Memory usage
+// Laravel Debugbar (browser toolbar alternative):
+// composer require barryvdh/laravel-debugbar --dev
+// Automatically show karega:
+// - Query count per page
+// - N+1 warning badge
+// - Individual query times
+// - Memory usage graph
+
+// Manual N+1 detection code:
+DB::enableQueryLog();
+// ... your code ...
+$queries = DB::getQueryLog();
+$duplicates = array_filter(array_count_values(
+    array_column($queries, 'query')
+), fn($count) => $count > 1);
+if (!empty($duplicates)) {
+    Log::warning('Possible N+1 detected!', $duplicates);
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="03_MySQL_Advanced_Queries_Joins_and_Window_Functions.html" class="nav-btn">&larr; Previous: Data Types & Schema</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="05_MySQL_Performance_Tuning_and_Server_Configuration.html" class="nav-btn">Next: Relationships & Joins &rarr;</a>
+    </div>
+
+    <!-- Hidden Raw Markdown Container -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 4: Indexing Deep Dive & N+1 Problem — Laravel App Ka Sabse Bada Performance Killer
+
+Ek 3-year Laravel developer ke liye do cheezein hain jo production app ko slow banati hain — **missing indexes** aur **N+1 queries**. Inhe samajhna aur fix karna aapko junior se mid-level developer banaata hai.
+
+Ek real example: Blog platform tha, 50 posts list ho rahe the with author name aur comments count. Page load time tha 8 seconds. EXPLAIN se pata chala — N+1 problem thi aur user_id column pe index nahi tha. Fix ke baad: **180 milliseconds**. That's 44x faster!
+
+---
+
+#### 1. Index Kya Hai — Simple Analogy Se Samjho
+
+Socho ek dictionary hai. 1 lakh words hain. Aapko "ubiquitous" dhundna hai.
+
+- **Without Index (Full Table Scan):** Page 1 se shuru karo, har word check karo — 1 lakh comparisons.
+- **With Index (B+Tree):** Dictionary ka alphabetical order use karo — seedha 'U' section pe jao — sirf ~20 comparisons!
+
+MySQL mein B+Tree index ek sorted data structure hai jisme:
+- **Leaf nodes** mein actual primary key (ya ROWID) stored hota hai
+- **Internal nodes** route karte hain correct leaf tak
+- **Range queries** (`WHERE price BETWEEN 100 AND 500`) bhi efficient hain kyunki sorted hai
+
+```sql
+-- Index ke bina query:
+-- EXPLAIN SELECT * FROM orders WHERE user_id = 42;
+-- type: ALL, rows: 1000000 (poori table scan!)
+
+-- Index ke sath (user_id pe index hai):
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+-- EXPLAIN SELECT * FROM orders WHERE user_id = 42;
+-- type: ref, rows: 12 (sirf 12 rows check!)
+```
+
+Laravel migration mein:
+```php
+// Single column index:
+$table->index('user_id');
+
+// Ya foreign key ke sath (automatically index banta hai):
+$table->foreignId('user_id')->constrained(); // FK + index ek sath!
+
+// Unique index:
+$table->unique('email');
+$table->unique('slug');
+
+// Composite index (multiple columns):
+$table->index(['user_id', 'status']);
+$table->index(['status', 'created_at', 'is_active']);
+```
+
+---
+
+#### 2. N+1 Problem — Laravel Ka Sabse Common Bug
+
+N+1 problem tab hoti hai jab aap loop mein relationships access karte ho bina eager loading ke.
+
+##### Problem Scenario:
+```php
+// Posts list page — 50 posts dikhane hain with author name:
+
+// WRONG (N+1 problem!):
+$posts = Post::all();           // Query 1: SELECT * FROM posts
+foreach ($posts as $post) {
+    echo $post->user->name;     // Query 2,3,4...51: SELECT * FROM users WHERE id = ?
+}
+// Total queries: 1 + 50 = 51 queries! 
+
+// 100 posts = 101 queries
+// 1000 posts = 1001 queries
+// Ye linear growth hai — app slow ho jaata hai!
+
+// CORRECT (Eager Loading with ->with()):
+$posts = Post::with('user')->get();
+// Query 1: SELECT * FROM posts
+// Query 2: SELECT * FROM users WHERE id IN (1, 2, 3, ..., 50)
+// Total: SIRF 2 queries, chahe 1000 posts kyun na ho!
+
+foreach ($posts as $post) {
+    echo $post->user->name;  // Memory se — no query!
+}
+```
+
+##### Nested N+1 — Aur Deeper Problem:
+```php
+// WRONG: Posts → User → Profile (N+1 x2)
+$posts = Post::all();
+foreach ($posts as $post) {
+    echo $post->user->profile->avatar;
+    // Post ke liye user query, user ke liye profile query!
+    // 50 posts = 1 + 50 + 50 = 101 queries!
+}
+
+// CORRECT: Nested eager loading
+$posts = Post::with('user.profile')->get();
+// 3 queries total, nested relationship ek sath load!
+
+// Multiple relationships:
+$posts = Post::with(['user', 'comments', 'tags', 'category'])->get();
+// 5 queries total regardless of how many posts!
+
+// With constraints on relationship:
+$posts = Post::with([
+    'comments' => function ($query) {
+        $query->where('is_approved', true)->latest()->limit(3);
+        // Sirf approved comments, latest 3
+    },
+    'user:id,name,avatar', // Sirf these columns (SELECT * avoid!)
+])->get();
+```
+
+##### `withCount`, `withSum`, `withAvg` — Aggregates Without N+1:
+```php
+// WRONG:
+$users = User::all();
+foreach ($users as $user) {
+    echo $user->orders->count();  // N+1! Orders load ho rahi hain sirf count ke liye
+    echo $user->orders->sum('amount'); // N+1!
+}
+
+// CORRECT — Single query mein aggregate:
+$users = User::withCount('orders')          // orders_count column
+             ->withSum('orders', 'amount')  // orders_sum_amount column
+             ->withAvg('orders', 'rating')  // orders_avg_rating column
+             ->get();
+
+foreach ($users as $user) {
+    echo $user->orders_count;      // No query!
+    echo $user->orders_sum_amount; // No query!
+}
+```
+
+---
+
+#### 3. EXPLAIN — Query Ka X-Ray
+
+`EXPLAIN` MySQL optimizer ka decision dikhata hai. Laravel developer ke liye yeh command bahut powerful tool hai.
+
+```php
+// Laravel Tinker mein:
+$explain = DB::select("EXPLAIN SELECT * FROM orders WHERE user_id = 42 AND status = 'pending'");
+print_r($explain);
+```
+
+##### EXPLAIN Output Ke Important Columns:
+
+| Column | Meaning | ✅ Good Values | ❌ Bad Values |
+|:---|:---|:---|:---|
+| **type** | How table is accessed | `const`, `eq_ref`, `ref` | `ALL` (full scan!) |
+| **key** | Index used (NULL = no index!) | Index name | NULL |
+| **rows** | Estimated rows checked | Small number | Millions |
+| **Extra** | Additional info | `Using index` | `Using filesort`, `Using temporary` |
+
+##### Type Values — Best Se Worst:
+```sql
+-- EXPLAIN type column values (best to worst):
+-- const     = Single row by PK/unique (SELECT WHERE id = 1) — PERFECT
+-- eq_ref    = One row from FK (JOIN on unique column) — EXCELLENT
+-- ref       = Multiple rows by non-unique index — GOOD
+-- range     = Index range scan (BETWEEN, >, <, IN) — OK
+-- index     = Full index scan (better than ALL but still slow) — MEDIOCRE
+-- ALL       = Full table scan (NO INDEX!) — DANGER!
+
+-- Example: Good EXPLAIN output:
+-- id | type  | key           | rows | Extra
+--  1 | ref   | idx_user_id   | 5    | Using where
+-- (reading 5 rows via index — fast!)
+
+-- Example: Bad EXPLAIN output:
+-- id | type | key  | rows    | Extra
+--  1 | ALL  | NULL | 1000000 | Using where
+-- (reading 1 million rows — very slow!)
+```
+
+---
+
+#### 4. Composite Index — The Leftmost Prefix Rule
+
+Composite index do ya zyada columns ka combined index hota hai. **Leftmost Prefix Rule:** Query mein leftmost column hona zaroori hai, tabhi index use hoga.
+
+```php
+// Migration:
+$table->index(['user_id', 'status', 'created_at']); // Composite index
+
+// YEH QUERIES index USE KARENGE:
+// WHERE user_id = 1                           -- user_id (leftmost) ✅
+// WHERE user_id = 1 AND status = 'pending'    -- user_id + status ✅
+// WHERE user_id = 1 AND status = 'p' AND created_at > '...' -- all 3 ✅
+
+// YEH QUERIES index USE NAHI KARENGE:
+// WHERE status = 'pending'                    -- user_id missing! ❌
+// WHERE created_at > '2024-01-01'             -- user_id missing! ❌
+// WHERE status = 'p' AND created_at > '...'  -- user_id missing! ❌
+```
+
+##### Real-World Composite Index Design for Laravel:
+```php
+// Scenario: Orders admin page
+// Common queries:
+// 1. All pending orders (status filter)
+// 2. User's orders sorted by date (user_id + created_at)
+// 3. Admin date range filter (created_at range)
+
+Schema::table('orders', function (Blueprint $table) {
+    // For: WHERE status = ? ORDER BY created_at DESC
+    $table->index(['status', 'created_at']);
+
+    // For: WHERE user_id = ? ORDER BY created_at DESC
+    $table->index(['user_id', 'created_at']);
+
+    // For: WHERE user_id = ? AND status = ?
+    $table->index(['user_id', 'status']);
+});
+
+// Laravel queries jo in indexes ka fayda uthaayenge:
+Order::where('status', 'pending')->latest()->paginate(20);
+// Uses: ['status', 'created_at'] index ✅
+
+Order::where('user_id', auth()->id())->latest()->get();
+// Uses: ['user_id', 'created_at'] index ✅
+
+Order::where('user_id', 1)->where('status', 'pending')->get();
+// Uses: ['user_id', 'status'] index ✅
+```
+
+---
+
+#### 5. Covering Index — The Fastest Possible Query
+
+Covering index tab hota hai jab query mein **sirf indexed columns** use ho. MySQL table tak jaata hi nahi — sirf index se answer deta hai.
+
+```php
+// Scenario: Posts list page sirf id, title, slug, created_at chahiye
+$posts = Post::select(['id', 'title', 'slug', 'created_at'])
+             ->where('status', 'published')
+             ->latest()
+             ->get();
+
+// Migration — covering index banao:
+$table->index(['status', 'created_at', 'id', 'title', 'slug']);
+// Ab MySQL sirf index se answer dega — table disk read nahi hogi!
+// EXPLAIN Extra column mein: "Using index" dikhega — PERFECT!
+```
+
+---
+
+#### 6. Kab Index Mat Banao
+
+Index sirf read ko fast karta hai — **write ko slow karta hai** (INSERT/UPDATE/DELETE ke sath index bhi update hota hai).
+
+```php
+// INDEX MAT BANAO AGAR:
+
+// 1. Column ki cardinality bahut kam hai (few unique values):
+$table->boolean('is_active');   // Sirf 2 values: true/false
+$table->index('is_active');     // USELESS! MySQL full scan prefer karega
+// Composite mein add karo instead:
+$table->index(['is_active', 'user_id']); // Ab useful hai
+
+// 2. Small tables (< 1000 rows):
+// MySQL index overhead > benefit hoga
+// Cache bhi poori table fit ho jaati hai
+
+// 3. Columns jo queries mein kabhi alone use nahi hote:
+// Agar 'country' column hamesha 'user_id' ke sath query hota hai
+// to sirf ['user_id', 'country'] composite index kaafi hai
+// Alag 'country' index waste hai
+
+// 4. Columns jahan writes bahut zyada hain:
+// Log tables, analytics events, audit trails
+// Indexes slow kar denge bulk inserts ko
+
+// RULE OF THUMB:
+// Read-heavy tables (products, users, posts): Index freely
+// Write-heavy tables (logs, events, sessions): Minimize indexes
+// OLAP reporting: Partial indexes ya separate read replica use karo
+```
+
+---
+
+#### 7. Laravel Telescope — N+1 aur Slow Queries Detect Karna
+
+```bash
+# Install Telescope (development only):
+composer require laravel/telescope --dev
+php artisan telescope:install
+php artisan migrate
+
+# .env mein:
+TELESCOPE_ENABLED=true
+```
+
+```php
+// AppServiceProvider mein Telescope configure karo:
+use Laravel\Telescope\Telescope;
+
+public function register(): void
+{
+    if ($this->app->environment('local', 'staging')) {
+        $this->app->register(TelescopeServiceProvider::class);
+    }
+}
+
+// config/telescope.php mein slow query threshold:
+'slow_query_threshold' => 100, // 100ms se slow queries flag hongi
+
+// Dashboard: http://your-app.test/telescope
+// Queries tab: Saari queries with time, N+1 warnings!
+// "Duplicate queries" warning = N+1 problem!
+```
+
+```php
+// Alternative: Laravel Debugbar (browser toolbar mein):
+// composer require barryvdh/laravel-debugbar --dev
+// Automatically show karega:
+// - Total queries run
+// - N+1 warnings
+// - Memory usage
+// - Response time
+```
+
+---
+
+#### Summary — Indexing & N+1 Master Checklist
+
+1. **Foreign key columns pe hamesha index hona chahiye** — `foreignId()` automatically karta hai, manual `unsignedBigInteger()` ke sath manually add karo.
+2. **`->with()` use karo loop se pehle** — Eloquent lazy loading default hai, eager loading opt-in — ise default habit banao.
+3. **`EXPLAIN` chalao slow queries par** — `type: ALL` dikhte hi index add karne ki zaroorat hai.
+4. **Leftmost prefix rule yaad rakho** — Composite index `(user_id, status)` hai to `WHERE status =` query index nahi use karegi.
+5. **`withCount()` / `withSum()` use karo** — Relationship mein loop ke andar `.count()` call karna N+1 hai.
+6. **Telescope ya Debugbar install karo local mein** — Ye tools N+1 aur slow queries automatically detect kar dete hain.
+
+</textarea>
+
+    <script>
+        // 1. Render Markdown Content
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 2. N+1 Detection Pipeline Stepper
+        const n1Steps = [
+            {
+                title: 'Step 1: Slow Page Notice Karo',
+                level: 'Symptom',
+                desc: 'Blog posts listing page 8 seconds le rahi hai. 50 posts hain. Local mein chal raha tha 0.5 seconds mein, lekin staging par slow ho gaya. Yeh pattern N+1 ka classic symptom hai — jitna zyada data, utna slow.',
+                code: '// Laravel Debugbar mein dikhta hai:\n// Queries: 51 | Time: 8234ms | Memory: 45MB\n// Yeh 51 queries for 50 posts is clearly N+1!\n// 1 (posts) + 50 (user per post) = 51'
+            },
+            {
+                title: 'Step 2: Query Log Enable Karo',
+                level: 'Debug Setup',
+                desc: 'DB::enableQueryLog() se saari queries capture karo. Is se pata chalega exactly kaunsi queries baar baar chal rahi hain aur kaunsa code unhe trigger kar raha hai.',
+                code: 'DB::enableQueryLog();\n\n$posts = Post::all();\nforeach ($posts as $post) {\n    echo $post->user->name;  // This causes N+1!\n}\n\n$log = DB::getQueryLog();\necho count($log) . " queries ran";\n// Output: 51 queries ran'
+            },
+            {
+                title: 'Step 3: N+1 Spot Karo',
+                level: 'Diagnosis',
+                desc: 'Query log mein dekho — same SQL structure baar baar chal rahi hai sirf WHERE id value alag hai. Yeh clearly N+1 hai. User ID 1, 2, 3... 50 ke liye alag-alag SELECT chal raha hai.',
+                code: '// Query log mein yeh pattern dikhega:\n// Query 1: SELECT * FROM posts\n// Query 2: SELECT * FROM users WHERE id = 1\n// Query 3: SELECT * FROM users WHERE id = 2\n// Query 4: SELECT * FROM users WHERE id = 3\n// ... (47 more similar queries!)'
+            },
+            {
+                title: 'Step 4: Eager Loading Se Fix Karo',
+                level: 'Fix',
+                desc: 'Post::all() ko Post::with("user") mein badlo. Yeh single IN() query se saare users ek sath fetch kar leta hai, phir PHP mein match karta hai — disk par sirf 2 trips, 50 nahi.',
+                code: '// BEFORE (N+1 — 51 queries):\n$posts = Post::all();\nforeach ($posts as $post) { echo $post->user->name; }\n\n// AFTER (Eager loading — 2 queries!):\n$posts = Post::with("user")->get();\nforeach ($posts as $post) { echo $post->user->name; }\n\n// SQL generated (2 total!):\n// SELECT * FROM posts\n// SELECT * FROM users WHERE id IN (1,2,3,...,50)'
+            },
+            {
+                title: 'Step 5: EXPLAIN Se Index Check Karo',
+                level: 'Query Analysis',
+                desc: 'Eager loading ne N+1 fix kiya, lekin ab doosri query bhi check karo: "SELECT * FROM users WHERE id IN (...)". EXPLAIN chalao — user_id column pe index hai? Normally PRIMARY KEY automatically indexed hota hai.',
+                code: '// Laravel Tinker mein EXPLAIN run karo:\n$explain = DB::select("EXPLAIN SELECT * FROM posts WHERE user_id IN (1,2,3,4,5)");\n\n// Good output hona chahiye:\n// type: range | key: PRIMARY | rows: 5\n// Agar type: ALL dikhaye to user_id pe index add karo!'
+            },
+            {
+                title: 'Step 6: Index Add Karo + Final Verify',
+                level: 'Optimization',
+                desc: 'Agar EXPLAIN mein type: ALL dikh raha hai ya extra columns par slow sorting hai, to composite index add karo. Migration create karo, run karo, phir phir EXPLAIN se verify karo ki index use ho raha hai.',
+                code: '// New migration create karo:\nphp artisan make:migration add_index_to_posts_table\n\n// Migration:\n$table->index(["status", "created_at"]); // List page ke liye\n$table->index(["user_id", "created_at"]); // User posts ke liye\n\n// After migration, verify:\n$explain = DB::select("EXPLAIN SELECT * FROM posts WHERE status = ? ORDER BY created_at DESC", ["published"]);\n// type: ref | key: idx_status_created | rows: 150\n// Result: 8 seconds -> 180ms (44x faster!)'
+            }
+        ];
+
+        function showN1Step(index) {
+            const chips = document.querySelectorAll('#n1Nav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+            const step = n1Steps[index];
+            const contentBox = document.getElementById('n1Content');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showN1Step(0);
+
+        function switchN1Tab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

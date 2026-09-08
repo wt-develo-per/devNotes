@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Masterclass — Eloquent ORM & Database Mastery</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="03_Laravel_Requests_Validation_and_Security.html" class="nav-btn">&larr; Previous: Requests & Security</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="05_Laravel_Authentication_Sanctum_and_Authorization.html" class="nav-btn">Next: Auth & Sanctum &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Interactive N+1 Query Optimizer Simulator -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive N+1 Query Fixer & Execution Benchmark</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            See the raw difference in database roundtrips, CPU execution time, and memory usage between Junior Lazy Loading vs Senior Eager Loading:
+        </p>
+
+        <div class="stepper-nav" id="nplusOneNav">
+            <button class="step-chip active" onclick="showNplusStep(0)">1. ❌ Junior Anti-Pattern (N+1 Nightmare)</button>
+            <button class="step-chip" onclick="showNplusStep(1)">2. ✅ Eager Loading (with)</button>
+            <button class="step-chip" onclick="showNplusStep(2)">3. ⚡ Constrained Eager Loading</button>
+            <button class="step-chip" onclick="showNplusStep(3)">4. 🚀 withCount & Subquery Aggregations</button>
+            <button class="step-chip" onclick="showNplusStep(4)">5. 🛡️ preventLazyLoading Enforcement</button>
+        </div>
+
+        <div class="step-content-box" id="nplusContent">
+            <!-- Dynamic Content Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Eloquent Relationship Matrix Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchRelTab(event, 'rel-belongs-to-many')">1. Many-to-Many + Custom Pivot</button>
+            <button class="tab-btn" onclick="switchRelTab(event, 'rel-has-many-through')">2. HasManyThrough (SaaS Hierarchy)</button>
+            <button class="tab-btn" onclick="switchRelTab(event, 'rel-polymorphic')">3. Polymorphic + EnforceMorphMap</button>
+        </div>
+
+        <div id="rel-belongs-to-many" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Many-to-Many: Custom Pivot Model with Extra Fields, Statuses, and Timestamps.</p>
+            <pre><code class="language-php">&lt;?php
+// In User Model:
+public function roles(): BelongsToMany {
+    return $this->belongsToMany(Role::class, 'user_role')
+        ->using(UserRole::class) // Custom Pivot class extends Illuminate\Database\Eloquent\Relations\Pivot
+        ->withPivot(['assigned_by', 'expires_at', 'status'])
+        ->withTimestamps();
+}
+
+// In custom Pivot model app/Models/UserRole.php:
+class UserRole extends Pivot {
+    protected $casts = [
+        'expires_at' => 'datetime',
+    ];
+
+    public function isExpired(): bool {
+        return $this->expires_at && $this->expires_at->isPast();
+    }
+}
+
+// Usage in business logic:
+$user->roles()->attach($roleId, [
+    'assigned_by' => auth()->id(),
+    'expires_at'  => now()->addMonths(6),
+    'status'      => 'active',
+]);
+?&gt;</code></pre>
+        </div>
+
+        <div id="rel-has-many-through" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">HasManyThrough: Access grand-children without looping intermediate models (Tenant -> Project -> Task).</p>
+            <pre><code class="language-php">&lt;?php
+// Architecture: Company -> hasMany -> Projects -> hasMany -> Tasks
+// Direct access to all tasks across all company projects!
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+
+class Company extends Model {
+    public function tasks(): HasManyThrough {
+        return $this->hasManyThrough(
+            Task::class,    // The final target model
+            Project::class, // The intermediate model
+            'company_id',   // Foreign key on projects table...
+            'project_id',   // Foreign key on tasks table...
+            'id',           // Local key on companies table...
+            'id'            // Local key on projects table...
+        );
+    }
+}
+
+// Single optimal SQL query:
+// SELECT tasks.*, projects.company_id FROM tasks
+// INNER JOIN projects ON projects.id = tasks.project_id
+// WHERE projects.company_id = ?;
+$urgentTasks = $company->tasks()->where('priority', 'critical')->get();
+?&gt;</code></pre>
+        </div>
+
+        <div id="rel-polymorphic" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Polymorphic Relations: Clean decoupling with <code>Relation::enforceMorphMap()</code>.</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ ANTI-PATTERN: Default me Laravel DB me full class name store karta hai:
+// commentable_type = 'App\Models\Post'
+// Agar kal ko namespace ya model rename hua, DB crash ho jayega!
+
+// ✅ SENIOR ARCHITECT: Enforce Morph Map in AppServiceProvider
+namespace App\Providers;
+
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider {
+    public function boot(): void {
+        Relation::enforceMorphMap([
+            'post'    => \App\Models\Post::class,
+            'video'   => \App\Models\Video::class,
+            'product' => \App\Models\Product::class,
+        ]);
+    }
+}
+
+// DB me clean string store hoti hai: commentable_type = 'post'
+// In Comment Model:
+public function commentable(): MorphTo {
+    return $this->morphTo();
+}
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="03_Laravel_Requests_Validation_and_Security.html" class="nav-btn">&larr; Previous: Requests & Security</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="05_Laravel_Authentication_Sanctum_and_Authorization.html" class="nav-btn">Next: Auth & Sanctum &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### Module 04: Eloquent ORM, Performance Tuning & Database Mastery
+
+Laravel ka **Eloquent ORM** Active Record pattern implement karta hai. Ye jitna intuitive aur expressive hai, utna hi dangerous ho sakta hai agar aapko ye na pata ho ki under-the-hood SQL engine kaise queries generate karta hai.
+
+90% production Laravel application slowdowns database queries ki wajah se hote hain — **N+1 queries**, missing indexes, missing eager constraints, aur unhandled deadlocks.
+
+Is module me hum **Laravel 10, 11, 12 aur 13** ke according Eloquent relationships, Subquery optimizations, Pessimistic locking aur Advanced Casting ko master karenge.
+
+---
+
+#### 1. Eloquent Architecture & Modern Model Casting
+
+##### 1.1 The Model Casting Paradigm Shift (L10 vs L11, L12 & L13)
+
+* **Laravel 10 Era:** Model casting static array property me define hoti thi: `protected $casts = [...]`. Isme dynamic parameters ya closure methods pass nahi ho sakte the.
+* **Laravel 11, 12 & 13 Era:** Model casting ek dynamic method ban chuki hai: `protected function casts(): array`.
+* **Laravel 13 & PHP 8.4 Era:** Native **Property Hooks** (`get`/`set`) aur **Asymmetric Visibility** (`public private(set)`) ka first-class support.
+
+```php
+namespace App\Models;
+
+use App\Enums\SubscriptionPlan;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\AsEncryptedArrayObject;
+use Illuminate\Database\Eloquent\Casts\AsEnumCollection;
+
+class Organization extends Model
+{
+    /**
+     * ✅ Modern Laravel 11/12/13 Casts Method:
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active'       => 'boolean',
+            'trial_ends_at'   => 'datetime',
+            'plan'            => SubscriptionPlan::class, // Backed Enum
+            'features'        => AsEnumCollection::of(FeatureFlag::class),
+            'api_credentials' => AsEncryptedArrayObject::class, // Auto-encrypted in DB with AES-256!
+        ];
+    }
+}
+```
+
+> **Hinglish Tip:** `AsEncryptedArrayObject` use karne se aapka sensitive JSON configuration DB me raw text store nahi hota. Laravel use transparently AES-256-CBC se encrypt karke save karta hai aur read karte waqt decrypt karta hai.
+
+---
+
+#### 2. The Complete Relationship Spectrum (All Core Types)
+
+Senior backend architecture me DB tables ko normalize rakha jata hai aur Eloquent ke clean methods se relate kiya jata hai:
+
+##### 2.1 One-to-Many with Default Fallback
+
+```php
+// In Post Model:
+public function author(): BelongsTo
+{
+    return $this->belongsTo(User::class, 'user_id')
+        ->withDefault([
+            'name'  => 'Ghost Author',
+            'email' => 'support@example.com',
+        ]); // Agar author delete ho chuka ho, toh null pointer exception nahi aayega!
+}
+```
+
+##### 2.2 Many-to-Many with Intermediate Pivot Models
+
+Jab 2 tables ke beech many-to-many relation ho (jaise `users` aur `roles`), toh standard pivot table me sirf `user_id` aur `role_id` hote hain. Lekin enterprise apps me pivot me extra data hota hai:
+
+```php
+// User model
+public function teams(): BelongsToMany
+{
+    return $this->belongsToMany(Team::class)
+        ->using(TeamMembership::class) // Custom Pivot Model
+        ->withPivot(['role', 'joined_at', 'invited_by'])
+        ->withTimestamps();
+}
+```
+
+##### 2.3 Has-Many-Through (Grand-Child Queries)
+
+Jab aapko intermediate table se hokar 3rd table ka data query karna ho:
+- `Country` -> hasMany -> `Users` -> hasMany -> `Posts`.
+- Ek single country ke saare posts fetch karne ke liye without intermediate loops:
+
+```php
+// In Country Model:
+public function posts(): HasManyThrough
+{
+    return $this->hasManyThrough(Post::class, User::class);
+}
+```
+
+##### 2.4 Polymorphic Relations & Morph Maps
+
+Polymorphic relations me ek single table (`comments`) multiple models (`posts`, `videos`, `podcasts`) ke sath attach ho sakti hai.
+
+> **CRITICAL ARCHITECT RULE (Enforce Morph Map):**
+> By default Laravel DB me `commentable_type` column me full PHP class name save karta hai (`App\Models\Post`).
+> Kal ko agar aapne model ka folder change kiya ya class rename ki, toh DB corrupt ho jayega!
+> Hamesha `AppServiceProvider` me `Relation::enforceMorphMap()` define karein:
+
+```php
+// app/Providers/AppServiceProvider.php
+use Illuminate\Database\Eloquent\Relations\Relation;
+
+public function boot(): void
+{
+    Relation::enforceMorphMap([
+        'post'    => \App\Models\Post::class,
+        'video'   => \App\Models\Video::class,
+        'article' => \App\Models\Article::class,
+    ]);
+}
+```
+
+---
+
+#### 3. Query Performance & The N+1 Problem (Deep Dive)
+
+N+1 problem tab occur hoti hai jab code 1 initial query run karta hai parent records ke liye, aur phir loop ke andar har record ke liye 1 extra child query run karta hai.
+
+##### 3.1 The Math of Disaster
+
+Agar aap 100 blog posts display kar rahe hain:
+- 1 Query: `SELECT * FROM posts LIMIT 100;`
+- 100 Queries inside loop: `SELECT * FROM users WHERE id = ?;` (100 times!)
+- **Total: 101 Database Queries! Response time: 850ms.**
+
+##### 3.2 The Eager Loading Solution
+
+```php
+// ✅ Eager Loading with with():
+$posts = Post::with(['author', 'tags'])->limit(100)->get();
+```
+
+SQL engine sirf 2 queries run karta hai:
+1. `SELECT * FROM posts LIMIT 100;`
+2. `SELECT * FROM users WHERE id IN (1, 2, 5, 8, ...);`
+- **Total: 2 Database Queries! Response time: 12ms (98% faster!).**
+
+##### 3.3 Constrained Eager Loading
+
+Agar aapko related child records me se sirf specific records chahiyein:
+
+```php
+$users = User::with([
+    'orders' => function ($query) {
+        $query->where('status', 'completed')
+              ->where('total', '>', 500)
+              ->latest()
+              ->limit(3);
+    },
+    'profile:id,user_id,avatar,city', // Only select required columns!
+])->get();
+```
+
+##### 3.4 Automated N+1 Detection in Development
+
+Kyun manually har controller me N+1 dhoondein? Laravel ko development me crash karne ke liye configure karein:
+
+```php
+// app/Providers/AppServiceProvider.php
+use Illuminate\Database\Eloquent\Model;
+
+public function boot(): void
+{
+    // Agar development me kahin bhi lazy loading hui, toh instant Exception throw karega!
+    Model::preventLazyLoading(! $this->app->isProduction());
+
+    // Strict mode: unfillable attributes + lazy loading + unretrieved attributes
+    Model::shouldBeStrict(! $this->app->isProduction());
+}
+```
+
+---
+
+#### 4. Subquery Aggregations (`withCount`, `withAvg`, `withSum`)
+
+Junior developers related count nikaalne ke liye child relation ko memory me load kar lete hain:
+
+```php
+// ❌ DISASTER: 5,000 comment objects ko memory me hydrate karta hai sirf count lene ke liye!
+foreach ($posts as $post) {
+    echo $post->comments->count(); // Memory explosion!
+}
+
+// ✅ SENIOR ARCHITECT: withCount() subquery
+$posts = Post::withCount([
+    'comments',
+    'comments as pending_comments_count' => function ($query) {
+        $query->where('status', 'pending');
+    },
+])->withAvg('ratings', 'score')->get();
+
+// SQL executed:
+// SELECT posts.*,
+//   (SELECT count(*) FROM comments WHERE comments.post_id = posts.id) as comments_count
+// FROM posts;
+```
+
+Ab aap direct `$post->comments_count` access kar sakte hain bina ek bhi comment object load kiye!
+
+---
+
+#### 5. Local & Global Query Scopes
+
+##### 5.1 Local Scopes (Reusable Query Chunks)
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+
+class Invoice extends Model
+{
+    // Scope define karne ke liye 'scope' prefix lagayein:
+    public function scopeOverdue(Builder $query): void
+    {
+        $query->where('status', 'unpaid')
+              ->where('due_date', '<', now());
+    }
+
+    public function scopeForCustomer(Builder $query, int $customerId): void
+    {
+        $query->where('customer_id', $customerId);
+    }
+}
+
+// Usage in controllers (Clean & expressive):
+$overdueInvoices = Invoice::overdue()->forCustomer($customerId)->get();
+```
+
+##### 5.2 Global Scopes (Multi-Tenant Isolation)
+
+Global scope har query par automatically apply ho jata hai, jisse multi-tenant SaaS apps me data leakage prevent hoti hai:
+
+```php
+namespace App\Models\Scopes;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
+
+class TenantScope implements Scope
+{
+    public function apply(Builder $builder, Model $model): void
+    {
+        if ($tenantId = session('current_tenant_id')) {
+            $builder->where('tenant_id', $tenantId);
+        }
+    }
+}
+
+// In Model:
+protected static function booted(): void
+{
+    static::addGlobalScope(new TenantScope());
+}
+
+// Bypassing scope (SuperAdmin dashboard ke liye):
+$allTenantsData = Order::withoutGlobalScope(TenantScope::class)->get();
+```
+
+---
+
+#### 6. Database Transactions & Concurrency Control (Race Conditions)
+
+High concurrency systems me jab 2 users simultaneous checkout karte hain aur inventory me sirf 1 item bacha ho:
+
+##### 6.1 Automatic Retries with Deadlock Handling
+
+```php
+use Illuminate\Support\Facades\DB;
+
+// Transaction blocks: 5 attempts agar deadlock detect ho
+$order = DB::transaction(function () use ($userId, $items) {
+    // 1. Create order record
+    $order = Order::create(['user_id' => $userId, 'status' => 'pending']);
+
+    // 2. Attach items
+    foreach ($items as $item) {
+        $order->items()->create($item);
+    }
+
+    return $order;
+}, attempts: 5);
+```
+
+##### 6.2 Pessimistic Locking (`lockForUpdate`)
+
+`lockForUpdate()` row-level database lock acquire karta hai. Jab tak transaction commit ya rollback nahi hoti, tab tak koi dusra request us row ko read/modify nahi kar sakta:
+
+```php
+DB::transaction(function () use ($productId, $quantity) {
+    // Row-level exclusive lock (FOR UPDATE in MySQL)
+    $product = Product::where('id', $productId)
+        ->lockForUpdate()
+        ->firstOrFail();
+
+    if ($product->stock < $quantity) {
+        throw new \DomainException("Out of stock!");
+    }
+
+    // Deduct stock safely
+    $product->decrement('stock', $quantity);
+});
+```
+
+---
+
+#### 7. Zero-Downtime Migration Best Practices
+
+Senior software teams production me zero-downtime deployments karte hain. Migrations me ye 3 rules hamesha follow karein:
+
+1. **Foreign Key Definition (Modern Standard):**
+   ```php
+   // Modern concise foreign key:
+   $table->foreignIdFor(\App\Models\User::class)
+         ->constrained()
+         ->cascadeOnDelete();
+   ```
+2. **Never Drop or Rename Columns in a Single Step:**
+   * *Step 1:* New column add karein (`new_email`).
+   * *Step 2:* Code deploy karein jo dono columns me write kare aur new se read kare.
+   * *Step 3:* Background command se old data backfill karein.
+   * *Step 4:* Next migration me old column drop karein.
+3. **Compound Indexes for Query Performance:**
+   ```php
+   // Agar query me where('tenant_id', $t)->where('status', $s)->orderBy('created_at') ho:
+   $table->index(['tenant_id', 'status', 'created_at'], 'idx_tenant_status_created');
+   ```
+
+---
+
+#### 8. Senior Checklist — Eloquent ORM & Database
+
+1. [x] **Always enable `Model::preventLazyLoading()`** in local/staging environments to eliminate N+1 bugs before deployment.
+2. [x] **Enforce Morph Maps** with `Relation::enforceMorphMap()` to decouple database records from PHP class namespaces.
+3. [x] **Use `withCount()`, `withAvg()`, and `withSum()`** to calculate metrics directly in SQL instead of loading huge collections into PHP memory.
+4. [x] **Protect financial & inventory transactions with `lockForUpdate()`** to completely eliminate race conditions and double-spending.
+5. [x] **Use the modern `casts(): array` method** (Laravel 11+) to leverage Backed Enums and dynamic casting arguments.
+6. [x] **Always pair `DB::transaction()` with `attempts: 5`** to handle transient MySQL/PostgreSQL deadlocks gracefully.
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize N+1 Step 0
+            showNplusStep(0);
+        });
+
+        // 2. Interactive N+1 Data
+        const nplusSteps = [
+            {
+                title: "1. The Junior N+1 Trap",
+                metric: "101 Queries | 850ms | 34MB RAM",
+                desc: "Looping through 100 posts and calling $post->author->name causes 100 individual database queries! The database is bombarded with roundtrips.",
+                code: "// In Controller:\n$posts = Post::limit(100)->get(); // 1 query\n\n// In Blade View:\n@foreach($posts as $post)\n    <p>{{ $post->author->name }}</p> {{-- 100 individual queries executed! --}}\n@endforeach"
+            },
+            {
+                title: "2. The Standard Eager Loading Solution",
+                metric: "2 Queries | 14ms | 6MB RAM",
+                desc: "with('author') tells Eloquent to collect all unique author_ids and run a single 'WHERE id IN (...)' query. Performance improves by 98%!",
+                code: "// In Controller:\n$posts = Post::with('author')->limit(100)->get();\n\n// SQL Executed:\n// 1. SELECT * FROM posts LIMIT 100;\n// 2. SELECT * FROM users WHERE id IN (1, 4, 9, 12, 18, ...);"
+            },
+            {
+                title: "3. Constrained Eager Loading (Select Only Needed Columns)",
+                metric: "2 Queries | 9ms | 4MB RAM",
+                desc: "Don't select all columns (*)! Only request the primary key, foreign key, and required display fields to save bandwidth and memory.",
+                code: "$posts = Post::with([\n    'author:id,name,avatar', // id & foreign key MUST be included!\n    'comments' => fn($q) => $q->approved()->latest()->limit(5)\n])->limit(50)->get();"
+            },
+            {
+                title: "4. withCount & Subquery Aggregations (Zero Model Loading)",
+                metric: "1 Query | 6ms | 3MB RAM",
+                desc: "Never load 10,000 comments into memory just to count them! withCount executes an optimized SQL subquery and attaches 'comments_count' directly.",
+                code: "$posts = Post::withCount('comments')\n    ->withAvg('ratings', 'score')\n    ->having('comments_count', '>', 10)\n    ->get();\n\n// Access directly: $post->comments_count, $post->ratings_avg_score"
+            },
+            {
+                title: "5. Automated Production Guardrails (preventLazyLoading)",
+                metric: "Zero N+1 Leaks in Production",
+                desc: "Enabling preventLazyLoading causes Laravel to throw a LazyLoadingViolationException immediately in development whenever a query is lazy-loaded.",
+                code: "// app/Providers/AppServiceProvider.php\npublic function boot(): void {\n    Model::preventLazyLoading(! $this->app->isProduction());\n    Model::shouldBeStrict(! $this->app->isProduction());\n}"
+            }
+        ];
+
+        function showNplusStep(index) {
+            const chips = document.querySelectorAll('#nplusOneNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = nplusSteps[index];
+            const contentBox = document.getElementById('nplusContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${step.title}</h5>
+                    <span class="badge badge-pro">${step.metric}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${step.desc}</p>
+                <pre style="margin:0;"><code class="language-php">${step.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchRelTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

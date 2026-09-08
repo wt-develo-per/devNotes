@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Architecture & Data Types for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Start of Course</span>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="02_MySQL_Indexing_BTrees_and_Query_Optimization.html" class="nav-btn">Next: Indexing & Query Optimization &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Eloquent Query Lifecycle Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: User::find(1) Se MySQL Disk Tak Ka Safar</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Jab aap Laravel mein ek simple Eloquent call karte hain, to MySQL ke andar kya-kya hota hai step by step dekhein:
+        </p>
+
+        <div class="stepper-nav" id="eqNav">
+            <button class="step-chip active" onclick="showEqStep(0)">
+                <span class="step-num">01</span>
+                <span>Eloquent Call</span>
+            </button>
+            <button class="step-chip" onclick="showEqStep(1)">
+                <span class="step-num">02</span>
+                <span>PDO Connection</span>
+            </button>
+            <button class="step-chip" onclick="showEqStep(2)">
+                <span class="step-num">03</span>
+                <span>SQL Parsing</span>
+            </button>
+            <button class="step-chip" onclick="showEqStep(3)">
+                <span class="step-num">04</span>
+                <span>Query Optimizer</span>
+            </button>
+            <button class="step-chip" onclick="showEqStep(4)">
+                <span class="step-num">05</span>
+                <span>InnoDB Read</span>
+            </button>
+            <button class="step-chip" onclick="showEqStep(5)">
+                <span class="step-num">06</span>
+                <span>PHP Model Return</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="eqContent">
+            <!-- Dynamic Content populated by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Laravel Migration Data Types Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchEqTab(event, 'tab-columns')">📋 Migration Column Types</button>
+            <button class="tab-btn" onclick="switchEqTab(event, 'tab-utf8mb4')">🌏 utf8mb4 Fix Guide</button>
+            <button class="tab-btn" onclick="switchEqTab(event, 'tab-money')">💰 Money & Decimal Trap</button>
+            <button class="tab-btn" onclick="switchEqTab(event, 'tab-tinker')">🔍 Tinker Diagnostics</button>
+        </div>
+
+        <!-- Tab 1: Migration Column Types Reference -->
+        <div id="tab-columns" class="tab-panel active">
+            <h5>3-Year Dev Ka Column Type Quick Reference (Laravel Migrations)</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Laravel Migration Method</th>
+                        <th>MySQL Column Type</th>
+                        <th>Use Case</th>
+                        <th>Common Mistake</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>$table->id()</code></td>
+                        <td>BIGINT UNSIGNED AUTO_INCREMENT</td>
+                        <td>Primary Key (default)</td>
+                        <td>Foreign key ke liye <code>integer()</code> use karna — type mismatch error!</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->unsignedBigInteger('user_id')</code></td>
+                        <td>BIGINT UNSIGNED</td>
+                        <td>Foreign Key column</td>
+                        <td>Signed <code>integer()</code> FK banaana — FK constraint fail karta hai</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->string('email', 150)</code></td>
+                        <td>VARCHAR(150)</td>
+                        <td>Emails, names, short text</td>
+                        <td>VARCHAR(255) pe index = slow — VARCHAR(191) use karo utf8mb4 me</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->text('bio')</code></td>
+                        <td>TEXT (65KB)</td>
+                        <td>Long descriptions, bios</td>
+                        <td>TEXT column pe index nahi banta without prefix length</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->decimal('price', 10, 2)</code></td>
+                        <td>DECIMAL(10,2)</td>
+                        <td>Money, prices, amounts</td>
+                        <td><code>float()</code> use karna — rounding errors in billing!</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->boolean('is_active')</code></td>
+                        <td>TINYINT(1)</td>
+                        <td>True/False flags</td>
+                        <td>MySQL mein true boolean nahi hai — sirf 0/1 stored hota hai</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->timestamps()</code></td>
+                        <td>TIMESTAMP NULL (×2)</td>
+                        <td>created_at, updated_at</td>
+                        <td>TIMESTAMP range sirf 1970-2038 — future dates ke liye <code>dateTime()</code> use karo</td>
+                    </tr>
+                    <tr>
+                        <td><code>$table->json('settings')</code></td>
+                        <td>JSON</td>
+                        <td>Dynamic key-value config</td>
+                        <td>JSON column pe index nahi banta bina Generated Column ke</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: utf8mb4 Fix -->
+        <div id="tab-utf8mb4" class="tab-panel">
+            <h5>Emoji Bug Fix: utf8 se utf8mb4 Migration Guide</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                Production par "Incorrect string value" error aa raha hai jab user 😊 type karta hai? Ye step-by-step fix karo:
+            </p>
+            <pre><code class="language-php">// Step 1: .env file update karo
+DB_CHARSET=utf8mb4
+DB_COLLATION=utf8mb4_unicode_ci
+
+// Step 2: config/database.php mein verify karo
+'charset'   => 'utf8mb4',
+'collation' => 'utf8mb4_unicode_ci',
+
+// Step 3: MySQL server variables check karo (Tinker mein)
+DB::select("SHOW VARIABLES LIKE 'character_set%'");
+DB::select("SHOW VARIABLES LIKE 'collation%'");
+// character_set_connection hona chahiye: utf8mb4
+
+// Step 4: Existing tables convert karo
+// (Naya migration create karo: php artisan make:migration convert_charset)
+DB::statement("ALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+DB::statement("ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+DB::statement("ALTER TABLE comments CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+// Step 5: my.cnf (production server) mein add karo:
+// [mysqld]
+// character-set-server = utf8mb4
+// collation-server = utf8mb4_unicode_ci</code></pre>
+        </div>
+
+        <!-- Tab 3: Money Decimal Trap -->
+        <div id="tab-money" class="tab-panel">
+            <h5>Float vs Decimal — Billing Bug Ka Sabse Bada Source!</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                Float mein paise store karna ek silent, dangerous bug hai jo months baad catch hota hai:
+            </p>
+            <pre><code class="language-php">// WRONG APPROACH - Float ka Floating Point Error:
+// Migration: $table->float('price');
+// Stored: 10.50 + 10.20 = ?
+
+$a = 10.50;
+$b = 10.20;
+var_dump($a + $b); // float(20.699999999999999) - NOT 20.70!
+
+// Database mein bhi same problem:
+// SELECT 10.50 + 10.20 = 20.699999999999999
+
+// CORRECT APPROACH - DECIMAL:
+// Migration: $table->decimal('price', 10, 2);
+// Stored: 10.50 + 10.20 = 20.70 (EXACT!)
+
+// Laravel Model Casting - automatic hai:
+protected $casts = [
+    'price' => 'decimal:2',       // Float nahi, string ke roop mein return hoga
+    'tax_amount' => 'decimal:2',
+    'wallet_balance' => 'decimal:2',
+];
+
+// Usage mein sahi tarika:
+$total = bcadd($order->subtotal, $order->tax, 2);  // PHP bcmath functions use karo
+$total = number_format($order->total, 2);            // Display ke liye</code></pre>
+        </div>
+
+        <!-- Tab 4: Tinker Diagnostics -->
+        <div id="tab-tinker" class="tab-panel">
+            <h5>Laravel Tinker Se MySQL Architecture Diagnose Karo</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                <code>php artisan tinker</code> se in commands se apne database ki health instantly check karo:
+            </p>
+            <pre><code class="language-php">// 1. MySQL version aur settings check karo:
+DB::select('SELECT VERSION() as version');
+// => [{"version":"8.0.32"}]
+
+// 2. Database character set verify karo:
+DB::select("SHOW VARIABLES LIKE 'character_set_database'");
+// character_set_database = utf8mb4 hona chahiye!
+
+// 3. Table ka engine aur charset check karo:
+DB::select("SHOW TABLE STATUS LIKE 'users'");
+// Engine: InnoDB | Collation: utf8mb4_unicode_ci
+
+// 4. Query log enable karke N+1 detect karo:
+DB::enableQueryLog();
+$users = User::with('orders')->get();
+$log = DB::getQueryLog();
+echo count($log) . ' queries ran';
+// Agar count > 2, to N+1 problem hai!
+foreach ($log as $query) {
+    echo $query['query'] . ' [' . round($query['time'], 2) . 'ms]' . PHP_EOL;
+}
+
+// 5. Apna connection stats dekhna:
+DB::select("SHOW STATUS LIKE 'Connections'");
+DB::select("SHOW STATUS LIKE 'Threads_connected'");</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Start of Course</span>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="02_MySQL_Indexing_BTrees_and_Query_Optimization.html" class="nav-btn">Next: Indexing & Query Optimization &rarr;</a>
+    </div>
+
+    <!-- Hidden Raw Markdown Container -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 1: Architecture & Data Types — PHP Laravel Developer Ke Liye
+
+Jab aap `User::find(1)` likhte hain Laravel mein, to kya hota hai actually? Yeh ek simple PHP line hai, lekin iske peeche MySQL ka pura engine ghoomta hai. 3 saal ke Laravel developer ke liye sabse zaroori hai ki woh samjhe ki:
+
+1. **Kyun meri Eloquent query slow hai** jab table badi ho jaati hai?
+2. **Kyun Laravel migrations mein `unsigned()`, `nullable()`, `after()` use karte hain?**
+3. **Kyun `utf8` se `utf8mb4` mein migrate karna padta hai** jab users emojis save karne lagte hain?
+
+In sab ke answers MySQL ka internal architecture samajhne se milte hain. Is module mein hum MySQL ko **Laravel developer ki aankhon se** dekhenge.
+
+---
+
+#### 1. MySQL Architecture — Laravel App Ki Nazar Se
+
+Jab aapka Laravel app MySQL se baat karta hai, to network ke paar yeh hota hai:
+
+```
+[ Laravel Application (PHP) ]
+           |
+           | TCP Connection (Port 3306)
+           v
+[ MySQL Server — Connection Layer ]
+    - Client Connection Thread spawn hoti hai
+    - Authentication & Authorization check
+    - Connection Pool (Laravel DB config mein persistent: true)
+           |
+           v
+[ SQL Layer — Query Parsing & Optimization ]
+    - SQL parse hoker Abstract Syntax Tree (AST) banta hai
+    - Optimizer decide karta hai: index use karna hai ya full scan?
+    - Execution Plan banta hai
+           |
+           v
+[ Storage Engine Layer — InnoDB ]
+    - Actual disk se data read/write
+    - Transaction management (BEGIN / COMMIT / ROLLBACK)
+    - Row-level locking
+           |
+           v
+[ Physical Disk (Data Files: .ibd, Redo Logs, Binlog) ]
+```
+
+##### Laravel Connection Ki Baat:
+
+`config/database.php` mein jo aap define karte hain:
+```php
+'mysql' => [
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '3306'),
+    'database' => env('DB_DATABASE', 'forge'),
+    'username' => env('DB_USERNAME', 'forge'),
+    'password' => env('DB_PASSWORD', ''),
+    'charset' => 'utf8mb4',          // IMPORTANT: emoji support ke liye
+    'collation' => 'utf8mb4_unicode_ci',
+    'strict' => true,                // Production mein hamesha true!
+    'options' => extension_loaded('pdo_mysql') ? array_filter([
+        PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+    ]) : [],
+],
+```
+> Ye sabhi options MySQL Connection Layer tak pahunchte hain before any query executes.
+
+---
+
+#### 2. InnoDB vs MyISAM — Laravel Ke Liye Kyun InnoDB Hi Sahi Hai
+
+Jab aap `php artisan make:migration create_orders_table` chalate hain, to Laravel automatically **InnoDB** use karta hai. Kyun? Kyunki MyISAM mein yeh teen cheezein nahi hain jo har Laravel project ko chahiye:
+
+| Feature | InnoDB | MyISAM | Laravel Impact |
+| :--- | :---: | :---: | :--- |
+| **Foreign Keys** | ✅ Yes | ❌ No | `$table->foreign('user_id')->references('id')->on('users')` kaam nahi karta MyISAM mein |
+| **Transactions** | ✅ Yes | ❌ No | `DB::transaction()` aur `DB::beginTransaction()` require InnoDB |
+| **Row-Level Locking** | ✅ Yes | ❌ (Table Lock) | High traffic mein ek slow write poori table lock kar deta hai MyISAM mein |
+| **Crash Recovery** | ✅ Automatic | ❌ Manual `REPAIR` | Production server restart par data consistent rehta hai |
+| **ACID Compliance** | ✅ Full | ❌ No | Bank transfers, order placements require ACID |
+
+##### Practical Laravel Example:
+```php
+// Ye sirf InnoDB mein kaam karta hai:
+Schema::table('orders', function (Blueprint $table) {
+    $table->unsignedBigInteger('user_id');
+    $table->foreign('user_id')
+          ->references('id')
+          ->on('users')
+          ->onDelete('cascade');  // User delete hone par orders bhi delete honge
+});
+```
+
+---
+
+#### 3. Data Types — Laravel Migration Mein Kaunsa Column Type Chuno?
+
+Yeh 3-year developer ki sabse common galti hoti hai — galat column type choose karna. Iska directly asar performance par padta hai.
+
+##### Integer Types — `id()` vs `bigIncrements()` vs `integer()`:
+
+```php
+// CASE 1: Primary Key (Auto Increment)
+$table->id();                    // = unsignedBigInteger AUTO_INCREMENT (Range: 0 to 18 Quintillion)
+$table->bigIncrements('id');     // Same as above
+
+// CASE 2: Foreign Key — hamesha unsigned BigInteger use karo!
+$table->unsignedBigInteger('user_id');   // Correct — matches primary key type
+$table->integer('user_id');              // WRONG! Signed range different hai, FK fail ho sakta hai
+
+// CASE 3: Small counters (rating 1-5, status flags)
+$table->tinyInteger('rating');           // Range: -128 to 127
+$table->unsignedTinyInteger('status');   // Range: 0 to 255
+```
+
+##### String & Text Types — Confusion Clear Karo:
+
+```php
+// VARCHAR: Fixed max length, stores only used space
+$table->string('name', 255);     // Up to 255 characters — names, titles ke liye
+$table->string('email', 150);    // Email ke liye 150 enough hai
+
+// TEXT: Large text — no need to specify max length
+$table->text('description');         // Up to 65,535 bytes (~65KB) — blog excerpts, short content
+$table->mediumText('body');          // Up to 16MB — full blog posts, articles
+$table->longText('raw_html');        // Up to 4GB — avoid karo jab tak zaroorat na ho
+
+// CHAR: Fixed-length (wastes space if shorter)
+$table->char('country_code', 2);     // 'IN', 'US' — hamesha 2 chars, CHAR perfect hai
+$table->char('status', 10);          // 'active', 'pending' — length consistent ho to CHAR
+```
+
+##### Date & Time Types:
+
+```php
+// TIMESTAMP: Timezone-aware, 1970-2038 range
+$table->timestamps();             // created_at + updated_at (Laravel convention)
+$table->softDeletes();            // deleted_at for soft delete
+
+// DATETIME: Timezone-naive, 1000-9999 range — future dates ke liye
+$table->dateTime('scheduled_at'); // Appointments, scheduled jobs
+
+// DATE only (no time): birthdays, expiry dates
+$table->date('birth_date');
+
+// TIME only: opening hours, shift timings
+$table->time('opens_at');
+
+// IMPORTANT: timestamps() vs dateTime() choice:
+// timestamps() = TIMESTAMP type = UTC mein store, auto-converts to server timezone
+// dateTime() = DATETIME type = exactly as stored, no conversion
+```
+
+##### Decimal vs Float — Money Math Ki Galti Mat Karna:
+
+```php
+// FLOAT/DOUBLE — Floating point (INACCURATE for money!)
+$table->float('price');       // 10.50 internally might be 10.49999999...
+
+// DECIMAL — Exact decimal storage (ALWAYS use for money!)
+$table->decimal('price', 10, 2);  // Total 10 digits, 2 after decimal point
+// e.g. 99999999.99 max — Rs 9.99 Crore
+
+// Laravel ke newer versions mein:
+$table->money('price');       // = decimal(19, 4) — future-proof money column
+```
+
+##### JSON Type — Laravel Mein Casting Ke Sath:
+
+```php
+// Migration mein:
+$table->json('metadata');
+$table->json('settings')->nullable();
+
+// Model mein casts use karo:
+protected $casts = [
+    'metadata' => 'array',
+    'settings' => 'collection',  // Laravel Collection as cast
+];
+
+// Usage:
+$user->settings = ['theme' => 'dark', 'lang' => 'hi'];
+$user->save(); // Automatically JSON encode karke store hoga
+echo $user->settings['theme']; // 'dark' — automatically decoded!
+```
+
+---
+
+#### 4. Character Set: `utf8` vs `utf8mb4` — Emoji Bug Ka Samna
+
+Yeh ek bahut common production bug hai jo 3-year developers face karte hain:
+
+**The Problem:** User ne 😊 emoji comment mein daala, aur Laravel error diya:
+```
+SQLSTATE[HY000]: General error: 1366 Incorrect string value: '\xF0\x9F\x98\x8A'
+```
+
+**Root Cause:** MySQL ka `utf8` charset fake hai — sirf 3 bytes per character support karta hai! Emojis aur kai special characters ko 4 bytes chahiye.
+
+`utf8mb4` = **True UTF-8** = 4 bytes per character = All emojis + All Unicode characters.
+
+##### Fix In `.env` aur Config:
+```bash
+# .env
+DB_CHARSET=utf8mb4
+DB_COLLATION=utf8mb4_unicode_ci
+```
+
+```php
+// config/database.php:
+'charset' => 'utf8mb4',
+'collation' => 'utf8mb4_unicode_ci',
+```
+
+##### Migration Mein Existing Tables Fix Karna:
+```sql
+-- Existing table ka charset convert karo:
+ALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Ya poori database ek sath:
+ALTER DATABASE your_database_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+##### `utf8mb4_unicode_ci` vs `utf8mb4_general_ci` vs `utf8mb4_0900_ai_ci`:
+- `utf8mb4_general_ci` — Purana, fast but imprecise sorting (Hindi characters galat sort ho sakte hain)
+- `utf8mb4_unicode_ci` — Unicode standard sorting, recommended for multilingual apps
+- `utf8mb4_0900_ai_ci` — MySQL 8.0+ default, fastest, most accurate. Naye projects ke liye best!
+
+---
+
+#### 5. Laravel Schema Best Practices — Production-Ready Migrations
+
+##### Rule 1: Hamesha `unsigned()` use karo IDs ke liye
+```php
+// WRONG:
+$table->integer('user_id');       // -2B to +2B range — negative IDs meaningless!
+
+// CORRECT:
+$table->unsignedBigInteger('user_id');  // 0 to 18 Quintillion — matches parent PK
+```
+
+##### Rule 2: `nullable()` sochkar lagao
+```php
+// Agar column har row mein hona hi chahiye — NOT NULL:
+$table->string('email');          // Required, no nullable
+
+// Agar optional information:
+$table->string('phone')->nullable();       // Optional
+$table->text('bio')->nullable();           // Profile bio — not everyone fills it
+$table->timestamp('email_verified_at')->nullable();  // Laravel default
+```
+
+##### Rule 3: `default()` values carefully set karo
+```php
+$table->boolean('is_active')->default(true);
+$table->string('status')->default('pending');
+$table->integer('login_count')->default(0);
+$table->decimal('wallet_balance', 10, 2)->default(0.00);
+```
+
+##### Rule 4: Indexes — foreign keys par hamesha index chahiye
+```php
+// Laravel automatically index banata hai jab aap foreign() call karte ho
+$table->foreign('user_id')->references('id')->on('users');
+// Lekin agar foreign constraint nahi hai to manually add karo:
+$table->index('user_id');         // Single column index
+$table->index(['user_id', 'status']);  // Composite index
+```
+
+---
+
+#### 6. Laravel Tinker Se MySQL Architecture Verify Karo
+
+Yeh queries Tinker ya phpMyAdmin mein chalao to samajhna easy ho jata hai:
+
+```php
+// Laravel Tinker mein:
+
+// 1. Active database connection details dekho:
+DB::select('SELECT version()');
+DB::select('SHOW VARIABLES LIKE "character_set_database"');
+DB::select('SHOW VARIABLES LIKE "collation_database"');
+
+// 2. Table ka storage engine check karo:
+DB::select('SHOW TABLE STATUS LIKE "users"');
+// Engine: InnoDB, Collation: utf8mb4_unicode_ci — confirm karo
+
+// 3. Query execution time measure karo:
+DB::enableQueryLog();
+User::with('orders')->take(10)->get();
+$queries = DB::getQueryLog();
+// Dekho kitni queries chali aur kitna time laga!
+
+// 4. Raw SQL run karo:
+DB::statement('ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4');
+```
+
+---
+
+#### Summary — File 01 Key Takeaways For 3-Year Laravel Dev
+
+1. **InnoDB choose karo:** Laravel migrations automatically InnoDB use karte hain — foreign keys, transactions, aur crash recovery ke liye essential hai.
+2. **`unsignedBigInteger` for FKs:** `id()` ka default type `unsignedBigInteger` hai — foreign keys bhi same type ke hone chahiye warna MySQL error dega.
+3. **Money ke liye `decimal(10,2)`:** Float/Double kabhi mat use karo financial calculations ke liye — rounding errors aate hain.
+4. **utf8mb4 mandatory hai:** `utf8` se `utf8mb4` mein migrate karo warna emoji aur special characters store nahi honge.
+5. **`timestamps()` = TIMESTAMP type:** Auto-manage created_at/updated_at ke liye Laravel ka convention follow karo.
+
+</textarea>
+
+    <script>
+        // 1. Render Markdown Content
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 2. Interactive Eloquent Lifecycle Stepper Logic
+        const eqSteps = [
+            {
+                title: 'Step 1: Laravel Eloquent Call',
+                level: 'PHP Application',
+                desc: 'Aap apne Controller ya Service mein likhte hain: User::find(1). Eloquent internally is ko SQL mein compile karta hai: SELECT * FROM users WHERE id = 1 LIMIT 1. Yeh MySQL ko send hone ke liye ready hoti hai.',
+                code: '// Aapka PHP Code:\n$user = User::find(1);\n// Eloquent is ko SQL mein convert karta hai:\n// SELECT * FROM users WHERE users.id = 1 LIMIT 1'
+            },
+            {
+                title: 'Step 2: PDO Connection Establish',
+                level: 'PHP PDO Layer',
+                desc: 'Laravel PHP PDO (PHP Data Objects) extension use karke MySQL server se TCP connection banata hai (port 3306). config/database.php ki settings (host, username, password, charset) yahan use hoti hain. Agar persistent connections enabled hain, to connection reuse hota hai.',
+                code: '// config/database.php se connection settings:\n// host: DB_HOST (127.0.0.1 ya AWS RDS endpoint)\n// charset: utf8mb4\n// Laravel internally PDO connection pool maintain karta hai'
+            },
+            {
+                title: 'Step 3: SQL Parsing & AST',
+                level: 'MySQL Query Parser',
+                desc: 'MySQL server ko SQL text milta hai. Parser ishe check karta hai ki syntax sahi hai ya nahi. Agar theek hai to Abstract Syntax Tree (AST) banta hai — yeh ek internal representation hai query ki jo optimizer samajh sake.',
+                code: '-- MySQL ko yeh SQL string milti hai:\nSELECT * FROM users WHERE users.id = 1 LIMIT 1\n-- Parser verify karta hai: valid SQL? Table exist karte hain? Columns valid hain?'
+            },
+            {
+                title: 'Step 4: Query Optimizer — Index Ya Full Scan?',
+                level: 'MySQL Optimizer',
+                desc: 'Yeh sabse important step hai! Optimizer decide karta hai ki kaise data fetch karna sabse fast rahega. id column par PRIMARY KEY index hota hai, to optimizer usse use karta hai — poori table scan nahi karta. Isi liye indexes important hain.',
+                code: '-- Optimizer ka decision check karo (Tinker mein chalao):\nDB::select("EXPLAIN SELECT * FROM users WHERE id = 1");\n-- Result: type = const, key = PRIMARY, rows = 1\n-- type = "const" = single row lookup via PK = FASTEST possible!'
+            },
+            {
+                title: 'Step 5: InnoDB Buffer Pool Read',
+                level: 'Storage Engine',
+                desc: 'InnoDB storage engine actual data fetch karta hai. Pehle Buffer Pool (RAM cache) mein check karta hai — agar data wahan hai to disk tak nahi jaana padta (cache hit!). Agar nahi hai to disk se .ibd file read karke Buffer Pool mein laata hai.',
+                code: '-- Buffer Pool Hit Rate check karo (Tinker mein):\nDB::select("SHOW GLOBAL STATUS LIKE \'Innodb_buffer_pool_read_requests\'");\nDB::select("SHOW GLOBAL STATUS LIKE \'Innodb_buffer_pool_reads\'");\n-- Hit Rate > 99% hona chahiye production mein!'
+            },
+            {
+                title: 'Step 6: PHP Model Object Return',
+                level: 'Back to Laravel',
+                desc: 'MySQL se raw data PHP tak aa jaata hai. Laravel is raw data ko automatically User Model object mein convert karta hai — with all $casts applied, $hidden fields removed, aur $appends attributes added. Aap $user->email, $user->name directly access kar sakte hain.',
+                code: '// Aapko mila:  User {#1234}\n$user->name;          // "Rahul Sharma"\n$user->email;         // "rahul@example.com"\n$user->created_at;    // Carbon date object (automatic!)\n$user->is_active;     // true (TINYINT 1 auto-cast to bool)'
+            }
+        ];
+
+        function showEqStep(index) {
+            const chips = document.querySelectorAll('#eqNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = eqSteps[index];
+            const contentBox = document.getElementById('eqContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        // Initialize first step
+        showEqStep(0);
+
+        // 3. Tab Switcher
+        function switchEqTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

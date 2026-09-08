@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP 8 Changes vs PHP 7 — Migration Guide & Latest Versions (8.0 → 8.4)</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="06_PHP7_vs_PHP8_Complete_Guide.html" class="nav-btn">&larr; Previous: PHP 7 vs PHP 8 Guide</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="../Laravel/01_Laravel_Architecture_Lifecycle_and_Service_Container.html" class="nav-btn">Next: Laravel Masterclass &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: PHP 8.0 to 8.4 Evolution Timeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive PHP 8.0 &rarr; 8.4 Version Timeline & Feature Matrix</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Step through the rapid evolution of PHP across every major 8.x release, exploring paradigm shifts from 8.0 to cutting-edge 8.4:
+        </p>
+
+        <div class="stepper-nav" id="timelineNav">
+            <button class="step-chip active" onclick="showTimelineStep(0)">1. PHP 8.0 (The Foundation)</button>
+            <button class="step-chip" onclick="showTimelineStep(1)">2. PHP 8.1 (Enums & Fibers)</button>
+            <button class="step-chip" onclick="showTimelineStep(2)">3. PHP 8.2 (Readonly Classes)</button>
+            <button class="step-chip" onclick="showTimelineStep(3)">4. PHP 8.3 (Typed Constants)</button>
+            <button class="step-chip" onclick="showTimelineStep(4)">5. PHP 8.4 (Property Hooks)</button>
+            <button class="step-chip" onclick="showTimelineStep(5)">6. Breaking Changes & Pitfalls</button>
+        </div>
+
+        <div class="step-content-box" id="timelineContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Modern PHP 8.x Paradigms & Metaprogramming Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchPhp8Tab(event, 'p8tab-hooks')">🚀 1. PHP 8.4 Property Hooks & Asymmetric Visibility</button>
+            <button class="tab-btn" onclick="switchPhp8Tab(event, 'p8tab-attributes')">🏷️ 2. Native Attributes & Metaprogramming</button>
+            <button class="tab-btn" onclick="switchPhp8Tab(event, 'p8tab-comparisons')">⚠️ 3. String-Number Comparison Shift (PHP 7 vs 8)</button>
+            <button class="tab-btn" onclick="switchPhp8Tab(event, 'p8tab-arrays')">⚡ 4. PHP 8.4 Functional Arrays & Lazy Objects</button>
+        </div>
+
+        <div id="p8tab-hooks" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">PHP 8.4 State-of-the-Art: Property Hooks (get/set) and Asymmetric Visibility (public private(set)).</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+class UserAccount
+{
+    // Asymmetric Visibility: Anyone can read, but only internal methods can mutate!
+    public private(set) int $loginAttempts = 0;
+
+    // Property Hooks: Eliminate trivial getter/setter boilerplate!
+    public string $email {
+        set {
+            if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                throw new \InvalidArgumentException('Invalid email format');
+            }
+            $this-&gt;email = strtolower(trim($value));
+        }
+        get =&gt; $this-&gt;email;
+    }
+
+    // Computed Virtual Property (No backing storage needed):
+    public string $initials {
+        get =&gt; strtoupper(substr($this-&gt;firstName, 0, 1) . substr($this-&gt;lastName, 0, 1));
+    }
+
+    public function __construct(
+        public string $firstName,
+        public string $lastName,
+        string $email
+    ) {
+        $this-&gt;email = $email;
+    }
+
+    public function recordFailedLogin(): void
+    {
+        $this-&gt;loginAttempts++; // Allowed internally!
+    }
+}
+
+$user = new UserAccount('John', 'Doe', ' JOHN@DOMAIN.COM ');
+echo $user-&gt;email;            // 'john@domain.com'
+echo $user-&gt;initials;         // 'JD'
+echo $user-&gt;loginAttempts;    // 0
+// $user-&gt;loginAttempts = 5;  // Fatal Error: Cannot modify private(set) property from global scope!
+?&gt;</code></pre>
+        </div>
+
+        <div id="p8tab-attributes" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">PHP 8 Native Attributes: Type-safe, compile-time metadata replacing doctrine docblock comments.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+namespace App\Attributes;
+
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD | Attribute::TARGET_FUNCTION)]
+class Route
+{
+    public function __construct(
+        public string $path,
+        public string $method = 'GET'
+    ) {}
+}
+
+// Controller using Native Attributes (Modern Framework Pattern):
+class UserController
+{
+    #[Route('/api/v1/users', method: 'GET')]
+    public function index(): array
+    {
+        return ['status' =&gt; 'active users list'];
+    }
+
+    #[Route('/api/v1/users', method: 'POST')]
+    public function store(): array
+    {
+        return ['status' =&gt; 'user created'];
+    }
+}
+
+// Reflection Engine reading attributes at runtime:
+$reflector = new ReflectionClass(UserController::class);
+foreach ($reflector-&gt;getMethods() as $method) {
+    $attributes = $method-&gt;getAttributes(Route::class);
+    foreach ($attributes as $attribute) {
+        $routeInstance = $attribute-&gt;newInstance();
+        echo "Found Route: {$routeInstance-&gt;method} {$routeInstance-&gt;path} =&gt; {$method-&gt;getName()}\n";
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="p8tab-comparisons" class="tab-panel">
+            <p style="color:#B45309; font-weight:600;">Critical Migration Pitfall: String-to-Number Comparison Logic completely inverted in PHP 8!</p>
+            <pre><code class="language-php">&lt;?php
+// ==================== THE PHP 7 DANGER ====================
+// In PHP 7: When comparing number to string, PHP cast the STRING to a NUMBER!
+// 'foobar' cast to integer became 0!
+0 == 'foobar'; // TRUE in PHP 7! (Catastrophic bug in authentication / authorization!)
+0 == '';       // TRUE in PHP 7!
+42 == '42foo'; // TRUE in PHP 7!
+
+// ==================== THE PHP 8 FIX =======================
+// In PHP 8: When comparing number to non-numeric string, PHP converts NUMBER to STRING!
+0 == 'foobar'; // FALSE in PHP 8! ('0' == 'foobar')
+0 == '';       // FALSE in PHP 8! ('0' == '')
+42 == '42foo'; // FALSE in PHP 8! (Leading numeric string comparison deprecated/removed)
+0 == '0';      // TRUE in PHP 8! (Both represent numeric string '0')
+
+// ==================== SWITCH vs MATCH =====================
+// switch statement uses LOOSE COMPARISON (==):
+switch (0) {
+    case 'admin': // In PHP 7, MATCHED! Admin access granted! In PHP 8, does not match.
+        break;
+}
+
+// match expression uses STRICT TYPE CHECKING (===):
+$role = match(0) {
+    'admin' =&gt; 'Administrator', // Will NEVER match integer 0!
+    0       =&gt; 'Guest User',
+};
+?&gt;</code></pre>
+        </div>
+
+        <div id="p8tab-arrays" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">PHP 8.4 Array Family &amp; Lazy Objects: Native performance without third-party libraries.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+// 1. PHP 8.4 Functional Array Helpers:
+$users = [
+    ['id' =&gt; 1, 'name' =&gt; 'Alice', 'role' =&gt; 'subscriber', 'active' =&gt; true],
+    ['id' =&gt; 2, 'name' =&gt; 'Bob',   'role' =&gt; 'editor',     'active' =&gt; true],
+    ['id' =&gt; 3, 'name' =&gt; 'Carol', 'role' =&gt; 'admin',      'active' =&gt; false],
+];
+
+// Find first element matching predicate:
+$admin = array_find($users, fn($u) =&gt; $u['role'] === 'admin');
+// Result: ['id' =&gt; 3, 'name' =&gt; 'Carol', ...]
+
+// Check if any element matches predicate:
+$hasAdmin = array_any($users, fn($u) =&gt; $u['role'] === 'admin'); // true
+
+// Check if all elements match predicate:
+$allActive = array_all($users, fn($u) =&gt; $u['active'] === true); // false
+
+// 2. PHP 8.4 Native Lazy Objects (Ghost Objects):
+// Defers heavy database hydration until a property or method is actually accessed!
+$reflector = new ReflectionClass(HeavyDatabaseModel::class);
+$lazyInstance = $reflector-&gt;newLazyGhost(function (HeavyDatabaseModel $ghost) {
+    // Only runs when $lazyInstance-&gt;someProperty is touched!
+    $ghost-&gt;hydrateFromRemoteDatabase();
+});
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="06_PHP7_vs_PHP8_Complete_Guide.html" class="nav-btn">&larr; Previous: PHP 7 vs PHP 8 Guide</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="../Laravel/01_Laravel_Architecture_Lifecycle_and_Service_Container.html" class="nav-btn">Next: Laravel Masterclass &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+
+### PHP 8 Changes vs PHP 7 — Migration Guide & Latest Versions (8.0 → 8.4)
+
+This file answers **exactly two questions**:
+1. **What changed when moving from PHP 7 to PHP 8?** (breaking changes + new additions)
+2. **What did each sub-version of PHP 8 introduce?** (8.0 → 8.1 → 8.2 → 8.3 → 8.4)
+
+Read this if you are maintaining a PHP 7 project and planning to upgrade, or if you want to understand *why* Laravel keeps bumping its minimum PHP version.
+
+> **20 YOE Expert Insight:** PHP 7 → PHP 8 upgrade mein breaking changes zyada nahi hain lekin understanding zaroori hai. Sab se badi shift hai — `match` > `switch`, `named args`, `JIT`, aur `constructor promotion`. Ek baar yeh pattern aapke head mein baith gaye toh PHP 8.x code padhna Laravel source code padhne jaisa aasaan ho jaayega.
+
+---
+
+#### 🔴 PHP 7 → PHP 8.0: Breaking Changes (Things That STOPPED Working)
+
+These are changes where **PHP 7 code breaks silently or throws errors on PHP 8**.
+
+##### 1. Comparison Operator Behaviour Changed
+
+One of the most impactful and silent breaking changes in PHP 8 is how `0` compares to non-numeric strings:
+
+| Expression | PHP 7 Result | PHP 8 Result | Explanation |
+| :--- | :---: | :---: | :--- |
+| `0 == "foo"` | `true` ⚠️ | `false` ✅ | PHP 8 does NOT coerce string to 0 |
+| `0 == ""` | `true` ⚠️ | `false` ✅ | Empty string no longer equals 0 |
+| `0 == "0"` | `true` ✅ | `true` ✅ | Numeric string still works |
+| `0 == null` | `true` ✅ | `true` ✅ | No change |
+| `"1" == "01"` | `true` ✅ | `true` ✅ | No change |
+| `"10" == "1e1"` | `true` ✅ | `true` ✅ | No change |
+
+```php
+<?php
+// PHP 7 — this was a real security vulnerability!
+$userInput = "hacker";
+
+// strcmp returns 0 for equal strings, but...
+if (strcmp($userInput, "admin") == 0) { /* ... */ }
+// If strcmp returned non-numeric string and was compared with == 0... dangerous!
+
+// PHP 8 — fixed: non-numeric strings don't equal 0 anymore
+var_dump(0 == "foo");   // PHP 7: true  | PHP 8: false ✅
+
+// HOW TO FIX: always use ===
+var_dump(0 === "foo");  // PHP 7: false | PHP 8: false ✅ (both correct)
+?>
+```
+
+##### 2. `match` is Strict — `switch` Used Loose Comparison
+
+```php
+<?php
+// PHP 7 switch — LOOSE == comparison (dangerous)
+$input = 0;
+switch ($input) {
+    case "foo":   // 0 == "foo" is TRUE in PHP 7 — bug!
+        echo "matched foo!";  // This runs in PHP 7!
+        break;
+}
+
+// PHP 8 match — STRICT === comparison (safe)
+$result = match($input) {
+    "foo" => "matched foo",   // 0 === "foo" is FALSE — correct!
+    0     => "matched zero",  // This correctly matches
+};
+?>
+```
+
+##### 3. Removed Functions (Must Replace These Immediately)
+
+```php
+<?php
+// ❌ Removed in PHP 8.0 — these cause Fatal Error
+each($array);                  // Use foreach instead
+create_function($args, $body); // Use fn() or function() {}
+$array{0};                     // Array/string curly brace access — use $array[0]
+(real) $value;                 // Cast alias — use (float) instead
+FILTER_SANITIZE_STRING;        // Removed filter constant — use FILTER_SANITIZE_SPECIAL_CHARS
+
+// ❌ Deprecated in PHP 8.x
+libxml_disable_entity_loader(); // PHP 8.0 deprecated
+mb_strrpos() with encoding arg; // Changed argument order
+
+// ✅ Correct PHP 8 replacements:
+foreach ($array as $key => $value) {}  // replaces each()
+$fn = fn($x) => $x * 2;               // replaces create_function()
+$array[0];                             // replaces $array{0}
+(float) $value;                        // replaces (real)
+?>
+```
+
+##### 4. Error Handling — `\Throwable` Changed
+
+```php
+<?php
+// PHP 7 — Fatal Errors were NOT catchable (they killed the script)
+// PHP 8 — More errors are converted to Exceptions/Errors you can catch
+
+// PHP 8: TypeError on wrong argument type
+function add(int $a, int $b): int { return $a + $b; }
+
+// PHP 7 (without strict_types): silently coerced "5" to 5
+// PHP 8 (without strict_types): STILL coerces (same for non-strict mode)
+// PHP 8 (WITH strict_types=1): throws TypeError
+
+// What IS new in PHP 8 error handling:
+try {
+    $result = 10 / 0;  // PHP 7: Warning + returns false | PHP 8: DivisionByZeroError!
+} catch (\DivisionByZeroError $e) {
+    echo "Caught: " . $e->getMessage();  // PHP 8 only!
+}
+
+// intdiv() with zero divisor
+try {
+    intdiv(10, 0);  // PHP 7: Fatal Error | PHP 8: \DivisionByZeroError
+} catch (\DivisionByZeroError $e) { }
+
+// Calling non-existent methods
+// PHP 7: Fatal Error (uncatchable)
+// PHP 8: \Error (catchable!)
+try {
+    $obj->nonExistentMethod();
+} catch (\Error $e) {
+    echo "Caught method call error";
+}
+?>
+```
+
+##### 5. `@` Error Suppression — Changed Behaviour
+
+```php
+<?php
+// PHP 7 — @ suppressed FATAL errors (terrible but it worked)
+// PHP 8 — @ NO longer suppresses Fatal Errors and TypeErrors
+
+// PHP 7: this silently returned false
+$result = @file_get_contents('/nonexistent/file.txt');
+
+// PHP 8: @ still suppresses warnings, but TypeErrors and internal errors
+// triggered by wrong types are NO longer suppressible — they throw
+?>
+```
+
+##### 6. String to Number Comparisons — Complete Rule Change
+
+```php
+<?php
+// PHP 8 new rule: if a string is NUMERIC, compare as number.
+//                 if a string is NON-numeric, convert number to string and compare as string.
+
+var_dump(0 == "0");         // true  — "0" is numeric → compare as 0 == 0
+var_dump(0 == "");          // false — "" is non-numeric → compare as "0" == "" → false
+var_dump(0 == "php");       // false — "php" is non-numeric → compare "0" == "php" → false
+var_dump(42 == "   42   "); // true  — whitespace-trimmed numeric string
+var_dump(42 == "42abc");    // false — "42abc" is non-numeric in PHP 8
+//                          // PHP 7: true! (42abc was cast to 42)
+?>
+```
+
+---
+
+#### 🟢 PHP 8.0 — All NEW Features Added (Not in PHP 7)
+
+##### Match Expression
+
+```php
+<?php
+// PHP 7 only had switch — PHP 8.0 adds match
+// match: strict ===, returns a value, throws if no match, no fall-through
+
+$statusCode = 404;
+
+// OLD (PHP 7) switch
+switch ($statusCode) {
+    case 200: $text = "OK"; break;
+    case 404: $text = "Not Found"; break;
+    default:  $text = "Unknown";
+}
+
+// NEW (PHP 8) match
+$text = match($statusCode) {
+    200, 201 => "OK",
+    301, 302 => "Redirect",
+    404      => "Not Found",
+    500      => "Server Error",
+    default  => "Unknown: $statusCode",
+};
+?>
+```
+
+##### Named Arguments
+
+```php
+<?php
+// PHP 7 — positional only, must remember order
+htmlspecialchars($str, ENT_QUOTES, 'UTF-8', false);
+
+// PHP 8 — jump to any argument by name
+htmlspecialchars(string: $str, double_encode: false);
+
+// Skip defaults cleanly
+function makeTag(string $tag, string $content, string $class = '', string $id = ''): string {
+    $cls = $class ? " class=\"$class\"" : '';
+    $eid = $id    ? " id=\"$id\""      : '';
+    return "<$tag$cls$eid>$content</$tag>";
+}
+
+// PHP 7: had to pass empty strings for class to get to id
+makeTag('div', 'Hello', '', 'main');
+
+// PHP 8: skip directly to what you need
+makeTag(tag: 'div', content: 'Hello', id: 'main');
+?>
+```
+
+##### Union Types
+
+```php
+<?php
+// PHP 7 — only ONE type or nullable
+function parseId(?int $id): ?int { return $id; }
+
+// PHP 8 — multiple valid types
+function parseId(int|string $id): int {
+    return is_string($id) ? (int)$id : $id;
+}
+
+// Real-world use: functions that accept multiple formats
+function respond(array|string $data): void {
+    echo is_array($data) ? json_encode($data) : $data;
+}
+?>
+```
+
+##### Nullsafe Operator `?->`
+
+```php
+<?php
+// PHP 7 — nested null checks everywhere
+$zip = null;
+if ($user !== null) {
+    $addr = $user->getAddress();
+    if ($addr !== null) {
+        $city = $addr->getCity();
+        if ($city !== null) {
+            $zip = $city->getZip();
+        }
+    }
+}
+
+// PHP 8 — one line, stops at first null
+$zip = $user?->getAddress()?->getCity()?->getZip();
+?>
+```
+
+##### Constructor Property Promotion
+
+```php
+<?php
+// PHP 7 — 3 separate steps per property (declare, receive, assign)
+class ApiClient {
+    private string $baseUrl;
+    private string $apiKey;
+    private int    $timeout;
+
+    public function __construct(string $baseUrl, string $apiKey, int $timeout = 30) {
+        $this->baseUrl = $baseUrl;
+        $this->apiKey  = $apiKey;
+        $this->timeout = $timeout;
+    }
+}
+
+// PHP 8 — all in one, no repetition
+class ApiClient {
+    public function __construct(
+        private string $baseUrl,
+        private string $apiKey,
+        private int    $timeout = 30
+    ) {}
+}
+?>
+```
+
+##### Attributes (Native Annotations)
+
+```php
+<?php
+// PHP 7 — docblock @annotations (just comments, not real PHP)
+/**
+ * @Route("/users", methods={"GET", "POST"})
+ * @Cache(ttl=300)
+ */
+class UserController { }
+
+// PHP 8 — real #[Attribute] syntax (IDE-aware, type-safe, readable via Reflection)
+#[Route('/users', methods: ['GET', 'POST'])]
+#[Cache(ttl: 300)]
+class UserController { }
+?>
+```
+
+##### JIT Compiler
+
+```php
+<?php
+// PHP 7 — interpreted (parsed → bytecode → execute)
+// PHP 8 — JIT compiles hot code paths to native machine code at runtime
+
+// Enable in php.ini:
+// opcache.jit_buffer_size = 100M
+// opcache.jit = tracing
+
+// Impact:
+// - CPU-bound code (math, algorithms): 2-5x faster
+// - Typical web app (I/O bound): 5-20% faster
+// - Laravel request cycle: ~10% faster
+?>
+```
+
+##### String Functions: `str_contains`, `str_starts_with`, `str_ends_with`
+
+```php
+<?php
+// PHP 7 — ugly workarounds
+if (strpos($haystack, $needle) !== false) { }   // str_contains
+if (strpos($haystack, $needle) === 0) { }        // str_starts_with
+if (substr($haystack, -strlen($needle)) === $needle) { } // str_ends_with
+
+// PHP 8 — clean, readable, self-documenting
+if (str_contains($haystack, $needle)) { }
+if (str_starts_with($url, 'https://')) { }
+if (str_ends_with($filename, '.php')) { }
+?>
+```
+
+##### `throw` as Expression
+
+```php
+<?php
+// PHP 7 — throw was only a statement
+$value = $input ?: null;
+if ($value === null) throw new \Exception("Required");  // separate line
+
+// PHP 8 — throw is an expression, use anywhere
+$value = $input ?: throw new \InvalidArgumentException("Input required");
+
+// In match (impossible in PHP 7)
+$type = match($format) {
+    'json' => 'application/json',
+    'xml'  => 'application/xml',
+    default => throw new \RuntimeException("Unsupported format: $format"),
+};
+
+// In arrow functions
+$parse = fn($v) => is_numeric($v) ? (float)$v : throw new \TypeError("Not a number");
+?>
+```
+
+---
+
+<div style="background:#f0fdf4;border-left:5px solid #16a34a;padding:18px 22px;border-radius:0 10px 10px 0;margin:30px 0;">
+<strong style="color:#15803d;font-size:1.1em;">🟢 PHP 8.1 — Key Additions (Nov 2021)</strong><br>
+<em>Laravel 9 minimum requirement</em>
+</div>
+
+##### Enums
+
+```php
+<?php
+// PHP 7/8.0 — fake enum using class constants (no type enforcement)
+class OrderStatus {
+    const PENDING   = 'pending';
+    const CONFIRMED = 'confirmed';
+}
+function setStatus(string $status): void { } // Accepts ANY string!
+
+// PHP 8.1 — real Enums with full type safety
+enum OrderStatus: string {
+    case Pending   = 'pending';
+    case Confirmed = 'confirmed';
+    case Shipped   = 'shipped';
+    case Delivered = 'delivered';
+    case Cancelled = 'cancelled';
+
+    public function isFinal(): bool {
+        return match($this) {
+            self::Delivered, self::Cancelled => true,
+            default => false,
+        };
+    }
+}
+
+function setStatus(OrderStatus $status): void { } // Only valid enum cases accepted!
+
+setStatus(OrderStatus::Confirmed);  // ✅
+// setStatus('confirmed');          // TypeError ✅
+// setStatus('invalid_value');      // TypeError ✅
+?>
+```
+
+##### Readonly Properties
+
+```php
+<?php
+// PHP 8.0 — no readonly (could accidentally mutate)
+class User {
+    public int    $id;
+    public string $email;
+    // Someone could do: $user->id = 999; — dangerous!
+}
+
+// PHP 8.1 — readonly: set once in constructor, immutable forever
+class User {
+    public function __construct(
+        public readonly int    $id,
+        public readonly string $email,
+        public string          $name,  // Still mutable
+    ) {}
+}
+
+$user = new User(1, 'r@test.com', 'Rahul');
+$user->name = 'Rahul K';  // ✅ mutable
+// $user->id = 2;          // Error: Cannot modify readonly property!
+?>
+```
+
+##### Fibers
+
+```php
+<?php
+// PHP 8.1 — cooperative multitasking / coroutines
+// Foundation for async PHP (used by ReactPHP, Amp v3, Revolt)
+
+$fiber = new Fiber(function(): string {
+    $received = Fiber::suspend('first');   // Pause execution, send value out
+    return "Got: $received";
+});
+
+$sent    = $fiber->start();               // Run until suspend → returns 'first'
+$fiber->resume('hello');                  // Resume, pass 'hello' in
+echo $fiber->getReturn();                 // "Got: hello"
+?>
+```
+
+##### `never` Return Type
+
+```php
+<?php
+// PHP 8.1 — function that NEVER returns (always throws or exits)
+function abort(int $code): never {
+    http_response_code($code);
+    exit;
+}
+
+function fail(string $msg): never {
+    throw new \RuntimeException($msg);
+}
+
+// PHPStan/IDE knows code after these calls is unreachable
+$user = findUser($id) ?? fail("User not found");
+echo $user['name'];  // Guaranteed to run (no null check needed after fail())
+?>
+```
+
+##### Intersection Types `A&B`
+
+```php
+<?php
+// PHP 8.0 — union: EITHER one OR the other
+function accept(Iterator|Countable $col): void { }
+
+// PHP 8.1 — intersection: MUST satisfy ALL types simultaneously
+function process(Iterator&Countable $col): void {
+    for ($i = 0; $i < $col->count(); $i++) {
+        // Can both iterate AND count
+    }
+}
+?>
+```
+
+##### `array_is_list()`
+
+```php
+<?php
+// New built-in: is this array a sequential 0-indexed list?
+array_is_list([]);              // true
+array_is_list([1, 2, 3]);      // true
+array_is_list(['a'=>1,'b'=>2]); // false — has string keys
+array_is_list([0=>'x', 2=>'y']); // false — gap at index 1
+
+// Use case: decide JSON output format
+function toJson(array $data): string {
+    return json_encode(array_is_list($data) ? array_values($data) : $data);
+}
+?>
+```
+
+---
+
+<div style="background:#eff6ff;border-left:5px solid #2563eb;padding:18px 22px;border-radius:0 10px 10px 0;margin:30px 0;">
+<strong style="color:#1d4ed8;font-size:1.1em;">🔵 PHP 8.2 — Key Additions (Dec 2022)</strong><br>
+<em>Laravel 10 minimum requirement</em>
+</div>
+
+##### Readonly Classes
+
+```php
+<?php
+// PHP 8.1 — mark every property individually
+class Point81 {
+    public function __construct(
+        public readonly float $x,
+        public readonly float $y,
+        public readonly float $z,
+    ) {}
+}
+
+// PHP 8.2 — mark entire class readonly at once
+readonly class Point {
+    public function __construct(
+        public float $x,
+        public float $y,
+        public float $z,
+    ) {}
+}
+// ALL properties auto-readonly. Perfect for DTOs, Events, Value Objects.
+
+// Usage
+readonly class CreateUserDTO {
+    public function __construct(
+        public string $name,
+        public string $email,
+        public string $password,
+        public string $role = 'user',
+    ) {}
+}
+
+$dto = new CreateUserDTO('Rahul', 'r@test.com', 'secret');
+// $dto->name = 'X';  // Error — entire class is readonly!
+?>
+```
+
+##### DNF Types — Disjunctive Normal Form
+
+```php
+<?php
+// PHP 8.1 had intersection (A&B) and union (A|B) separately
+// PHP 8.2 — combine them: (A&B)|C
+
+// Must be (Stringable AND Countable) OR just null
+function process((Stringable&Countable)|null $col): string {
+    if ($col === null) return "empty";
+    return "Count:{$col->count()} String:{$col}";
+}
+
+// (Iterator&Countable)|array — either a countable iterator OR plain array
+function each((Iterator&Countable)|array $items): void {
+    foreach ($items as $item) { handle($item); }
+}
+?>
+```
+
+##### `true`, `false`, `null` as Standalone Types
+
+```php
+<?php
+// PHP 8.2 — these are now valid standalone return types
+function alwaysTrue(): true {
+    return true;   // Must return EXACTLY true (not 1, not "yes")
+}
+
+function maybeError(): false|string {
+    if ($error) return "Error message here";
+    return false;  // Explicit false = no error
+}
+
+function checkNull(): null {
+    return null;   // Always returns null — signals "no result"
+}
+?>
+```
+
+##### Deprecate Dynamic Properties (Warning in 8.2, Error in 9.0)
+
+```php
+<?php
+class User { public string $name; }
+
+$user = new User();
+$user->name = "Rahul";  // ✅ declared property
+$user->age  = 25;       // ⚠️ PHP 8.2 deprecation warning!
+                        // ❌ PHP 9.0 will throw Error
+
+// Fix: declare all properties, or opt in with attribute
+#[\AllowDynamicProperties]
+class LegacyModel { }  // Can still have dynamic properties in 8.2+
+?>
+```
+
+---
+
+<div style="background:#fdf4ff;border-left:5px solid #a21caf;padding:18px 22px;border-radius:0 10px 10px 0;margin:30px 0;">
+<strong style="color:#a21caf;font-size:1.1em;">🟣 PHP 8.3 — Key Additions (Nov 2023)</strong><br>
+<em>Laravel 11 minimum requirement</em>
+</div>
+
+##### Typed Class Constants
+
+```php
+<?php
+// PHP 8.2 — constants had no type, could be overridden with wrong type
+interface HasVersion { const VERSION = '1.0'; }
+class BadImpl implements HasVersion {
+    const VERSION = 42;  // No error! Wrong type silently allowed.
+}
+
+// PHP 8.3 — typed constants, enforced on override
+interface HasVersion {
+    const string VERSION = '1.0';  // Must always be string
+}
+
+class GoodImpl implements HasVersion {
+    const string VERSION = '2.0';  // ✅ string
+    // const string VERSION = 42;  // Error — must be string!
+}
+
+// Works in abstract classes and enums too
+abstract class BaseConfig {
+    const int    MAX_RETRY = 3;
+    const string DEFAULT_LOCALE = 'en';
+    const array  ALLOWED_METHODS = ['GET', 'POST'];
+}
+?>
+```
+
+##### `json_validate()` — Validate Without Decoding
+
+```php
+<?php
+// PHP 8.2 — had to decode to check validity (memory wasted!)
+$raw = file_get_contents('php://input');
+$data = json_decode($raw, true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    die('Bad JSON');
+}
+
+// PHP 8.3 — validate in ONE step, no decode needed
+if (!json_validate($raw)) {
+    http_response_code(400);
+    die('Invalid JSON body');
+}
+$data = json_decode($raw, true); // Only decode after validation
+
+// With depth limit
+json_validate($raw, depth: 100);  // Reject deeply nested JSON (DoS protection!)
+json_validate($raw, depth: 512, flags: 0);
+?>
+```
+
+##### `#[Override]` Attribute
+
+```php
+<?php
+// PHP 8.2 — no way to verify you're actually overriding a parent method
+class Child extends Parent {
+    public function sve(): bool { }  // Typo in method name — silent bug!
+    // Parent has save(), not sve() — you're not overriding anything!
+}
+
+// PHP 8.3 — #[Override] verifies at compile time
+class Child extends ParentClass {
+    #[Override]
+    public function save(): bool { return true; }  // ✅ verified to exist in parent
+
+    #[Override]
+    public function sve(): bool { }  // ❌ Error: Parent has no method 'sve'
+}
+?>
+```
+
+##### Dynamic Class Constant Fetch
+
+```php
+<?php
+class Color {
+    const RED   = '#FF0000';
+    const GREEN = '#00FF00';
+    const BLUE  = '#0000FF';
+}
+
+$name = 'RED';
+
+// PHP 8.2 — needed constant() function
+$hex = constant("Color::$name");  // Verbose
+
+// PHP 8.3 — direct dynamic access
+$hex = Color::{$name};  // '#FF0000' — clean!
+
+// Also works with Enums
+enum Suit: string { case Hearts = '♥'; case Spades = '♠'; }
+$case = 'Hearts';
+echo Suit::{$case}->value;  // ♥
+?>
+```
+
+##### `gc_status()` — New Garbage Collector Info
+
+```php
+<?php
+// PHP 8.3 — get detailed GC stats
+$status = gc_status();
+
+echo $status['runs'];          // How many GC cycles have run
+echo $status['collected'];     // Objects collected
+echo $status['threshold'];     // Collection threshold
+echo $status['roots'];         // Current root buffer size
+?>
+```
+
+---
+
+<div style="background:#f0f9ff;border-left:5px solid #0284c7;padding:18px 22px;border-radius:0 10px 10px 0;margin:30px 0;">
+<strong style="color:#0284c7;font-size:1.1em;">🔵 PHP 8.4 — Key Additions (Nov 2024) — Latest Version</strong><br>
+<em>Currently Supported. Laravel 11.x supports PHP 8.4.</em>
+</div>
+
+##### Property Hooks — BIGGEST Addition in PHP 8.4
+
+Property hooks let you attach `get` and `set` logic directly to a property — without writing boilerplate getter/setter methods:
+
+```php
+<?php
+// PHP 8.3 and earlier — verbose getter/setter boilerplate
+class User {
+    private string $_email;
+    private string $_firstName;
+    private string $_lastName;
+
+    public function getEmail(): string { return $this->_email; }
+    public function setEmail(string $email): void {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+            throw new \ValueError("Invalid email: $email");
+        $this->_email = strtolower($email);
+    }
+
+    public function getFirstName(): string { return $this->_firstName; }
+    public function setFirstName(string $v): void { $this->_firstName = trim($v); }
+
+    public function getFullName(): string { return $this->_firstName . ' ' . $this->_lastName; }
+}
+
+// PHP 8.4 — Property Hooks: logic lives WITH the property!
+class User {
+    // Hook on set: validate + normalize when assigned
+    public string $email {
+        set(string $value) {
+            if (!filter_var($value, FILTER_VALIDATE_EMAIL))
+                throw new \ValueError("Invalid email: $value");
+            $this->email = strtolower($value);  // Stores the value
+        }
+    }
+
+    // Hook on get: compute/transform when read
+    public string $fullName {
+        get => $this->firstName . ' ' . $this->lastName;
+        // No set → readonly computed property!
+    }
+
+    public string $firstName {
+        set => trim($value);  // Short hook syntax
+    }
+
+    public function __construct(string $email, string $firstName, string $lastName) {
+        $this->email     = $email;      // Triggers set hook → validates + lowercases
+        $this->firstName = $firstName;  // Triggers set hook → trims
+        $this->lastName  = $lastName;
+    }
+}
+
+$user = new User('RAHUL@EXAMPLE.COM', '  Rahul  ', 'Sharma');
+echo $user->email;     // rahul@example.com (auto-lowercased via hook)
+echo $user->firstName; // Rahul (auto-trimmed)
+echo $user->fullName;  // Rahul Sharma (computed on-the-fly)
+
+// $user->fullName = 'X';  // Error: no set hook defined → readonly!
+?>
+```
+
+##### Asymmetric Visibility — `public` Read, `private` Write
+
+```php
+<?php
+// PHP 8.3 — readonly prevents any mutation (even internal)
+class BankAccount {
+    public readonly float $balance = 0.0;
+    // Problem: even the class itself cannot update $balance after construction!
+}
+
+// PHP 8.4 — asymmetric visibility: control read vs write separately
+class BankAccount {
+    public private(set) float $balance = 0.0;
+    // public = anyone can READ
+    // private(set) = only THIS CLASS can WRITE
+
+    public function deposit(float $amount): void {
+        $this->balance += $amount;  // ✅ class can modify
+    }
+
+    public function withdraw(float $amount): void {
+        if ($amount > $this->balance) throw new \RuntimeException("Insufficient");
+        $this->balance -= $amount;  // ✅ class can modify
+    }
+}
+
+$acc = new BankAccount();
+echo $acc->balance;     // ✅ public read — anyone can read
+$acc->deposit(5000);
+echo $acc->balance;     // 5000
+// $acc->balance = 999; // ❌ Error: private(set) — cannot write from outside!
+?>
+```
+
+##### `new` in Initialisers — Use `new` Directly in Default Values
+
+```php
+<?php
+// PHP 8.3 — could NOT use new in default parameter values
+class Logger {
+    private Formatter $formatter;
+    public function __construct(Formatter $formatter = null) {
+        $this->formatter = $formatter ?? new DefaultFormatter();  // Workaround
+    }
+}
+
+// PHP 8.4 — use new directly in default values!
+class Logger {
+    public function __construct(
+        private Formatter $formatter = new DefaultFormatter(),  // ✅ PHP 8.4!
+        private Writer    $writer    = new FileWriter('app.log'),
+    ) {}
+}
+
+// Also works in property declarations:
+class Cache {
+    private array $store = [];
+    private Clock $clock = new SystemClock();  // ✅ PHP 8.4
+}
+?>
+```
+
+##### `array_find()`, `array_find_key()`, `array_all()`, `array_any()`
+
+```php
+<?php
+// PHP 8.3 — had to use array_filter + array_shift for these common patterns
+$users = [
+    ['id' => 1, 'name' => 'Rahul', 'role' => 'admin'],
+    ['id' => 2, 'name' => 'Priya', 'role' => 'user'],
+    ['id' => 3, 'name' => 'Amit',  'role' => 'admin'],
+];
+
+// Find first admin — PHP 8.3 way
+$admin = array_shift(array_filter($users, fn($u) => $u['role'] === 'admin'));
+
+// PHP 8.4 — new built-in functions!
+$admin    = array_find($users, fn($u) => $u['role'] === 'admin');
+// ['id'=>1, 'name'=>'Rahul', 'role'=>'admin'] ← returns first matching element
+
+$adminKey = array_find_key($users, fn($u) => $u['role'] === 'admin');
+// 0 ← returns the KEY of first match
+
+$allAdmins = array_all($users, fn($u) => $u['role'] === 'admin');
+// false ← returns true only if ALL elements match
+
+$hasAdmin  = array_any($users, fn($u) => $u['role'] === 'admin');
+// true ← returns true if ANY element matches
+?>
+```
+
+##### Lazy Objects — Instantiate Only When Needed
+
+```php
+<?php
+// PHP 8.4 — lazy object proxies (powered by Reflection)
+// The object is NOT constructed until a property/method is actually accessed!
+class HeavyService {
+    public function __construct() {
+        // Expensive: connects to DB, loads config, etc.
+        sleep(1);
+        echo "HeavyService constructed!\n";
+    }
+
+    public function doWork(): string { return "Working!"; }
+}
+
+$reflector = new ReflectionClass(HeavyService::class);
+
+// Create a lazy ghost — construction is DEFERRED
+$lazy = $reflector->newLazyGhost(function(HeavyService $obj) {
+    // This runs only when $obj is first accessed
+    $obj->__construct();
+});
+
+echo "Lazy object created (no construction yet)\n";
+// HeavyService constructor has NOT run yet!
+
+echo $lazy->doWork();
+// NOW the constructor runs, then doWork() executes
+// Output: "HeavyService constructed!" then "Working!"
+?>
+```
+
+---
+
+#### 📊 Complete PHP 8 Sub-Version Changelog Summary
+
+| Feature | 8.0 | 8.1 | 8.2 | 8.3 | 8.4 |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| JIT Compiler | ✅ | ✅ | ✅ | ✅ | ✅+ |
+| Named Arguments | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `match` Expression | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Union Types `A\|B` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Nullsafe `?->` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Constructor Promotion | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Attributes `#[]` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `str_contains/starts/ends` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Throw as Expression | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Enums | — | ✅ | ✅ | ✅ | ✅ |
+| Readonly Properties | — | ✅ | ✅ | ✅ | ✅ |
+| Fibers | — | ✅ | ✅ | ✅ | ✅ |
+| `never` Type | — | ✅ | ✅ | ✅ | ✅ |
+| Intersection Types `A&B` | — | ✅ | ✅ | ✅ | ✅ |
+| `array_is_list()` | — | ✅ | ✅ | ✅ | ✅ |
+| Readonly Classes | — | — | ✅ | ✅ | ✅ |
+| DNF Types `(A&B)\|C` | — | — | ✅ | ✅ | ✅ |
+| `true/false/null` Types | — | — | ✅ | ✅ | ✅ |
+| Typed Class Constants | — | — | — | ✅ | ✅ |
+| `json_validate()` | — | — | — | ✅ | ✅ |
+| `#[Override]` | — | — | — | ✅ | ✅ |
+| Dynamic Constant `Cls::{$x}` | — | — | — | ✅ | ✅ |
+| **Property Hooks** | — | — | — | — | ✅ |
+| **Asymmetric Visibility** | — | — | — | — | ✅ |
+| **`new` in Initialisers** | — | — | — | — | ✅ |
+| **`array_find/all/any`** | — | — | — | — | ✅ |
+| **Lazy Objects** | — | — | — | — | ✅ |
+
+---
+
+#### 🎯 What Version Should You Use? — Decision Guide
+
+| Your Situation | Recommendation |
+| :--- | :--- |
+| **New project, greenfield** | PHP **8.4** — latest, longest support |
+| **Laravel 11** | PHP **8.3** minimum, **8.4** preferred |
+| **Laravel 10** | PHP **8.2** minimum |
+| **Laravel 9** | PHP **8.1** minimum |
+| **Existing PHP 7.4 project** | Migrate to **8.2** using Rector — safe path |
+| **Existing PHP 7.0-7.3 project** | Upgrade to 7.4 first, then 8.x step by step |
+| **Production server** | Use **8.3** (security support until Nov 2026) |
+
+<span class="hinglish">Ek line mein samjhao PHP version choice: **Agar naya project hai toh PHP 8.3 ya 8.4 use karo**. Laravel 11 officially PHP 8.4 support karta hai. Purane projects ke liye Rector tool se automated migration karo — manually sab fix karna time waste hai.</span>
+
+```bash
+# Check your current PHP version
+php --version
+
+# Check which version your server supports
+php -r "echo phpversion();"
+
+# One-command upgrade check with Rector
+composer require --dev rector/rector
+./vendor/bin/rector process src --dry-run --set=php83  # Preview PHP 8.3 changes
+./vendor/bin/rector process src --set=php83             # Apply changes
+```
+    
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Stepper Step 0
+            showTimelineStep(0);
+        });
+
+        // 2. Interactive PHP 8 Timeline Steps Data
+        const timelineSteps = [
+            {
+                title: "1. PHP 8.0: The Foundation of Modern PHP (Nov 2020)",
+                level: "RELEASE: PHP 8.0",
+                desc: "Revolutionized syntax and type safety: Constructor Property Promotion, Match Expressions, Named Arguments, Union Types (int|float), Nullsafe Operator (?->), Attributes, and JIT Compiler.",
+                code: "class User {\n    public function __construct(public string $name, public int $age = 18) {}\n}\n$role = match($code) { 1 => 'Admin', 2 => 'Editor', default => 'Guest' };"
+            },
+            {
+                title: "2. PHP 8.1: Domain Modeling & Fibers (Nov 2021)",
+                level: "RELEASE: PHP 8.1",
+                desc: "Introduced first-class Enums (Pure & Backed), Readonly Properties, First-Class Callable Syntax (strlen(...)), Fibers (Coroutines for Async I/O), 'never' return type, and Intersection Types (A&B).",
+                code: "enum Status: string { case ACTIVE = 'active'; case PENDING = 'pending'; }\nclass Invoice { public readonly string $uuid; }\n$closure = strlen(...); // First-class callable"
+            },
+            {
+                title: "3. PHP 8.2: True Immutability & DNF Types (Dec 2022)",
+                level: "RELEASE: PHP 8.2",
+                desc: "Added Readonly Classes, Disjunctive Normal Form (DNF) Types ((A&B)|C), standalone 'true', 'false', and 'null' types, SensitiveParameter attribute (redacts passwords from stack traces), and deprecated dynamic properties.",
+                code: "readonly class Money { public function __construct(public int $cents) {} }\nfunction check((HasId&JsonSerializable)|null $obj): void {}\nfunction login(#[SensitiveParameter] string $password) {}"
+            },
+            {
+                title: "4. PHP 8.3: Ergonomics & json_validate (Nov 2023)",
+                level: "RELEASE: PHP 8.3",
+                desc: "Introduced Typed Class Constants, native json_validate() (validates JSON without allocating memory for decoding), #[Override] attribute safeguard, dynamic class constant fetch, and deep-cloning of readonly properties.",
+                code: "interface AppConfig { public const string VERSION = '1.0'; }\nif (json_validate($largeJsonPayload)) { /* Memory-safe check */ }\n#[Override] public function handle(): void {}"
+            },
+            {
+                title: "5. PHP 8.4: Property Hooks & Functional Arrays (Nov 2024)",
+                level: "RELEASE: PHP 8.4",
+                desc: "The largest ergonomic release: Property Hooks (native get/set attached directly to properties), Asymmetric Visibility (public private(set)), array_find(), array_any(), array_all(), and Lazy Object Ghosts.",
+                code: "class User {\n    public private(set) int $id;\n    public string $name {\n        set => trim($value);\n        get => ucfirst($this->name);\n    }\n}\n$item = array_find($items, fn($x) => $x['id'] === 10);"
+            },
+            {
+                title: "6. Critical Migration Pitfalls (Things That Break)",
+                level: "MIGRATION ALERT",
+                desc: "String-to-number comparisons flipped (0 == 'foo' is FALSE in PHP 8, was TRUE in PHP 7). Warnings promoted to fatal TypeErrors, and undefined variables in string interpolations throw ValueError.",
+                code: "// ❌ Dangerous in PHP 7, fixed in PHP 8:\nif (0 == 'in_progress') { /* Executed in PHP 7! Never executes in PHP 8 */ }\n// Undefined array key now emits E_WARNING instead of silent notice!"
+            }
+        ];
+
+        function showTimelineStep(index) {
+            const chips = document.querySelectorAll('#timelineNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = timelineSteps[index];
+            const contentBox = document.getElementById('timelineContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-pro">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-php">' + step.code + '</code></pre>';
+        }
+
+        // 3. Tab Switcher
+        function switchPhp8Tab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

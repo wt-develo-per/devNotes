@@ -1,45 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Express Validation Middleware</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.7; color: #2c3e50; }
-        pre { background: #f0f8ff; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #bce8f1; }
-        code { font-family: 'Fira Code', Consolas, Monaco, monospace; background: #f0f8ff; padding: 3px 6px; border-radius: 4px; font-size: 0.95em; color: #2980b9; }
-        blockquote { border-left: 5px solid #2980b9; margin: 0; padding-left: 20px; background: #e8f4f8; padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
-        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.7;
+            color: #2c3e50;
+        }
+
+        pre {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #bce8f1;
+        }
+
+        code {
+            font-family: 'Fira Code', Consolas, Monaco, monospace;
+            background: #f0f8ff;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.95em;
+            color: #2980b9;
+        }
+
+        blockquote {
+            border-left: 5px solid #2980b9;
+            margin: 0;
+            padding-left: 20px;
+            background: #e8f4f8;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+
         /* Modifying H3 to look like a clean title */
-        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #2980b9; padding-bottom: 8px; margin-top: 0; }
-        
+        h3 {
+            color: #2c3e50;
+            font-size: 1.8em;
+            border-bottom: 2px solid #2980b9;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
         /* Modifying H4 to look like a clean section header */
-        h4 { color: #2980b9; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
-        
+        h4 {
+            color: #2980b9;
+            font-size: 1.4em;
+            margin-top: 40px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;
+        }
+
         /* H5 for sub-sections */
-        h5 { color: #3498db; font-size: 1.1em; margin-top: 20px; }
-        
-        strong { color: #2980b9; }
-        .hinglish { color: #e67e22; font-weight: bold; font-style: italic; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f4f6f7; color: #2c3e50; font-weight: bold; }
-        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
-        .nav-btn { background-color: #2980b9; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #1a5276; }
-        .nav-btn:hover { background-color: #3498db; }
-        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+        h5 {
+            color: #3498db;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+
+        strong {
+            color: #2980b9;
+        }
+
+        .hinglish {
+            color: #e67e22;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f6f7;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .nav-btn {
+            background-color: #2980b9;
+            color: white !important;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+            display: inline-block;
+            border-bottom: 3px solid #1a5276;
+        }
+
+        .nav-btn:hover {
+            background-color: #3498db;
+        }
+
+        .nav-btn.disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            pointer-events: none;
+            border-bottom: 3px solid #aaa;
+        }
     </style>
 </head>
+
 <body>
     <div class="nav-bar">
         <a href="01a_Zod_Real_World_Form_Controller.html" class="nav-btn">&larr; Previous: Form Controller</a>
-        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠
+            Hub Index</a>
         <span class="nav-btn disabled">Next &rarr;</span>
     </div>
     <div id="content"></div>
     <div class="nav-bar">
         <a href="01a_Zod_Real_World_Form_Controller.html" class="nav-btn">&larr; Previous: Form Controller</a>
-        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠
+            Hub Index</a>
         <span class="nav-btn disabled">Next &rarr;</span>
     </div>
     <script type="text/markdown" id="markdown-content">
@@ -153,25 +258,31 @@ Validation isn't just for Passwords and Emails. Here is how we validate the rest
 
 ##### Example 6: Search String Sanitization
 **Problem:** A user types `?search=<script>alert(1)</script>`.
-**Solution:** While Zod doesn't do HTML escaping directly, you can use `.trim()` and `.max(100)` to ensure they aren't passing massive malicious payloads in the search bar. `query: z.object({ search: z.string().trim().max(100).optional() })`.
+    **Solution:** While Zod doesn't do HTML escaping directly, you can use `.trim()` and `.max(100)` to ensure they
+    aren't passing massive malicious payloads in the search bar. `query: z.object({ search:
+    z.string().trim().max(100).optional() })`.
 
-##### Example 7: Date Range Queries
-**Problem:** You want data `?startDate=2026-01-01&endDate=2026-12-31`, but you need to ensure `endDate` is strictly AFTER `startDate`.
-**Solution:** Use `.refine()` on the query object!
-`.refine(data => data.endDate > data.startDate, { message: "End Date must be after Start Date" })`
+    ##### Example 7: Date Range Queries
+    **Problem:** You want data `?startDate=2026-01-01&endDate=2026-12-31`, but you need to ensure `endDate` is strictly
+    AFTER `startDate`.
+    **Solution:** Use `.refine()` on the query object!
+    `.refine(data => data.endDate > data.startDate, { message: "End Date must be after Start Date" })`
 
-##### Example 8: Validating Headers
-**Problem:** You require a specific custom header `x-api-version: v2` to route the request properly.
-**Solution:** You can expand the middleware to also parse `req.headers`! 
-`headers: z.object({ 'x-api-version': z.literal('v2') })`.
+    ##### Example 8: Validating Headers
+    **Problem:** You require a specific custom header `x-api-version: v2` to route the request properly.
+    **Solution:** You can expand the middleware to also parse `req.headers`!
+    `headers: z.object({ 'x-api-version': z.literal('v2') })`.
 
-##### Example 9: File Upload Validation
-**Problem:** You are accepting a file upload, but you need to ensure the user also sent the `folderId` in the body.
-**Solution:** Validation runs before your business logic! If `folderId` is missing, the request is rejected immediately, and you don't waste AWS bandwidth processing the file upload.
+    ##### Example 9: File Upload Validation
+    **Problem:** You are accepting a file upload, but you need to ensure the user also sent the `folderId` in the body.
+    **Solution:** Validation runs before your business logic! If `folderId` is missing, the request is rejected
+    immediately, and you don't waste AWS bandwidth processing the file upload.
 
-##### Example 10: Centralized Error Translation
-**Problem:** Your API serves French and English users. You need the Zod error messages to be in different languages.
-**Solution:** Because all validation happens in ONE Universal Middleware, you can check `req.headers['accept-language']` right inside the middleware, and map the Zod error codes to custom French/English dictionaries before sending the 400 response!
+    ##### Example 10: Centralized Error Translation
+    **Problem:** Your API serves French and English users. You need the Zod error messages to be in different languages.
+    **Solution:** Because all validation happens in ONE Universal Middleware, you can check
+    `req.headers['accept-language']` right inside the middleware, and map the Zod error codes to custom French/English
+    dictionaries before sending the 400 response!
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -180,4 +291,5 @@ Validation isn't just for Passwords and Emails. Here is how we validate the rest
         });
     </script>
 </body>
+
 </html>

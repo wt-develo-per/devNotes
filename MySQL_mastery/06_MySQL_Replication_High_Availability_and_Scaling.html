@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Transactions, ACID & Data Integrity for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="05_MySQL_Performance_Tuning_and_Server_Configuration.html" class="nav-btn">&larr; Previous: Relationships & Joins</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="07_MySQL_Security_Backups_and_Disaster_Recovery.html" class="nav-btn">Next: Advanced SQL Queries &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Order Payment Transaction Lifecycle Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Order Payment Transaction — Safe Execution Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            "Buy Now" click se lekar payment confirm hone tak ek safe transaction ka step-by-step flow:
+        </p>
+
+        <div class="stepper-nav" id="txNav">
+            <button class="step-chip active" onclick="showTxStep(0)">
+                <span class="step-num">01</span>
+                <span>Begin Transaction</span>
+            </button>
+            <button class="step-chip" onclick="showTxStep(1)">
+                <span class="step-num">02</span>
+                <span>Lock Stock</span>
+            </button>
+            <button class="step-chip" onclick="showTxStep(2)">
+                <span class="step-num">03</span>
+                <span>Validate & Deduct</span>
+            </button>
+            <button class="step-chip" onclick="showTxStep(3)">
+                <span class="step-num">04</span>
+                <span>Create Order</span>
+            </button>
+            <button class="step-chip" onclick="showTxStep(4)">
+                <span class="step-num">05</span>
+                <span>Commit / Rollback</span>
+            </button>
+            <button class="step-chip" onclick="showTxStep(5)">
+                <span class="step-num">06</span>
+                <span>Post-Commit Actions</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="txContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTxTab(event, 'tab-patterns')">&#128260; Transaction Patterns</button>
+            <button class="tab-btn" onclick="switchTxTab(event, 'tab-race')">&#9889; Race Condition Fix</button>
+            <button class="tab-btn" onclick="switchTxTab(event, 'tab-deadlock')">&#128274; Deadlock Prevention</button>
+            <button class="tab-btn" onclick="switchTxTab(event, 'tab-cascade')">&#128279; FK Cascades Guide</button>
+        </div>
+
+        <!-- Tab 1: Transaction Patterns -->
+        <div id="tab-patterns" class="tab-panel active">
+            <h5>Transaction Patterns — Kab Kya Use Karein?</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Code</th>
+                        <th>Best For</th>
+                        <th>Drawback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DB::transaction(closure)</strong></td>
+                        <td><code>DB::transaction(fn() => ...)</code></td>
+                        <td>Simple multi-operation transactions</td>
+                        <td>No partial commit possible</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Manual begin/commit/rollback</strong></td>
+                        <td><code>beginTransaction(), commit()</code></td>
+                        <td>Complex flows needing partial control</td>
+                        <td>Must handle rollback in catch</td>
+                    </tr>
+                    <tr>
+                        <td><strong>With retry attempts</strong></td>
+                        <td><code>DB::transaction(fn, attempts: 3)</code></td>
+                        <td>High-concurrency; deadlock-prone tables</td>
+                        <td>Idempotent operations only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nested (Savepoints)</strong></td>
+                        <td>Nested <code>DB::transaction()</code></td>
+                        <td>Complex services with sub-transactions</td>
+                        <td>Laravel manages savepoints automatically</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <pre><code class="language-php">// GOLDEN RULE: Transaction ke andar sirf DB operations karo!
+// WRONG:
+DB::transaction(function () use ($order) {
+    $order->update(['status' => 'confirmed']);
+    Mail::to($order->user)->send(new OrderConfirmed($order)); // WRONG! Email in transaction!
+    // Agar email fail ho = order rollback! Email service DB se related nahi!
+});
+
+// CORRECT: DB operations transaction mein, side effects baad mein
+DB::transaction(function () use ($order) {
+    $order->update(['status' => 'confirmed']);
+    // Sirf DB operations yahan
+});
+// Transaction ke baad email bhejo:
+Mail::to($order->user)->send(new OrderConfirmed($order));
+// Ya better: Queue mein daalo
+dispatch(new SendOrderConfirmationJob($order));</code></pre>
+        </div>
+
+        <!-- Tab 2: Race Condition Fix -->
+        <div id="tab-race" class="tab-panel">
+            <h5>Race Condition — lockForUpdate() Se Fix Karo</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                Last item ki rush purchase scenario — do users ek sath try karte hain:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr><th>Without Lock</th><th>With lockForUpdate()</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>User A reads stock = 1 ✅</td>
+                        <td>User A: SELECT ... FOR UPDATE — gets lock ✅</td>
+                    </tr>
+                    <tr>
+                        <td>User B reads stock = 1 ✅ (before A updates)</td>
+                        <td>User B: SELECT ... FOR UPDATE — WAITS ⏳</td>
+                    </tr>
+                    <tr>
+                        <td>User A decrements stock to 0</td>
+                        <td>User A: stock = 1, decrements to 0, commits</td>
+                    </tr>
+                    <tr>
+                        <td>User B ALSO decrements stock to -1 ❌</td>
+                        <td>User B: lock released, reads stock = 0 → Out of Stock ✅</td>
+                    </tr>
+                    <tr>
+                        <td>Result: Oversold! Stock = -1</td>
+                        <td>Result: Correct! Only 1 order placed</td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre><code class="language-php">// Correct implementation with lockForUpdate:
+public function purchaseProduct(int $productId, int $userId, int $qty): Order
+{
+    return DB::transaction(function () use ($productId, $userId, $qty) {
+        // Exclusive lock — sirf ek request ek waqt mein yahan rahegi
+        $product = Product::lockForUpdate()->findOrFail($productId);
+
+        if ($product->stock < $qty) {
+            throw new InsufficientStockException(
+                "Only {$product->stock} items available"
+            );
+        }
+
+        // Safe decrement:
+        $product->decrement('stock', $qty);
+
+        // Create order:
+        $order = Order::create([
+            'user_id'    => $userId,
+            'product_id' => $productId,
+            'qty'        => $qty,
+            'total'      => $product->price * $qty,
+            'status'     => 'confirmed',
+        ]);
+
+        return $order;
+        // Lock releases on transaction commit
+    });
+}</code></pre>
+        </div>
+
+        <!-- Tab 3: Deadlock Prevention -->
+        <div id="tab-deadlock" class="tab-panel">
+            <h5>Deadlock Prevention — 4 Golden Rules</h5>
+            <pre><code class="language-php">// RULE 1: Consistent lock order (MOST IMPORTANT!)
+// ALWAYS lock in same order across all transactions:
+// users -> orders -> products (never reverse!)
+
+// WRONG (can deadlock if two transactions run simultaneously):
+// Tx A: lock user(1), then order(5)
+// Tx B: lock order(5), then user(1) -- DEADLOCK!
+
+// CORRECT: Both Tx lock in same order:
+DB::transaction(function () {
+    $user = User::lockForUpdate()->find(1);   // ALWAYS FIRST
+    $order = Order::lockForUpdate()->find(5); // ALWAYS SECOND
+});
+
+// RULE 2: Minimal transaction scope
+DB::transaction(function () use ($data) {
+    // Only DB operations -- no API calls, file I/O, sleep()
+    Order::create($data);
+    Product::where('id', $data['product_id'])->decrement('stock');
+}); // Transaction ends immediately after DB work
+
+// RULE 3: Use built-in retry
+DB::transaction(function () {
+    // Your operations
+}, attempts: 3); // Deadlock par 3 baar try karega
+
+// RULE 4: Catch & handle deadlock gracefully
+use IlluminateDatabaseQueryException;
+
+try {
+    DB::transaction(function () { ... });
+} catch (QueryException $e) {
+    if ($e->errorInfo[1] === 1213) { // MySQL deadlock error code
+        Log::warning('Deadlock detected, retrying...');
+        // Queue mein daalo ya user ko retry suggest karo
+        throw new RetryableException('Please try again in a moment');
+    }
+    throw $e;
+}</code></pre>
+        </div>
+
+        <!-- Tab 4: FK Cascades -->
+        <div id="tab-cascade" class="tab-panel">
+            <h5>Foreign Key Cascades — E-Commerce Strategy Guide</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Cascade Type</th>
+                        <th>Laravel Method</th>
+                        <th>Behavior</th>
+                        <th>When to Use</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RESTRICT</strong></td>
+                        <td><code>->restrictOnDelete()</code></td>
+                        <td>Parent delete blocked if children exist</td>
+                        <td>Users with orders — protect history</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CASCADE</strong></td>
+                        <td><code>->cascadeOnDelete()</code></td>
+                        <td>Children auto-deleted with parent</td>
+                        <td>Cart items when cart deleted</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SET NULL</strong></td>
+                        <td><code>->nullOnDelete()</code></td>
+                        <td>FK set to NULL when parent deleted</td>
+                        <td>Product category deleted — keep product</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NO ACTION</strong></td>
+                        <td>Default (same as RESTRICT)</td>
+                        <td>Error on parent delete</td>
+                        <td>Strict data integrity needed</td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre><code class="language-php">// E-commerce FK Strategy Example:
+// users -> RESTRICT orders (history must be preserved)
+// orders -> CASCADE order_items (meaningless without order)
+// orders -> RESTRICT payments (financial data never auto-delete)
+// products -> SET NULL order_items.product_id (history preserved, product can be deleted)
+// categories -> SET NULL products.category_id (uncategorize, dont delete products)
+// carts -> CASCADE cart_items (cart deleted = items deleted too)
+
+Schema::create('order_items', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('order_id')
+          ->constrained()
+          ->cascadeOnDelete();       // Order deleted = items deleted
+
+    $table->foreignId('product_id')
+          ->nullable()               // Must be nullable for SET NULL!
+          ->constrained()
+          ->nullOnDelete();          // Product deleted = null here, not deleted
+
+    $table->unsignedInteger('qty');
+    $table->decimal('unit_price', 10, 2); // Snapshot of price at purchase time
+    $table->timestamps();
+});</code></pre>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="05_MySQL_Performance_Tuning_and_Server_Configuration.html" class="nav-btn">&larr; Previous: Relationships & Joins</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="07_MySQL_Security_Backups_and_Disaster_Recovery.html" class="nav-btn">Next: Advanced SQL Queries &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 6: Transactions, ACID & Data Integrity — Payment Fail Hua Lekin Stock Kam Ho Gaya!
+
+Yeh ek real production bug hai jo 3-year developers face karte hain. Ek order place hua, payment gateway timeout de diya, lekin product ka stock 1 se kam ho gaya. Order mein status "failed" tha lekin stock chhoot gaya. Customer ko product nahi mila, stock tracking galat ho gaya — **kyunki transaction nahi tha!**
+
+Is module mein hum samjhenge:
+- **ACID properties** — practical Laravel explanation
+- **`DB::transaction()`** — yeh kaise use karna chahiye
+- **Race conditions** — do requests ek sath same stock update karein to kya hoga?
+- **`lockForUpdate()`** — race condition ka solution
+- **Deadlocks** — kaise hote hain aur kaise bachein
+
+---
+
+#### 1. ACID — Laravel Developer Ke Liye Practical Explanation
+
+##### Atomicity — "Sab Kuch Ya Kuch Nahi":
+```php
+// WITHOUT Atomicity (DANGEROUS!):
+$order->update(['status' => 'confirmed']);   // ✅ Order confirmed
+$product->decrement('stock');                 // ❌ Server crash! Stock never decremented
+// Result: Order confirmed but stock wrong!
+
+// WITH Transaction (Atomicity guaranteed):
+DB::transaction(function () use ($order, $product) {
+    $order->update(['status' => 'confirmed']);
+    $product->decrement('stock');
+    // Agar koi bhi fail hua to DONO rollback ho jaayenge!
+});
+// Either both succeed, or neither does.
+```
+
+##### Consistency — "Rules Hamesha Valid Rahein":
+```php
+// Database-level constraints = Consistency enforce karte hain:
+// 1. Foreign key: order.user_id must exist in users.id
+// 2. NOT NULL: order.total cannot be null
+// 3. UNIQUE: users.email must be unique
+// 4. CHECK constraint (MySQL 8.0+): stock >= 0
+
+// Migration mein constraints add karo:
+Schema::create('orders', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->restrictOnDelete();
+    $table->decimal('total_amount', 10, 2);           // NOT NULL by default
+    $table->unsignedInteger('item_count')->default(0); // UNSIGNED = no negatives
+});
+```
+
+##### Isolation — "Concurrent Transactions Ek Doosre Ko Affect Na Karein":
+```php
+// Default MySQL Isolation Level: REPEATABLE READ
+// (99% Laravel apps ke liye yeh fine hai)
+
+// Issue: Two requests ek sath stock check karein:
+// Request A: SELECT stock FROM products WHERE id = 1  -> 1 (in stock)
+// Request B: SELECT stock FROM products WHERE id = 1  -> 1 (in stock)
+// Request A: UPDATE products SET stock = 0 WHERE id = 1  -> stock = 0
+// Request B: UPDATE products SET stock = 0 WHERE id = 1  -> stock = 0 AGAIN!
+// Result: 2 orders placed for 1 item — OVERSELLING!
+
+// Solution: lockForUpdate() (explained in detail below)
+```
+
+##### Durability — "Commit Ke Baad Data Safe Hai":
+```php
+// Committed data crash hone par bhi survive karta hai.
+// InnoDB Redo Log + Write-Ahead Logging (WAL) se guarantee hota hai.
+// Laravel ke liye: COMMIT successful hua = data safe, even if server restarts.
+// Ye InnoDB automatically handle karta hai — developer ko kuch extra nahi karna.
+```
+
+---
+
+#### 2. `DB::transaction()` — Sahi Tarika
+
+```php
+// BASIC USAGE — Simple closure:
+DB::transaction(function () use ($order, $cart) {
+    $order->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+
+    foreach ($cart->items as $item) {
+        $item->product->decrement('stock', $item->quantity);
+        OrderItem::create([...]);
+    }
+
+    $cart->delete();
+    // Agar koi bhi operation fail hua = automatic rollback!
+});
+
+// RETURN VALUE — Transaction se value return karo:
+$order = DB::transaction(function () use ($cartData, $userId) {
+    $order = Order::create([
+        'user_id'      => $userId,
+        'total_amount' => $cartData->total,
+        'status'       => 'pending',
+    ]);
+
+    foreach ($cartData->items as $item) {
+        $order->items()->create([
+            'product_id' => $item->product_id,
+            'qty'        => $item->quantity,
+            'unit_price' => $item->price,
+        ]);
+        Product::where('id', $item->product_id)
+               ->decrement('stock', $item->quantity);
+    }
+
+    return $order; // Yeh value return hogi!
+});
+
+// Now $order is available:
+return redirect()->route('orders.show', $order->id);
+
+// RETRY ON DEADLOCK — Automatic retry karo:
+DB::transaction(function () {
+    // Complex operations...
+}, attempts: 3); // Deadlock par 3 baar try karega automatically!
+```
+
+##### Manual Transaction Control — Zyada Control Chahiye:
+```php
+// Manual mode — try/catch ke sath:
+DB::beginTransaction();
+try {
+    $payment = Payment::create([...]);
+    $order->update(['status' => 'paid', 'payment_id' => $payment->id]);
+    $this->notifyUser($order); // Agar notification fail ho...
+
+    DB::commit(); // Sab theek hai to commit karo
+} catch (\Exception $e) {
+    DB::rollBack(); // Koi bhi error = rollback!
+    Log::error('Payment transaction failed', ['error' => $e->getMessage()]);
+    throw $e; // Re-throw for proper error handling
+}
+
+// USE CASE FOR MANUAL: Jab aapko partial commit karna ho
+DB::beginTransaction();
+try {
+    $order = Order::create([...]);
+    DB::commit(); // Order commit karo pehle
+
+    // Ab separately payment attempt karo (outside transaction):
+    $payment = $paymentGateway->charge($order->total);
+    if (!$payment->success) {
+        $order->update(['status' => 'payment_failed']);
+    }
+} catch (\Exception $e) {
+    DB::rollBack();
+    throw $e;
+}
+```
+
+---
+
+#### 3. Race Conditions — `lockForUpdate()` Ka Use
+
+Race condition tab hoti hai jab do concurrent requests same data modify karne ki koshish karein. Sabse common example: **stock management**.
+
+```php
+// RACE CONDITION SCENARIO:
+// User A aur User B dono ek hi time par last product khareedne ki koshish karte hain
+
+// WITHOUT LOCK (WRONG — Overselling possible!):
+$product = Product::find($productId);
+if ($product->stock > 0) {
+    // Time gap here! Another request can also pass this check!
+    $product->decrement('stock');
+    Order::create([...]);
+}
+
+// WITH lockForUpdate (CORRECT — Atomic check + update):
+DB::transaction(function () use ($productId, $userId) {
+    // Row-level exclusive lock — doosra transaction wait karega!
+    $product = Product::where('id', $productId)
+                      ->lockForUpdate()  // SELECT ... FOR UPDATE
+                      ->first();
+
+    if (!$product || $product->stock <= 0) {
+        throw new OutOfStockException('Sorry, product is out of stock!');
+    }
+
+    $product->decrement('stock');
+
+    Order::create([
+        'user_id'    => $userId,
+        'product_id' => $productId,
+        'status'     => 'confirmed',
+    ]);
+    // Lock transaction end hone par release hoti hai
+});
+// Request B ab lock release hone par check karega — stock = 0 milega, out of stock!
+
+// sharedLock() — Read lock (other reads allowed, writes blocked):
+$product = Product::where('id', $productId)
+                  ->sharedLock()  // SELECT ... LOCK IN SHARE MODE
+                  ->first();
+// Use: Sirf consistent read chahiye, no write intent
+```
+
+---
+
+#### 4. Savepoints — Nested Transactions Ka Correct Way
+
+```php
+// MySQL mein true nested transactions nahi hoti
+// Laravel internally SAVEPOINTS use karta hai
+
+DB::transaction(function () {
+    User::create([...]); // Main transaction
+
+    DB::transaction(function () {
+        // Savepoint banta hai: SAVEPOINT trans2
+        Order::create([...]);
+
+        DB::transaction(function () {
+            // Savepoint: SAVEPOINT trans3
+            Payment::create([...]);
+            // Agar fail = ROLLBACK TO SAVEPOINT trans3 only!
+            // Outer transactions safe hain!
+        });
+    });
+    // Agar ye fail = ROLLBACK TO SAVEPOINT trans2
+    // User::create() safe hai!
+});
+```
+
+---
+
+#### 5. Deadlocks — Kaise Hote Hain Aur Kaise Bachein
+
+Deadlock tab hota hai jab do transactions ek doosre ka wait karein aur koi release na kare.
+
+```php
+// DEADLOCK SCENARIO:
+// Transaction A:
+DB::transaction(function () {
+    $user = User::lockForUpdate()->find(1);    // Lock user 1
+    // ... processing ...
+    $order = Order::lockForUpdate()->find(5);  // Try to lock order 5 -> WAIT (B has it!)
+});
+
+// Transaction B (simultaneously):
+DB::transaction(function () {
+    $order = Order::lockForUpdate()->find(5);  // Lock order 5
+    // ... processing ...
+    $user = User::lockForUpdate()->find(1);    // Try to lock user 1 -> WAIT (A has it!)
+});
+// DEADLOCK! A waits for B, B waits for A — MySQL auto-detects and kills one
+
+// HOW TO AVOID DEADLOCKS:
+
+// Rule 1: Hamesha same order mein resources lock karo
+// BOTH transactions: user pehle, order baad mein
+DB::transaction(function () {
+    $user = User::lockForUpdate()->find(1);    // FIRST: user
+    $order = Order::lockForUpdate()->find(5);  // SECOND: order
+    // Consistent order = no deadlock possible!
+});
+
+// Rule 2: Transaction scope chota rakho
+DB::transaction(function () {
+    // Sirf zaroori operations yahan
+    // Long API calls, file uploads — bahar karo
+});
+
+// Rule 3: Retry on deadlock (Laravel built-in):
+DB::transaction(function () { ... }, attempts: 3);
+// Deadlock aane par automatic retry — 3 attempts
+
+// Rule 4: Catch DeadlockException manually:
+use Illuminate\Database\QueryException;
+try {
+    DB::transaction(function () { ... });
+} catch (QueryException $e) {
+    if ($e->getCode() === '40001') { // Deadlock error code
+        // Retry or inform user
+        return response()->json(['error' => 'System busy, please retry'], 503);
+    }
+    throw $e;
+}
+```
+
+---
+
+#### 6. Foreign Key Cascades — Database Level Data Integrity
+
+```php
+// RESTRICT (default) — Parent delete block hota hai agar children hain:
+$table->foreignId('user_id')->constrained()->restrictOnDelete();
+// User::find(1)->delete() = ERROR agar orders hain!
+// Use: Kab kab accidental deletion rokna ho
+
+// CASCADE — Parent delete hone par children bhi delete:
+$table->foreignId('user_id')->constrained()->cascadeOnDelete();
+// User::find(1)->delete() = User + All orders + All order_items deleted!
+// Use: Agar parent ke bina child meaningless hai (e.g., cart_items agar cart delete ho)
+
+// SET NULL — Parent delete hone par FK column NULL ho jaata hai:
+$table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+// Category delete = product.category_id = NULL
+// Use: Agar child without parent bhi valid hai
+
+// SET DEFAULT (MySQL 8.0+):
+// Parent delete hone par default value set hoti hai
+// Rare use case — mostly SET NULL prefer karein
+
+// REAL WORLD EXAMPLE — E-commerce cascade strategy:
+Schema::create('orders', function (Blueprint $table) {
+    // User delete = RESTRICT (orders history preserve karo)
+    $table->foreignId('user_id')->constrained()->restrictOnDelete();
+});
+
+Schema::create('order_items', function (Blueprint $table) {
+    // Order delete = CASCADE (order bina order_items meaningless)
+    $table->foreignId('order_id')->constrained()->cascadeOnDelete();
+    // Product delete = SET NULL (order history preserve, sirf FK null karo)
+    $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
+});
+
+Schema::create('cart_items', function (Blueprint $table) {
+    // Cart delete = CASCADE (cart bina cart items koi kaam ki nahi)
+    $table->foreignId('cart_id')->constrained()->cascadeOnDelete();
+});
+```
+
+---
+
+#### Summary — Transactions & ACID Master Checklist
+
+1. **`DB::transaction()` use karo** jab multiple DB operations ek logical unit hain — koi bhi fail hua to sab rollback hona chahiye.
+2. **`lockForUpdate()` zaroori hai** stock decrement, wallet debit, seat booking mein — race condition se overselling/overbooking rukta hai.
+3. **Deadlock avoid karne ke liye:** Same order mein locks lo, transactions chote rakho, `attempts: 3` retry enable karo.
+4. **`cascadeOnDelete` sochke lagao** — accidental cascade bade data loss ka cause ban sakta hai production mein.
+5. **Transaction ke andar long operations mat karo** — API calls, file uploads, email sending transaction ke bahar karo.
+6. **MySQL auto-detects deadlocks** — loser transaction abort karta hai. `attempts: 3` se automatic retry ho jaati hai.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const txSteps = [
+            {
+                title: 'Step 1: Transaction Begin Karo',
+                level: 'DB Layer',
+                desc: 'Jab "Buy Now" click hota hai, Laravel controller DB::transaction() start karta hai. MySQL ko BEGIN statement bheja jaata hai. Ab se saari operations ek single atomic unit ki tarah treat hongi — ya sab commit honge ya sab rollback.',
+                code: 'DB::transaction(function () use ($request, $userId) {\n    // BEGIN; -- MySQL ko bheja jaata hai\n    // Ab saari queries ek transaction mein hain\n    // Koi bhi failure = automatic ROLLBACK;\n});'
+            },
+            {
+                title: 'Step 2: Stock Ko Lock Karo',
+                level: 'Locking',
+                desc: 'Pehle kaam: product ki stock row ko exclusive lock karo. SELECT ... FOR UPDATE se dusre concurrent requests isko modify nahi kar sakte jab tak yeh transaction commit na ho. Yeh race condition se bachata hai — do users ek sath last item nahi khareed sakte.',
+                code: '// Exclusive row lock:\n$product = Product::lockForUpdate()->findOrFail($productId);\n// Generated SQL:\n// SELECT * FROM products WHERE id = ? FOR UPDATE\n// Doosra request yahan WAIT karega jab tak yeh transaction commit na ho!'
+            },
+            {
+                title: 'Step 3: Stock Validate aur Deduct Karo',
+                level: 'Business Logic',
+                desc: 'Ab locked row se stock check karo. Agar available hai to decrement karo. Agar nahi hai to Exception throw karo — yeh automatically transaction rollback trigger karega. Lock release hogi aur doosra pending request proceed kar sakta hai.',
+                code: 'if ($product->stock < $requestedQty) {\n    // Exception = automatic ROLLBACK!\n    throw new InsufficientStockException("Out of stock");\n}\n\n// Safe atomic decrement:\n$product->decrement("stock", $requestedQty);\n// SQL: UPDATE products SET stock = stock - 2 WHERE id = ?'
+            },
+            {
+                title: 'Step 4: Order aur Order Items Create Karo',
+                level: 'Order Creation',
+                desc: 'Stock deducted ho gayi — ab order create karo. Order aur uske items dono same transaction mein create honge. Agar order create hua lekin items creation fail hua, to poori transaction rollback hogi — partial orders nahi banenge.',
+                code: '$order = Order::create([\n    "user_id"   => $userId,\n    "status"    => "confirmed",\n    "total"     => $product->price * $qty,\n]);\n\nOrderItem::create([\n    "order_id"   => $order->id,\n    "product_id" => $product->id,\n    "qty"        => $qty,\n    "unit_price" => $product->price, // Snapshot!\n]);'
+            },
+            {
+                title: 'Step 5: Commit Ya Rollback',
+                level: 'Transaction End',
+                desc: 'Agar saari operations successfully complete hui — COMMIT hota hai. Saari changes permanent ho jaati hain. Lock release hoti hai. Agar koi bhi operation mein exception aayi — ROLLBACK hota hai. Stock wapas original par, koi order nahi bana. Durability guarantee: Committed data crash survive karta hai.',
+                code: '// Sab theek: COMMIT;\n// All changes permanent, lock released\n// Stock decremented, order created -- both durable now!\n\n// Koi fail: ROLLBACK;\n// Stock unchanged, no order created\n// As if nothing happened!'
+            },
+            {
+                title: 'Step 6: Post-Commit Side Effects',
+                level: 'After Transaction',
+                desc: 'Transaction commit hone ke BAAD side effects karo. Email, notifications, webhooks, cache invalidation — yeh sab transaction ke bahar hone chahiye. Agar email fail ho to transaction rollback nahi hona chahiye. Queue jobs use karo for reliability.',
+                code: '// Transaction ke BAAD:\n$order = DB::transaction(function () { ... }); // Returns order\n\n// NOW do side effects (outside transaction):\ndispatch(new SendOrderEmailJob($order));       // Queue mein\ndispatch(new UpdateInventoryReportJob($order)); // Queue mein\nCache::tags("products")->flush();              // Cache clear\n// Agar koi side effect fail ho = order safe hai!'
+            }
+        ];
+
+        function showTxStep(index) {
+            document.querySelectorAll('#txNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = txSteps[index];
+            document.getElementById('txContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showTxStep(0);
+
+        function switchTxTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

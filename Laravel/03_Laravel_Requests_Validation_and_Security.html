@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Masterclass — Requests, Advanced Validation & Security</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="02_Laravel_Routing_Controllers_and_Middleware.html" class="nav-btn">&larr; Previous: Routing & Middleware</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="04_Laravel_Eloquent_ORM_and_Database_Mastery.html" class="nav-btn">Next: Eloquent ORM & Database &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Validation Rule Scenario Playground -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive FormRequest Validation Scenario Playground</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click a scenario to see how Senior Architects structure production FormRequests with lifecycle hooks, custom rules, and DTO transformations:
+        </p>
+
+        <div class="stepper-nav" id="scenarioNav">
+            <button class="step-chip active" onclick="showScenario(0)">1. User Registration (Password Rules)</button>
+            <button class="step-chip" onclick="showScenario(1)">2. Profile Update (Unique Ignore Self)</button>
+            <button class="step-chip" onclick="showScenario(2)">3. E-Commerce Order (Nested Arrays)</button>
+            <button class="step-chip" onclick="showScenario(3)">4. File Upload (MIME & Dimensions)</button>
+            <button class="step-chip" onclick="showScenario(4)">5. API Custom 422 JSON Handler</button>
+        </div>
+
+        <div class="step-content-box" id="scenarioContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Security Exploit vs Defense Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchSecTab(event, 'sec-mass-assign')">🛡️ 1. Mass Assignment (is_admin Injection)</button>
+            <button class="tab-btn" onclick="switchSecTab(event, 'sec-csrf')">🛡️ 2. CSRF Token & Webhook Exclusions</button>
+            <button class="tab-btn" onclick="switchSecTab(event, 'sec-sql-raw')">🛡️ 3. SQLi in whereRaw & orderByRaw</button>
+        </div>
+
+        <div id="sec-mass-assign" class="tab-panel active">
+            <p style="color:#991B1B; font-weight:600;">Vulnerability: Attacker passes <code>{"is_admin": true, "balance": 99999}</code> in POST payload.</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ VULNERABLE: Direct $request-&gt;all() into Model::create()
+public function store(Request $request) {
+    // Hacker payload: {"name": "Hacker", "email": "h@k.com", "is_admin": true}
+    $user = User::create($request->all()); // Hacker becomes SUPERADMIN!
+}
+
+// ✅ 1. SECURE: Use $request-&gt;validated() or $request-&gt;safe()
+public function store(RegisterUserRequest $request) {
+    $user = User::create($request->validated()); // Only whitelisted fields pass!
+}
+
+// ✅ 2. ENTERPRISE ENFORCEMENT: Enable Strict Mode in AppServiceProvider
+// app/Providers/AppServiceProvider.php
+public function boot(): void {
+    // Development me unfillable field aate hi turant Exception throw karega!
+    \Illuminate\Database\Eloquent\Model::shouldBeStrict(! $this->app->isProduction());
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="sec-csrf" class="tab-panel">
+            <p style="color:#166534; font-weight:600;">CSRF Protection: How CSRF tokens work and how to configure webhook exemptions.</p>
+            <pre><code class="language-php">&lt;?php
+// 1. In Blade Forms (Generates hidden input _token):
+// &lt;form method="POST" action="/transfer"&gt;
+//     @csrf
+//     ...
+// &lt;/form&gt;
+
+// 2. In Single Page Apps / Mobile (Axios & Fetch):
+// Laravel sets an unencrypted XSRF-TOKEN cookie on every response.
+// Axios automatically reads this cookie and sends it in the X-XSRF-TOKEN header!
+
+// 3. Excluding Webhooks from CSRF (Laravel 10 vs Laravel 11/12/13)
+// Laravel 10: app/Http/Middleware/VerifyCsrfToken.php -> protected $except = ['stripe/*'];
+// Laravel 11, 12, 13: bootstrap/app.php:
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->validateCsrfTokens(except: [
+            'stripe/webhook',
+            'api/v1/payments/razorpay-callback',
+            'github/webhook',
+        ]);
+    })->create();
+?&gt;</code></pre>
+        </div>
+
+        <div id="sec-sql-raw" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">SQL Injection in Raw Methods: Eloquent does NOT escape raw strings automatically!</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ VULNERABLE: Direct string concatenation inside whereRaw() or orderByRaw()
+$category = $request->query('category'); // Value: "electronics' OR 1=1 -- "
+$products = Product::whereRaw("category = '$category'")->get(); // SQL INJECTION!
+
+$sortBy = $request->query('sort'); // Value: "price; DROP TABLE users;--"
+$products = Product::orderByRaw("$sortBy ASC")->get(); // SQL INJECTION!
+
+// ✅ SAFE 1: Pass bindings array to whereRaw()
+$products = Product::whereRaw('category = ?', [$category])->get();
+
+// ✅ SAFE 2: Use whitelisted column matching for dynamic orderBy
+$allowedSorts = ['price', 'created_at', 'rating'];
+$column = in_array($request->query('sort'), $allowedSorts, true) ? $request->query('sort') : 'created_at';
+$products = Product::orderBy($column, 'desc')->get();
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="02_Laravel_Routing_Controllers_and_Middleware.html" class="nav-btn">&larr; Previous: Routing & Middleware</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="04_Laravel_Eloquent_ORM_and_Database_Mastery.html" class="nav-btn">Next: Eloquent ORM & Database &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### Module 03: Requests, Advanced Validation & Security Hardening
+
+Validation aur Security application ki pehli defence line hoti hai. Kisi bhi production application me user input ko tab tak **"Untrusted & Hostile"** maana jaata hai jab tak wo strict validation layers se pass hokar sanitize na ho jaye.
+
+Is module me hum explore karenge ki kaise **Senior Staff Engineers** FormRequests, Custom Rules, DTO hydration, Mass Assignment, CSRF, XSS aur SQLi defences ko implement karte hain **Laravel 10, 11, 12 aur 13** me.
+
+---
+
+#### 1. The Modern Request Object (`Illuminate\Http\Request`)
+
+Laravel 10, 11, 12 aur 13 me `Request` object powerful typed helper methods provide karta hai taaki aapko manually typecast na karna pade:
+
+##### 1.1 Fluent Type-Safe Input Retrieval
+
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class SearchController extends Controller
+{
+    public function filter(Request $request)
+    {
+        // 1. Strongly-typed retrieval (Laravel 10+)
+        $searchQuery  = $request->string('q')->trim()->toString();
+        $page         = $request->integer('page', default: 1);
+        $minPrice     = $request->float('min_price', default: 0.0);
+        $inStockOnly  = $request->boolean('in_stock'); // Converts 'true', '1', 'on', 'yes' to boolean true
+        $startDate    = $request->date('start_date', 'Y-m-d'); // Returns Carbon instance or null
+        $statusEnum   = $request->enum('status', OrderStatus::class); // Backed Enum instance
+
+        // 2. Safe presence checks
+        if ($request->filled('coupon_code')) {
+            // Field present hai aur empty string nahi hai
+        }
+
+        if ($request->missing('secret_key')) {
+            // Field request me bheji hi nahi gayi
+        }
+
+        // 3. Conditional execution helpers
+        $request->whenFilled('discount_code', function (string $code) {
+            // Sirf tab chalega jab discount_code field non-empty ho
+        });
+    }
+}
+```
+
+> **Hinglish Tip:** Kabhi bhi `$request->get('is_active') == 'true'` jaisi manual string matching mat likhiye! Hamesha `$request->boolean('is_active')` use karein kyunki ye `1`, `"1"`, `"true"`, `"on"`, aur `"yes"` sabko smartly boolean `true` me convert karta hai.
+
+---
+
+#### 2. FormRequest Architecture: The Senior Clean Standard
+
+Controllers me `$request->validate([...])` likhna small scripts ke liye theek hai, lekin production apps me validation hamesha dedicated **FormRequest Classes** me honi chahiye.
+
+```bash
+php artisan make:request StoreOrderRequest
+```
+
+##### 2.1 Complete Lifecycle of a FormRequest
+
+Ek FormRequest me sirf `rules()` nahi hoti, balki 5 critical lifecycle methods hote hain:
+
+```
+Incoming Request
+      │
+      ▼
+1. authorize()           → Checks Gates/Policies. Returns 403 if false.
+      │
+      ▼
+2. prepareForValidation()→ Data Sanitization (Trimming, lowercase email, stripping dashes)
+      │
+      ▼
+3. rules()               → Executes Validation Rules
+      │
+      ├── [FAILS]  ───────→ 422 Unprocessable Entity (with JSON errors or session redirect)
+      ▼ [PASSES]
+4. passedValidation()    → Post-validation mutation / DTO construction
+      │
+      ▼
+Controller Action Executed
+```
+
+##### 2.2 Production FormRequest Implementation
+
+```php
+namespace App\Http\Requests;
+
+use App\Data\OrderDTO;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class StoreOrderRequest extends FormRequest
+{
+    /**
+     * 1. Authorization Gate:
+     * Agar user authorized nahi hai toh automatic 403 Forbidden return hota hai!
+     */
+    public function authorize(): bool
+    {
+        return $this->user() !== null && $this->user()->can('create', \App\Models\Order::class);
+    }
+
+    /**
+     * 2. Pre-Validation Sanitization:
+     * Validation run hone se pehle data clean karein!
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => strtolower(trim((string) $this->input('email'))),
+            'phone' => preg_replace('/[^0-9]/', '', (string) $this->input('phone')), // Strips spaces and dashes
+        ]);
+    }
+
+    /**
+     * 3. Validation Rules
+     */
+    public function rules(): array
+    {
+        return [
+            'email'        => ['required', 'email:rfc,dns', 'max:255'],
+            'phone'        => ['required', 'string', 'min:10', 'max:15'],
+            'payment_type' => ['required', Rule::in(['stripe', 'paypal', 'wallet'])],
+            'items'        => ['required', 'array', 'min:1', 'max:50'],
+            'items.*.id'   => ['required', 'integer', Rule::exists('products', 'id')->where('is_active', true)],
+            'items.*.qty'  => ['required', 'integer', 'min:1', 'max:10'],
+        ];
+    }
+
+    /**
+     * 4. Custom Error Messages & Attribute Labels
+     */
+    public function messages(): array
+    {
+        return [
+            'items.*.id.exists' => 'Selected product is currently unavailable or out of stock.',
+            'items.*.qty.max'   => 'You cannot order more than :max units of any single product.',
+        ];
+    }
+
+    /**
+     * 5. Conversion to Strongly Typed Data Transfer Object (DTO)
+     */
+    public function toDto(): OrderDTO
+    {
+        return new OrderDTO(
+            userId: (int) $this->user()->id,
+            email: (string) $this->validated('email'),
+            phone: (string) $this->validated('phone'),
+            items: (array) $this->validated('items')
+        );
+    }
+}
+```
+
+---
+
+#### 3. Advanced Validation Rules Deep Dive
+
+##### 3.1 Unique Rule with Self-Update Exemption
+
+Profile update karte waqt agar user apna email change nahi karta, toh standard `unique:users,email` rule fail ho jayega kyunki wo email already DB me usi user ka exist karta hai!
+
+```php
+use Illuminate\Validation\Rule;
+
+public function rules(): array
+{
+    // $this->user() se logged-in user ki ID nikaal kar ignore karein
+    return [
+        'email' => [
+            'required',
+            'email',
+            Rule::unique('users', 'email')->ignore($this->user()->id),
+        ],
+    ];
+}
+```
+
+##### 3.2 Enterprise Password Rule (Pwned Password Detection)
+
+Laravel ka `Password` rule object HaveIBeenPwned API ko call karta hai to ensure ki password kisi public database leak me compromise na hua ho:
+
+```php
+use Illuminate\Validation\Rules\Password;
+
+public function rules(): array
+{
+    return [
+        'password' => [
+            'required',
+            'confirmed', // Requires matching password_confirmation field
+            Password::min(10)
+                ->letters()
+                ->mixedCase()
+                ->numbers()
+                ->symbols()
+                ->uncompromised(threshold: 3), // Rejects if leaked 3+ times online!
+        ],
+    ];
+}
+```
+
+##### 3.3 Conditional & Complex Rules (`required_if`, `prohibited_if`)
+
+```php
+use Illuminate\Validation\Rule;
+
+public function rules(): array
+{
+    return [
+        'payment_method' => ['required', 'in:credit_card,bank_transfer,crypto'],
+
+        // Card number sirf tab required hai jab payment_method == 'credit_card'
+        'card_number' => ['required_if:payment_method,credit_card', 'nullable', 'string'],
+
+        // Bank routing code crypto ke time prohibited (forbidden) hona chahiye!
+        'bank_code'   => ['prohibited_if:payment_method,crypto', 'nullable', 'string'],
+
+        // Dynamic exclusion: Agar free tier hai toh promo_code check mat karo
+        'promo_code'  => [Rule::excludeIf($this->boolean('is_free_trial')), 'string', 'max:20'],
+    ];
+}
+```
+
+---
+
+#### 4. Custom Validation Rules (Invokable Classes)
+
+Laravel 10, 11, 12 aur 13 me custom validation rules **Invokable** class pattern implement karte hain (`ValidationRule` interface):
+
+```bash
+php artisan make:rule ValidGstNumber
+```
+
+```php
+namespace App\Rules;
+
+use Closure;
+use Illuminate\Contracts\Validation\ValidationRule;
+
+final class ValidGstNumber implements ValidationRule
+{
+    /**
+     * Run the validation rule.
+     *
+     * @param  string   $attribute  The field name under validation
+     * @param  mixed    $value      The incoming input value
+     * @param  Closure  $fail       Callable to invoke if validation fails
+     */
+    public function validate(string $attribute, mixed $value, Closure $fail): void
+    {
+        // GST format regex: 2 digits state code + 10 chars PAN + 1 entity + 1 'Z' + 1 checksum
+        $gstRegex = '/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/';
+
+        if (! is_string($value) || ! preg_match($gstRegex, strtoupper($value))) {
+            $fail('The :attribute is not a valid Indian GSTIN number format.');
+        }
+    }
+}
+
+// Usage in any FormRequest:
+'gst_number' => ['required', new ValidGstNumber()],
+```
+
+---
+
+#### 5. Security Defense 1: Mass Assignment & Strict Models
+
+Mass assignment attack tab hota hai jab attacker HTTP request me extra sensitive attributes (jaise `is_admin`, `verified`, `role`, `account_balance`) inject kar deta hai aur developer `$request->all()` use karta hai.
+
+##### 5.1 The Danger
+
+```php
+// ❌ CRITICAL SECURITY FLAW:
+$user = User::create($request->all());
+```
+
+Agar `User` model me `protected $guarded = [];` likha hai, toh attacker superadmin ban jayega!
+
+##### 5.2 The 3-Tier Defense Standard
+
+1. **Always use `$request->validated()`:**
+   ```php
+   $user = User::create($request->validated()); // Sirf wahi fields aayenge jo rules() me define hain!
+   ```
+2. **Explicit `$fillable` in Models:**
+   ```php
+   protected $fillable = ['name', 'email', 'password']; // Never include is_admin or balance!
+   ```
+3. **Model Strictness in `AppServiceProvider`:**
+   ```php
+   // app/Providers/AppServiceProvider.php
+   public function boot(): void
+   {
+       // Development / Staging me mass-assignment violation par direct Exception throw karega!
+       Model::shouldBeStrict(! $this->app->isProduction());
+   }
+   ```
+
+---
+
+#### 6. Security Defense 2: CSRF & CORS Protection
+
+##### 6.1 How CSRF Protection Works
+
+1. Har active user session ke liye Laravel ek cryptographic 40-character secret token generate karta hai: `session()->token()`.
+2. Har POST, PUT, DELETE request par Laravel verify karta hai ki form ka `_token` ya `X-CSRF-TOKEN` header session ke token se match karta hai ya nahi (`hash_equals()` timing-safe comparison).
+3. Token invalid hone par **`419 Page Expired / CSRF token mismatch`** return hota hai.
+
+##### 6.2 Webhook Exclusions Across Versions
+
+* **Laravel 10:** `app/Http/Middleware/VerifyCsrfToken.php` ke andar `$except` array me route URL daalna padta tha.
+* **Laravel 11, 12, 13:** `bootstrap/app.php` me direct register hota hai:
+  ```php
+  $middleware->validateCsrfTokens(except: [
+      'stripe/webhook',
+      'webhooks/*',
+  ]);
+  ```
+
+---
+
+#### 7. Security Defense 3: XSS & Safe Blade Rendering
+
+Cross-Site Scripting (XSS) attack tab hota hai jab malicious JavaScript browser me inject ho jati hai.
+
+```blade
+{{-- ✅ SAFE: Laravel automatically runs htmlspecialchars($userInput, ENT_QUOTES, 'UTF-8') --}}
+<h3>Hello, {{ $user->name }}</h3>
+{{-- Output if name is &lt;script&gt;alert(1)&lt;/script&gt;:
+     Hello, &lt;script&gt;alert(1)&lt;/script&gt; (Rendered safely as text!) --}}
+
+{{-- ❌ DANGEROUS: Unescaped raw output! NEVER use with user-supplied input! --}}
+<div>{!! $user->bio !!}</div>
+```
+
+Agar user se rich text (HTML content) accept karna hi hai, toh storage se pehle **HTMLPurifier** library se sanitize karein:
+
+```bash
+composer require mews/purifier
+```
+
+```php
+$cleanHtml = clean($request->input('rich_bio'));
+```
+
+---
+
+#### 8. Security Defense 4: SQL Injection in Raw Database Expressions
+
+Eloquent ORM standard query builder methods (`where('status', $status)`) me automatically **PDO Prepared Statements** use karta hai, isliye standard methods me SQLi impossible hai.
+
+**Lekin Raw Methods me developer ko bindings manually pass karni hoti hain!**
+
+```php
+// ❌ VULNERABLE: Direct string interpolation
+User::whereRaw("email = '" . $request->input('email') . "'")->first();
+
+// ✅ SECURE: Parameter Binding with Question Mark (?)
+User::whereRaw('email = ?', [$request->input('email')])->first();
+
+// ✅ SECURE: Named Parameter Binding
+User::whereRaw('status = :status AND points > :min', [
+    'status' => 'active',
+    'min'    => 100,
+])->get();
+```
+
+---
+
+#### 9. Custom API 422 JSON Exception Response
+
+Default me validation fail hone par Laravel web requests ko back redirect karta hai with errors. Lekin API requests ke liye standard JSON format follow hona chahiye:
+
+```php
+// In app/Http/Requests/ApiFormRequest.php
+namespace App\Http\Requests;
+
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+
+abstract class ApiFormRequest extends FormRequest
+{
+    /**
+     * Override failedValidation to throw custom API error envelope.
+     */
+    protected function failedValidation(Validator $validator): void
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'code'    => 'VALIDATION_FAILED',
+            'message' => 'The given input data was invalid.',
+            'errors'  => $validator->errors()->messages(),
+        ], 422));
+    }
+}
+```
+
+---
+
+#### 10. Senior Checklist — Requests, Validation & Security
+
+1. [x] **Never use `$request->all()`** in `Model::create()` or `Model::update()`. Always use `$request->validated()` from FormRequests.
+2. [x] **Enable `Model::shouldBeStrict()`** in `AppServiceProvider::boot()` to catch unfillable attributes and lazy loading violations immediately in local development.
+3. [x] **Sanitize inputs before validation** using `prepareForValidation()` in FormRequests rather than dirtying controller actions.
+4. [x] **Always ignore current ID on update** with `Rule::unique()->ignore($user->id)` to prevent false duplicate validation errors.
+5. [x] **Never concatenate raw strings in `whereRaw()`, `orderByRaw()`, or `havingRaw()`**: Always use prepared statement parameter bindings (`?` or `:name`).
+6. [x] **Use `Password::uncompromised()`** for user passwords in production to block credentials leaked in public data breaches.
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Scenario 0
+            showScenario(0);
+        });
+
+        // 2. Interactive Scenarios Data
+        const scenarios = [
+            {
+                title: "1. User Registration with Compromised Password Check",
+                badge: "AUTH SECURITY",
+                desc: "Validates email RFC/DNS format, enforces a strong password, and calls HaveIBeenPwned API to ensure the password has never appeared in public breaches.",
+                code: "'email'    => ['required', 'email:rfc,dns', 'max:255', Rule::unique('users', 'email')],\n'password' => [\n    'required', 'confirmed',\n    Password::min(10)->letters()->mixedCase()->numbers()->symbols()->uncompromised(threshold: 3)\n],"
+            },
+            {
+                title: "2. Profile Update (Ignore Current User ID)",
+                badge: "CRUD SAFE",
+                desc: "Allows the user to update their name and profile while keeping their existing email without triggering a 'The email has already been taken' error.",
+                code: "'email' => [\n    'required', 'email', 'max:255',\n    Rule::unique('users', 'email')->ignore($this->user()->id)\n],\n'username' => [\n    'required', 'alpha_dash:ascii', 'max:30',\n    Rule::unique('users', 'username')->ignore($this->user()->id)\n],"
+            },
+            {
+                title: "3. E-Commerce Order with Nested Items Array",
+                badge: "COMPLEX ARRAYS",
+                desc: "Validates an order containing an array of items, ensuring every product ID exists in the DB, is active, and quantity does not exceed inventory constraints.",
+                code: "'items'              => ['required', 'array', 'min:1', 'max:50'],\n'items.*.product_id' => ['required', 'integer', Rule::exists('products', 'id')->where('is_active', true)],\n'items.*.quantity'   => ['required', 'integer', 'min:1', 'max:10'],\n'shipping_address'   => ['required', 'array'],\n'shipping_address.zip'=> ['required', 'regex:/^[0-9]{5,6}$/'],"
+            },
+            {
+                title: "4. Secure File Upload (MIME, Dimensions & Size)",
+                badge: "FILE HARDENING",
+                desc: "Restricts uploaded avatar to JPG/PNG/WebP, enforces minimum and maximum dimensions, and caps size at 2MB to prevent server disk exhaustion.",
+                code: "'avatar' => [\n    'required', 'file',\n    'mimes:jpg,jpeg,png,webp',\n    'max:2048', // 2MB in kilobytes\n    Rule::dimensions()->minWidth(200)->minHeight(200)->maxWidth(2000)->maxHeight(2000)\n],"
+            },
+            {
+                title: "5. Custom API 422 JSON Handler (No Redirects)",
+                badge: "API REST ENVELOPE",
+                desc: "Overrides FormRequest's failedValidation method to throw an HttpResponseException with a standardized JSON error envelope for mobile and SPA clients.",
+                code: "protected function failedValidation(Validator $validator): void {\n    throw new HttpResponseException(response()->json([\n        'success' => false,\n        'code'    => 'VALIDATION_FAILED',\n        'message' => 'Input data failed validation rules.',\n        'errors'  => $validator->errors()->messages(),\n    ], 422));\n}"
+            }
+        ];
+
+        function showScenario(index) {
+            const chips = document.querySelectorAll('#scenarioNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const sc = scenarios[index];
+            const contentBox = document.getElementById('scenarioContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${sc.title}</h5>
+                    <span class="badge badge-pro">${sc.badge}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${sc.desc}</p>
+                <pre style="margin:0;"><code class="language-php">${sc.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchSecTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

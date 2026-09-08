@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core PHP - OOP & Advanced Concepts</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="01_Core_PHP_Fundamentals.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="03_Core_PHP_Database_and_Security.html" class="nav-btn">Next: Database & Security &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Interactive OOP Architectural Pipeline -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive PHP OOP Architecture & Advanced Patterns</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click through the core paradigms of enterprise PHP OOP to see how modern encapsulation, inheritance, LSB, and generators operate under the hood:
+        </p>
+
+        <div class="stepper-nav" id="oopNav">
+            <button class="step-chip active" onclick="showOopStep(0)">1. Property Promotion (PHP 8)</button>
+            <button class="step-chip" onclick="showOopStep(1)">2. Inheritance & Overriding</button>
+            <button class="step-chip" onclick="showOopStep(2)">3. Abstract vs Interface</button>
+            <button class="step-chip" onclick="showOopStep(3)">4. Traits Conflict Resolution</button>
+            <button class="step-chip" onclick="showOopStep(4)">5. Late Static Binding (self vs static)</button>
+            <button class="step-chip" onclick="showOopStep(5)">6. Memory Generators (yield)</button>
+        </div>
+
+        <div class="step-content-box" id="oopContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Magic Methods & Framework Metaprogramming Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchOopTab(event, 'otab-props')">1. Property Overloading (__get / __set)</button>
+            <button class="tab-btn" onclick="switchOopTab(event, 'otab-methods')">2. Method Overloading (__call / __callStatic)</button>
+            <button class="tab-btn" onclick="switchOopTab(event, 'otab-lifecycle')">3. Invocation & Serialization (__invoke / __toString)</button>
+        </div>
+
+        <div id="otab-props" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Property Overloading: The underlying mechanism behind Laravel Eloquent dynamic attributes.</p>
+            <pre><code class="language-php">&lt;?php
+class DynamicModel
+{
+    protected array $attributes = [];
+
+    // Invoked automatically when reading an inaccessible or non-existent property
+    public function __get(string $name): mixed
+    {
+        return $this->attributes[$name] ?? null;
+    }
+
+    // Invoked automatically when writing to an inaccessible property
+    public function __set(string $name, mixed $value): void
+    {
+        // Mutate or sanitize before storing!
+        $this->attributes[$name] = $value;
+    }
+
+    public function __isset(string $name): bool
+    {
+        return isset($this->attributes[$name]);
+    }
+}
+
+$user = new DynamicModel();
+$user->email = 'admin@corp.com'; // Calls __set('email', 'admin@corp.com')
+echo $user->email;               // Calls __get('email')
+?&gt;</code></pre>
+        </div>
+
+        <div id="otab-methods" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">Method Overloading: The foundation of Laravel Facades and Query Builder forwarding.</p>
+            <pre><code class="language-php">&lt;?php
+class ServiceProxy
+{
+    protected RealWorker $worker;
+
+    public function __construct() {
+        $this->worker = new RealWorker();
+    }
+
+    // Dynamic instance method forwarding:
+    public function __call(string $method, array $arguments): mixed
+    {
+        echo "Intercepted call to dynamic method: {$method}()\n";
+        return $this->worker->{$method}(...$arguments);
+    }
+
+    // Dynamic static method forwarding (Laravel Facade pattern!):
+    public static function __callStatic(string $method, array $arguments): mixed
+    {
+        $instance = static::resolveInstance();
+        return $instance->{$method}(...$arguments);
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="otab-lifecycle" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Invokable Objects & String Casting: Clean Action Classes & Value Objects.</p>
+            <pre><code class="language-php">&lt;?php
+// Invokable Class: Can be called directly as a function!
+final class CalculateInvoiceTax
+{
+    public function __invoke(float $amount, float $taxRate = 0.18): float
+    {
+        return $amount * (1 + $taxRate);
+    }
+}
+
+$taxCalculator = new CalculateInvoiceTax();
+$total = $taxCalculator(1000.0); // Directly invokes __invoke() -> returns 1180.0
+
+// Value Object with __toString:
+final class Money
+{
+    public function __construct(public int $cents, public string $currency = 'INR') {}
+
+    public function __toString(): string
+    {
+        return sprintf('%s %.2f', $this->currency, $this->cents / 100);
+    }
+}
+
+$price = new Money(4999);
+echo "Final Price: " . $price; // Auto-casts: "Final Price: INR 49.99"
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="01_Core_PHP_Fundamentals.html" class="nav-btn">&larr; Previous: Fundamentals</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="03_Core_PHP_Database_and_Security.html" class="nav-btn">Next: Database & Security &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+
+### Core PHP — OOP, Interfaces, Traits & Advanced Patterns
+
+Object-Oriented PHP is the foundation of every major PHP framework — Laravel, Symfony, Slim, CakePHP. Understanding PHP OOP deeply means you can read Laravel source code, extend it confidently, and write truly reusable, testable backend systems.
+
+> **20 YOE Expert Tip:** PHP OOP PHP 5 mein aaya, PHP 7 ne use enterprise-ready banaya, aur PHP 8 ne use near-Java-level type safety de di. Laravel ka pura core — Service Container, Facades, Eloquent ORM — sab OOP ke upar build hai.
+
+---
+
+#### 1. Classes & Objects — The Basics
+
+```php
+<?php
+
+class User {
+    // Properties (instance variables)
+    public string $name;
+    public string $email;
+    private string $password;      // Private — only inside this class
+    protected int $loginAttempts;  // Protected — this class + subclasses
+
+    // Constructor — runs when object is created with `new`
+    public function __construct(string $name, string $email, string $password) {
+        $this->name     = $name;
+        $this->email    = $email;
+        $this->password = password_hash($password, PASSWORD_BCRYPT);
+        $this->loginAttempts = 0;
+    }
+
+    // Public method — accessible from anywhere
+    public function getEmail(): string {
+        return $this->email;
+    }
+
+    // Private method — only accessible inside this class
+    private function hashPassword(string $raw): string {
+        return password_hash($raw, PASSWORD_BCRYPT);
+    }
+
+    // Verifies password
+    public function verifyPassword(string $raw): bool {
+        return password_verify($raw, $this->password);
+    }
+
+    // toString magic method — called when object is used as string
+    public function __toString(): string {
+        return "User({$this->name}, {$this->email})";
+    }
+}
+
+// Creating an object (instance)
+$user = new User("Rahul", "rahul@example.com", "secret123");
+
+// Accessing public properties & methods
+echo $user->name;             // Rahul
+echo $user->getEmail();       // rahul@example.com
+echo $user->verifyPassword("secret123"); // true
+echo $user;                   // User(Rahul, rahul@example.com) — uses __toString
+
+// echo $user->password;  // Fatal Error! Private property
+?>
+```
+
+---
+
+#### 2. Access Modifiers — public, protected, private
+
+| Modifier | Same Class | Subclass | Outside Class |
+| :--- | :---: | :---: | :---: |
+| `public` | ✅ | ✅ | ✅ |
+| `protected` | ✅ | ✅ | ❌ |
+| `private` | ✅ | ❌ | ❌ |
+
+```php
+<?php
+class BankAccount {
+    public string $owner;
+    protected float $balance;  // subclasses can read/write balance
+    private string $pin;       // ONLY this class can touch pin
+
+    public function __construct(string $owner, float $initialBalance, string $pin) {
+        $this->owner   = $owner;
+        $this->balance = $initialBalance;
+        $this->pin     = $pin;
+    }
+
+    public function getBalance(): float {
+        return $this->balance;
+    }
+
+    public function withdraw(float $amount, string $pin): bool {
+        if ($pin !== $this->pin) {
+            throw new \RuntimeException("Invalid PIN!");
+        }
+        if ($amount > $this->balance) {
+            throw new \RuntimeException("Insufficient balance!");
+        }
+        $this->balance -= $amount;
+        return true;
+    }
+}
+
+class SavingsAccount extends BankAccount {
+    private float $interestRate;
+
+    public function __construct(string $owner, float $balance, string $pin, float $rate) {
+        parent::__construct($owner, $balance, $pin);  // Call parent constructor
+        $this->interestRate = $rate;
+    }
+
+    public function applyInterest(): void {
+        $this->balance *= (1 + $this->interestRate);  // Protected — accessible here!
+        // $this->pin — Fatal Error! Private — NOT accessible in child
+    }
+}
+?>
+```
+
+---
+
+#### 3. Static Properties & Methods
+
+Static members belong to the **class itself**, not to any individual instance:
+
+```php
+<?php
+class Database {
+    // Static property — shared across ALL instances
+    private static ?Database $instance = null;
+    private static int $queryCount = 0;
+
+    private function __construct(private string $dsn) {}
+
+    // Singleton pattern — only one DB connection ever created
+    public static function getInstance(string $dsn = 'mysql:host=localhost;dbname=app'): self {
+        if (self::$instance === null) {
+            self::$instance = new self($dsn);
+        }
+        return self::$instance;
+    }
+
+    public static function getQueryCount(): int {
+        return self::$queryCount;
+    }
+
+    public function query(string $sql): string {
+        self::$queryCount++;
+        return "Executing: $sql (Query #{$this->getQueryCount()})";
+    }
+}
+
+// Access static method without creating an object
+$db1 = Database::getInstance();
+$db2 = Database::getInstance();
+
+var_dump($db1 === $db2);  // true — same object (Singleton!)
+
+echo Database::getQueryCount();  // 0
+$db1->query("SELECT * FROM users");
+echo Database::getQueryCount();  // 1
+
+// Useful static utility class
+class Str {
+    public static function slug(string $text): string {
+        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $text)));
+    }
+
+    public static function truncate(string $text, int $length = 100): string {
+        return strlen($text) > $length ? substr($text, 0, $length) . '...' : $text;
+    }
+}
+
+echo Str::slug("Hello World PHP!"); // hello-world-php
+echo Str::truncate("A very long string here...", 10); // A very lon...
+?>
+```
+
+---
+
+#### 4. Inheritance & Method Overriding
+
+```php
+<?php
+
+// Base class (Parent)
+abstract class Animal {
+    public function __construct(
+        protected string $name,
+        protected string $species
+    ) {}
+
+    // Regular method — subclasses can call or override
+    public function describe(): string {
+        return "{$this->name} is a {$this->species}";
+    }
+
+    // Abstract method — MUST be implemented by subclasses
+    abstract public function makeSound(): string;
+
+    // Final method — CANNOT be overridden by subclasses
+    final public function breathe(): string {
+        return "{$this->name} is breathing...";
+    }
+}
+
+class Dog extends Animal {
+    public function __construct(string $name, private string $breed) {
+        parent::__construct($name, 'Canis lupus familiaris');
+    }
+
+    // Implementing the abstract method — MANDATORY
+    public function makeSound(): string {
+        return "{$this->name} says: Woof!";
+    }
+
+    // Overriding the parent method
+    public function describe(): string {
+        return parent::describe() . " ({$this->breed})";
+    }
+}
+
+class Cat extends Animal {
+    public function makeSound(): string {
+        return "{$this->name} says: Meow!";
+    }
+}
+
+$dog = new Dog("Bruno", "Labrador");
+$cat = new Cat("Whiskers", "Felis catus");
+
+echo $dog->describe();   // Bruno is a Canis lupus familiaris (Labrador)
+echo $dog->makeSound();  // Bruno says: Woof!
+echo $cat->makeSound();  // Whiskers says: Meow!
+echo $dog->breathe();    // Bruno is breathing...
+
+// Polymorphism — same method name, different behavior
+$animals = [$dog, $cat];
+foreach ($animals as $animal) {
+    echo $animal->makeSound() . "\n";  // Each makes its own sound
+}
+?>
+```
+
+<span class="hinglish">Laravel mein `Model` class `Illuminate\Database\Eloquent\Model` ko extend karta hai. `User extends Model` — yahi inheritance hai! Aur `HasFactory`, `Notifiable` — yeh sab Traits hain jo hum next section mein dekhenge.</span>
+
+---
+
+#### 5. Interfaces — Define a Contract
+
+An interface defines **what** a class must do, but NOT **how**. It is a pure contract:
+
+```php
+<?php
+
+// Interface — defines the contract
+interface Payable {
+    public function charge(float $amount): bool;
+    public function refund(float $amount): bool;
+    public function getBalance(): float;
+}
+
+interface Loggable {
+    public function log(string $message): void;
+}
+
+// A class CAN implement multiple interfaces (unlike extends — only one parent)
+class RazorpayGateway implements Payable, Loggable {
+    private float $balance = 0.0;
+    private array $logs = [];
+
+    public function charge(float $amount): bool {
+        $this->balance += $amount;
+        $this->log("Charged: ₹{$amount}");
+        return true;
+    }
+
+    public function refund(float $amount): bool {
+        if ($amount > $this->balance) return false;
+        $this->balance -= $amount;
+        $this->log("Refunded: ₹{$amount}");
+        return true;
+    }
+
+    public function getBalance(): float {
+        return $this->balance;
+    }
+
+    public function log(string $message): void {
+        $this->logs[] = date('Y-m-d H:i:s') . " — " . $message;
+    }
+}
+
+class StripeGateway implements Payable {
+    private float $balance = 0.0;
+
+    public function charge(float $amount): bool {
+        $this->balance += $amount;
+        return true;
+    }
+
+    public function refund(float $amount): bool {
+        $this->balance -= $amount;
+        return true;
+    }
+
+    public function getBalance(): float {
+        return $this->balance;
+    }
+}
+
+// Type-hinted to interface — works with ANY implementation!
+function processPayment(Payable $gateway, float $amount): void {
+    if ($gateway->charge($amount)) {
+        echo "Payment of ₹{$amount} processed. Balance: ₹" . $gateway->getBalance();
+    }
+}
+
+processPayment(new RazorpayGateway(), 5000);
+processPayment(new StripeGateway(), 3000);
+
+// Interface type checking
+$gw = new RazorpayGateway();
+var_dump($gw instanceof Payable);   // true
+var_dump($gw instanceof Loggable);  // true
+?>
+```
+
+> **Senior Dev Tip:** In Laravel, `Illuminate\Contracts\*` are all interfaces. `Cache\Repository` implements `Cache\Store`. This is how Laravel lets you swap Redis for Memcached without changing application code — **Dependency Inversion Principle**.
+
+---
+
+#### 6. Traits — Horizontal Code Reuse
+
+PHP only allows **single inheritance**. Traits solve the problem of sharing code across unrelated class hierarchies:
+
+```php
+<?php
+
+// Trait — a reusable block of methods
+trait Timestampable {
+    private ?string $createdAt = null;
+    private ?string $updatedAt = null;
+
+    public function setCreatedAt(): void {
+        $this->createdAt = date('Y-m-d H:i:s');
+    }
+
+    public function setUpdatedAt(): void {
+        $this->updatedAt = date('Y-m-d H:i:s');
+    }
+
+    public function getCreatedAt(): ?string { return $this->createdAt; }
+    public function getUpdatedAt(): ?string { return $this->updatedAt; }
+}
+
+trait SoftDeletable {
+    private ?string $deletedAt = null;
+
+    public function softDelete(): void {
+        $this->deletedAt = date('Y-m-d H:i:s');
+    }
+
+    public function restore(): void {
+        $this->deletedAt = null;
+    }
+
+    public function isDeleted(): bool {
+        return $this->deletedAt !== null;
+    }
+}
+
+trait HasUuid {
+    private string $uuid;
+
+    public function generateUuid(): void {
+        $this->uuid = sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+
+    public function getUuid(): string { return $this->uuid; }
+}
+
+// Use multiple traits in a single class
+class Post {
+    use Timestampable, SoftDeletable, HasUuid;
+
+    public function __construct(
+        public string $title,
+        public string $content
+    ) {
+        $this->generateUuid();
+        $this->setCreatedAt();
+    }
+}
+
+class Comment {
+    use Timestampable, SoftDeletable;  // Reuse same traits in unrelated class!
+
+    public function __construct(public string $body) {
+        $this->setCreatedAt();
+    }
+}
+
+$post = new Post("Hello PHP", "PHP OOP is powerful!");
+echo $post->getUuid();       // e.g. a1b2c3d4-...
+echo $post->getCreatedAt();  // 2024-01-15 14:30:00
+
+$post->softDelete();
+echo $post->isDeleted();  // true
+$post->restore();
+echo $post->isDeleted();  // false
+?>
+```
+
+<span class="hinglish">Laravel ke `User` model mein `use HasFactory, Notifiable, HasApiTokens` likha hota hai — yeh sab Traits hain! `Notifiable` Trait add karne se aapki User class ko email/SMS notification bhejne ki power mil jaati hai bina kisi inheritance ke. Yahi Traits ki beauty hai!</span>
+
+---
+
+#### 7. Abstract Classes vs Interfaces — Key Differences
+
+| Feature | Abstract Class | Interface |
+| :--- | :--- | :--- |
+| Can have concrete methods | ✅ Yes | ❌ No (PHP 8 has default methods) |
+| Can have properties | ✅ Yes | ❌ No (only constants) |
+| Can have constructor | ✅ Yes | ❌ No |
+| Multiple inheritance | ❌ One only | ✅ Multiple interfaces |
+| Access modifiers | ✅ public/protected/private | Only `public` |
+| Use when | Sharing implementation + enforcing structure | Defining pure contracts |
+
+---
+
+#### 8. PHP 8 Constructor Property Promotion
+
+PHP 8 introduced a massive shorthand that eliminates boilerplate constructor code:
+
+```php
+<?php
+
+// OLD WAY (verbose, repetitive)
+class ProductOld {
+    public string $name;
+    private float $price;
+    protected int $stock;
+
+    public function __construct(string $name, float $price, int $stock) {
+        $this->name  = $name;
+        $this->price = $price;
+        $this->stock = $stock;
+    }
+}
+
+// NEW WAY — PHP 8 Constructor Property Promotion (same result, 70% less code!)
+class Product {
+    public function __construct(
+        public readonly string $name,    // readonly = can't be changed after construction
+        private float $price,
+        protected int $stock = 0,        // Default value support
+        public ?string $category = null  // Nullable support
+    ) {}
+
+    public function getPrice(): float { return $this->price; }
+
+    public function applyDiscount(float $percent): void {
+        $this->price *= (1 - $percent / 100);
+        // $this->name = "New Name"; // Fatal Error! readonly property
+    }
+}
+
+$product = new Product("Laptop", 75000.00, 50, "Electronics");
+echo $product->name;         // Laptop
+echo $product->getPrice();   // 75000
+
+$product->applyDiscount(10);
+echo $product->getPrice();   // 67500
+?>
+```
+
+---
+
+#### 9. Magic Methods — PHP's Special Hooks
+
+Magic methods are automatically called by PHP in specific situations:
+
+```php
+<?php
+
+class MagicBox {
+    private array $data = [];
+    private array $callLog = [];
+
+    // __get — called when accessing non-existent/inaccessible property
+    public function __get(string $name): mixed {
+        return $this->data[$name] ?? null;
+    }
+
+    // __set — called when setting non-existent/inaccessible property
+    public function __set(string $name, mixed $value): void {
+        $this->data[$name] = $value;
+    }
+
+    // __isset — called when isset() or empty() is used on property
+    public function __isset(string $name): bool {
+        return isset($this->data[$name]);
+    }
+
+    // __unset — called when unset() is used on property
+    public function __unset(string $name): void {
+        unset($this->data[$name]);
+    }
+
+    // __call — called when invoking inaccessible/non-existent METHOD
+    public function __call(string $name, array $args): mixed {
+        $this->callLog[] = "$name(" . implode(', ', $args) . ")";
+        return "Called: $name";
+    }
+
+    // __callStatic — called when invoking inaccessible STATIC method
+    public static function __callStatic(string $name, array $args): mixed {
+        return "Static called: $name";
+    }
+
+    // __toString — called when object is cast to string
+    public function __toString(): string {
+        return json_encode($this->data);
+    }
+
+    // __invoke — called when object is used as a function
+    public function __invoke(string $input): string {
+        return strtoupper($input);
+    }
+
+    // __clone — called after object is cloned
+    public function __clone(): void {
+        $this->data = []; // Clone starts with empty data
+    }
+
+    // __debugInfo — controls var_dump output
+    public function __debugInfo(): array {
+        return ['data_count' => count($this->data), 'keys' => array_keys($this->data)];
+    }
+}
+
+$box = new MagicBox();
+$box->username = "Rahul";      // __set
+echo $box->username;           // __get → Rahul
+echo isset($box->username);    // __isset → true
+
+echo $box->nonExistentMethod("arg1", "arg2"); // __call → Called: nonExistentMethod
+echo MagicBox::staticMethod(); // __callStatic → Static called: staticMethod
+
+echo $box;  // __toString → {"username":"Rahul"}
+
+$transform = new MagicBox();
+echo $transform("hello world");  // __invoke → HELLO WORLD
+
+$copy = clone $box;
+var_dump($copy->username);  // NULL — __clone cleared data
+?>
+```
+
+---
+
+#### 10. Namespaces — Organizing PHP Code
+
+Namespaces prevent class name collisions across libraries and organize code logically (like folders for code):
+
+```php
+<?php
+
+// File: src/Models/User.php
+namespace App\Models;
+
+class User {
+    public function __construct(
+        public readonly int $id,
+        public readonly string $email
+    ) {}
+}
+
+// File: src/Services/Auth/UserService.php
+namespace App\Services\Auth;
+
+use App\Models\User;                    // Import a specific class
+use App\Repositories\UserRepository;
+use App\Exceptions\AuthException;
+use PDO;                                // Import from global namespace
+
+class UserService {
+    public function __construct(
+        private UserRepository $repo
+    ) {}
+
+    public function findByEmail(string $email): ?User {
+        return $this->repo->findOneBy(['email' => $email]);
+    }
+}
+
+// File: index.php — Using namespaced classes
+require 'vendor/autoload.php';  // Composer autoloader handles file inclusion
+
+use App\Models\User;
+use App\Services\Auth\UserService;
+use App\Repositories\UserRepository;
+
+$userService = new UserService(new UserRepository());
+$user = $userService->findByEmail('rahul@example.com');
+?>
+```
+
+> **Expert Tip:** PSR-4 autoloading standard maps namespace to directory structure. `App\Models\User` maps to `src/Models/User.php`. Laravel follows PSR-4 via Composer. You never need `require` or `include` manually in modern PHP.
+
+---
+
+#### 11. Composer & Autoloading
+
+Composer is PHP's package manager (equivalent to npm for Node.js):
+
+```json
+{
+    "name": "myapp/backend",
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.8",
+        "monolog/monolog": "^3.5",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "fakerphp/faker": "^1.23"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
+```
+
+```bash
+# Install dependencies
+composer install
+
+# Add a package
+composer require guzzlehttp/guzzle
+
+# Add a dev-only package
+composer require --dev phpunit/phpunit
+
+# Update all packages
+composer update
+
+# Generate optimized autoloader (for production)
+composer dump-autoload --optimize
+```
+
+---
+
+#### 12. PHP 8 Enums — Type-Safe Named Constants
+
+Enums replace the old `class with constants` pattern with a proper, type-safe construct:
+
+```php
+<?php
+
+// Pure Enum — just named cases
+enum Status {
+    case Pending;
+    case Active;
+    case Suspended;
+    case Deleted;
+}
+
+// Backed Enum — cases backed by a value (string or int)
+enum OrderStatus: string {
+    case Pending   = 'pending';
+    case Confirmed = 'confirmed';
+    case Shipped   = 'shipped';
+    case Delivered = 'delivered';
+    case Cancelled = 'cancelled';
+
+    // Enums can have methods!
+    public function label(): string {
+        return match($this) {
+            self::Pending   => '⏳ Awaiting confirmation',
+            self::Confirmed => '✅ Order confirmed',
+            self::Shipped   => '🚚 Out for delivery',
+            self::Delivered => '📦 Delivered',
+            self::Cancelled => '❌ Cancelled',
+        };
+    }
+
+    public function isTerminal(): bool {
+        return in_array($this, [self::Delivered, self::Cancelled]);
+    }
+}
+
+// Usage
+$status = OrderStatus::Shipped;
+echo $status->value;        // shipped
+echo $status->name;         // Shipped
+echo $status->label();      // 🚚 Out for delivery
+echo $status->isTerminal(); // false
+
+// Convert from value (e.g., from database)
+$fromDb = OrderStatus::from('delivered');       // throws ValueError if invalid
+$safe   = OrderStatus::tryFrom('invalid');      // returns null if invalid
+
+// Use in type hints — this is the power!
+function updateOrder(int $orderId, OrderStatus $status): void {
+    // $status is guaranteed to be a valid OrderStatus — no if/validation needed
+    echo "Order $orderId → " . $status->label();
+}
+
+updateOrder(101, OrderStatus::Delivered);  // Order 101 → 📦 Delivered
+// updateOrder(101, "delivered");          // TypeError! Must be OrderStatus enum
+?>
+```
+
+<span class="hinglish">Pehle hum `const PENDING = 'pending'` use karte the jo sirf string tha. Koi bhi galat value pass kar sakta tha. Ab PHP 8 Enums ke saath, `OrderStatus::Pending` type-safe hai. Laravel 10+ ke Eloquent Casts mein aap `protected $casts = ['status' => OrderStatus::class]` likh sakte hain!</span>
+
+---
+
+#### 13. Fibers — PHP 8.1 Coroutines
+
+Fibers are PHP's implementation of cooperative multitasking (similar to async/await concept):
+
+```php
+<?php
+
+// Fiber — can pause and resume execution
+$fiber = new Fiber(function(): string {
+    echo "Fiber started\n";
+
+    // Suspend the fiber and yield a value out
+    $valueFromOutside = Fiber::suspend("First suspension");
+    echo "Fiber resumed with: $valueFromOutside\n";
+
+    $valueFromOutside2 = Fiber::suspend("Second suspension");
+    echo "Fiber resumed again with: $valueFromOutside2\n";
+
+    return "Fiber finished!";
+});
+
+// Start the fiber — runs until first suspend
+$value1 = $fiber->start();
+echo "Got from fiber: $value1\n";  // "First suspension"
+
+// Resume the fiber — pass a value in
+$value2 = $fiber->resume("Hello from outside!");
+echo "Got from fiber: $value2\n";  // "Second suspension"
+
+// Resume again
+$fiber->resume("Final message!");
+
+echo "Return value: " . $fiber->getReturn();  // "Fiber finished!"
+
+// Output:
+// Fiber started
+// Got from fiber: First suspension
+// Fiber resumed with: Hello from outside!
+// Got from fiber: Second suspension
+// Fiber resumed again with: Final message!
+// Return value: Fiber finished!
+?>
+```
+
+---
+
+#### 14. First-Class Callable Syntax (PHP 8.1)
+
+A clean shorthand to create closures from existing functions:
+
+```php
+<?php
+
+// OLD WAY
+$arr = [3, 1, 4, 1, 5, 9];
+usort($arr, function($a, $b) { return strlen($a) - strlen($b); });
+
+$strLengths = array_map(function($s) { return strlen($s); }, ['hello', 'hi', 'hey']);
+
+// NEW WAY — PHP 8.1 First-Class Callables
+$strlen = strlen(...);          // Closure wrapping strlen function
+echo $strlen("Hello");          // 5
+
+$arr = ['hello', 'hi', 'hey', 'howdy'];
+$strLengths = array_map(strlen(...), $arr);  // [5, 2, 3, 5]
+
+// Works with static methods
+$slugs = array_map(Str::slug(...), ['Hello World', 'PHP is Great']);
+// ['hello-world', 'php-is-great']
+
+// Works with instance methods
+$user = new User("Rahul", "rahul@example.com", "secret");
+$emailGetter = $user->getEmail(...);
+echo $emailGetter();  // rahul@example.com
+?>
+```
+
+---
+
+#### 15. Named Arguments (PHP 8.0)
+
+Pass arguments by name instead of position — makes code self-documenting:
+
+```php
+<?php
+
+function createOrder(
+    string $product,
+    int    $quantity = 1,
+    float  $discount = 0.0,
+    bool   $express  = false,
+    string $note     = ''
+): array {
+    return compact('product', 'quantity', 'discount', 'express', 'note');
+}
+
+// OLD WAY — easy to confuse argument order
+$order = createOrder("Laptop", 2, 10.0, true, "Handle with care");
+
+// NEW WAY — named arguments, order doesn't matter!
+$order = createOrder(
+    product:  "Laptop",
+    express:  true,        // Skip to the one you need
+    note:     "Handle with care",
+    quantity: 2,
+    discount: 10.0
+);
+
+// Great for built-in functions with many optional params
+$arr = [3, 1, 4, 1, 5, 9];
+$result = array_slice(array: $arr, offset: 2, length: 3, preserve_keys: true);
+// [4, 1, 5]
+?>
+```
+
+---
+
+#### 16. Union Types, Intersection Types & `never` Return Type (PHP 8)
+
+```php
+<?php
+
+// Union Types (PHP 8.0) — accept multiple types
+function parseInput(int|string|float $input): string {
+    return (string) $input;
+}
+
+// Intersection Types (PHP 8.1) — must implement ALL listed interfaces
+interface Stringable { public function __toString(): string; }
+interface Countable  { public function count(): int; }
+
+function processCollection(Stringable&Countable $collection): void {
+    echo "Count: " . $collection->count() . ", String: " . $collection;
+}
+
+// mixed type — any type (PHP 8.0)
+function handleAny(mixed $value): mixed {
+    return $value;
+}
+
+// never return type — function NEVER returns (throws or exits)
+function fail(string $message): never {
+    throw new \RuntimeException($message);
+    // Code after throw is unreachable — PHP validates this at compile time
+}
+
+// readonly properties (PHP 8.1) — set once in constructor, immutable after
+class ImmutablePoint {
+    public function __construct(
+        public readonly float $x,
+        public readonly float $y
+    ) {}
+}
+
+$point = new ImmutablePoint(3.0, 4.0);
+echo $point->x;  // 3
+// $point->x = 5;  // Error: Cannot modify readonly property
+?>
+```
+
+---
+
+#### 17. Design Patterns in PHP
+
+##### Repository Pattern
+
+```php
+<?php
+
+interface UserRepositoryInterface {
+    public function find(int $id): ?array;
+    public function findAll(): array;
+    public function create(array $data): array;
+    public function update(int $id, array $data): bool;
+    public function delete(int $id): bool;
+}
+
+class MySqlUserRepository implements UserRepositoryInterface {
+    public function __construct(private \PDO $pdo) {}
+
+    public function find(int $id): ?array {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function findAll(): array {
+        return $this->pdo->query("SELECT * FROM users")->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function create(array $data): array {
+        $stmt = $this->pdo->prepare("INSERT INTO users (name, email) VALUES (?, ?)");
+        $stmt->execute([$data['name'], $data['email']]);
+        return $this->find($this->pdo->lastInsertId());
+    }
+
+    public function update(int $id, array $data): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET name=?, email=? WHERE id=?");
+        return $stmt->execute([$data['name'], $data['email'], $id]);
+    }
+
+    public function delete(int $id): bool {
+        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id=?");
+        return $stmt->execute([$id]);
+    }
+}
+
+// For testing — swap implementation without touching business logic!
+class InMemoryUserRepository implements UserRepositoryInterface {
+    private array $users = [];
+    private int $nextId  = 1;
+
+    public function find(int $id): ?array {
+        return $this->users[$id] ?? null;
+    }
+
+    public function findAll(): array { return array_values($this->users); }
+
+    public function create(array $data): array {
+        $user = ['id' => $this->nextId++, ...$data];
+        $this->users[$user['id']] = $user;
+        return $user;
+    }
+
+    public function update(int $id, array $data): bool {
+        if (!isset($this->users[$id])) return false;
+        $this->users[$id] = array_merge($this->users[$id], $data);
+        return true;
+    }
+
+    public function delete(int $id): bool {
+        if (!isset($this->users[$id])) return false;
+        unset($this->users[$id]);
+        return true;
+    }
+}
+?>
+```
+
+##### Observer Pattern
+
+```php
+<?php
+
+interface Observer {
+    public function update(string $event, mixed $data): void;
+}
+
+interface Observable {
+    public function subscribe(string $event, Observer $observer): void;
+    public function notify(string $event, mixed $data): void;
+}
+
+trait EventEmitter {
+    private array $listeners = [];
+
+    public function subscribe(string $event, Observer $observer): void {
+        $this->listeners[$event][] = $observer;
+    }
+
+    public function notify(string $event, mixed $data): void {
+        foreach ($this->listeners[$event] ?? [] as $observer) {
+            $observer->update($event, $data);
+        }
+    }
+}
+
+class OrderService implements Observable {
+    use EventEmitter;
+
+    public function placeOrder(array $orderData): array {
+        // Business logic here...
+        $order = ['id' => rand(1000, 9999), ...$orderData, 'status' => 'pending'];
+
+        // Notify all listeners — OrderService doesn't know WHO is listening
+        $this->notify('order.placed', $order);
+
+        return $order;
+    }
+}
+
+class EmailNotifier implements Observer {
+    public function update(string $event, mixed $data): void {
+        echo "📧 Email sent for event '{$event}': Order #{$data['id']}\n";
+    }
+}
+
+class InventoryManager implements Observer {
+    public function update(string $event, mixed $data): void {
+        echo "📦 Inventory updated for Order #{$data['id']}\n";
+    }
+}
+
+class AuditLogger implements Observer {
+    public function update(string $event, mixed $data): void {
+        echo "📝 Audit log: {$event} at " . date('Y-m-d H:i:s') . "\n";
+    }
+}
+
+$orderService = new OrderService();
+$orderService->subscribe('order.placed', new EmailNotifier());
+$orderService->subscribe('order.placed', new InventoryManager());
+$orderService->subscribe('order.placed', new AuditLogger());
+
+$order = $orderService->placeOrder(['product' => 'Laptop', 'qty' => 1]);
+// All three observers are automatically notified!
+?>
+```
+
+<span class="hinglish">Yeh Observer Pattern Laravel mein `Event` aur `Listener` ke naam se available hai. `event(new OrderPlaced($order))` Laravel ke EventDispatcher ko call karta hai jo registered sabhi listeners ko notify karta hai. Concept exactly wahi hai jo humne upar likha!</span>
+
+---
+
+#### Summary — OOP Pillars in PHP
+
+| Concept | Purpose | PHP Syntax |
+| :--- | :--- | :--- |
+| **Encapsulation** | Hide internal state | `private`, `protected`, getters/setters |
+| **Inheritance** | Reuse parent code | `class Child extends Parent` |
+| **Polymorphism** | Same interface, different behavior | Method overriding, interfaces |
+| **Abstraction** | Hide complexity | `abstract class`, `interface` |
+| **Trait** | Horizontal reuse | `trait T {}`, `use T;` |
+| **Namespace** | Avoid collisions | `namespace App\Models;` |
+| **Enum** | Type-safe constants | `enum Status: string {}` |
+| **Readonly** | Immutable properties | `public readonly string $name` |
+    
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize OOP Step 0
+            showOopStep(0);
+        });
+
+        // 2. Interactive OOP Stepper Data
+        const oopSteps = [
+            {
+                title: "1. Constructor Property Promotion (PHP 8 Revolution)",
+                category: "ENCAPSULATION",
+                desc: "Replaces boilerplate property declarations and assignments in one clean stroke. Visibility modifiers (public, private, protected) inside constructor parameters auto-bind to class properties.",
+                code: "// Modern PHP 8+ Constructor Property Promotion:\nclass User {\n    public function __construct(\n        public readonly string $uuid,\n        public string $name,\n        private string $passwordHash,\n        protected int $loginAttempts = 0\n    ) {}\n}"
+            },
+            {
+                title: "2. Inheritance, Overriding & parent:: Execution",
+                category: "INHERITANCE",
+                desc: "Child classes extend parent classes. Overridden methods can extend existing behavior using parent::method() or seal behavior permanently with the 'final' keyword.",
+                code: "class Employee extends User {\n    public function __construct(string $name, public string $department) {\n        parent::__construct(uuid: (string)Str::uuid(), name: $name, passwordHash: '');\n    }\n\n    public final function getSalary(): float { return 95000.0; } // Cannot be overridden!\n}"
+            },
+            {
+                title: "3. Interfaces vs Abstract Classes (Design Contract)",
+                category: "ABSTRACTION",
+                desc: "Interfaces define a 100% abstract public API contract (no state, no body). Abstract classes provide partial implementations and shared protected states that children inherit.",
+                code: "interface PaymentGatewayInterface {\n    public function charge(float $amount): string;\n}\n\nabstract class BaseGateway implements PaymentGatewayInterface {\n    protected function logTransaction(string $id): void { /* Shared implementation */ }\n}"
+            },
+            {
+                title: "4. Traits & Conflict Resolution (Horizontal Code Reuse)",
+                category: "COMPOSITION",
+                desc: "Traits share methods across unrelated class hierarchies. Method name collisions are resolved explicitly using the 'insteadof' and 'as' operators.",
+                code: "class OrderController {\n    use LoggerTrait, AuditTrait {\n        LoggerTrait::log insteadof AuditTrait; // Use Logger's log() method\n        AuditTrait::log as auditLog;           // Alias Audit's log() method\n    }\n}"
+            },
+            {
+                title: "5. Late Static Binding: self:: vs static::",
+                category: "POLYMORPHISM",
+                desc: "self:: binds to the class where the method was defined at compile-time. static:: uses runtime Late Static Binding to resolve the exact calling class (essential for Factory methods).",
+                code: "class Model {\n    public static function create(): static {\n        return new static(); // Instantiates the child (User / Order), NOT Model!\n    }\n}"
+            },
+            {
+                title: "6. Memory-Efficient Generators (yield vs return)",
+                category: "STREAMING ENGINE",
+                desc: "Generators stream items one by one on-demand instead of loading a million records into an in-memory array. Drops RAM usage from 500MB to 2MB!",
+                code: "function streamCsv(string $file): Generator {\n    $h = fopen($file, 'r');\n    while (($row = fgetcsv($h)) !== false) {\n        yield $row; // Pauses execution and yields single row!\n    }\n    fclose($h);\n}"
+            }
+        ];
+
+        function showOopStep(index) {
+            const chips = document.querySelectorAll('#oopNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = oopSteps[index];
+            const contentBox = document.getElementById('oopContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-pro">' + step.category + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-php">' + step.code + '</code></pre>';
+        }
+
+        // 3. Tab Switcher
+        function switchOopTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

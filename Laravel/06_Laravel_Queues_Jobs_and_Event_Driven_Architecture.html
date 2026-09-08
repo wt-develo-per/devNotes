@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Masterclass — Queues, Jobs & Event-Driven Architecture</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="05_Laravel_Authentication_Sanctum_and_Authorization.html" class="nav-btn">&larr; Previous: Auth & Sanctum</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="07_Laravel_Caching_Redis_and_Performance_Tuning.html" class="nav-btn">Next: Caching & Redis &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Interactive Queue Lifecycle & Retry Simulator -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive Queue Job Lifecycle & Failure Recovery Simulator</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click through the lifecycle of a high-concurrency background job to see how workers handle Redis push, model re-hydration, timeouts, exponential backoff, and dead-letter queueing:
+        </p>
+
+        <div class="stepper-nav" id="queueNav">
+            <button class="step-chip active" onclick="showQueueStep(0)">1. Dispatch to Redis</button>
+            <button class="step-chip" onclick="showQueueStep(1)">2. Worker Pickup & De-serialize</button>
+            <button class="step-chip" onclick="showQueueStep(2)">3. Transient API Failure</button>
+            <button class="step-chip" onclick="showQueueStep(3)">4. Exponential Backoff</button>
+            <button class="step-chip" onclick="showQueueStep(4)">5. Final Exhaustion & failed() Hook</button>
+            <button class="step-chip" onclick="showQueueStep(5)">6. Dead-Letter Storage & Retry</button>
+        </div>
+
+        <div class="step-content-box" id="queueContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Job Orchestration Tabs (Chains vs Batches vs Concurrency) -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchQueueTab(event, 'qtab-chain')">1. Sequential Chaining (Bus::chain)</button>
+            <button class="tab-btn" onclick="switchQueueTab(event, 'qtab-batch')">2. Parallel Batching (Bus::batch)</button>
+            <button class="tab-btn" onclick="switchQueueTab(event, 'qtab-concurrency')">3. Laravel 12/13 Concurrency::run()</button>
+        </div>
+
+        <div id="qtab-chain" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Job Chaining: Strict sequential order — Next job only executes if previous succeeds!</p>
+            <pre><code class="language-php">&lt;?php
+use Illuminate\Support\Facades\Bus;
+use App\Jobs\GeneratePdfInvoice;
+use App\Jobs\ChargeCustomerCard;
+use App\Jobs\SendReceiptEmail;
+
+// Strict dependency pipeline:
+Bus::chain([
+    new ChargeCustomerCard($order),     // Step 1: Charge card
+    new GeneratePdfInvoice($order),     // Step 2: Only runs if charge succeeded
+    new SendReceiptEmail($order),       // Step 3: Only runs if PDF generated
+])->catch(function (\Throwable $e) use ($order) {
+    // Pipeline failed at any step!
+    \Log::channel('payments')->critical("Order pipeline failed for #{$order->id}: " . $e->getMessage());
+    $order->update(['status' => 'payment_failed']);
+})->dispatch();
+?&gt;</code></pre>
+        </div>
+
+        <div id="qtab-batch" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">Job Batching: Process 10,000 items in parallel across 20 workers with live progress tracking.</p>
+            <pre><code class="language-php">&lt;?php
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+use App\Jobs\ProcessCsvRow;
+
+$jobs = $csvRows->map(fn($row) => new ProcessCsvRow($row));
+
+$batch = Bus::batch($jobs)
+    ->name('Importing 50,000 Catalog Products')
+    ->onQueue('imports')
+    ->allowFailures() // Don't abort entire import if 2 rows fail!
+    ->then(function (Batch $batch) {
+        // All 50,000 jobs completed successfully!
+        NotifyUserImportFinished::dispatch($batch->id);
+    })
+    ->catch(function (Batch $batch, Throwable $e) {
+        // First batch failure detected
+    })
+    ->finally(function (Batch $batch) {
+        // Runs when batch finishes, regardless of failure count
+        CleanupTempFiles::dispatch($batch->id);
+    })
+    ->dispatch();
+
+// Frontend polls batch progress API:
+return response()->json([
+    'batch_id' => $batch->id,
+    'progress' => $batch->progress(), // e.g. 64%
+    'total'    => $batch->totalJobs,
+    'failed'   => $batch->failedJobs,
+]);
+?&gt;</code></pre>
+        </div>
+
+        <div id="qtab-concurrency" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Laravel 12/13 Concurrency Facade: Run async tasks in parallel without queue overhead!</p>
+            <pre><code class="language-php">&lt;?php
+// 🚀 Available in Laravel 12 and Laravel 13:
+use Illuminate\Support\Facades\Concurrency;
+
+// Problem: Calling 3 third-party APIs sequentially takes 600ms + 400ms + 500ms = 1,500ms!
+// Solution: Run all 3 concurrently using PHP Forks or Fibers:
+
+[$exchangeRates, $shippingQuotes, $fraudScore] = Concurrency::run([
+    fn() => Http::timeout(2)->get('https://api.fx.com/rates')->json(),
+    fn() => Http::timeout(2)->get('https://api.fedex.com/quotes')->json(),
+    fn() => Http::timeout(2)->post('https://api.fraud.com/check', ['ip' => $ip])->json(),
+]);
+
+// Total response time = Max single call (600ms instead of 1,500ms — 60% faster!)
+return response()->json([
+    'rates'    => $exchangeRates,
+    'shipping' => $shippingQuotes,
+    'fraud'    => $fraudScore,
+]);
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="05_Laravel_Authentication_Sanctum_and_Authorization.html" class="nav-btn">&larr; Previous: Auth & Sanctum</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="07_Laravel_Caching_Redis_and_Performance_Tuning.html" class="nav-btn">Next: Caching & Redis &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### Module 06: Queues, Asynchronous Jobs & Event-Driven Architecture
+
+Web applications me user experience ka sabse bada enemy **High Latency** hota hai. Agar user checkout button click karta hai aur server 4 seconds tak email send karne aur PDF generate karne me laga rehta hai, toh 30% users cart abandon kar dete hain.
+
+Ek **Senior Staff Engineer** synchronous HTTP request se saare non-critical heavy operations ko cut karke **Queue Workers** par offload karta hai taaki HTTP Response **< 100ms** me return ho jaye.
+
+Is module me hum explore karenge ki kaise **Redis Queues**, **Laravel Horizon**, **Exponential Backoffs**, **Job Batching**, **Events & Queued Listeners**, aur **Laravel 12/13 ka Concurrency Facade** enterprise scale par design kiye jaate hain.
+
+---
+
+#### 1. Synchronous vs Asynchronous Queue Architecture
+
+Jab client ek request bhejta hai:
+
+```
+❌ Synchronous HTTP Request (Junior Pattern - Total: 3,500ms):
+Client ──► [HTTP Hit] ──► [DB Insert: 20ms] ──► [Stripe Charge: 800ms] ──► [Generate PDF: 1500ms] ──► [SMTP Email: 1200ms] ──► Client gets Response
+
+✅ Asynchronous Queue Pattern (Senior Architecture - Total: 45ms):
+Client ──► [HTTP Hit] ──► [DB Insert: 20ms] ──► [Push Job to Redis: 5ms] ──► [Immediate 201 Response to Client!]
+                                 │
+                                 ▼ (In Background Worker Process)
+                    [Worker picks up job] ──► [PDF + Email processed independently]
+```
+
+##### 1.1 Anatomy of a Modern Job Class
+
+```bash
+php artisan make:job ProcessVideoTranscoding
+```
+
+```php
+namespace App\Jobs;
+
+use App\Models\Video;
+use App\Services\VideoTranscoder;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
+final class ProcessVideoTranscoding implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * 1. Max execution time before worker kills the job (in seconds)
+     */
+    public int $timeout = 300;
+
+    /**
+     * 2. Number of retry attempts on failure
+     */
+    public int $tries = 3;
+
+    /**
+     * 3. Exponential Backoff: Wait 10s, then 60s, then 300s before retrying
+     */
+    public array $backoff = [10, 60, 300];
+
+    /**
+     * The SerializesModels trait automatically converts $video model into a lightweight
+     * identifier (class name + ID) when pushed to Redis!
+     */
+    public function __construct(
+        public Video $video,
+        public string $targetResolution = '1080p'
+    ) {
+        // Job ko dedicated high-priority ya heavy queue assign karein:
+        $this->onQueue('media');
+    }
+
+    /**
+     * Execute the job.
+     */
+    public function handle(VideoTranscoder $transcoder): void
+    {
+        // Notice: VideoTranscoder is automatically injected via Service Container!
+        $transcoder->transcode($this->video, $this->targetResolution);
+    }
+
+    /**
+     * 4. Failure Hook: Executes only when all 3 tries are exhausted!
+     */
+    public function failed(?\Throwable $exception): void
+    {
+        $this->video->update(['status' => 'failed', 'error' => $exception?->getMessage()]);
+        \Log::channel('slack')->critical("Video #{$this->video->id} transcoding failed permanently!");
+    }
+}
+```
+
+> **Hinglish Tip (SerializesModels Mechanism):** Jab aap Job ke constructor me Eloquent Model pass karte hain, toh Laravel poora 10MB ka object Redis me store nahi karta. Wo sirf `{class: "App\Models\Video", id: 45}` store karta hai. Jab worker job uthata hai, toh wo automatically fresh record DB se query karta hai (`Video::findOrFail(45)`). Agar job chalne se pehle user ne video delete kar diya, toh Laravel bina crash hue gracefully `ModelNotFoundException` catch kar leta hai!
+
+---
+
+#### 2. Fault Tolerance, Rate Limiting & Unique Jobs
+
+##### 2.1 Unique Jobs (`ShouldBeUnique`)
+
+Agar 2 users simultaneous export button click karte hain, ya webhook 2 baar trigger ho jata hai, toh hum nahi chahte ki duplicate heavy jobs queue ho jayein:
+
+```php
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+
+class GenerateMonthlyReportJob implements ShouldQueue, ShouldBeUnique
+{
+    // Unique lock expire hone ka maximum time (1 hour):
+    public int $uniqueFor = 3600;
+
+    public function __construct(public int $companyId) {}
+
+    // Unique Lock Key:
+    public function uniqueId(): string
+    {
+        return (string) $this->companyId;
+    }
+}
+```
+
+##### 2.2 Redis Rate Limiting Inside Jobs
+
+Agar third-party SMS API sirf 10 requests per second allow karti hai, toh 100 workers API ko overwhelm kar denge:
+
+```php
+use Illuminate\Support\Facades\Redis;
+
+public function handle(): void
+{
+    // Allow maximum 10 calls every 1 second:
+    Redis::throttle('sms-gateway')
+        ->allow(10)
+        ->every(1)
+        ->then(function () {
+            // Safe to call API
+            $this->smsService->send($this->phone, $this->message);
+        }, function () {
+            // Rate limit exceeded: Release job back to queue after 5 seconds!
+            $this->release(5);
+        });
+}
+```
+
+---
+
+#### 3. Complex Orchestration: Chains vs Batches
+
+##### 3.1 Sequential Chaining (`Bus::chain`)
+
+Jab step B tabhi chalna chahiye jab step A successfully pass ho:
+
+```php
+use Illuminate\Support\Facades\Bus;
+
+Bus::chain([
+    new ProcessPayment($order),
+    new DeductInventoryStock($order),
+    new DispatchShippingOrder($order),
+    new SendOrderPlacedNotification($order),
+])->catch(function (Throwable $e) use ($order) {
+    // Chain me koi bhi ek job fail hua toh aage ke jobs CANCEL ho jayenge!
+    \Log::error("Order pipeline halted at failure: " . $e->getMessage());
+})->dispatch();
+```
+
+##### 3.2 Mass Parallel Batching (`Bus::batch`)
+
+Jab aapko 50,000 CSV records ko 500 parallel jobs me divide karke process karna ho:
+
+```php
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+$batch = Bus::batch($jobsArray)
+    ->name('CSV Product Import')
+    ->allowFailures() // Agar 2 corrupt rows fail hon, tab bhi baki 49,998 rows complete hon!
+    ->then(fn(Batch $batch) => SendAdminNotification::dispatch("Import finished!"))
+    ->catch(fn(Batch $batch, Throwable $e) => \Log::error("Batch error: " . $e->getMessage()))
+    ->finally(fn(Batch $batch) => CleanTempFiles::dispatch())
+    ->dispatch();
+```
+
+---
+
+#### 4. Laravel Horizon: Enterprise Redis Queue Supervisor
+
+Production me raw `php artisan queue:work` chalana monitoring aur auto-scaling ke point of view se blind flying jaisa hota hai. **Laravel Horizon** Redis queues ke liye mission control dashboard provide karta hai.
+
+```bash
+composer require laravel/horizon
+php artisan horizon:install
+```
+
+##### 4.1 Auto-Scaling Configuration (`config/horizon.php`)
+
+Horizon workload ke hisaab se workers ko dynamically scale-up aur scale-down karta hai:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-default' => [
+            'connection' => 'redis',
+            'queue'      => ['high', 'default', 'low'],
+            'balance'    => 'auto', // Dynamic auto-balancing!
+            'minProcesses' => 5,    // Low traffic par 5 workers
+            'maxProcesses' => 30,   // Traffic spike aate hi 30 workers tak scale karega!
+            'balanceMaxShift' => 2,
+            'balanceCooldown' => 3,
+            'tries'      => 3,
+            'timeout'    => 90,
+        ],
+    ],
+],
+```
+
+##### 4.2 Restricting Horizon in Production
+
+```php
+// app/Providers/AppServiceProvider.php
+use Illuminate\Support\Facades\Gate;
+
+public function boot(): void
+{
+    Gate::define('viewHorizon', function ($user) {
+        return in_array($user->email, [
+            'devops@example.com',
+            'cto@example.com',
+        ]);
+    });
+}
+```
+
+---
+
+#### 5. Laravel 12 & 13 Concurrency Revolution (`Concurrency::run`)
+
+Laravel 12 aur 13 me introducing **Native Concurrency**. Ab aapko 2 ya 3 parallel lightweight tasks run karne ke liye heavy background queue dispatch karne ki zaroorat nahi hai:
+
+```php
+use Illuminate\Support\Facades\Concurrency;
+use Illuminate\Support\Facades\Http;
+
+// Scenario: 3 distinct microservices se user data, credit score, aur KYC status fetch karna
+// Sequential Time: 300ms + 400ms + 350ms = 1,050ms
+// Concurrent Time: Max(300ms, 400ms, 350ms) = 400ms! (62% Faster!)
+
+[$userData, $creditScore, $kycStatus] = Concurrency::run([
+    fn() => Http::timeout(2)->get('https://users.internal/api/' . $id)->json(),
+    fn() => Http::timeout(2)->get('https://credit.internal/score/' . $id)->json(),
+    fn() => Http::timeout(2)->get('https://kyc.internal/status/' . $id)->json(),
+]);
+```
+
+> **Hinglish Note:** Concurrency background queue ka replacement nahi hai! Concurrency **usi single HTTP request ke duration ke andar** multiple blocking tasks ko parallelly run karne ke liye use hoti hai (using PHP Process / Fork / Swoole fibers). Heavy tasks jo user ko wait nahi karwane (jaise email, image processing) wo hamesha Queues me hi jayenge.
+
+---
+
+#### 6. Event-Driven Architecture (Events & Queued Listeners)
+
+Event-driven architecture aapke application modules ko **Decouple** kar deta hai. Jab koi significant business event hota hai (`OrderPlaced`), toh controller ko ye parwah karne ki zaroorat nahi hai ki invoice kahan jayega ya Slack alert kaun bhejega.
+
+##### 6.1 Creating the Domain Event
+
+```php
+namespace App\Events;
+
+use App\Models\Order;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+final class OrderPlaced
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public function __construct(public Order $order) {}
+}
+```
+
+##### 6.2 Creating an Asynchronous (Queued) Listener
+
+```php
+namespace App\Listeners;
+
+use App\Events\OrderPlaced;
+use App\Mail\OrderInvoiceMail;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Mail;
+
+// ✅ ShouldQueue lagate hi ye listener background worker me execute hoga!
+final class SendOrderInvoiceListener implements ShouldQueue
+{
+    use InteractsWithQueue;
+
+    public string $queue = 'notifications'; // Custom queue
+    public int $delay = 5; // 5 second delay
+
+    public function handle(OrderPlaced $event): void
+    {
+        Mail::to($event->order->user->email)->send(
+            new OrderInvoiceMail($event->order)
+        );
+    }
+}
+```
+
+##### 6.3 Event Auto-Discovery Across Versions
+
+* **Laravel 10:** `app/Providers/EventServiceProvider.php` me manual mapping karni padti thi ya `shouldDiscoverEvents()` ko `true` return karwana padta tha.
+* **Laravel 11, 12, 13:** **Event Discovery is Enabled by Default!** Aapko kisi provider me mapping karne ki zaroorat nahi hai. Laravel `app/Listeners` directory inspect karta hai aur listener ke `handle(OrderPlaced $event)` method ke type-hint se automatically event ko connect kar deta hai!
+
+---
+
+#### 7. Senior Checklist — Queues, Jobs & Events
+
+1. [x] **Always assign appropriate `$timeout` and `$tries`** to every job to prevent zombie worker threads from locking Redis memory.
+2. [x] **Use Exponential Backoff (`$backoff = [10, 60, 300]`)** instead of hammering third-party APIs with instant retries.
+3. [x] **Implement `ShouldBeUnique`** on recurring exports, sync jobs, and payment webhooks to block duplicate race conditions.
+4. [x] **Implement `failed(\Throwable $e)` hook** on mission-critical jobs to log telemetry and alert monitoring channels.
+5. [x] **Use `Bus::batch()` for bulk operations** to allow parallel execution, failure resilience, and user-facing progress polling.
+6. [x] **Leverage Laravel 12/13 `Concurrency::run()`** to parallelize external HTTP API calls inside web requests without queue latency.
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Queue Step 0
+            showQueueStep(0);
+        });
+
+        // 2. Interactive Queue Simulator Data
+        const queueSteps = [
+            {
+                title: "1. Dispatching Job to Redis Store",
+                stage: "PRODUCER STAGE",
+                desc: "Controller calls ProcessOrder::dispatch($order). The SerializesModels trait serializes the model into {class: 'App\\Models\\Order', id: 9812}. The payload is pushed to Redis queue 'orders' in 4ms.",
+                code: "// In Controller:\nProcessOrder::dispatch($order)->onQueue('orders');\n\n// Stored in Redis List 'queues:orders':\n{\"displayName\":\"App\\\\Jobs\\\\ProcessOrder\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"data\":{\"command\":\"O:22:\\\"App\\\\Jobs\\\\ProcessOrder\\\":1:...\"}}"
+            },
+            {
+                title: "2. Worker Pickup & Model De-Serialization",
+                stage: "WORKER EXECUTION",
+                desc: "A background worker running 'php artisan horizon' pops the job. SerializesModels queries Order::findOrFail(9812) to re-hydrate fresh state. Dependencies are injected into handle().",
+                code: "[2026-09-08 12:45:01][10982] Processing: App\\Jobs\\ProcessOrder\n// Model hydrated: App\\Models\\Order #9812 (status: pending)\n// Dependency Injected: App\\Services\\StripePaymentGateway"
+            },
+            {
+                title: "3. Transient External API Failure",
+                stage: "EXCEPTION INTERCEPTED",
+                desc: "Stripe API returns HTTP 504 Gateway Timeout. The handle() method throws an exception. The worker catches the exception without crashing the daemon process.",
+                code: "[2026-09-08 12:45:03][10982] Failed: App\\Jobs\\ProcessOrder\n// Exception: Illuminate\\Http\\Client\\ConnectionException: cURL error 28: Operation timed out after 30000 milliseconds"
+            },
+            {
+                title: "4. Exponential Backoff Calculation",
+                stage: "RETRY SCHEDULING",
+                desc: "Instead of hammering Stripe immediately, the worker inspects public $backoff = [10, 60, 300]. Attempt 1 failed -> Job is scheduled in Redis sorted set with delay = now() + 10 seconds.",
+                code: "// Attempt 1 of 3: Delaying retry for 10 seconds...\n// In Redis ZSET 'queues:orders:delayed':\n// Score: 1720000010 (Timestamp = now + 10s)"
+            },
+            {
+                title: "5. Final Exhaustion & failed() Hook",
+                stage: "DEAD LETTER NOTIFICATION",
+                desc: "Attempts 1, 2, and 3 all fail. Max $tries = 3 is exhausted. The worker executes the job's failed(Throwable $e) method, notifying Slack and marking the order as failed.",
+                code: "public function failed(?Throwable $e): void {\n    $this->order->update(['status' => 'payment_failed']);\n    Log::channel('slack')->critical(\"Order #{$this->order->id} payment failed permanently!\");\n}"
+            },
+            {
+                title: "6. Dead-Letter Storage in failed_jobs Table",
+                stage: "OPERATIONAL AUDIT",
+                desc: "The failed payload, stack trace, and timestamp are inserted into MySQL 'failed_jobs' table for debugging. Once the Stripe outage is resolved, DevOps runs 'php artisan queue:retry all'.",
+                code: "INSERT INTO failed_jobs (uuid, connection, queue, payload, exception, failed_at) VALUES (...);\n\n// DevOps CLI recovery:\nphp artisan queue:retry 5c8b21-4f12...\n// Or retry all:\nphp artisan queue:retry all"
+            }
+        ];
+
+        function showQueueStep(index) {
+            const chips = document.querySelectorAll('#queueNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = queueSteps[index];
+            const contentBox = document.getElementById('queueContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${step.title}</h5>
+                    <span class="badge badge-pro">${step.stage}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${step.desc}</p>
+                <pre style="margin:0;"><code class="language-php">${step.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchQueueTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

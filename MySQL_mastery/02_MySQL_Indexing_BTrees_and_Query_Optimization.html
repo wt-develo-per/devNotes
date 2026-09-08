@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Eloquent CRUD & Query Builder Best Practices</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="01_MySQL_Architecture_Storage_Engines_and_Data_Types.html" class="nav-btn">&larr; Previous: MySQL Architecture</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="03_MySQL_Advanced_Queries_Joins_and_Window_Functions.html" class="nav-btn">Next: Data Types & Schema Design &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Eloquent CRUD Decision Pipeline -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: User::create() Se DB Tak — Kya Sahi Hai, Kya Galat?</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Registration form submit hone se lekar database mein safe record save hone tak ke sabhi steps dekhein:
+        </p>
+
+        <div class="stepper-nav" id="crudNav">
+            <button class="step-chip active" onclick="showCrudStep(0)">
+                <span class="step-num">01</span>
+                <span>Form Request</span>
+            </button>
+            <button class="step-chip" onclick="showCrudStep(1)">
+                <span class="step-num">02</span>
+                <span>Validation</span>
+            </button>
+            <button class="step-chip" onclick="showCrudStep(2)">
+                <span class="step-num">03</span>
+                <span>Mass Assignment</span>
+            </button>
+            <button class="step-chip" onclick="showCrudStep(3)">
+                <span class="step-num">04</span>
+                <span>Model Events</span>
+            </button>
+            <button class="step-chip" onclick="showCrudStep(4)">
+                <span class="step-num">05</span>
+                <span>SQL Execution</span>
+            </button>
+            <button class="step-chip" onclick="showCrudStep(5)">
+                <span class="step-num">06</span>
+                <span>Response Return</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="crudContent">
+            <!-- Dynamic Content populated by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: CRUD Best Practices Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchCrudTab(event, 'tab-mass')">🛡️ Mass Assignment Security</button>
+            <button class="tab-btn" onclick="switchCrudTab(event, 'tab-bulk')">🚀 Bulk Operations Lab</button>
+            <button class="tab-btn" onclick="switchCrudTab(event, 'tab-chunk')">💾 Large Dataset Safety</button>
+            <button class="tab-btn" onclick="switchCrudTab(event, 'tab-debug')">🔍 Query Debug Toolkit</button>
+        </div>
+
+        <!-- Tab 1: Mass Assignment Security -->
+        <div id="tab-mass" class="tab-panel active">
+            <h5>Mass Assignment Vulnerability — Security Checklist</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                Yeh ek real-world attack vector hai. Neeche dangerous vs safe patterns compare karein:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Approach</th>
+                        <th>Code</th>
+                        <th>Security Risk</th>
+                        <th>Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>request()->all()</strong></td>
+                        <td><code>User::create($request->all())</code></td>
+                        <td>Attacker POST mein <code>is_admin=1</code> bhej sakta hai</td>
+                        <td>❌ NEVER USE</td>
+                    </tr>
+                    <tr>
+                        <td><strong>request()->only()</strong></td>
+                        <td><code>User::create($request->only(['name','email']))</code></td>
+                        <td>Sirf allowed fields pass hoti hain</td>
+                        <td>✅ SAFE</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$request->validated()</strong></td>
+                        <td><code>User::create($request->validated())</code></td>
+                        <td>Sirf validated fields — Form Request use karo</td>
+                        <td>✅ BEST PRACTICE</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$fillable defined</strong></td>
+                        <td>Model mein <code>protected $fillable = [...]</code></td>
+                        <td>Whitelist — fillable mein nahi hai to ignore hoga</td>
+                        <td>✅ MANDATORY</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$guarded = []</strong></td>
+                        <td><code>protected $guarded = []</code></td>
+                        <td>Koi protection nahi — every field fillable!</td>
+                        <td>❌ Avoid in production</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Bulk Operations -->
+        <div id="tab-bulk" class="tab-panel">
+            <h5>Bulk Operations Performance Comparison (10,000 Records)</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                CSV import ya sync jobs mein correct pattern use karna zaroori hai:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Queries Run</th>
+                        <th>Time (10k rows)</th>
+                        <th>Model Events</th>
+                        <th>Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>foreach { create() }</code></td>
+                        <td>10,000 INSERT queries</td>
+                        <td>~90 seconds</td>
+                        <td>✅ Yes (creating/created)</td>
+                        <td>❌ Production mein mat karo</td>
+                    </tr>
+                    <tr>
+                        <td><code>foreach { updateOrCreate() }</code></td>
+                        <td>20,000 queries (SELECT + INSERT)</td>
+                        <td>~210 seconds</td>
+                        <td>✅ Yes</td>
+                        <td>❌ Extreme slow for bulk</td>
+                    </tr>
+                    <tr>
+                        <td><code>DB::table()->insert([])</code></td>
+                        <td>1 query (all rows)</td>
+                        <td>~1.5 seconds</td>
+                        <td>❌ No (bypass model)</td>
+                        <td>✅ Fast bulk insert</td>
+                    </tr>
+                    <tr>
+                        <td><code>Model::upsert(chunk 1000)</code></td>
+                        <td>10 batch queries</td>
+                        <td>~1.2 seconds</td>
+                        <td>❌ No events</td>
+                        <td>⭐ BEST — Insert + Update both</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 3: Large Dataset Safety -->
+        <div id="tab-chunk" class="tab-panel">
+            <h5>1 Million Users Ko Email Bhejne Ka Sahi Tarika</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                <code>User::all()</code> se PHP memory crash hogi. Yeh teeno approaches memory-safe hain:
+            </p>
+            <pre><code class="language-php">// WRONG: Server crash guaranteed!
+User::all()->each(fn($u) => Mail::to($u)->send(new Newsletter()));
+
+// OPTION 1: chunkById() — Fastest for large tables
+User::where('subscribed', true)->chunkById(500, function ($users) {
+    foreach ($users as $user) {
+        Mail::to($user)->send(new Newsletter());
+    }
+    // Har chunk ke baad memory free ho jaati hai
+    // Offset ki jagah WHERE id > :last_id use hoti hai — fast!
+});
+
+// OPTION 2: lazy() — PHP Generator based, memory light
+User::where('subscribed', true)->lazy(500)->each(function ($user) {
+    Mail::to($user)->send(new Newsletter());
+});
+
+// OPTION 3: Laravel Queued Jobs — BEST APPROACH for emails!
+User::where('subscribed', true)->chunkById(200, function ($users) {
+    foreach ($users as $user) {
+        dispatch(new SendNewsletterJob($user))->onQueue('emails');
+    }
+    // Queue mein push ho jaati hai — web request free hai turant!
+});</code></pre>
+        </div>
+
+        <!-- Tab 4: Query Debug Toolkit -->
+        <div id="tab-debug" class="tab-panel">
+            <h5>Query Debugging Cheatsheet — Locally aur Staging Par</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                Queries dekhne ke liye yeh tools use karo bina manually SQL likhne ke:
+            </p>
+            <pre><code class="language-php">// 1. Generated SQL dekho (values without binding — Laravel 9 and below):
+$sql = User::where('status', 'active')->toSql();
+// "select * from users where status = ?"
+
+// 2. Values ke sath SQL dekho (Laravel 10+):
+$sql = User::where('status', 'active')->toRawSql();
+// "select * from users where status = 'active'"
+
+// 3. Ek block mein saari queries capture karo:
+DB::enableQueryLog();
+$result = User::with('orders')->where('active', true)->get();
+$queries = DB::getQueryLog();
+// $queries = [['query' => '...', 'bindings' => [], 'time' => 2.45], ...]
+
+// 4. Quick dump and die:
+User::where('active', true)->dd();   // Execute + die
+User::where('active', true)->dump(); // Execute + continue
+
+// 5. Laravel Telescope (install karein: composer require laravel/telescope):
+// Web dashboard: /telescope/queries
+// Saari queries with execution time, N+1 detection, slow query alerts!
+
+// 6. AppServiceProvider mein slow query logger:
+DB::listen(function ($query) {
+    if ($query->time > 200) { // 200ms se slow
+        Log::channel('slow_queries')->warning($query->sql, [
+            'time' => $query->time,
+            'bindings' => $query->bindings,
+        ]);
+    }
+});</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="01_MySQL_Architecture_Storage_Engines_and_Data_Types.html" class="nav-btn">&larr; Previous: MySQL Architecture</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="03_MySQL_Advanced_Queries_Joins_and_Window_Functions.html" class="nav-btn">Next: Data Types & Schema Design &rarr;</a>
+    </div>
+
+    <!-- Hidden Raw Markdown Container -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 2: Eloquent CRUD & Query Builder — ORM Magic Ke Piche Kya Hai?
+
+3 saal ke Laravel developer ke liye sabse important skill hai — **Eloquent code likhte waqt samajhna ki MySQL mein kya chal raha hai**. Jab aap `User::create([...])` likhte hain, to kya exact SQL run hoti hai? Kab Eloquent use karein aur kab raw Query Builder? Kab ek simple query 50 queries mein badal jaati hai bina pata chale?
+
+Is module mein hum samjhenge:
+- Har Eloquent method ke peeche exact SQL kya hai
+- Mass Assignment ki security vulnerability aur kaise bachein
+- `updateOrCreate`, `upsert` se bulk operations efficiently karna
+- **Large datasets ke sath memory crash avoid karna** (`chunk`, `cursor`, `lazy`)
+- Queries debug karne ke practical tools
+
+---
+
+#### 1. Eloquent CRUD — Under The Hood SQL
+
+##### Create Operations:
+```php
+// METHOD 1: Model::create() — Mass Assignment
+$user = User::create([
+    'name'  => 'Rahul Sharma',
+    'email' => 'rahul@example.com',
+    'password' => bcrypt('secret'),
+]);
+// Generated SQL:
+// INSERT INTO `users` (`name`, `email`, `password`, `created_at`, `updated_at`)
+// VALUES ('Rahul Sharma', 'rahul@example.com', '$2y$10$...', '2024-09-08 10:30:00', '2024-09-08 10:30:00')
+
+// METHOD 2: new + save() — Zyada control milti hai
+$user = new User();
+$user->name = 'Rahul Sharma';
+$user->email = 'rahul@example.com';
+$user->save();
+// Same INSERT SQL generates hogi
+
+// METHOD 3: Query Builder (No Model, No Casts, No Events)
+DB::table('users')->insert([
+    'name'       => 'Rahul Sharma',
+    'email'      => 'rahul@example.com',
+    'created_at' => now(),
+    'updated_at' => now(),
+]);
+// Fastest option — no Eloquent overhead, no model events fired!
+```
+
+##### Read Operations:
+```php
+// Ek record by PK:
+$user = User::find(1);
+// SQL: SELECT * FROM `users` WHERE `users`.`id` = 1 LIMIT 1
+
+// Ek record with condition:
+$user = User::where('email', 'rahul@example.com')->first();
+// SQL: SELECT * FROM `users` WHERE `email` = 'rahul@example.com' LIMIT 1
+
+// IMPORTANT: find() vs firstOrFail()
+$user = User::findOrFail(999);  // 999 nahi mila to ModelNotFoundException throw hogi
+$user = User::find(999);        // 999 nahi mila to null return hogi — check karo!
+
+// Specific columns select karo (SELECT * avoid karo!):
+$users = User::select(['id', 'name', 'email'])->where('is_active', true)->get();
+// SQL: SELECT `id`, `name`, `email` FROM `users` WHERE `is_active` = 1
+// Network bandwidth aur memory dono bachti hai!
+
+// Count:
+$count = User::where('is_active', true)->count();
+// SQL: SELECT COUNT(*) AS aggregate FROM `users` WHERE `is_active` = 1
+```
+
+##### Update Operations:
+```php
+// Method 1: Instance update (fires Model events like 'updating', 'updated')
+$user = User::find(1);
+$user->name = 'Rahul Kumar';
+$user->save();
+// SQL: UPDATE `users` SET `name` = 'Rahul Kumar', `updated_at` = '...' WHERE `id` = 1
+
+// Method 2: Mass update via query (NO model events fired!)
+User::where('status', 'trial')->update(['status' => 'expired']);
+// SQL: UPDATE `users` SET `status` = 'expired', `updated_at` = '...' WHERE `status` = 'trial'
+// CAUTION: updated_at automatic update hoti hai lekin Model Events (like notifications) nahi chalte!
+
+// Method 3: Atomic increment/decrement (race condition safe!)
+$product->increment('stock', 1);
+// SQL: UPDATE `products` SET `stock` = `stock` + 1, `updated_at` = '...' WHERE `id` = 42
+// Yeh $product->stock++ se better hai kyunki race condition nahi hoti!
+```
+
+##### Delete Operations:
+```php
+// Soft Delete (agar SoftDeletes trait use ki hai):
+$user->delete();
+// SQL: UPDATE `users` SET `deleted_at` = '2024-09-08 10:30:00' WHERE `id` = 1
+// Row table mein rehti hai! Normal queries mein automatically filter hoti hai.
+
+// Hard Delete — permanently remove karo:
+$user->forceDelete();
+// SQL: DELETE FROM `users` WHERE `id` = 1
+
+// Soft deleted records dekhna:
+User::withTrashed()->where('id', 1)->first();
+User::onlyTrashed()->get();  // Sirf deleted records
+
+// Restore karna:
+User::withTrashed()->find(1)->restore();
+// SQL: UPDATE `users` SET `deleted_at` = NULL WHERE `id` = 1
+```
+
+---
+
+#### 2. Mass Assignment — Security Vulnerability Samjho
+
+**The Problem:** Agar aap `User::create($request->all())` karte hain bina filter kiye, to attacker `is_admin=1` POST kar sakta hai aur khud admin ban sakta hai!
+
+```php
+// DANGEROUS:
+$user = User::create($request->all());
+// POST body: name=Rahul&email=rahul@x.com&is_admin=1
+// is_admin = true! Database mein ban gaya admin!
+
+// SAFE: $fillable se whitelist define karo:
+class User extends Model
+{
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        // is_admin YAHAN NAHI HAI — automatically ignore hoga!
+    ];
+}
+
+// ALTERNATIVE: $guarded se blacklist define karo:
+class User extends Model
+{
+    protected $guarded = ['is_admin', 'role', 'email_verified_at'];
+    // Yahan listed fields ko create/update mein pass nahi kar sakte
+}
+
+// BEST PRACTICE: Always specific fields hi pass karo:
+$user = User::create($request->only(['name', 'email', 'password']));
+// Ya validated data use karo:
+$user = User::create($request->validated()); // Form Request se aaya data — safe!
+```
+
+---
+
+#### 3. Smart CRUD — `firstOrCreate`, `updateOrCreate`, `upsert`
+
+##### `firstOrCreate` — Duplicate Creation Rokna:
+```php
+// User exist kare to wo return karo, nahi kare to create karo:
+$user = User::firstOrCreate(
+    ['email' => 'rahul@example.com'],      // Search conditions
+    ['name' => 'Rahul Sharma', 'password' => bcrypt('secret')]  // Create karne ke liye extra fields
+);
+// SQL 1: SELECT * FROM `users` WHERE `email` = 'rahul@...' LIMIT 1
+// SQL 2 (agar nahi mila): INSERT INTO `users` (...) VALUES (...)
+
+// PROBLEM: Race condition! 2 requests ek sath aayein to dono INSERT kar sakte hain.
+// SOLUTION: Database unique constraint + try-catch:
+$table->unique('email'); // Migration mein
+```
+
+##### `updateOrCreate` — Upsert Pattern:
+```php
+// Agar record exist kare to update karo, nahi kare to create karo:
+$order = Order::updateOrCreate(
+    ['user_id' => 1, 'status' => 'cart'],    // Find conditions
+    ['subtotal' => 1500.00, 'updated_at' => now()]  // Update/create values
+);
+// SQL 1: SELECT * FROM `orders` WHERE `user_id` = 1 AND `status` = 'cart' LIMIT 1
+// SQL 2: INSERT or UPDATE accordingly
+```
+
+##### `upsert` — Bulk Upsert (1000 rows at once!):
+```php
+// BAD: Loop mein updateOrCreate (10,000 rows = 20,000 queries!)
+foreach ($products as $product) {
+    Product::updateOrCreate(['sku' => $product['sku']], $product);
+}
+
+// GOOD: Single SQL batch upsert:
+Product::upsert(
+    $products,                           // Array of arrays
+    uniqueBy: ['sku'],                   // Unique column(s)
+    update: ['price', 'stock', 'updated_at']  // Columns to update on duplicate
+);
+// SQL: INSERT INTO `products` (...) VALUES (...),(...),...
+//      ON DUPLICATE KEY UPDATE `price` = VALUES(`price`), ...
+// 10,000 rows = Sirf 10 queries (1000 per batch)!
+```
+
+---
+
+#### 4. Large Datasets — Memory Crash Se Bachna
+
+Yeh ek bahut common production issue hai:
+
+```php
+// MEMORY KILLER — Kabi mat karo!
+$users = User::all(); // 1 million users = 500MB+ RAM crash!
+
+// OPTION 1: chunk() — Batches mein process karo (lazy loading, no cursor)
+User::where('is_active', true)->chunk(1000, function ($users) {
+    foreach ($users as $user) {
+        // Process karo...
+        Mail::to($user)->send(new WelcomeEmail());
+    }
+    // Har batch ke baad memory free ho jaati hai!
+});
+// SQL: SELECT * FROM users WHERE is_active = 1 LIMIT 1000 OFFSET 0
+//      SELECT * FROM users WHERE is_active = 1 LIMIT 1000 OFFSET 1000
+//      ... (offset badhhta jaata hai)
+
+// OPTION 2: chunkById() — Better performance (cursor based, no offset issue)
+User::where('is_active', true)->chunkById(1000, function ($users) {
+    foreach ($users as $user) {
+        // Process...
+    }
+});
+// SQL: SELECT * FROM users WHERE is_active = 1 AND id > 0 LIMIT 1000
+//      SELECT * FROM users WHERE is_active = 1 AND id > 5432 LIMIT 1000
+// Offset nahi use hota — large tables par 10x faster!
+
+// OPTION 3: lazy() — PHP Generator, memory efficient
+foreach (User::where('is_active', true)->lazy(500) as $user) {
+    // Har iteration par sirf 1 user memory mein hota hai!
+    Mail::to($user)->send(new NewsletterEmail());
+}
+
+// OPTION 4: cursor() — Bhi generator based, lekin ek hi query se
+foreach (User::cursor() as $user) {
+    // Single SQL query, PHP generator se ek-ek row process hoti hai
+}
+```
+
+**Kab kya use karein:**
+| Method | Use Case | Memory Usage |
+|---|---|---|
+| `chunk(1000)` | General batch processing | Low (1000 rows at a time) |
+| `chunkById(1000)` | Large tables (millions of rows) | Low + Faster |
+| `lazy()` | Memory-sensitive processing | Very Low |
+| `cursor()` | Smallest memory footprint needed | Lowest |
+
+---
+
+#### 5. Query Debugging Toolkit — Queries Dekho Khud Ki Aankhon Se
+
+```php
+// 1. toSql() — Generated SQL string dekho (values bind nahi hote):
+$sql = User::where('status', 'active')->orderBy('created_at', 'desc')->toSql();
+// Output: "select * from `users` where `status` = ? order by `created_at` desc"
+
+// 2. toRawSql() — Laravel 10+ mein values bhi bind hoti hain:
+$sql = User::where('status', 'active')->toRawSql();
+// Output: "select * from `users` where `status` = 'active' order by `created_at` desc"
+
+// 3. DB::enableQueryLog() — Ek block mein saari queries capture karo:
+DB::enableQueryLog();
+$users = User::with('orders')->where('is_active', true)->get();
+$log = DB::getQueryLog();
+foreach ($log as $q) {
+    echo $q['query'] . ' [' . round($q['time'], 2) . 'ms]' . "\n";
+}
+DB::disableQueryLog();
+
+// 4. DB::listen() — Global query listener (AppServiceProvider mein):
+if (app()->environment('local')) {
+    DB::listen(function ($query) {
+        if ($query->time > 100) { // 100ms se slow queries log karo
+            Log::warning('Slow Query: ' . $query->sql, [
+                'bindings' => $query->bindings,
+                'time'     => $query->time . 'ms',
+            ]);
+        }
+    });
+}
+
+// 5. dd() aur dump() — Quick debug:
+User::where('active', true)->dump(); // Query execute karke result dump karo
+User::where('active', true)->dd();   // Same but execution rokta hai
+```
+
+---
+
+#### 6. Eloquent vs Query Builder — Kab Kya Use Karein?
+
+```php
+// USE ELOQUENT WHEN:
+// - Model events chahiye (creating, updating, deleted)
+// - Relationships access karni hain ($user->orders)
+// - Casts aur mutators chahiye ($user->price formatted hota hai)
+// - API resources ya JSON response banani ho
+
+$user = User::with('profile')->find(1);
+$user->orders()->where('status', 'pending')->get();
+
+// USE QUERY BUILDER WHEN:
+// - Bulk inserts/updates (koi model events nahi chahiye)
+// - Reporting queries (complex aggregations, GROUP BY)
+// - Performance critical paths (no ORM overhead)
+// - Raw JOINs between multiple tables
+
+$report = DB::table('orders')
+    ->join('users', 'orders.user_id', '=', 'users.id')
+    ->select('users.name', DB::raw('COUNT(*) as total_orders'), DB::raw('SUM(orders.amount) as revenue'))
+    ->where('orders.created_at', '>=', now()->subMonth())
+    ->groupBy('users.id', 'users.name')
+    ->orderByDesc('revenue')
+    ->get();
+```
+
+---
+
+#### Summary — Eloquent CRUD Master Checklist For 3-Year Dev
+
+1. **`fillable` hamesha define karo:** Mass assignment vulnerability se protect karo. `$request->all()` kabhi directly `create()` mein mat daalo.
+2. **Select * avoid karo:** Production mein `->select(['id', 'name'])` use karo — bandwidth aur memory bachti hai.
+3. **`increment()` / `decrement()` use karo counters ke liye:** Ye race-condition safe atomic SQL operations hain.
+4. **Large datasets pe `chunkById()` use karo:** `all()` kabhi nahi; large tables par offset-based `chunk()` se bhi better `chunkById()` hai.
+5. **`toRawSql()` ya `DB::enableQueryLog()` se debug karo:** Assume mat karo ki Eloquent sahi SQL generate kar raha hai — check karo!
+6. **Model Events ka dhyan rakho:** `->update()` query method se model events nahi fire hote — agar notifications chahiye to instance pe `save()` use karo.
+
+</textarea>
+
+    <script>
+        // 1. Render Markdown Content
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 2. Eloquent CRUD Pipeline Stepper
+        const crudSteps = [
+            {
+                title: 'Step 1: HTTP Form Request Aata Hai',
+                level: 'HTTP Layer',
+                desc: 'User registration form submit karta hai. Laravel controller method call hoti hai. $request object mein user ka POST data hota hai: name, email, password, aur potentially malicious fields jaise is_admin=1.',
+                code: '// Controller Method:\npublic function store(Request $request)\n{\n    // $request->all() = {name: "Rahul", email: "...", password: "...", is_admin: "1"}\n    // DANGER: is_admin field bhi aa rahi hai!\n}'
+            },
+            {
+                title: 'Step 2: Validation — Data Filter Hota Hai',
+                level: 'Laravel Validation',
+                desc: 'Form Request ya inline validate() se data validate hota hai. Validated data mein sirf wahi fields hoti hain jo validation rules mein defined hain — is_admin jaise extra fields yahan automatically drop ho jaate hain.',
+                code: '// Form Request (StoreUserRequest):\npublic function rules(): array\n{\n    return [\n        "name"     => ["required", "string", "max:255"],\n        "email"    => ["required", "email", "unique:users"],\n        "password" => ["required", "min:8", "confirmed"],\n        // is_admin ka koi rule nahi = validated() mein nahi aayega!\n    ];\n}\n// $request->validated() = {name: ..., email: ..., password: ...}'
+            },
+            {
+                title: 'Step 3: Mass Assignment Guard Check',
+                level: 'Eloquent Model',
+                desc: 'User::create() call hone par Eloquent $fillable array check karta hai. Sirf fillable mein listed fields ko INSERT query mein include karta hai. Baaki sab ignore. Yeh doosri line of defense hai.',
+                code: '// User Model:\nprotected $fillable = ["name", "email", "password"];\n\n// create() call hoti hai:\nUser::create($request->validated());\n// Eloquent filter karta hai: sirf name, email, password allowed'
+            },
+            {
+                title: 'Step 4: Model Events Fire Hote Hain',
+                level: 'Eloquent Events',
+                desc: 'INSERT se pehle "creating" event fire hota hai — yahan aap additional processing kar sakte hain (default values set karna, UUID generate karna, etc.). INSERT ke baad "created" event fire hota hai — yahan welcome email queue mein dal sakte hain.',
+                code: '// Model mein ya Observer mein:\nprotected static function booted()\n{\n    // INSERT se pehle:  \n    static::creating(function ($user) {\n        $user->uuid = (string) Str::uuid();\n        $user->referral_code = Str::upper(Str::random(8));\n    });\n    \n    // INSERT ke baad:\n    static::created(function ($user) {\n        dispatch(new SendWelcomeEmailJob($user));\n    });\n}'
+            },
+            {
+                title: 'Step 5: SQL INSERT Execute Hoti Hai',
+                level: 'MySQL Engine',
+                desc: 'Finally InnoDB storage engine par actual SQL execute hoti hai. created_at aur updated_at automatically add hoti hain. AUTO_INCREMENT se new ID generate hota hai. Agar unique constraint violate ho to exception throw hoti hai.',
+                code: '-- Generated SQL:\nINSERT INTO users\n    (name, email, password, uuid, referral_code, created_at, updated_at)\nVALUES\n    ("Rahul Sharma", "rahul@example.com", "$2y$10$...", "uuid-...", "ABCD1234", "2024-09-08 10:30:00", "2024-09-08 10:30:00")'
+            },
+            {
+                title: 'Step 6: Response Return — Model Object as JSON',
+                level: 'API Response',
+                desc: 'create() naya User model object return karta hai with all attributes. API response mein $hidden fields (jaise password) automatically exclude hote hain. API Resource use karke sirf specific fields expose karo.',
+                code: '// Controller:\nreturn response()->json([\n    "user" => new UserResource($user),\n    "message" => "Registration successful!",\n], 201);\n\n// UserResource sirf allowed fields expose karta hai:\n// { id: 42, name: "Rahul Sharma", email: "...", referral_code: "ABCD1234" }\n// password field HIDDEN hai — $hidden = ["password"] Model mein'
+            }
+        ];
+
+        function showCrudStep(index) {
+            const chips = document.querySelectorAll('#crudNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = crudSteps[index];
+            const contentBox = document.getElementById('crudContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showCrudStep(0);
+
+        // Tab Switcher
+        function switchCrudTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

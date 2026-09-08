@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Relationships, Joins & Eager Loading for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="04_MySQL_Transactions_ACID_and_Locking_Internals.html" class="nav-btn">&larr; Previous: Indexing & N+1</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="06_MySQL_Replication_High_Availability_and_Scaling.html" class="nav-btn">Next: Transactions & ACID &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Relationship SQL Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Eloquent Relationships Ka Actual SQL — Under The Hood</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Har relationship type ke liye MySQL mein kya SQL generate hoti hai — step by step dekhein:
+        </p>
+
+        <div class="stepper-nav" id="relNav">
+            <button class="step-chip active" onclick="showRelStep(0)">
+                <span class="step-num">01</span>
+                <span>belongsTo</span>
+            </button>
+            <button class="step-chip" onclick="showRelStep(1)">
+                <span class="step-num">02</span>
+                <span>hasMany</span>
+            </button>
+            <button class="step-chip" onclick="showRelStep(2)">
+                <span class="step-num">03</span>
+                <span>belongsToMany</span>
+            </button>
+            <button class="step-chip" onclick="showRelStep(3)">
+                <span class="step-num">04</span>
+                <span>hasManyThrough</span>
+            </button>
+            <button class="step-chip" onclick="showRelStep(4)">
+                <span class="step-num">05</span>
+                <span>morphTo</span>
+            </button>
+            <button class="step-chip" onclick="showRelStep(5)">
+                <span class="step-num">06</span>
+                <span>withCount/withSum</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="relContent">
+            <!-- Dynamic Content populated by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Relationships Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchRelTab(event, 'tab-joins')">&#128279; JOIN Types Comparison</button>
+            <button class="tab-btn" onclick="switchRelTab(event, 'tab-wherehas')">&#9889; whereHas vs join()</button>
+            <button class="tab-btn" onclick="switchRelTab(event, 'tab-subquery')">&#128202; Subquery Selects</button>
+            <button class="tab-btn" onclick="switchRelTab(event, 'tab-pivot')">&#128203; Pivot Table Patterns</button>
+        </div>
+
+        <!-- Tab 1: JOIN Types -->
+        <div id="tab-joins" class="tab-panel active">
+            <h5>SQL JOIN Types — Laravel Query Builder Examples</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>JOIN Type</th>
+                        <th>Laravel Method</th>
+                        <th>Result</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>INNER JOIN</strong></td>
+                        <td><code>->join()</code></td>
+                        <td>Only matching rows from both tables</td>
+                        <td>Orders with valid users; posts with authors</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LEFT JOIN</strong></td>
+                        <td><code>->leftJoin()</code></td>
+                        <td>All left table rows + matching right (NULL if no match)</td>
+                        <td>All users even if no orders; posts with optional category</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RIGHT JOIN</strong></td>
+                        <td><code>->rightJoin()</code></td>
+                        <td>All right table rows + matching left (rare in practice)</td>
+                        <td>Rarely needed — restructure query with LEFT JOIN instead</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CROSS JOIN</strong></td>
+                        <td><code>->crossJoin()</code></td>
+                        <td>Cartesian product (every row x every row)</td>
+                        <td>Generating combinations; test data; matrix reports</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <pre><code class="language-php">// INNER JOIN — Common report query:
+$salesReport = DB::table('orders')
+    ->join('users', 'orders.user_id', '=', 'users.id')
+    ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+    ->join('products', 'order_items.product_id', '=', 'products.id')
+    ->select(
+        'users.name as customer',
+        'products.name as product',
+        'order_items.qty',
+        DB::raw('order_items.qty * order_items.unit_price as line_total')
+    )
+    ->where('orders.status', 'delivered')
+    ->whereBetween('orders.created_at', [now()->startOfMonth(), now()->endOfMonth()])
+    ->get();
+
+// LEFT JOIN — Find users who have NOT placed any orders:
+$usersWithoutOrders = DB::table('users')
+    ->leftJoin('orders', 'users.id', '=', 'orders.user_id')
+    ->whereNull('orders.id')   // No matching order = never ordered!
+    ->select('users.*')
+    ->get();</code></pre>
+        </div>
+
+        <!-- Tab 2: whereHas vs join -->
+        <div id="tab-wherehas" class="tab-panel">
+            <h5>whereHas() vs join() — Performance Comparison</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>whereHas() SQL</th>
+                        <th>join() SQL</th>
+                        <th>Winner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Users with published posts</td>
+                        <td>EXISTS subquery (correlated)</td>
+                        <td>INNER JOIN + DISTINCT</td>
+                        <td>join() for large tables</td>
+                    </tr>
+                    <tr>
+                        <td>Small tables (&lt; 10K rows)</td>
+                        <td>Readable, clean code</td>
+                        <td>More verbose</td>
+                        <td>whereHas() — simplicity wins</td>
+                    </tr>
+                    <tr>
+                        <td>Need data from related table too</td>
+                        <td>Extra query needed</td>
+                        <td>Single query gets both</td>
+                        <td>join() clearly</td>
+                    </tr>
+                    <tr>
+                        <td>doesntHave / NOT EXISTS</td>
+                        <td>whereDoesntHave() — cleanest!</td>
+                        <td>LEFT JOIN + WHERE NULL</td>
+                        <td>whereDoesntHave() wins on clarity</td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre><code class="language-php">// Pattern 1: whereHas — cleaner for simple existence:
+$activeUsers = User::whereHas('orders', function ($q) {
+    $q->where('status', 'completed')->where('created_at', '>', now()->subMonth());
+})->get();
+
+// Pattern 2: join — faster for large datasets + need joined data:
+$activeUsers = User::join('orders', 'users.id', '=', 'orders.user_id')
+    ->where('orders.status', 'completed')
+    ->where('orders.created_at', '>', now()->subMonth())
+    ->select('users.*', DB::raw('COUNT(orders.id) as order_count'))
+    ->groupBy('users.id')
+    ->having('order_count', '>', 0)
+    ->get();
+
+// Pattern 3: whereDoesntHave — users who never ordered:
+$neverOrdered = User::whereDoesntHave('orders')->get();
+// SQL: WHERE NOT EXISTS (SELECT * FROM orders WHERE user_id = users.id)
+// vs LEFT JOIN + WHERE NULL — same result, whereDoesntHave() is cleaner!</code></pre>
+        </div>
+
+        <!-- Tab 3: Subquery Selects -->
+        <div id="tab-subquery" class="tab-panel">
+            <h5>Subquery Selects — Single Query Mein Extra Data</h5>
+            <pre><code class="language-php">// SCENARIO 1: Users list with last order date
+$users = User::addSelect([
+    'last_order_at' => Order::select('created_at')
+        ->whereColumn('user_id', 'users.id')
+        ->latest()
+        ->limit(1),
+    'total_spent' => Order::select(DB::raw('COALESCE(SUM(total_amount), 0)'))
+        ->whereColumn('user_id', 'users.id')
+        ->where('status', 'completed')
+])
+->withCasts(['last_order_at' => 'datetime', 'total_spent' => 'decimal:2'])
+->get();
+
+// Access:
+echo $user->last_order_at->diffForHumans(); // "3 days ago"
+echo number_format($user->total_spent, 2);   // "15,230.50"
+
+// SCENARIO 2: Posts with comment count + last comment date (without N+1):
+$posts = Post::addSelect([
+    'comments_count' => Comment::selectRaw('COUNT(*)')
+        ->whereColumn('post_id', 'posts.id'),
+    'last_commented_at' => Comment::select('created_at')
+        ->whereColumn('post_id', 'posts.id')
+        ->latest()
+        ->limit(1),
+])->get();
+
+// SCENARIO 3: Products with stock status label:
+$products = Product::addSelect([
+    DB::raw("CASE WHEN stock = 0 THEN 'out_of_stock'
+                  WHEN stock < 5 THEN 'low_stock'
+                  ELSE 'in_stock' END as stock_status")
+])->get();
+
+// $product->stock_status = 'low_stock', 'in_stock', 'out_of_stock'</code></pre>
+        </div>
+
+        <!-- Tab 4: Pivot Table Patterns -->
+        <div id="tab-pivot" class="tab-panel">
+            <h5>Pivot Table Patterns — belongsToMany Advanced Usage</h5>
+            <pre><code class="language-php">// SETUP: Products and Categories (many-to-many with extra pivot data)
+// category_product table: category_id, product_id, display_order, is_primary
+
+// Product Model:
+public function categories(): BelongsToMany
+{
+    return $this->belongsToMany(Category::class)
+                ->withPivot(['display_order', 'is_primary'])
+                ->withTimestamps()
+                ->orderByPivot('display_order');
+}
+
+// ATTACH (add relationship):
+$product->categories()->attach($categoryId, [
+    'display_order' => 1,
+    'is_primary' => true,
+]);
+
+// DETACH (remove relationship):
+$product->categories()->detach($categoryId);
+$product->categories()->detach(); // All categories detach
+
+// SYNC (replace all):
+$product->categories()->sync([1, 2, 3]); // Only these categories remain
+
+// SYNC with pivot data:
+$product->categories()->sync([
+    1 => ['display_order' => 1, 'is_primary' => true],
+    2 => ['display_order' => 2, 'is_primary' => false],
+]);
+
+// TOGGLE (attach if not present, detach if present):
+$product->categories()->toggle([1, 2]); // Like a checkbox toggle
+
+// ACCESS pivot data:
+foreach ($product->categories as $category) {
+    echo $category->name;                    // Category name
+    echo $category->pivot->display_order;    // Pivot column
+    echo $category->pivot->is_primary ? 'Primary' : 'Secondary';
+}
+
+// QUERY pivot data in whereHas:
+$primaryProducts = Product::whereHas('categories', function ($q) {
+    $q->wherePivot('is_primary', true);
+})->get();</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="04_MySQL_Transactions_ACID_and_Locking_Internals.html" class="nav-btn">&larr; Previous: Indexing & N+1</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="06_MySQL_Replication_High_Availability_and_Scaling.html" class="nav-btn">Next: Transactions & ACID &rarr;</a>
+    </div>
+
+    <!-- Hidden Raw Markdown Container -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 5: Relationships, Joins & Eager Loading — Eloquent Ke Piche Ka SQL
+
+Jab aap `$post->user->name` likhte hain, MySQL mein kya hota hai? Aur jab aap `User::with('orders')->get()` likhte hain, to woh `JOIN` use karta hai ya alag queries? Kya `whereHas()` aur `join()` ka result same hota hai — performance mein kya fark hai?
+
+Ye saare questions ek 3-year developer ko pata hone chahiye. Is module mein hum har Eloquent relationship ka **actual SQL** dekhenge aur learn karenge kab Eloquent use karna aur kab raw JOIN banana better hai.
+
+---
+
+#### 1. Eloquent Relationships — Underlying SQL Kya Hai?
+
+##### `belongsTo` — Child Table Se Parent Fetch:
+```php
+// Post model mein:
+public function user(): BelongsTo
+{
+    return $this->belongsTo(User::class);
+    // Assume: posts.user_id -> users.id
+}
+
+// Usage:
+$post = Post::find(1);
+$user = $post->user; // Lazy load triggers:
+// SQL: SELECT * FROM users WHERE users.id = {post.user_id} LIMIT 1
+
+// With eager loading:
+$post = Post::with('user')->find(1);
+// SQL 1: SELECT * FROM posts WHERE posts.id = 1 LIMIT 1
+// SQL 2: SELECT * FROM users WHERE users.id IN (5) -- single IN query
+```
+
+##### `hasMany` — Parent Se Multiple Children Fetch:
+```php
+// User model mein:
+public function posts(): HasMany
+{
+    return $this->hasMany(Post::class);
+    // Assume: posts.user_id -> users.id
+}
+public function orders(): HasMany
+{
+    return $this->hasMany(Order::class);
+}
+
+// Usage:
+$user = User::find(1);
+$posts = $user->posts; // Lazy load:
+// SQL: SELECT * FROM posts WHERE posts.user_id = 1
+
+// Eager loaded:
+$users = User::with('posts')->get();
+// SQL 1: SELECT * FROM users
+// SQL 2: SELECT * FROM posts WHERE posts.user_id IN (1, 2, 3, ..., N)
+// PHP mein Eloquent match karta hai — koi JOIN nahi!
+```
+
+##### `belongsToMany` — Pivot Table Ke Sath Many-to-Many:
+```php
+// Post model mein:
+public function tags(): BelongsToMany
+{
+    return $this->belongsToMany(Tag::class);
+    // Pivot table: post_tag (post_id, tag_id)
+}
+
+// Usage:
+$post = Post::find(1);
+$tags = $post->tags; // Lazy load:
+// SQL: SELECT tags.*, post_tag.post_id AS pivot_post_id, post_tag.tag_id AS pivot_tag_id
+//      FROM tags
+//      INNER JOIN post_tag ON post_tag.tag_id = tags.id
+//      WHERE post_tag.post_id = 1
+
+// Pivot table mein extra data rakho:
+$post->tags()->attach($tagId, ['added_by' => auth()->id(), 'created_at' => now()]);
+
+// Pivot data access karo:
+foreach ($post->tags as $tag) {
+    echo $tag->pivot->added_by; // Pivot column direct access
+}
+
+// withPivot() se pivot columns include karo:
+public function tags(): BelongsToMany
+{
+    return $this->belongsToMany(Tag::class)
+                ->withPivot(['added_by', 'notes'])
+                ->withTimestamps();
+}
+```
+
+##### `hasManyThrough` — Indirect Relationship:
+```php
+// Real example: Country -> Users -> Posts
+// Country ke saare posts dekhne hain
+
+// Country model mein:
+public function posts(): HasManyThrough
+{
+    return $this->hasManyThrough(
+        Post::class,   // Final model
+        User::class,   // Intermediate model
+        'country_id',  // FK on users table
+        'user_id',     // FK on posts table
+        'id',          // Local key on countries
+        'id'           // Local key on users
+    );
+}
+
+// Usage:
+$country = Country::find(1);
+$posts = $country->posts;
+// SQL: SELECT posts.*
+//      FROM posts
+//      INNER JOIN users ON users.id = posts.user_id
+//      WHERE users.country_id = 1
+// Ek query mein indirect relationship!
+
+// Another real example: Department -> Employees -> Projects
+public function projects(): HasManyThrough
+{
+    return $this->hasManyThrough(Project::class, Employee::class);
+}
+```
+
+---
+
+#### 2. Polymorphic Relationships — Kab Use Karein, Kab Avoid Karein
+
+```php
+// USE CASE: Comments jo Posts, Videos, aur Products par ho sakti hain
+
+// comments table:
+// id | commentable_id | commentable_type         | body
+//  1 |       42       | App\Models\Post           | "Great post!"
+//  2 |       17       | App\Models\Video          | "Nice video!"
+//  3 |        5       | App\Models\Product        | "Love this product!"
+
+// Comment model:
+public function commentable(): MorphTo
+{
+    return $this->morphTo();
+}
+
+// Post, Video, Product models:
+public function comments(): MorphMany
+{
+    return $this->morphMany(Comment::class, 'commentable');
+}
+
+// BENEFIT: Ek comments table = 3 relationships
+$post->comments; // SQL: WHERE commentable_type = 'App\Models\Post' AND commentable_id = 42
+$video->comments; // SQL: WHERE commentable_type = 'App\Models\Video' AND commentable_id = 17
+
+// WHEN TO AVOID POLYMORPHIC:
+// 1. Agar sirf 2 models share karte hain — regular FK better hai
+// 2. Foreign key constraint nahi ban sakta polymorphic columns par
+// 3. JOINs mushkil ho jaate hain (commentable_type se JOIN nahi hoti database mein)
+// 4. Reporting queries complex ho jaati hain
+
+// Alternative to Polymorphic (Null-able FKs — simpler for few models):
+// comments table:
+// id | post_id (nullable) | video_id (nullable) | body
+// Sirf ek column non-null hoga — explicit, indexable, joinable!
+```
+
+---
+
+#### 3. `whereHas()` vs `join()` — Kab Kya Better Hai?
+
+Yeh ek important decision point hai jo 3-year developers face karte hain.
+
+```php
+// SCENARIO: Saare users dhundne hain jinke paas at least 1 published post hai
+
+// APPROACH 1: whereHas() — Eloquent way
+$users = User::whereHas('posts', function ($query) {
+    $query->where('status', 'published');
+})->get();
+// Generated SQL:
+// SELECT * FROM users
+// WHERE EXISTS (
+//     SELECT * FROM posts
+//     WHERE posts.user_id = users.id AND status = 'published'
+// )
+// PRO: Clean, readable, uses Eloquent models
+// CON: Correlated subquery — for large tables can be slow
+
+// APPROACH 2: join() — Raw SQL JOIN
+$users = User::join('posts', 'users.id', '=', 'posts.user_id')
+             ->where('posts.status', 'published')
+             ->select('users.*')
+             ->distinct()
+             ->get();
+// Generated SQL:
+// SELECT DISTINCT users.*
+// FROM users
+// INNER JOIN posts ON users.id = posts.user_id
+// WHERE posts.status = 'published'
+// PRO: Faster for large datasets (JOIN is optimizable by MySQL)
+// CON: More verbose, need distinct() to avoid duplicate users
+
+// APPROACH 3: whereIn with subquery (balanced approach)
+$publishedAuthorIds = Post::where('status', 'published')
+                          ->distinct()
+                          ->pluck('user_id');
+$users = User::whereIn('id', $publishedAuthorIds)->get();
+// 2 queries but both simple aur fast!
+```
+
+##### Kab Kya Use Karein:
+
+| Situation | Recommended |
+|:---|:---|
+| Simple existence check (has/doesntHave) | `whereHas()` — readable |
+| Need data from both tables | `join()` — efficient |
+| Large tables (> 100K rows) | `join()` — faster than correlated subquery |
+| Filtering + relationship data | `join()` with `select()` |
+| "Users without X" query | `whereDoesntHave()` — cleanest |
+
+---
+
+#### 4. Practical JOIN Types — Laravel Query Builder Se
+
+```php
+// Database: orders + users + products
+
+// INNER JOIN — Sirf matching records (common!):
+$orders = DB::table('orders')
+    ->join('users', 'orders.user_id', '=', 'users.id')
+    ->select('orders.id', 'orders.total', 'users.name as customer_name')
+    ->get();
+// SQL: SELECT orders.id, orders.total, users.name as customer_name
+//      FROM orders INNER JOIN users ON orders.user_id = users.id
+// Result: Sirf orders jinke users exist karte hain
+
+// LEFT JOIN — Saare orders, chahe user deleted bhi ho:
+$orders = DB::table('orders')
+    ->leftJoin('users', 'orders.user_id', '=', 'users.id')
+    ->select('orders.id', 'orders.total', 'users.name as customer_name')
+    ->get();
+// SQL: LEFT JOIN — user NULL hoga agar user delete ho gaya
+// Use case: Reports where you want ALL records regardless
+
+// Eloquent se JOIN (returns Eloquent models):
+$posts = Post::join('users', 'posts.user_id', '=', 'users.id')
+             ->select('posts.*', 'users.name as author_name')
+             ->where('posts.status', 'published')
+             ->latest('posts.created_at')
+             ->get();
+// $post->author_name directly accessible!
+
+// Multiple JOINs:
+$orderItems = DB::table('order_items')
+    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+    ->join('products', 'order_items.product_id', '=', 'products.id')
+    ->join('users', 'orders.user_id', '=', 'users.id')
+    ->select(
+        'orders.id as order_id',
+        'users.name as customer',
+        'products.name as product',
+        'order_items.qty',
+        'order_items.unit_price'
+    )
+    ->where('orders.status', 'delivered')
+    ->get();
+```
+
+---
+
+#### 5. Subquery Selects — Extra Data Bina N+1 Ke
+
+```php
+// SCENARIO: Users list dikhani hai with their LAST ORDER date
+
+// WRONG: N+1 approach
+$users = User::all();
+foreach ($users as $user) {
+    $lastOrder = $user->orders()->latest()->first(); // N+1!
+    echo $lastOrder->created_at;
+}
+
+// CORRECT: Subquery select — single query!
+$users = User::addSelect([
+    'last_order_at' => Order::select('created_at')
+        ->whereColumn('user_id', 'users.id')
+        ->latest()
+        ->limit(1)
+])
+->withCasts(['last_order_at' => 'datetime'])
+->get();
+
+// Generated SQL:
+// SELECT users.*,
+//        (SELECT created_at FROM orders WHERE user_id = users.id ORDER BY created_at DESC LIMIT 1) as last_order_at
+// FROM users
+
+echo $user->last_order_at->format('d M Y'); // Carbon object! (due to cast)
+
+// Another example: withCount aur withSum (simpler API for counts):
+$users = User::withCount('orders')
+             ->withSum('orders', 'total_amount')
+             ->withMax('orders', 'total_amount')
+             ->withAvg('reviews', 'rating')
+             ->get();
+// $user->orders_count
+// $user->orders_sum_total_amount
+// $user->orders_max_total_amount
+// $user->reviews_avg_rating
+```
+
+---
+
+#### 6. `load()` vs `with()` — Collection Par Dynamic Loading
+
+```php
+// with() — Query ke sath pehle se define karo:
+$posts = Post::with('user')->get();
+// Use karo: Jab hamesha relationship chahiye
+
+// load() — Collection ke baad dynamically load karo:
+$posts = Post::paginate(20);
+// ... kuch processing ...
+if ($showAuthors) {
+    $posts->load('user'); // Ab load karo — conditional eager loading!
+}
+// Use karo: Jab relationship conditionally chahiye
+
+// loadMissing() — Sirf unloaded relationships load karo:
+$posts->loadMissing(['user', 'tags']);
+// Already loaded relationships dubara load nahi hongi
+
+// Practical use case — API Controller:
+public function index(Request $request): JsonResponse
+{
+    $posts = Post::latest()->paginate(20);
+
+    // Conditionally load based on request parameter:
+    if ($request->boolean('include_author')) {
+        $posts->load('user:id,name,avatar');
+    }
+    if ($request->boolean('include_tags')) {
+        $posts->load('tags:id,name,slug');
+    }
+
+    return PostResource::collection($posts)->response();
+}
+```
+
+---
+
+#### Summary — Relationships & Joins Master Checklist
+
+1. **`with()` ka use karo** jab hamesha relationship chahiye — yeh `JOIN` nahi karta, separate IN query chalata hai (2 queries for N records).
+2. **`whereHas()` readability ke liye** — lekin large tables par `join()` faster hota hai.
+3. **`hasManyThrough` real magic hai** — indirect relationships bina loop ke ek SQL mein.
+4. **Pivot table extra data** ke liye `withPivot()` use karo — yeh automatically SELECT mein include hota hai.
+5. **Subquery select** se last record, max value, etc. single query mein la sakte ho — N+1 avoid!
+6. **`load()` conditional hai** — `with()` hamesha load karta hai, `load()` baad mein decide kar sakte ho.
+
+</textarea>
+
+    <script>
+        // 1. Render Markdown Content
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 2. Relationship SQL Pipeline Stepper
+        const relSteps = [
+            {
+                title: 'belongsTo — Child Se Parent Fetch',
+                level: 'BelongsTo',
+                desc: 'Post apne User ko fetch karta hai. belongsTo relationship posts.user_id column use karta hai. Lazy load hone par: ek SELECT query users table par chalti hai WHERE id = post.user_id. Eager loading se IN() query se batch mein fetch hota hai.',
+                code: '-- Lazy load (1 query per post — N+1 risk!):\nSELECT * FROM users WHERE users.id = 5 LIMIT 1\n\n-- Eager load (1 query for all posts):\nSELECT * FROM users WHERE users.id IN (1, 2, 3, 4, 5)'
+            },
+            {
+                title: 'hasMany — Parent Se Multiple Children Fetch',
+                level: 'HasMany',
+                desc: 'User apne saare Posts fetch karta hai. hasMany WHERE posts.user_id = users.id use karta hai. Eager loading se: IN() query se saare users ke posts ek sath fetch hote hain, phir PHP mein group kiye jaate hain. Koi JOIN nahi hoti!',
+                code: '-- Lazy load (1 User ke posts):\nSELECT * FROM posts WHERE posts.user_id = 1\n\n-- Eager load (All users ke posts ek sath):\nSELECT * FROM posts WHERE posts.user_id IN (1, 2, 3, 4, 5)\n-- PHP mein: user_id ke basis par group karke model assign'
+            },
+            {
+                title: 'belongsToMany — Pivot Table Se M:N Relationship',
+                level: 'BelongsToMany',
+                desc: 'Post aur Tag many-to-many hain. Pivot table post_tag ke through. Jab $post->tags access hota hai, MySQL INNER JOIN karta hai post_tag table ke through tags table par. Pivot columns bhi select hote hain automatically.',
+                code: '-- belongsToMany SQL (INNER JOIN through pivot):\nSELECT tags.*,\n       post_tag.post_id AS pivot_post_id,\n       post_tag.tag_id AS pivot_tag_id\nFROM tags\nINNER JOIN post_tag ON post_tag.tag_id = tags.id\nWHERE post_tag.post_id = 1'
+            },
+            {
+                title: 'hasManyThrough — Indirect 2-Level Relationship',
+                level: 'HasManyThrough',
+                desc: 'Country ke saare Posts chahiye — Country -> User -> Posts path follow karta hai. Ek INNER JOIN query mein dono tables join karke result milta hai. Koi loop nahi, koi N+1 nahi — direct SQL JOIN se intermediate model traverse hota hai.',
+                code: '-- hasManyThrough SQL (ek query mein 2 level deep!):\nSELECT posts.*\nFROM posts\nINNER JOIN users ON users.id = posts.user_id\nWHERE users.country_id = 1\n-- Country 1 ke sabhi Users ke sabhi Posts!'
+            },
+            {
+                title: 'Polymorphic (morphTo) — Dynamic Type Relationship',
+                level: 'Polymorphic',
+                desc: 'Comment Post, Video ya Product par bhi ho sakti hai. commentable_type column decide karta hai kaunsa model relate hota hai. WHERE condition mein commentable_type AND commentable_id dono use hote hain. Foreign key index nahi ban sakta — is limitation ko dhyan mein rakho.',
+                code: '-- Post ke comments:\nSELECT * FROM comments\nWHERE commentable_type = "App\\Models\\Post"\n  AND commentable_id = 42\n\n-- Video ke comments:\nSELECT * FROM comments\nWHERE commentable_type = "App\\Models\\Video"\n  AND commentable_id = 17'
+            },
+            {
+                title: 'withCount / withSum — Aggregate Without N+1',
+                level: 'Aggregates',
+                desc: 'withCount(), withSum(), withAvg() Eloquent ke sabse powerful optimization methods hain. Ye subquery use karte hain jo main query ke sath ek hi result set mein aggregate value laate hain. N+1 nahi, koi loop nahi, ek hi SQL mein count + sum + avg!',
+                code: '-- withCount + withSum generated SQL:\nSELECT users.*,\n  (SELECT COUNT(*) FROM orders WHERE orders.user_id = users.id) AS orders_count,\n  (SELECT SUM(total_amount) FROM orders WHERE orders.user_id = users.id\n   AND status = "completed") AS orders_sum_total_amount\nFROM users\n-- Ek query mein count + sum — N+1 zero!'
+            }
+        ];
+
+        function showRelStep(index) {
+            const chips = document.querySelectorAll('#relNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+            const step = relSteps[index];
+            const contentBox = document.getElementById('relContent');
+            contentBox.innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showRelStep(0);
+
+        function switchRelTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

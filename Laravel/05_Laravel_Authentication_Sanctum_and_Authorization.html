@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Masterclass — Authentication, Sanctum & Authorization Architecture</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="04_Laravel_Eloquent_ORM_and_Database_Mastery.html" class="nav-btn">&larr; Previous: Eloquent & Database</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="06_Laravel_Queues_Jobs_and_Event_Driven_Architecture.html" class="nav-btn">Next: Queues & Events &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Interactive Sanctum Dual-Mode Simulator -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive Sanctum Dual-Mode Flow Simulator</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click between <strong>SPA Stateful Cookie Flow</strong> vs <strong>Mobile Bearer Token Flow</strong> to see exact headers, cookies, and database operations:
+        </p>
+
+        <div class="stepper-nav" id="sanctumNav">
+            <button class="step-chip active" onclick="showSanctumStep(0)">1. SPA Step 1: CSRF Cookie</button>
+            <button class="step-chip" onclick="showSanctumStep(1)">2. SPA Step 2: Login & Session</button>
+            <button class="step-chip" onclick="showSanctumStep(2)">3. SPA Step 3: Authenticated Request</button>
+            <button class="step-chip" onclick="showSanctumStep(3)">4. Mobile Step 1: Token Creation</button>
+            <button class="step-chip" onclick="showSanctumStep(4)">5. Mobile Step 2: Bearer Request</button>
+            <button class="step-chip" onclick="showSanctumStep(5)">6. Mobile Step 3: Abilities & Revocation</button>
+        </div>
+
+        <div class="step-content-box" id="sanctumContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Authorization Matrix (Gates vs Policies) -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchAuthTab(event, 'auth-policies')">1. Model Policies (Resource Rules)</button>
+            <button class="tab-btn" onclick="switchAuthTab(event, 'auth-gates')">2. Global Gates & SuperAdmin Bypass</button>
+            <button class="tab-btn" onclick="switchAuthTab(event, 'auth-multi')">3. Multi-Auth Guards (Admin vs Customer)</button>
+        </div>
+
+        <div id="auth-policies" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Model Policy: Granular ownership rules for CRUD operations on Eloquent models.</p>
+            <pre><code class="language-php">&lt;?php
+namespace App\Policies;
+
+use App\Models\Invoice;
+use App\Models\User;
+use Illuminate\Auth\Access\Response;
+
+final class InvoicePolicy
+{
+    /**
+     * Determine whether the user can view the invoice.
+     */
+    public function view(User $user, Invoice $invoice): Response
+    {
+        return $user->id === $invoice->user_id || $user->isSupportStaff()
+            ? Response::allow()
+            : Response::deny('You do not own this billing invoice.');
+    }
+
+    /**
+     * Determine whether the user can update the invoice.
+     */
+    public function update(User $user, Invoice $invoice): bool
+    {
+        // Unpaid invoices can only be modified if less than 30 days old
+        return $user->id === $invoice->user_id 
+            &amp;&amp; $invoice->status === 'unpaid' 
+            &amp;&amp; $invoice->created_at-&gt;gt(now()-&gt;subDays(30));
+    }
+}
+
+// In Controller: 1-line authorization check:
+public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+{
+    $this->authorize('update', $invoice); // Throws 403 HttpException if denied!
+    // Safe execution...
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="auth-gates" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">Gates & SuperAdmin Master Bypass in <code>AppServiceProvider</code>.</p>
+            <pre><code class="language-php">&lt;?php
+namespace App\Providers;
+
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // 1. SuperAdmin Master Bypass:
+        // Gate::before() runs BEFORE any Policy or Gate check!
+        Gate::before(function (User $user, string $ability) {
+            if ($user->hasRole('super-admin')) {
+                return true; // Bypass all checks across the entire system!
+            }
+        });
+
+        // 2. Closure-Based Standalone Gates:
+        Gate::define('access-pulse-dashboard', function (User $user) {
+            return in_array($user->email, config('app.pulse_allowed_users', []));
+        });
+
+        Gate::define('manage-billing', function (User $user, \App\Models\Team $team) {
+            return $user->id === $team->owner_id;
+        });
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="auth-multi" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Multi-Authentication: Separate DB tables, sessions, and guards for Admin vs Customer.</p>
+            <pre><code class="language-php">&lt;?php
+// config/auth.php
+return [
+    'guards' => [
+        'web' => [
+            'driver'   => 'session',
+            'provider' => 'users',
+        ],
+        'admin' => [
+            'driver'   => 'session',
+            'provider' => 'admins',
+        ],
+        'api' => [
+            'driver'   => 'sanctum',
+            'provider' => 'users',
+        ],
+    ],
+
+    'providers' => [
+        'users' => [
+            'driver' => 'eloquent',
+            'model'  => \App\Models\User::class,
+        ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model'  => \App\Models\Admin::class,
+        ],
+    ],
+];
+
+// Controller login for admin:
+Auth::guard('admin')->attempt(['email' => $email, 'password' => $pass]);
+
+// Route protection:
+Route::middleware('auth:admin')->prefix('admin')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+});
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="04_Laravel_Eloquent_ORM_and_Database_Mastery.html" class="nav-btn">&larr; Previous: Eloquent & Database</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="06_Laravel_Queues_Jobs_and_Event_Driven_Architecture.html" class="nav-btn">Next: Queues & Events &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### Module 05: Authentication, Sanctum & Enterprise Authorization
+
+Authentication (`AuthN`) ka matlab hota hai **"Who are you?"** (Identity verification), jabki Authorization (`AuthZ`) ka matlab hota hai **"What are you allowed to do?"** (Permission boundaries).
+
+Security audit reports me 60% critical exploits broken authentication aur unauthorized resource tampering (IDOR, privilege escalation) ki wajah se report hote hain.
+
+Is module me hum explore karenge ki kaise **Senior Staff Engineers** Multi-Auth Guards, Sanctum Dual-Mode Architecture (SPA vs Mobile Tokens), Policy auto-discovery, Session Fixation prevention aur SuperAdmin Gates ko **Laravel 10, 11, 12 aur 13** me design karte hain.
+
+---
+
+#### 1. Laravel Authentication Architecture (`config/auth.php`)
+
+Laravel ka authentication framework 2 fundamental concepts par divide hota hai:
+
+1. **Guards:** Ye define karte hain ki har request par user authenticate *kaise* hoga:
+   - `session` driver: Cookies aur PHP sessions use karta hai (Web UI).
+   - `sanctum` driver: Bearer tokens ya stateful session cookies use karta hai (APIs / SPAs).
+2. **User Providers:** Ye define karte hain ki user records DB se *kahan se* fetch honge:
+   - `eloquent` driver: Model queries se (`App\Models\User`).
+   - `database` driver: Direct query builder se.
+
+```
+Incoming Request
+      │
+      ▼
+   Guard (web / admin / sanctum)
+      │
+      ▼
+User Provider (Eloquent / Database)
+      │
+      ▼
+Password Verification (Argon2id / Bcrypt)
+```
+
+##### 1.1 Password Hashing Best Practices (Argon2id vs Bcrypt)
+
+Default me Laravel Bcrypt use karta hai. Lekin high-security enterprise apps me **Argon2id** (OWASP recommended) use karein:
+
+```php
+// config/hashing.php
+'driver' => 'argon2id',
+'argon' => [
+    'memory'  => 65536, // 64 MB RAM per hash calculation
+    'threads' => 1,
+    'time'    => 4,
+],
+```
+
+> **Automatic Re-hashing (Laravel 10+ Feature):** Jab aap algorithm ya work factor change karte hain, toh jab bhi user login karta hai, Laravel automatically check karta hai: `Hash::needsRehash($user->password)`. Agar true hota hai, toh transparently password ko new stronger algorithm me rehash karke DB update kar deta hai!
+
+---
+
+#### 2. Session-Based Web Authentication & Security Hardening
+
+##### 2.1 The Critical Session Fixation Defense
+
+Attacker victim ko ek pre-determined session ID send karta hai. Agar user login hone ke baad session ID change nahi hui, toh attacker user ka session hijack kar sakta hai!
+
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class LoginController extends Controller
+{
+    public function authenticate(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            // 🛡️ MANDATORY SECURITY STEP:
+            // Purani session ID ko destroy karke fresh random ID generate karta hai!
+            $request->session()->regenerate();
+
+            return redirect()->intended('/dashboard');
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        // Session wipe aur CSRF token rotate karein
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
+}
+```
+
+##### 2.2 Concurrent Device Invalidation ("Log Out Everywhere Else")
+
+Agar user ko lagta hai ki uska account compromise ho gaya hai:
+
+```php
+use Illuminate\Support\Facades\Auth;
+
+// Current device ko chhodkar baki saare desktop, mobile sessions ko turant expire karein:
+Auth::logoutOtherDevices($currentPlainPassword);
+```
+
+---
+
+#### 3. Laravel Sanctum: The Complete Dual-Mode Token Architecture
+
+Laravel Sanctum do completely different scenarios solve karta hai. Junior developers in dono me confuse ho jaate hain:
+
+| Feature | Mode 1: SPA Stateful Auth | Mode 2: Mobile / Third-Party API Tokens |
+| :--- | :--- | :--- |
+| **Target Client** | Vue, React, Next.js, Nuxt running in Browser | Flutter, React Native, iOS, Postman, External APIs |
+| **Mechanism** | HTTP-Only Cookies + Session + CSRF | `Bearer <plainTextToken>` HTTP Header |
+| **Token Storage** | Browser manages cookies automatically | Mobile Secure Keychain / SecureStorage |
+| **Vulnerabilities** | Immune to XSS token theft! Needs CSRF protection | Immune to CSRF! Sensitive to XSS/insecure storage |
+| **Database Queries** | Standard session lookup (Redis/DB) | SHA-256 token lookup in `personal_access_tokens` |
+
+##### 3.1 Mode 1: SPA Stateful Authentication (The Cookie Way)
+
+**Step 1: Frontend initial call to fetch CSRF Cookie**
+```javascript
+// Browser pehle Laravel se CSRF handshake karta hai:
+await axios.get('https://api.example.com/sanctum/csrf-cookie', { withCredentials: true });
+```
+
+**Step 2: Login via standard credentials endpoint**
+```javascript
+await axios.post('https://api.example.com/login', {
+    email: 'user@example.com',
+    password: 'secret_password'
+}, { withCredentials: true });
+// Laravel automatically set-cookie: myapp_session=... aur XSRF-TOKEN return karta hai!
+```
+
+**Step 3: Configuration Across Laravel Versions**
+* **Laravel 10:** `app/Http/Kernel.php` ke `api` middleware group me `EnsureFrontendRequestsAreStateful::class` add karna padta tha.
+* **Laravel 11, 12 & 13:** `bootstrap/app.php` me single method call se configure hota hai:
+  ```php
+  ->withMiddleware(function (Middleware $middleware) {
+      $middleware->statefulApi();
+  })
+  ```
+* `.env` Configuration:
+  ```ini
+  SANCTUM_STATEFUL_DOMAINS=localhost:3000,app.example.com
+  SESSION_DOMAIN=.example.com
+  ```
+
+##### 3.2 Mode 2: Mobile & Server-to-Server Personal Access Tokens
+
+Mobile apps cookies share nahi karti hain, isliye unhe **Personal Access Tokens** diye jaate hain:
+
+```php
+namespace App\Http\Controllers\Api;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class ApiAuthController extends Controller
+{
+    public function issueToken(Request $request)
+    {
+        $request->validate([
+            'email'       => 'required|email',
+            'password'    => 'required',
+            'device_name' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid login credentials.'],
+            ]);
+        }
+
+        // Token banate waqt granular Abilities (Scopes) assign karein:
+        $token = $user->createToken(
+            name: $request->device_name,
+            abilities: ['orders:create', 'orders:read'],
+            expiresAt: now()->addDays(30) // Token expiration
+        );
+
+        return response()->json([
+            'token'      => $token->plainTextToken, // Only returned ONCE!
+            'token_type' => 'Bearer',
+            'expires_at' => $token->accessToken->expires_at,
+        ]);
+    }
+}
+```
+
+##### 3.3 Protecting Routes with Token Abilities (Scopes)
+
+```php
+// In routes/api.php
+Route::middleware(['auth:sanctum', 'ability:orders:create'])->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']);
+});
+
+// Inside Controller method check:
+if ($request->user()->tokenCan('orders:refund')) {
+    // Authorized to refund
+}
+```
+
+##### 3.4 Revoking & Expiring Tokens
+
+```php
+// 1. Current request ka token revoke karein (Single device logout):
+$request->user()->currentAccessToken()->delete();
+
+// 2. Saare devices ke tokens delete karein (Complete account purge):
+$request->user()->tokens()->delete();
+
+// 3. Expired tokens ko clean karne ke liye automated Artisan cron job:
+// php artisan sanctum:prune-expired
+```
+
+---
+
+#### 4. Sanctum vs Laravel Passport (OAuth2): When to Pick Which?
+
+| Requirement | Pick Laravel Sanctum | Pick Laravel Passport |
+| :--- | :--- | :--- |
+| **SPA (Vue, React, Next.js)** | ✅ Best Choice (Zero overhead, cookies) | ❌ Overkill |
+| **Mobile Apps (Flutter, iOS)** | ✅ Lightweight & Fast | ❌ Unnecessary complexity |
+| **OAuth2 Server ("Login with MyCompany")** | ❌ Cannot act as OAuth2 provider | ✅ Full OAuth2 Server (RFC 6749) |
+| **Client Credentials Grant (Machine-to-Machine)** | ❌ Limited | ✅ First-class support |
+| **Setup Complexity** | 5 minutes | Heavy (Private/public keys, migrations) |
+
+---
+
+#### 5. Multi-Authentication Architecture (Admin vs Customer vs Partner)
+
+Production systems me Admins aur Customers ko kabhi ek hi table me `is_admin = 1` karke nahi chhodna chahiye agar unke security privileges completely isolated hain:
+
+```php
+// config/auth.php
+'guards' => [
+    'web' => [
+        'driver'   => 'session',
+        'provider' => 'users',
+    ],
+    'admin' => [
+        'driver'   => 'session',
+        'provider' => 'admins',
+    ],
+],
+
+'providers' => [
+    'users' => [
+        'driver' => 'eloquent',
+        'model'  => App\Models\User::class,
+    ],
+    'admins' => [
+        'driver' => 'eloquent',
+        'model'  => App\Models\Admin::class, // Separate DB table 'admins'
+    ],
+],
+```
+
+##### Route Isolation with Guards:
+
+```php
+// Customer Web Routes
+Route::middleware('auth:web')->group(function () {
+    Route::get('/orders', [CustomerOrderController::class, 'index']);
+});
+
+// Admin CMS Routes
+Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/analytics', [AdminAnalyticsController::class, 'index']);
+});
+```
+
+---
+
+#### 6. Authorization: Gates vs Policies (Granular Access Control)
+
+##### 6.1 Gates (Closure-Based Global Checks)
+
+Gates standalone actions ke liye perfect hote hain jo kisi specific model instance se bind nahi hote (jaise `access-admin-panel`, `view-telescope`):
+
+```php
+// app/Providers/AppServiceProvider.php
+use Illuminate\Support\Facades\Gate;
+use App\Models\User;
+
+public function boot(): void
+{
+    // 🛡️ SuperAdmin Master Bypass:
+    // Gate::before() sabse pehle run hota hai!
+    Gate::before(function (User $user, string $ability) {
+        if ($user->hasRole('super-admin')) {
+            return true; // Bypass all gates & policies!
+        }
+    });
+
+    Gate::define('access-horizon', function (User $user) {
+        return in_array($user->email, config('horizon.allowed_emails'));
+    });
+}
+```
+
+##### 6.2 Policies (Model-Bound Business Rules)
+
+Policies hamesha specific Eloquent model se associated hoti hain:
+
+```bash
+php artisan make:policy ProjectPolicy --model=Project
+```
+
+```php
+namespace App\Policies;
+
+use App\Models\Project;
+use App\Models\User;
+use Illuminate\Auth\Access\Response;
+
+final class ProjectPolicy
+{
+    /**
+     * Determine whether the user can view the project.
+     */
+    public function view(User $user, Project $project): Response
+    {
+        return $project->members()->where('user_id', $user->id)->exists()
+            ? Response::allow()
+            : Response::deny('You are not a registered collaborator on this private project.', 403);
+    }
+
+    /**
+     * Determine whether the user can delete the project.
+     */
+    public function delete(User $user, Project $project): bool
+    {
+        return $user->id === $project->owner_id;
+    }
+}
+```
+
+##### 6.3 Invoking Policies Across the Application
+
+```php
+// 1. Inside Controller (Throws 403 automatically):
+$this->authorize('delete', $project);
+
+// 2. In FormRequest:
+public function authorize(): bool {
+    return $this->user()->can('update', $this->route('project'));
+}
+
+// 3. In Blade Views (Hides buttons if not authorized):
+@can('delete', $project)
+    <button class="btn-danger">Delete Project</button>
+@endcan
+
+// 4. In Route Middleware:
+Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])
+    ->middleware('can:delete,project');
+```
+
+---
+
+#### 7. Senior Checklist — Auth, Sanctum & Authorization
+
+1. [x] **Always call `$request->session()->regenerate()`** on successful authentication to prevent Session Fixation attacks.
+2. [x] **Use Argon2id hashing** for high-security applications (`config/hashing.php`).
+3. [x] **Use SPA Cookie Mode for Browser Apps** instead of storing Bearer tokens in `localStorage` (which is vulnerable to XSS token theft).
+4. [x] **Assign Granular Abilities to Mobile Tokens** (`orders:read`, `orders:create`) instead of wildcards (`*`).
+5. [x] **Schedule `sanctum:prune-expired`** in your console scheduler to prevent `personal_access_tokens` table bloat.
+6. [x] **Implement `Gate::before()`** in `AppServiceProvider` for clean SuperAdmin access control rather than cluttering every individual policy method.
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Sanctum Step 0
+            showSanctumStep(0);
+        });
+
+        // 2. Interactive Sanctum Simulator Data
+        const sanctumSteps = [
+            {
+                title: "1. SPA Step 1: Handshake CSRF Cookie",
+                mode: "SPA COOKIE MODE",
+                desc: "Browser sends GET /sanctum/csrf-cookie. Laravel responds with HTTP 204 and sets two cookies: an encrypted session cookie and an unencrypted XSRF-TOKEN cookie.",
+                code: "GET /sanctum/csrf-cookie HTTP/1.1\nHost: api.example.com\n\nHTTP/1.1 204 No Content\nSet-Cookie: XSRF-TOKEN=4a7b...; Path=/; SameSite=Lax\nSet-Cookie: myapp_session=e2f9...; Path=/; HttpOnly; Secure; SameSite=Lax"
+            },
+            {
+                title: "2. SPA Step 2: Login Request with CSRF Header",
+                mode: "SPA COOKIE MODE",
+                desc: "Axios automatically extracts the XSRF-TOKEN cookie value and puts it in the X-XSRF-TOKEN header. Laravel authenticates credentials and regenerates the session.",
+                code: "POST /login HTTP/1.1\nHost: api.example.com\nX-XSRF-TOKEN: 4a7b...\nContent-Type: application/json\n\n{\"email\": \"admin@corp.com\", \"password\": \"secret\"}"
+            },
+            {
+                title: "3. SPA Step 3: Authenticated Request (Zero Bearer Tokens!)",
+                mode: "SPA COOKIE MODE",
+                desc: "All subsequent requests automatically carry the HttpOnly session cookie. The browser immune to JavaScript/XSS token theft! No tokens stored in localStorage.",
+                code: "GET /api/user HTTP/1.1\nHost: api.example.com\nCookie: myapp_session=e2f9...\n\nHTTP/1.1 200 OK\n{\"id\": 1, \"name\": \"Alex\", \"role\": \"developer\"}"
+            },
+            {
+                title: "4. Mobile Step 1: Plaintext Token Creation",
+                mode: "MOBILE BEARER MODE",
+                desc: "Mobile app posts credentials + device name. Laravel generates a 40-character random token, hashes it with SHA-256 into personal_access_tokens table, and returns plaintext token.",
+                code: "POST /api/sanctum/token\n{\"email\":\"m@corp.com\",\"password\":\"p@ss\",\"device\":\"iPhone 16 Pro\"}\n\nHTTP/1.1 200 OK\n{\"token\":\"1|w7x9Q2kL8...\",\"token_type\":\"Bearer\",\"expires_at\":\"2026-10-08\"}"
+            },
+            {
+                title: "5. Mobile Step 2: Request with Bearer Header",
+                mode: "MOBILE BEARER MODE",
+                desc: "Mobile client saves token in Secure Keychain. On every HTTP call, passes token in Authorization: Bearer header. Laravel queries personal_access_tokens by hashed value.",
+                code: "GET /api/v1/orders HTTP/1.1\nHost: api.example.com\nAuthorization: Bearer 1|w7x9Q2kL8...\nAccept: application/json\n\nHTTP/1.1 200 OK\n[{\"id\": 101, \"total\": 299.00}]"
+            },
+            {
+                title: "6. Mobile Step 3: Granular Abilities & Instant Revocation",
+                mode: "MOBILE BEARER MODE",
+                desc: "Routes are protected by ability middleware (e.g. ability:orders:create). User can revoke a single compromised device token without forcing logout on other devices.",
+                code: "// Revoke single token:\n$request->user()->currentAccessToken()->delete();\n\n// Check ability:\nif ($request->user()->tokenCan('billing:export')) { ... }"
+            }
+        ];
+
+        function showSanctumStep(index) {
+            const chips = document.querySelectorAll('#sanctumNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = sanctumSteps[index];
+            const contentBox = document.getElementById('sanctumContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${step.title}</h5>
+                    <span class="badge badge-pro">${step.mode}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${step.desc}</p>
+                <pre style="margin:0;"><code class="language-http">${step.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchAuthTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

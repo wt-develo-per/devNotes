@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core PHP - Testing, Code Quality & Best Practices</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="04_Core_PHP_APIs_and_Composer.html" class="nav-btn">&larr; Previous: APIs & Composer</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="06_PHP7_vs_PHP8_Complete_Guide.html" class="nav-btn">Next: PHP 7 vs PHP 8 Guide &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Enterprise TDD & CI/CD Testing Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive Enterprise PHP Testing & CI/CD Quality Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click through each stage of an automated enterprise testing and static analysis pipeline before production deployment:
+        </p>
+
+        <div class="stepper-nav" id="testNav">
+            <button class="step-chip active" onclick="showTestStep(0)">1. Code Style (PHP-CS-Fixer)</button>
+            <button class="step-chip" onclick="showTestStep(1)">2. Static Analysis (PHPStan Level 9)</button>
+            <button class="step-chip" onclick="showTestStep(2)">3. Unit Tests & Mocks (PHPUnit)</button>
+            <button class="step-chip" onclick="showTestStep(3)">4. DB Integration Tests (SQLite)</button>
+            <button class="step-chip" onclick="showTestStep(4)">5. HTTP & 3rd-Party Mocking</button>
+            <button class="step-chip" onclick="showTestStep(5)">6. Coverage Gate (GitHub Actions)</button>
+        </div>
+
+        <div class="step-content-box" id="testContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Modern Testing & Code Quality Deep-Dive Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTestTab(event, 'ttab-phpunit')">🧪 1. Modern PHPUnit 10/11 (Attributes & DataProviders)</button>
+            <button class="tab-btn" onclick="switchTestTab(event, 'ttab-mocking')">🎭 2. Test Doubles, Spies & Mockery</button>
+            <button class="tab-btn" onclick="switchTestTab(event, 'ttab-phpstan')">🛡️ 3. PHPStan Level 9 & Type Hardening</button>
+            <button class="tab-btn" onclick="switchTestTab(event, 'ttab-solid')">🏛️ 4. SOLID Architecture with DI Container</button>
+        </div>
+
+        <div id="ttab-phpunit" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Modern PHPUnit Architecture: PHP 8 Attributes (<code>#[Test]</code>, <code>#[DataProvider]</code>) and Strict Assertions.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestDox;
+use App\Services\PricingCalculator;
+
+final class PricingCalculatorTest extends TestCase
+{
+    private PricingCalculator $calculator;
+
+    protected function setUp(): void
+    {
+        // Fresh fixture instantiated before EVERY individual test method
+        $this-&gt;calculator = new PricingCalculator(taxRate: 0.18);
+    }
+
+    #[Test]
+    #[TestDox('Calculates gross price with standard 18% GST tax rate')]
+    public function it_calculates_gross_price_correctly(): void
+    {
+        $net = 1000.0;
+        $gross = $this-&gt;calculator-&gt;calculateGross($net);
+
+        $this-&gt;assertSame(1180.0, $gross);
+    }
+
+    #[Test]
+    #[DataProvider('discountScenarioProvider')]
+    public function it_applies_tier_discounts_accurately(float $subtotal, float $discountPercent, float $expected): void
+    {
+        $final = $this-&gt;calculator-&gt;applyDiscount($subtotal, $discountPercent);
+        $this-&gt;assertEqualsWithDelta($expected, $final, 0.001);
+    }
+
+    public static function discountScenarioProvider(): array
+    {
+        return [
+            'No discount below threshold'  =&gt; [500.0, 0.0, 500.0],
+            '10% Silver customer discount' =&gt; [1000.0, 10.0, 900.0],
+            '25% Black Friday promotion'   =&gt; [2000.0, 25.0, 1500.0],
+        ];
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="ttab-mocking" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">Test Doubles & Mocking: Isolating unit tests from external I/O, database, and email servers.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+use App\Services\OrderService;
+use App\Contracts\PaymentGatewayInterface;
+use App\Contracts\MailerInterface;
+use App\Models\Order;
+
+final class OrderServiceTest extends TestCase
+{
+    public function test_order_checkout_charges_gateway_and_dispatches_email(): void
+    {
+        // 1. Create Mock for Payment Gateway:
+        $gatewayMock = $this-&gt;createMock(PaymentGatewayInterface::class);
+        $gatewayMock-&gt;expects($this-&gt;once())
+            -&gt;method('charge')
+            -&gt;with(1500, 'cus_test_9921')
+            -&gt;willReturn(['status' =&gt; 'succeeded', 'txn_id' =&gt; 'tx_98124']);
+
+        // 2. Create Mock for Mailer:
+        $mailerMock = $this-&gt;createMock(MailerInterface::class);
+        $mailerMock-&gt;expects($this-&gt;once())
+            -&gt;method('sendReceipt')
+            -&gt;with('alice@example.com', 'tx_98124');
+
+        // 3. Inject mocks into OrderService:
+        $orderService = new OrderService(paymentGateway: $gatewayMock, mailer: $mailerMock);
+
+        $order = new Order(id: 101, amount: 1500, customerId: 'cus_test_9921', email: 'alice@example.com');
+        $result = $orderService-&gt;processCheckout($order);
+
+        $this-&gt;assertTrue($result-&gt;isSuccessful());
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="ttab-phpstan" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">PHPStan Level 9 Static Analysis: Eliminating null pointer errors & guarantees type-safety.</p>
+            <pre><code class="language-neon"># phpstan.neon (Production Strict Configuration)
+parameters:
+    level: 9                     # Max strictness: Checks missing typehints, nullability, and union types
+    paths:
+        - src
+        - tests
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    reportUnmatchedIgnoredErrors: false</code></pre>
+            <pre><code class="language-php">&lt;?php
+// PHPStan Generics & Strict PHPDoc annotations:
+
+/**
+ * @template T of \App\Models\Model
+ */
+class Repository
+{
+    /** @var class-string&lt;T&gt; */
+    protected string $modelClass;
+
+    /**
+     * @param int $id
+     * @return T|null
+     */
+    public function find(int $id): ?object
+    {
+        // PHPStan strictly knows the exact entity type returned!
+        return $this-&gt;query()-&gt;where('id', $id)-&gt;first();
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="ttab-solid" class="tab-panel">
+            <p style="color:#B45309; font-weight:600;">SOLID Principles & PSR-11 Dependency Injection: Loose coupling for high testability.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+namespace App\Core;
+
+use Psr\Container\ContainerInterface;
+use ReflectionClass;
+
+// Minimalistic PSR-11 Compliant Auto-Wiring Container:
+class Container implements ContainerInterface
+{
+    private array $bindings = [];
+    private array $instances = [];
+
+    public function bind(string $abstract, string|callable $concrete): void
+    {
+        $this-&gt;bindings[$abstract] = $concrete;
+    }
+
+    public function get(string $id): mixed
+    {
+        if (isset($this-&gt;instances[$id])) {
+            return $this-&gt;instances[$id];
+        }
+
+        $concrete = $this-&gt;bindings[$id] ?? $id;
+
+        if (is_callable($concrete)) {
+            return $concrete($this);
+        }
+
+        $reflector = new ReflectionClass($concrete);
+        $constructor = $reflector-&gt;getConstructor();
+
+        if ($constructor === null) {
+            return new $concrete();
+        }
+
+        // Auto-resolve constructor parameter dependencies!
+        $dependencies = [];
+        foreach ($constructor-&gt;getParameters() as $param) {
+            $type = $param-&gt;getType();
+            if ($type instanceof \ReflectionNamedType &amp;&amp; !$type-&gt;isBuiltin()) {
+                $dependencies[] = $this-&gt;get($type-&gt;getName());
+            }
+        }
+
+        return $reflector-&gt;newInstanceArgs($dependencies);
+    }
+
+    public function has(string $id): bool
+    {
+        return isset($this-&gt;bindings[$id]) || class_exists($id);
+    }
+}
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="04_Core_PHP_APIs_and_Composer.html" class="nav-btn">&larr; Previous: APIs & Composer</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="06_PHP7_vs_PHP8_Complete_Guide.html" class="nav-btn">Next: PHP 7 vs PHP 8 Guide &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+
+### Core PHP — Testing, Code Quality & Performance
+
+Writing code that *works* is a junior developer's goal. Writing code that is **provably correct, measurable in quality, and optimized for performance** is a senior developer's standard. This file covers the complete PHP quality toolkit used in production systems — the same tools Laravel itself is built and tested with.
+
+> **20 YOE Expert Tip:** Jo developer tests nahi likhta, woh apni poori zindagi manually browser mein click karta rahega regression check karne ke liye. Senior developers ki productivity ka secret hai test suite — ek baar likh do, machine hamesha check karegi.
+
+---
+
+#### 1. PHPUnit — Unit Testing Setup
+
+PHPUnit is the standard PHP testing framework. Laravel's test suite has 4,000+ tests all built on PHPUnit.
+
+##### 1.1 Installation & Configuration
+
+```bash
+# Install PHPUnit as a dev dependency
+composer require --dev phpunit/phpunit
+
+# Create the config file
+./vendor/bin/phpunit --generate-configuration
+```
+
+```xml
+<!-- phpunit.xml -->
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         stopOnFailure="false">
+
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Code Coverage -->
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+
+    <!-- Environment variables for testing -->
+    <php>
+        <env name="APP_ENV"      value="testing"/>
+        <env name="DB_DATABASE"  value=":memory:"/>  <!-- SQLite in-memory for tests -->
+        <env name="DB_DRIVER"    value="sqlite"/>
+        <env name="JWT_SECRET"   value="test_secret_key_for_phpunit_only"/>
+    </php>
+</phpunit>
+```
+
+---
+
+#### 2. Unit Testing — Testing Individual Classes
+
+Unit tests verify a **single class or function** in complete isolation from the outside world (database, filesystem, HTTP).
+
+##### 2.1 Testing Pure Functions & Utilities
+
+```php
+<?php
+// tests/Unit/StrHelperTest.php
+
+use PHPUnit\Framework\TestCase;
+use App\Core\Str;
+
+class StrHelperTest extends TestCase {
+
+    // Test method naming convention: test_what_it_does_when_condition
+    public function test_slug_converts_spaces_to_hyphens(): void {
+        $this->assertSame('hello-world', Str::slug('Hello World'));
+    }
+
+    public function test_slug_removes_special_characters(): void {
+        $this->assertSame('php-is-great', Str::slug('PHP is great!'));
+    }
+
+    public function test_slug_handles_multiple_spaces(): void {
+        $this->assertSame('hello-world', Str::slug('Hello   World'));
+    }
+
+    public function test_slug_handles_empty_string(): void {
+        $this->assertSame('', Str::slug(''));
+    }
+
+    public function test_truncate_shortens_long_strings(): void {
+        $text   = 'The quick brown fox jumps over the lazy dog';
+        $result = Str::truncate($text, 10);
+        $this->assertSame('The quick ...', $result);
+        $this->assertLessThanOrEqual(13, strlen($result));
+    }
+
+    public function test_truncate_returns_original_if_within_limit(): void {
+        $short  = 'Hi PHP';
+        $result = Str::truncate($short, 100);
+        $this->assertSame($short, $result);
+    }
+
+    // Data Provider — test multiple inputs with one test method
+    /** @dataProvider emailProvider */
+    public function test_email_validation(string $email, bool $expected): void {
+        $isValid = (bool) filter_var($email, FILTER_VALIDATE_EMAIL);
+        $this->assertSame($expected, $isValid);
+    }
+
+    // The data provider method — returns array of [input, expected] pairs
+    public static function emailProvider(): array {
+        return [
+            'valid standard email'    => ['user@example.com', true],
+            'valid subdomain email'   => ['user@mail.example.co.in', true],
+            'valid plus addressing'   => ['user+tag@example.com', true],
+            'invalid missing at sign' => ['userexample.com', false],
+            'invalid missing domain'  => ['user@', false],
+            'invalid empty string'    => ['', false],
+            'invalid spaces'          => ['user @example.com', false],
+        ];
+    }
+}
+```
+
+##### 2.2 Testing a Service Class with Mocks
+
+```php
+<?php
+// tests/Unit/UserServiceTest.php
+
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
+use App\Services\UserService;
+use App\Repositories\UserRepositoryInterface;
+use App\Exceptions\DuplicateEmailException;
+
+class UserServiceTest extends TestCase {
+
+    private MockObject $mockRepo;
+    private UserService $userService;
+
+    // setUp() runs BEFORE every single test method
+    protected function setUp(): void {
+        parent::setUp();
+
+        // Create a mock — a fake object that doesn't touch the database
+        $this->mockRepo    = $this->createMock(UserRepositoryInterface::class);
+        $this->userService = new UserService($this->mockRepo);
+    }
+
+    public function test_register_creates_user_successfully(): void {
+        $inputData = ['name' => 'Rahul', 'email' => 'rahul@example.com', 'password' => 'Secret@123'];
+        $savedUser = ['id' => 1, 'name' => 'Rahul', 'email' => 'rahul@example.com', 'role' => 'user'];
+
+        // Expect findByEmail to be called ONCE and return null (email not taken)
+        $this->mockRepo
+            ->expects($this->once())
+            ->method('findByEmail')
+            ->with('rahul@example.com')
+            ->willReturn(null);
+
+        // Expect create to be called ONCE and return the user ID
+        $this->mockRepo
+            ->expects($this->once())
+            ->method('create')
+            ->willReturn(1);
+
+        // Expect findById to be called ONCE and return the user
+        $this->mockRepo
+            ->expects($this->once())
+            ->method('findById')
+            ->with(1)
+            ->willReturn($savedUser);
+
+        $result = $this->userService->register($inputData);
+
+        // Assertions — verify the output
+        $this->assertSame(1, $result['id']);
+        $this->assertSame('rahul@example.com', $result['email']);
+        $this->assertArrayNotHasKey('password', $result);  // Password must not be returned!
+    }
+
+    public function test_register_throws_exception_on_duplicate_email(): void {
+        $existingUser = ['id' => 5, 'email' => 'taken@example.com'];
+
+        $this->mockRepo
+            ->method('findByEmail')
+            ->willReturn($existingUser);  // Email already exists
+
+        // Assert that our service THROWS the expected exception
+        $this->expectException(DuplicateEmailException::class);
+        $this->expectExceptionMessage('Email already registered');
+
+        $this->userService->register(['email' => 'taken@example.com', 'password' => 'pass']);
+    }
+
+    public function test_register_hashes_password_before_saving(): void {
+        $this->mockRepo->method('findByEmail')->willReturn(null);
+        $this->mockRepo->method('findById')->willReturn(['id' => 1, 'name' => 'Test']);
+
+        $capturedData = null;
+        $this->mockRepo
+            ->expects($this->once())
+            ->method('create')
+            ->willReturnCallback(function(array $data) use (&$capturedData) {
+                $capturedData = $data;
+                return 1;
+            });
+
+        $this->userService->register(['name' => 'Test', 'email' => 'test@test.com', 'password' => 'MyPassword@1']);
+
+        // The raw password must NEVER be stored
+        $this->assertNotSame('MyPassword@1', $capturedData['password']);
+        // It must be a valid bcrypt hash
+        $this->assertTrue(password_verify('MyPassword@1', $capturedData['password']));
+    }
+
+    // tearDown() runs AFTER every single test method
+    protected function tearDown(): void {
+        parent::tearDown();
+        // Clean up resources if needed
+    }
+}
+```
+
+---
+
+#### 3. Feature/Integration Testing — Testing Full Request/Response Cycle
+
+Feature tests test the **entire stack** — router, middleware, controller, service, repository. Use an in-memory SQLite database to avoid touching production data.
+
+```php
+<?php
+// tests/Feature/AuthApiTest.php
+
+use PHPUnit\Framework\TestCase;
+
+class AuthApiTest extends TestCase {
+
+    private PDO $pdo;
+    private Router $router;
+
+    protected function setUp(): void {
+        // Use SQLite in-memory — fast and isolated per test
+        $this->pdo = new PDO('sqlite::memory:', options: [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+
+        // Run schema migrations
+        $this->pdo->exec("
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT DEFAULT 'user',
+                is_active INTEGER DEFAULT 1,
+                failed_attempts INTEGER DEFAULT 0,
+                locked_until TEXT,
+                last_login_at TEXT,
+                deleted_at TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT
+            )
+        ");
+
+        $this->pdo->exec("
+            CREATE TABLE refresh_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                token_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                revoked_at TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+
+        // Setup the application with test DB
+        $this->router = $this->bootstrapApp($this->pdo);
+    }
+
+    // Simulate an HTTP request and capture the response
+    private function request(string $method, string $uri, array $body = [], array $headers = []): array {
+        // Override superglobals for testing
+        $_SERVER['REQUEST_METHOD'] = strtoupper($method);
+        $_SERVER['REQUEST_URI']    = $uri;
+        $_SERVER['CONTENT_TYPE']   = 'application/json';
+
+        foreach ($headers as $key => $value) {
+            $httpKey           = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
+            $_SERVER[$httpKey] = $value;
+        }
+
+        if (!empty($body)) {
+            $GLOBALS['request_body'] = $body;
+        }
+
+        // Capture output instead of sending to browser
+        ob_start();
+        try {
+            $this->router->dispatch();
+        } catch (\Exception $e) {
+            // Ignore exit() calls from response helpers
+        }
+        $output = ob_get_clean();
+
+        return json_decode($output, true) ?? [];
+    }
+
+    public function test_user_can_register_with_valid_data(): void {
+        $response = $this->request('POST', '/api/auth/register', [
+            'name'     => 'Rahul Sharma',
+            'email'    => 'rahul@example.com',
+            'password' => 'Secret@123',
+        ]);
+
+        $this->assertTrue($response['success']);
+        $this->assertSame(201, http_response_code());
+        $this->assertArrayHasKey('access_token', $response['data']['tokens']);
+        $this->assertArrayHasKey('refresh_token', $response['data']['tokens']);
+        $this->assertSame('rahul@example.com', $response['data']['user']['email']);
+        $this->assertArrayNotHasKey('password', $response['data']['user']);
+    }
+
+    public function test_registration_fails_with_duplicate_email(): void {
+        // Register first time
+        $this->request('POST', '/api/auth/register', [
+            'name' => 'User One', 'email' => 'same@example.com', 'password' => 'Secret@123'
+        ]);
+
+        // Try to register again with same email
+        $response = $this->request('POST', '/api/auth/register', [
+            'name' => 'User Two', 'email' => 'same@example.com', 'password' => 'Secret@123'
+        ]);
+
+        $this->assertFalse($response['success']);
+        $this->assertSame(409, http_response_code());
+    }
+
+    public function test_user_can_login_with_correct_credentials(): void {
+        // First register
+        $this->request('POST', '/api/auth/register', [
+            'name' => 'Priya', 'email' => 'priya@example.com', 'password' => 'Correct@123'
+        ]);
+
+        // Then login
+        $response = $this->request('POST', '/api/auth/login', [
+            'email'    => 'priya@example.com',
+            'password' => 'Correct@123',
+        ]);
+
+        $this->assertTrue($response['success']);
+        $this->assertArrayHasKey('access_token', $response['data']['tokens']);
+    }
+
+    public function test_login_fails_with_wrong_password(): void {
+        $this->request('POST', '/api/auth/register', [
+            'name' => 'Amit', 'email' => 'amit@example.com', 'password' => 'Correct@123'
+        ]);
+
+        $response = $this->request('POST', '/api/auth/login', [
+            'email'    => 'amit@example.com',
+            'password' => 'WrongPassword',
+        ]);
+
+        $this->assertFalse($response['success']);
+        $this->assertSame(401, http_response_code());
+    }
+
+    public function test_protected_route_requires_bearer_token(): void {
+        $response = $this->request('GET', '/api/users/me');
+
+        $this->assertFalse($response['success']);
+        $this->assertSame(401, http_response_code());
+    }
+
+    public function test_authenticated_user_can_access_profile(): void {
+        // Register and get token
+        $regResponse  = $this->request('POST', '/api/auth/register', [
+            'name' => 'Sneha', 'email' => 'sneha@example.com', 'password' => 'Secret@123'
+        ]);
+        $accessToken  = $regResponse['data']['tokens']['access_token'];
+
+        // Access protected route with token
+        $response = $this->request('GET', '/api/users/me', [], [
+            'Authorization' => "Bearer $accessToken",
+        ]);
+
+        $this->assertTrue($response['success']);
+        $this->assertSame('sneha@example.com', $response['data']['email']);
+    }
+
+    public function test_refresh_token_rotates_on_use(): void {
+        $regResponse   = $this->request('POST', '/api/auth/register', [
+            'name' => 'Dev', 'email' => 'dev@example.com', 'password' => 'Secret@123'
+        ]);
+        $firstRefresh  = $regResponse['data']['tokens']['refresh_token'];
+
+        // Use refresh token
+        $refreshResponse = $this->request('POST', '/api/auth/refresh', [
+            'refresh_token' => $firstRefresh,
+        ]);
+
+        $this->assertTrue($refreshResponse['success']);
+        $newRefresh = $refreshResponse['data']['refresh_token'];
+
+        // Old refresh token must no longer work
+        $reuseResponse = $this->request('POST', '/api/auth/refresh', [
+            'refresh_token' => $firstRefresh,
+        ]);
+
+        $this->assertFalse($reuseResponse['success']);
+        $this->assertSame(401, http_response_code());
+    }
+}
+```
+
+---
+
+#### 4. Code Coverage
+
+```bash
+# Run tests with HTML coverage report
+./vendor/bin/phpunit --coverage-html coverage/
+
+# Run with text summary
+./vendor/bin/phpunit --coverage-text
+
+# Run only a specific test file
+./vendor/bin/phpunit tests/Unit/UserServiceTest.php
+
+# Run only a specific test method
+./vendor/bin/phpunit --filter test_user_can_register_with_valid_data
+
+# Run specific test suite
+./vendor/bin/phpunit --testsuite Unit
+
+# Run with verbose output
+./vendor/bin/phpunit -v
+```
+
+```
+# Example coverage output:
+PHPUnit 11.0.0 by Sebastian Bergmann and contributors.
+
+.............                                         13 / 13 (100%)
+
+Time: 00:00.842, Memory: 12.00 MB
+
+OK (13 tests, 47 assertions)
+
+Code Coverage Report:
+  Classes: 87.50% (7/8)
+  Methods: 92.31% (24/26)
+  Lines:   94.07% (160/170)
+```
+
+<span class="hinglish">Code coverage 100% ka target mat rakho — yeh impractical hai. Industry standard hai: **Unit tests ke liye 80%+**, **Feature tests ke liye critical paths cover karo**. Laravel framework khud 80-85% coverage maintain karta hai. Har new feature ke saath tests likho — yahi TDD (Test-Driven Development) ka spirit hai.</span>
+
+---
+
+#### 5. Mocking Strategies — Deep Dive
+
+```php
+<?php
+// tests/Unit/EmailServiceTest.php
+
+use PHPUnit\Framework\TestCase;
+
+class EmailServiceTest extends TestCase {
+
+    // Stub — returns a preset value, doesn't care how many times called
+    public function test_welcome_email_uses_correct_template(): void {
+        $mailerStub = $this->createStub(MailerInterface::class);
+        $mailerStub->method('send')->willReturn(true);
+
+        $emailService = new EmailService($mailerStub);
+        $result = $emailService->sendWelcome('rahul@example.com', 'Rahul');
+
+        $this->assertTrue($result);
+    }
+
+    // Mock — strict expectations (how many times, with what args)
+    public function test_email_is_sent_exactly_once_on_registration(): void {
+        $mailerMock = $this->createMock(MailerInterface::class);
+
+        $mailerMock
+            ->expects($this->exactly(1))  // Must be called EXACTLY once
+            ->method('send')
+            ->with(
+                $this->equalTo('rahul@example.com'),
+                $this->stringContains('Welcome'),  // Subject must contain 'Welcome'
+                $this->anything()                  // Body can be anything
+            )
+            ->willReturn(true);
+
+        $emailService = new EmailService($mailerMock);
+        $emailService->sendWelcome('rahul@example.com', 'Rahul');
+        // If send() was NOT called, or called with wrong args — test fails!
+    }
+
+    // Spy — like a mock but you check AFTER the fact
+    public function test_notification_service_logs_failures(): void {
+        $loggerSpy = $this->createMock(LoggerInterface::class);
+
+        // Don't set expectation upfront — check after
+        $failingMailer = $this->createStub(MailerInterface::class);
+        $failingMailer->method('send')->willThrowException(new \RuntimeException('SMTP timeout'));
+
+        $service = new NotificationService($failingMailer, $loggerSpy);
+
+        // Assert logger was called with an 'error' level message
+        $loggerSpy->expects($this->once())
+                  ->method('error')
+                  ->with($this->stringContains('SMTP timeout'));
+
+        $service->notifyUser(1, 'Your order shipped!');
+    }
+
+    // Testing exceptions
+    public function test_send_throws_on_invalid_email(): void {
+        $mailer  = $this->createStub(MailerInterface::class);
+        $service = new EmailService($mailer);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid email');
+
+        $service->sendWelcome('not-an-email', 'User');
+    }
+
+    // Mocking static methods & time (using test doubles)
+    public function test_token_expires_correctly(): void {
+        // Freeze time by injecting a clock dependency
+        $frozenClock = new class implements ClockInterface {
+            public function now(): \DateTimeImmutable {
+                return new \DateTimeImmutable('2024-01-01 12:00:00');
+            }
+        };
+
+        $tokenService = new TokenService(clock: $frozenClock);
+        $token = $tokenService->generate(expiresInMinutes: 15);
+
+        $this->assertSame(
+            (new \DateTimeImmutable('2024-01-01 12:15:00'))->getTimestamp(),
+            $tokenService->getExpiry($token)
+        );
+    }
+}
+```
+
+---
+
+#### 6. PHPStan — Static Analysis (Catch Bugs Before Runtime)
+
+PHPStan analyses your PHP code without running it, catching type errors, undefined variables, and logic bugs at compile time.
+
+```bash
+# Install
+composer require --dev phpstan/phpstan
+
+# Run at level 5 (0=loose, 9=strictest)
+./vendor/bin/phpstan analyse src tests --level=5
+
+# Run at max level
+./vendor/bin/phpstan analyse src --level=max
+```
+
+```neon
+# phpstan.neon — configuration
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - src/Generated
+    checkMissingIterableValueType: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#Call to an undefined method PDOStatement::#'
+```
+
+```php
+<?php
+// PHPStan catches these BEFORE you run the code:
+
+function getUser(int $id): ?array {
+    // PHPStan error: "Cannot call method fetch() on PDOStatement|false"
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->fetch();  // fetch() returns array|false — you must handle false!
+}
+
+// PHPStan-correct version:
+function getUserSafe(int $id): ?array {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    $result = $stmt->fetch();
+    return ($result === false) ? null : $result;
+}
+
+// PHPStan catches undefined variables
+function badFunction(): string {
+    if (rand(0, 1)) {
+        $name = "Rahul";
+    }
+    return $name;  // Error: Variable $name might not be defined
+}
+
+// PHPStan catches wrong return types
+function alwaysReturnsString(): string {
+    return 42;  // Error: Return type string but returning int
+}
+?>
+```
+
+---
+
+#### 7. PHP-CS-Fixer — Automatic Code Style Enforcement
+
+```bash
+# Install
+composer require --dev friendsofphp/php-cs-fixer
+
+# Auto-fix all PHP files
+./vendor/bin/php-cs-fixer fix src/
+
+# Dry run — show what would change without making changes
+./vendor/bin/php-cs-fixer fix src/ --dry-run --diff
+```
+
+```php
+<?php
+// .php-cs-fixer.php — configuration file
+
+$finder = PhpCsFixer\Finder::create()
+    ->in(__DIR__ . '/src')
+    ->in(__DIR__ . '/tests')
+    ->exclude(['vendor', 'cache']);
+
+return (new PhpCsFixer\Config())
+    ->setRules([
+        '@PSR12'                     => true,  // PSR-12 coding standard
+        '@PHP82Migration'            => true,  // PHP 8.2 compatibility
+        'array_syntax'               => ['syntax' => 'short'],  // [] not array()
+        'ordered_imports'            => ['sort_algorithm' => 'alpha'],
+        'no_unused_imports'          => true,
+        'trailing_comma_in_multiline'=> ['elements' => ['arrays', 'arguments', 'parameters']],
+        'single_quote'               => true,  // Use '' not "" where no interpolation
+        'declare_strict_types'       => true,  // Add declare(strict_types=1) to all files
+        'phpdoc_align'               => ['align' => 'vertical'],
+        'binary_operator_spaces'     => ['default' => 'align_single_space_minimal'],
+    ])
+    ->setFinder($finder);
+?>
+```
+
+---
+
+#### 8. Performance Optimization in PHP
+
+##### 8.1 OPcache — PHP's Built-in Bytecode Cache
+
+```ini
+; php.ini — Enable OPcache (most important PHP performance setting)
+[opcache]
+opcache.enable=1
+opcache.enable_cli=0
+opcache.memory_consumption=256       ; MB of shared memory
+opcache.interned_strings_buffer=16   ; MB for interned strings
+opcache.max_accelerated_files=20000  ; Max files to cache
+opcache.validate_timestamps=0        ; DISABLE in production (re-enable for dev)
+opcache.revalidate_freq=0            ; Only matters if validate_timestamps=1
+opcache.fast_shutdown=1              ; Faster shutdown
+opcache.jit_buffer_size=100M         ; PHP 8 JIT compiler buffer
+opcache.jit=tracing                  ; Enable JIT (PHP 8+)
+```
+
+```php
+<?php
+// Check OPcache status in code
+$status = opcache_get_status();
+echo "Cached scripts: " . $status['opcache_statistics']['num_cached_scripts'];
+echo "Hit rate: " . round($status['opcache_statistics']['opcache_hit_rate'], 2) . "%";
+
+// Manually clear cache after a deployment
+opcache_reset();           // Clear all
+opcache_invalidate($file); // Clear one file
+?>
+```
+
+##### 8.2 Database Query Optimization
+
+```php
+<?php
+
+// ❌ N+1 Query Problem — the most common PHP performance killer
+$users = $pdo->query("SELECT * FROM users")->fetchAll();
+foreach ($users as $user) {
+    // This runs one query PER user — 1000 users = 1001 queries!
+    $orders = $pdo->prepare("SELECT * FROM orders WHERE user_id = ?");
+    $orders->execute([$user['id']]);
+    $user['orders'] = $orders->fetchAll();
+}
+
+// ✅ Eager Loading — fetch everything in 2 queries, then assemble in PHP
+$users = $pdo->query("SELECT * FROM users")->fetchAll();
+$userIds = array_column($users, 'id');
+
+// Single query for ALL orders using IN clause
+$placeholders = implode(',', array_fill(0, count($userIds), '?'));
+$stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id IN ($placeholders)");
+$stmt->execute($userIds);
+$allOrders = $stmt->fetchAll();
+
+// Group orders by user_id in PHP memory (O(n) — very fast)
+$ordersByUser = [];
+foreach ($allOrders as $order) {
+    $ordersByUser[$order['user_id']][] = $order;
+}
+
+// Attach to users
+foreach ($users as &$user) {
+    $user['orders'] = $ordersByUser[$user['id']] ?? [];
+}
+
+// ✅ Select ONLY the columns you need — never SELECT *
+$stmt = $pdo->query("SELECT id, name, email FROM users");
+// vs: SELECT * (fetches password hash, created_at, deleted_at — all wasted memory)
+
+// ✅ Use LIMIT for large datasets
+$stmt = $pdo->prepare("SELECT id, name FROM products ORDER BY created_at DESC LIMIT 20");
+
+// ✅ Explain your slow queries
+$stmt = $pdo->prepare("EXPLAIN SELECT * FROM orders WHERE user_id = ? AND status = ?");
+$stmt->execute([42, 'pending']);
+print_r($stmt->fetchAll());
+// Look for: type=ALL (bad), type=ref or range (good), Using index (great)
+?>
+```
+
+##### 8.3 Caching — Redis & APCu
+
+```php
+<?php
+// In-process cache with APCu (same process, fastest possible)
+// apcu_store, apcu_fetch, apcu_delete
+
+function getUserWithCache(PDO $pdo, int $id): ?array {
+    $cacheKey = "user:$id";
+
+    // Try APCu first (in-memory, same process)
+    $cached = apcu_fetch($cacheKey, $success);
+    if ($success) {
+        return $cached;  // Cache hit — no DB query!
+    }
+
+    // Cache miss — query database
+    $stmt = $pdo->prepare("SELECT id, name, email, role FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    $user = $stmt->fetch() ?: null;
+
+    if ($user) {
+        apcu_store($cacheKey, $user, 300);  // Cache for 5 minutes
+    }
+
+    return $user;
+}
+
+function invalidateUserCache(int $id): void {
+    apcu_delete("user:$id");
+}
+
+// Redis cache (cross-process, survives restarts — for production clusters)
+class RedisCache {
+    private Redis $redis;
+
+    public function __construct(string $host = '127.0.0.1', int $port = 6379) {
+        $this->redis = new Redis();
+        $this->redis->connect($host, $port);
+        $this->redis->auth($_ENV['REDIS_PASSWORD'] ?? '');
+        $this->redis->select((int)($_ENV['REDIS_DB'] ?? 0));
+    }
+
+    public function remember(string $key, int $ttlSeconds, callable $callback): mixed {
+        $cached = $this->redis->get($key);
+        if ($cached !== false) {
+            return unserialize($cached);
+        }
+
+        $value = $callback();
+        $this->redis->setex($key, $ttlSeconds, serialize($value));
+        return $value;
+    }
+
+    public function forget(string $key): void {
+        $this->redis->del($key);
+    }
+
+    public function forgetPattern(string $pattern): void {
+        // Careful: KEYS is O(N) — use SCAN in production!
+        $keys = $this->redis->keys($pattern);
+        if (!empty($keys)) {
+            $this->redis->del($keys);
+        }
+    }
+
+    public function increment(string $key, int $ttl = 60): int {
+        $count = $this->redis->incr($key);
+        if ($count === 1) {
+            $this->redis->expire($key, $ttl);  // Set TTL only on first increment
+        }
+        return $count;
+    }
+}
+
+// Usage — elegant cache-aside pattern
+$cache = new RedisCache();
+
+$topProducts = $cache->remember('products:top10', 600, function() use ($pdo) {
+    return $pdo->query(
+        "SELECT id, name, price, sales_count FROM products ORDER BY sales_count DESC LIMIT 10"
+    )->fetchAll();
+});
+?>
+```
+
+##### 8.4 PHP Profiling with Xdebug & Blackfire
+
+```bash
+# Enable Xdebug profiling (php.ini)
+# xdebug.mode=profile
+# xdebug.output_dir=/tmp/xdebug
+# xdebug.profiler_output_name=cachegrind.out.%p
+
+# Trigger profiling for a specific request
+curl http://localhost/api/users?XDEBUG_PROFILE=1
+
+# View cachegrind file with KCacheGrind (Linux) or WinCacheGrind (Windows)
+
+# Blackfire.io — production-grade profiler (cloud-based)
+# composer require --dev blackfire/php-sdk
+```
+
+```php
+<?php
+// Manual micro-timing for quick performance checks
+$start = hrtime(true);  // High-resolution time in nanoseconds
+
+// Code to benchmark
+$result = someExpensiveFunction();
+
+$end   = hrtime(true);
+$ms    = ($end - $start) / 1e6;  // Convert nanoseconds to milliseconds
+echo "Execution time: {$ms}ms";
+
+// Memory profiling
+$memBefore = memory_get_usage(true);
+$bigArray   = range(1, 100000);
+$memAfter   = memory_get_usage(true);
+echo "Memory used: " . round(($memAfter - $memBefore) / 1024 / 1024, 2) . " MB";
+echo "Peak memory: " . round(memory_get_peak_usage(true) / 1024 / 1024, 2) . " MB";
+?>
+```
+
+---
+
+#### 9. Continuous Integration — GitHub Actions for PHP
+
+```yaml
+# .github/workflows/php.yml
+name: PHP CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3']  # Test on multiple PHP versions
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: pdo, pdo_mysql, pdo_sqlite, redis, opcache
+          coverage: xdebug
+
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Copy .env
+        run: cp .env.testing .env
+
+      - name: Run PHPStan (static analysis)
+        run: ./vendor/bin/phpstan analyse src tests --level=6 --no-progress
+
+      - name: Run PHP-CS-Fixer (code style check)
+        run: ./vendor/bin/php-cs-fixer fix src/ --dry-run --diff --stop-on-violation
+
+      - name: Run PHPUnit tests with coverage
+        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
+
+      - name: Check coverage threshold (80% minimum)
+        run: |
+          COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage.xml | head -1)
+          PERCENT=$(echo "$COVERAGE * 100" | bc)
+          echo "Coverage: ${PERCENT}%"
+          if (( $(echo "$PERCENT < 80" | bc -l) )); then
+            echo "Coverage below 80%! Failing CI."
+            exit 1
+          fi
+```
+
+---
+
+#### 10. SOLID Principles in PHP — Quick Reference
+
+| Principle | Rule | PHP Example |
+| :--- | :--- | :--- |
+| **S** — Single Responsibility | One class = one reason to change | `UserRepository` only does DB queries. Email sending is in `EmailService`. |
+| **O** — Open/Closed | Open for extension, closed for modification | Add new payment gateway by creating new class implementing `Payable` — not modifying existing. |
+| **L** — Liskov Substitution | Subclasses must be replaceable by their parent | `SavingsAccount` can go anywhere `BankAccount` is expected. |
+| **I** — Interface Segregation | Don't force classes to implement unused methods | Split fat `UserInterface` into `Authenticatable`, `Notifiable`, `HasRoles`. |
+| **D** — Dependency Inversion | Depend on abstractions, not concretions | Type-hint `LoggerInterface` not `Monolog\Logger`. Swap implementations without code change. |
+
+```php
+<?php
+// ❌ VIOLATES Dependency Inversion — tightly coupled to MySQL
+class OrderService {
+    private MySqlOrderRepository $repo;  // Concrete class!
+
+    public function __construct() {
+        $this->repo = new MySqlOrderRepository(new PDO(...));
+    }
+}
+
+// ✅ FOLLOWS Dependency Inversion — depends on interface
+class OrderService {
+    public function __construct(
+        private OrderRepositoryInterface $repo,  // Abstract!
+        private LoggerInterface $logger,          // Abstract!
+        private Payable $paymentGateway,          // Abstract!
+    ) {}
+}
+
+// Can now use with any implementation — MySQL, MongoDB, InMemory (for tests)
+$service = new OrderService(
+    new MySqlOrderRepository($pdo),   // Production
+    // new MongoOrderRepository(...), // Alternative
+    // new InMemoryOrderRepository(), // Tests
+    createLogger(),
+    new RazorpayGateway()
+);
+?>
+```
+
+---
+
+#### Summary — PHP Quality Toolkit
+
+| Tool | Purpose | Command |
+| :--- | :--- | :--- |
+| **PHPUnit** | Unit & feature testing | `./vendor/bin/phpunit` |
+| **PHPStan** | Static analysis — catch bugs at compile time | `./vendor/bin/phpstan analyse src --level=6` |
+| **Psalm** | Alternative static analyser (stricter) | `./vendor/bin/psalm` |
+| **PHP-CS-Fixer** | Auto-format code to PSR-12 | `./vendor/bin/php-cs-fixer fix src/` |
+| **PHPMD** | Mess Detector — complexity, unused vars | `./vendor/bin/phpmd src text cleancode` |
+| **PHP Insights** | Architecture, code quality score | `./vendor/bin/phpinsights` |
+| **Blackfire** | Production profiler | `blackfire run php script.php` |
+| **Xdebug** | Dev profiler + debugger | Enable in `php.ini` |
+| **OPcache** | Bytecode cache + JIT (PHP 8) | Enable in `php.ini` |
+| **GitHub Actions** | Automated CI/CD pipeline | `.github/workflows/php.yml` |
+    
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Stepper Step 0
+            showTestStep(0);
+        });
+
+        // 2. Interactive Testing Pipeline Steps Data
+        const testSteps = [
+            {
+                title: "1. Code Style Enforcement (PHP-CS-Fixer)",
+                level: "PIPELINE: LINTING",
+                desc: "Automatically fixes formatting according to PSR-12 and custom company standards. Validates strict_types=1 declaration, trailing commas in multi-line arguments, and unused imports.",
+                code: "vendor/bin/php-cs-fixer fix --dry-run --diff --rules=@PSR12,declare_strict_types\n// Fails CI if any engineer forgot standardized spacing, braces, or strict types!"
+            },
+            {
+                title: "2. Static Code Analysis (PHPStan Level 9 / Max)",
+                level: "PIPELINE: STATIC ANALYSIS",
+                desc: "Analyzes PHP Abstract Syntax Trees (AST) without executing the code. Catches null-pointer exceptions, dead code paths, missing return types, and invalid array shapes before tests even run.",
+                code: "vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=512M\n// Finds: 'Cannot call method getId() on App\\Models\\User|null.' (Zero runtime surprises!)"
+            },
+            {
+                title: "3. Fast Unit Testing in Isolation (PHPUnit)",
+                level: "PIPELINE: UNIT TESTS",
+                desc: "Executes pure domain entity and service tests in milliseconds. All external services (mailers, SMS gateways, payment APIs) are replaced with PHPUnit Mocks or Spies.",
+                code: "$gateway = $this->createMock(PaymentGateway::class);\n$gateway->method('charge')->willReturn(['status' => 'success']);\n$service = new OrderService($gateway);\n$this->assertTrue($service->checkout(500));"
+            },
+            {
+                title: "4. Database Integration Tests (SQLite In-Memory)",
+                level: "PIPELINE: INTEGRATION",
+                desc: "Tests actual SQL queries, PDO transactions, and repository methods against an ephemeral in-memory SQLite database (:memory:), running rollbacks after each test to keep state clean.",
+                code: "$pdo = new PDO('sqlite::memory:');\n$pdo->exec(file_get_contents('schema.sql'));\n$repo = new UserRepository($pdo);\n$repo->save(new User('bob@domain.com'));\n$this->assertNotNull($repo->findByEmail('bob@domain.com'));"
+            },
+            {
+                title: "5. External HTTP & API Mocking (Guzzle MockHandler)",
+                level: "PIPELINE: HTTP DOUBLES",
+                desc: "Simulates remote HTTP services (Stripe, Twilio, AWS S3) by queuing mocked HTTP Responses (200 OK, 429 Too Many Requests, 500 Error) to test resilience without incurring real API charges.",
+                code: "$mock = new MockHandler([\n    new Response(200, [], json_encode(['id' => 'ch_3N1'])),\n    new Response(429, [], 'Rate Limit Exceeded')\n]);\n$client = new Client(['handler' => HandlerStack::create($mock)]);"
+            },
+            {
+                title: "6. Code Coverage & CI/CD Deployment Gate",
+                level: "PIPELINE: CI/CD GATE",
+                desc: "Generates lcov/clover reports via PCOV or Xdebug. GitHub Actions evaluates coverage thresholds (e.g. minimum 80% line coverage); builds failing the threshold are blocked from deployment.",
+                code: "# .github/workflows/tests.yml\n- name: Run Tests with Coverage\n  run: vendor/bin/phpunit --coverage-clover=coverage.xml\n- name: Check Coverage Threshold\n  run: php bin/check-coverage.php --min=80"
+            }
+        ];
+
+        function showTestStep(index) {
+            const chips = document.querySelectorAll('#testNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = testSteps[index];
+            const contentBox = document.getElementById('testContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-pro">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-php">' + step.code + '</code></pre>';
+        }
+
+        // 3. Tab Switcher
+        function switchTestTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

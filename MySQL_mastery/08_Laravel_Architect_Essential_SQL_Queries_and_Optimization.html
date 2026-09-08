@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Performance Tuning & Production Optimization for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="07_MySQL_Security_Backups_and_Disaster_Recovery.html" class="nav-btn">&larr; Previous: Advanced SQL Queries</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="09_Enterprise_DBMS_Interview_Questions_and_Answers.html" class="nav-btn">Next: Security, Backups & Production &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Laravel Performance Debugging Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Laravel Performance Debugging Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Production high latency (2.5s) se sub-50ms API response tak pahunchne ka 6-step engineering protocol:
+        </p>
+
+        <div class="stepper-nav" id="perfNav">
+            <button class="step-chip active" onclick="showPerfStep(0)">
+                <span class="step-num">01</span>
+                <span>Threshold Alert</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(1)">
+                <span class="step-num">02</span>
+                <span>EXPLAIN Plan</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(2)">
+                <span class="step-num">03</span>
+                <span>Column Pruning</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(3)">
+                <span class="step-num">04</span>
+                <span>Cursor Pagination</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(4)">
+                <span class="step-num">05</span>
+                <span>Batch Stream</span>
+            </button>
+            <button class="step-chip" onclick="showPerfStep(5)">
+                <span class="step-num">06</span>
+                <span>Redis Tier</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="perfContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchPerfTab(event, 'tab-diagnostics')">&#128300; Query Diagnostics</button>
+            <button class="tab-btn" onclick="switchPerfTab(event, 'tab-pagination')">&#128196; Pagination Benchmark</button>
+            <button class="tab-btn" onclick="switchPerfTab(event, 'tab-memory')">&#128190; Memory & Batch Processing</button>
+            <button class="tab-btn" onclick="switchPerfTab(event, 'tab-caching')">&#9889; Caching & Octane</button>
+        </div>
+
+        <!-- Tab 1: Query Diagnostics -->
+        <div id="tab-diagnostics" class="tab-panel active">
+            <h5>Production Query Profiling & Threshold Alarms</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Telescope local par theek hai, lekin production environment mein lightweight non-intrusive logging zaroori hai.
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tool / Hook</th>
+                        <th>Where to Place</th>
+                        <th>Recommended Threshold</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>DB::whenQueryingForLongerThan()</code></td>
+                        <td><code>AppServiceProvider::boot()</code></td>
+                        <td>200ms to 500ms (Production Slack / Sentry alert)</td>
+                    </tr>
+                    <tr>
+                        <td><code>DB::listen()</code></td>
+                        <td>Local / Staging environments only</td>
+                        <td>Log queries &gt; 100ms with full URL and bindings</td>
+                    </tr>
+                    <tr>
+                        <td>MySQL <code>slow_query_log</code></td>
+                        <td><code>/etc/mysql/my.cnf</code></td>
+                        <td><code>long_query_time = 0.5</code> (500ms) with log-queries-not-using-indexes</td>
+                    </tr>
+                    <tr>
+                        <td><code>mysqldumpslow</code></td>
+                        <td>Production CLI</td>
+                        <td><code>mysqldumpslow -s at -t 10 /var/log/mysql/slow.log</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Pagination Benchmark -->
+        <div id="tab-pagination" class="tab-panel">
+            <h5>Pagination Shootout — Deep Page Latency Comparison</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Table of 5,000,000 orders — Latency comparison as users/crawlers navigate deeper:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Page 1 (Limit 20)</th>
+                        <th>Page 500 (Offset 10k)</th>
+                        <th>Page 50,000 (Offset 1M)</th>
+                        <th>Total Count Query?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong><code>paginate()</code></strong></td>
+                        <td>12ms</td>
+                        <td>420ms</td>
+                        <td><strong>4,800ms &#10060;</strong></td>
+                        <td>Yes (Heavy <code>COUNT(*)</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><strong><code>simplePaginate()</code></strong></td>
+                        <td>3ms</td>
+                        <td>380ms</td>
+                        <td><strong>4,100ms &#10060;</strong></td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td><strong><code>cursorPaginate()</code></strong></td>
+                        <td><strong>2ms &#9989;</strong></td>
+                        <td><strong>2.1ms &#9989;</strong></td>
+                        <td><strong>2.3ms &#9989;</strong></td>
+                        <td>No (Constant Time O(1))</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top:12px; background:#f0fdf4; padding:12px; border-radius:8px; border:1px solid #bbf7d0;">
+                <strong style="color:#16a34a;">Pro Tip:</strong> Mobile apps aur infinite scroll feeds mein hamesha <code>cursorPaginate()</code> use karein. Regular admin tables jahan page 1-10 se aage koi nahi jaata wahan <code>paginate()</code> chal sakta hai.
+            </div>
+        </div>
+
+        <!-- Tab 3: Memory Processing -->
+        <div id="tab-memory" class="tab-panel">
+            <h5>Large Dataset Processing — Memory & Mutation Matrix</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                100,000 records export ya update karte waqt memory crash aur skipped records se bachein:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Memory Profile</th>
+                        <th>Safe for Mutating Rows?</th>
+                        <th>Underlying Mechanism</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>all() / get()</code></td>
+                        <td><strong>High (~150MB+) &#10060;</strong></td>
+                        <td>Yes</td>
+                        <td>Loads all rows and hydrates all models at once</td>
+                    </tr>
+                    <tr>
+                        <td><code>chunk(1000)</code></td>
+                        <td>Medium (~20MB)</td>
+                        <td><strong>NO! (Skipped records trap) &#10060;</strong></td>
+                        <td><code>LIMIT 1000 OFFSET n</code> (OFFSET shifts when rows mutate)</td>
+                    </tr>
+                    <tr>
+                        <td><code>chunkById(1000)</code></td>
+                        <td>Medium (~20MB)</td>
+                        <td><strong>YES &#9989;</strong></td>
+                        <td><code>WHERE id &gt; last_id ORDER BY id ASC LIMIT 1000</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>cursor()</code></td>
+                        <td><strong>Ultra Low (~4MB) &#9989;</strong></td>
+                        <td>Yes</td>
+                        <td>PHP Generator streaming rows one-by-one via PDO unbuffered</td>
+                    </tr>
+                    <tr>
+                        <td><code>lazy(1000)</code></td>
+                        <td>Low (~15MB) &#9989;</td>
+                        <td>Yes</td>
+                        <td>Laravel LazyCollection chunks streamed lazily into collection pipelines</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 4: Caching & Octane -->
+        <div id="tab-caching" class="tab-panel">
+            <h5>Redis Cache Tags & Laravel Octane Gotchas</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                MySQL 8.0 query cache removal ke baad application-level caching aur persistent worker state management:
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Pattern / Environment</th>
+                        <th>Best Practice</th>
+                        <th>Deadly Trap to Avoid</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cache Tags</strong></td>
+                        <td><code>Cache::tags(['products', 'cat-4'])->remember()</code></td>
+                        <td>Redis without tags requires complex wildcard key deletion scripts</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Observer Invalidation</strong></td>
+                        <td>Model <code>saved()</code> and <code>deleted()</code> hooks mein tags flush karein</td>
+                        <td>Stale pricing/stock showing to customers after admin updates</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Laravel Octane (State)</strong></td>
+                        <td>Request lifecycle events mein state clean karein</td>
+                        <td>Uncommitted transactions leaking into the next HTTP request</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection Dropouts</strong></td>
+                        <td><code>config/database.php</code> mein PDO reconnect options on rakhein</td>
+                        <td>"MySQL server has gone away" error on idle workers</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="07_MySQL_Security_Backups_and_Disaster_Recovery.html" class="nav-btn">&larr; Previous: Advanced SQL Queries</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="09_Enterprise_DBMS_Interview_Questions_and_Answers.html" class="nav-btn">Next: Security, Backups & Production &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 8: Performance Tuning & Production Optimization in Laravel
+
+> *"Production API slow hai — kahan se shuru karein debugging aur kaise banayein sub-50ms response?"*
+
+Junior developers jab slow API dekhte hain, to seedha server ka CPU/RAM upgrade karne ki maang karte hain. Lekin 90% production slowness **unindexed queries, deep pagination OFFSET traps, excessive model hydration, aur unsafe loops** ki wajah se hoti hai.
+
+Ek 3-year Laravel Backend Engineer ko pata hona chahiye ki:
+1. Request aane par query count aur execution time ko kaise trace karein (Telescope / Debugbar / `DB::listen`)
+2. MySQL ka **Slow Query Log** kaise enable aur analyze karte hain
+3. **Deep Pagination (`OFFSET 100000`)** kyun server kill karti hai aur `cursorPaginate()` ise kaise fix karta hai
+4. 100,000+ records process karte waqt `chunk()` ka mutating bug kya hai aur `chunkById()` ya `cursor()` kyun mandatory hain
+5. `SELECT *` vs `select(['id', 'title'])` se Eloquent memory footprint kaise 70% kam hoti hai
+6. Redis application caching vs DB query cache, aur Laravel Octane / Swoole context mein persistent connections
+
+---
+
+#### 1. Query Profiling & Bottleneck Detection Toolkit
+
+Sabse pehla rule: **"Never optimize without measuring"**. Pehle bottle-neck identify karo.
+
+##### A. Production Query Threshold Listener (`AppServiceProvider.php`):
+Development mein Debugbar ya Telescope dekhna aasan hai, lekin production par slow queries kaise pakdein bina performance drop kiye?
+
+```php
+// app/Providers/AppServiceProvider.php
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // 1. Alert if ANY single query takes longer than 200ms:
+        DB::whenQueryingForLongerThan(200, function ($connection) {
+            Log::warning("Slow database query detected on [{$connection->getName()}]: Total time exceeded 200ms");
+        });
+
+        // 2. Log exact SQL query, bindings & caller in local/staging:
+        if ($this->app->environment('local', 'staging')) {
+            DB::listen(function ($query) {
+                if ($query->time > 100) { // > 100ms
+                    Log::channel('daily')->warning("Slow Query [{$query->time}ms]: {$query->sql}", [
+                        'bindings' => $query->bindings,
+                        'url'      => request()->fullUrl(),
+                    ]);
+                }
+            });
+        }
+    }
+}
+```
+
+##### B. MySQL Slow Query Log (Server Side):
+Agar Laravel log nahi kar raha to MySQL server par slow query log on karo:
+
+```ini
+# /etc/mysql/mysql.conf.d/mysqld.cnf (or my.cnf)
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/mysql-slow.log
+long_query_time = 0.5            # 500 milliseconds se upar ki queries
+log_queries_not_using_indexes = 1 # Bina index wali table scans log karein
+min_examined_row_limit = 1000     # Kam se kam 1000 rows scan hui hon
+```
+
+###### Analyze using `mysqldumpslow`:
+```bash
+# Top 10 slowest queries by average execution time:
+mysqldumpslow -s at -t 10 /var/log/mysql/mysql-slow.log
+
+# Top 10 queries sorted by total count:
+mysqldumpslow -s c -t 10 /var/log/mysql/mysql-slow.log
+```
+
+---
+
+#### 2. Deep Pagination & The OFFSET Trap
+
+E-commerce websites par users ya Google crawlers jab page 500 ya page 5,000 par jaate hain, to API timeout ho jaati hai.
+
+##### The Disaster Behind `OFFSET`:
+```php
+// Page 10,000:
+$orders = Order::paginate(20, ['*'], 'page', 10000);
+
+// Generated SQL:
+// SELECT * FROM orders ORDER BY id DESC LIMIT 20 OFFSET 200000;
+```
+
+###### MySQL Engine Internals:
+1. MySQL storage engine ko **200,020 rows** disk se read karni padti hain.
+2. Pehli **200,000 rows ko memory mein laakar discard (throw away)** karta hai!
+3. Sirf aakhri 20 rows return karta hai.
+4. Sath mein `SELECT COUNT(*) FROM orders` alag se chalta hai jo 5 million rows count karta hai!
+5. **Execution Time:** ~4.2 seconds! High CPU & Disk I/O spike.
+
+---
+
+##### The Fix: Cursor Pagination (`cursorPaginate()`)
+Laravel 8.5+ mein built-in Keyset Cursor Pagination support hai:
+
+```php
+// ✅ FAST & CONSTANT TIME (Keyset Cursor):
+$orders = Order::orderBy('id', 'desc')->cursorPaginate(20);
+
+// Generated SQL for next page:
+// SELECT * FROM `orders` 
+// WHERE `id` < 482910 -- Last seen ID from cursor token
+// ORDER BY `id` DESC 
+// LIMIT 21;
+```
+
+###### Execution Mechanism:
+- MySQL B+Tree index par direct seek karta hai (`WHERE id < 482910`).
+- Exact 20 rows fetch karta hai, koi row discard nahi hoti.
+- **Execution Time:** ~2 milliseconds — Chahe aap Page 1 par hon ya Page 10,000 par!
+- `COUNT(*)` query nahi chalti, server resources 95% bachte hain.
+
+###### Comparison Matrix:
+| Feature | `paginate()` | `simplePaginate()` | `cursorPaginate()` |
+|---|---|---|---|
+| **Underlying SQL** | `LIMIT 20 OFFSET n` | `LIMIT 21 OFFSET n` | `WHERE id < n LIMIT 21` |
+| **Total Count Query** | `SELECT COUNT(*)` (Heavy) | ❌ None | ❌ None |
+| **Page 10,000 Speed** | 4,200ms 💥 | 3,900ms 💥 | **1.8ms ⚡** |
+| **Jump to Page N** | ✅ Yes (`?page=5`) | ❌ Only Prev/Next | ❌ Only Prev/Next |
+| **Infinite Scroll / Feeds** | Poor | Acceptable | **Gold Standard** |
+
+---
+
+#### 3. Large Dataset Processing Without Memory Exhaustion
+
+Cron jobs, data export (CSV/Excel), ya migrations mein jab 100,000+ rows process karni hon, to `Model::all()` ya `get()` chalane par **Fatal error: Allowed memory size exhausted** aa jaata hai.
+
+##### 1. The Deadly Mutating Bug in `chunk()`:
+Bohot saare 2-3 year developers yeh mistake karte hain:
+
+```php
+// ❌ CRITICAL BUG: Skipped Records in chunk()
+// Requirement: Pending orders ko 'processed' mark karo:
+Order::where('status', 'pending')->chunk(100, function ($orders) {
+    foreach ($orders as $order) {
+        $order->update(['status' => 'processed']);
+    }
+});
+```
+
+###### Kyun Adhe Records Skip Ho Jaate Hain?
+- `chunk(100)` internally `LIMIT 100 OFFSET 0` chalata hai.
+- 100 orders status 'processed' ho gaye.
+- Agle iteration mein `chunk` chalata hai: `LIMIT 100 OFFSET 100`.
+- Lekin pehle 100 orders to ab 'pending' rahe hi nahi! Table shift ho chuki hai!
+- Result: **50% rows skip ho jaati hain aur process nahi hoti!**
+
+##### 2. The Solution: `chunkById()`
+Primary key based chunks use karta hai (`WHERE id > last_id LIMIT 100`):
+
+```php
+// ✅ 100% SAFE FOR MUTATING DATA:
+Order::where('status', 'pending')->chunkById(100, function ($orders) {
+    foreach ($orders as $order) {
+        $order->update(['status' => 'processed']);
+    }
+});
+// Internally uses: WHERE status = 'pending' AND id > 100 ORDER BY id ASC LIMIT 100
+// Koi row skip nahi hogi, OFFSET zero rehta hai!
+```
+
+---
+
+##### 3. `cursor()` vs `lazy()` — PHP Generators for Millions of Rows
+Jab aapko memory leak ke bina 1-by-1 rows stream karni hon:
+
+```php
+// ✅ cursor() — Unbuffered PDO Query (Stream direct from MySQL socket):
+// Memory usage: Sirf 1 model memory mein rehta hai at any time!
+foreach (Order::where('year', 2026)->cursor() as $order) {
+    fputcsv($fileHandle, [$order->id, $order->total_amount]);
+}
+
+// ✅ lazy() — Uses chunking under the hood with Laravel LazyCollection:
+// Allows fluent collection methods like filter, map, take without loading all to memory:
+Order::lazy(1000)
+    ->filter(fn($order) => $order->isEligibleForDiscount())
+    ->each(fn($order) => dispatch(new SendPromoEmail($order)));
+```
+
+---
+
+#### 4. Model Hydration & `SELECT *` Overhead
+
+Eloquent ka sabse bada hidden cost **Model Hydration** hai. Jab aap query karte ho, to har row ke liye Laravel:
+1. Ek naya PHP `Model` class object instantiate karta hai
+2. Columns ko `$attributes` aur `$original` array mein duplicate copy karta hai
+3. Type casting (`casts`) evaluate karta hai
+4. Mutators aur date objects (`Carbon::parse`) create karta hai
+
+##### Example: 10,000 Products with `SELECT *` vs `Specific Columns`
+
+###### ❌ Bad:
+```php
+// Table has 45 columns, including big TEXT 'description' & JSON 'specifications'
+$products = Product::all(); // 10,000 objects hydrated with full text
+// RAM Used: ~140 MB!
+// Query Time: 280ms, PHP Hydration Time: 850ms!
+```
+
+###### ✅ Optimized:
+```php
+// Sirf listing ke liye zaroori columns select karo:
+$products = Product::select(['id', 'title', 'slug', 'price', 'thumbnail_url'])
+    ->paginate(20);
+// RAM Used: ~4 MB! (97% reduction)
+// Latency: Sub-30ms!
+```
+
+##### Gotcha with Eager Loading Column Selection:
+Jab aap relation eager load karte waqt columns specify karte hain, to **Foreign Key aur Primary Key include karna mandatory hai!**
+
+```php
+// ❌ BUG: Relationship will return NULL!
+// Author relation user_id match nahi kar payega kyunki user_id select nahi kiya:
+$posts = Post::with(['author' => function ($q) {
+    $q->select('name', 'email'); // Missing 'id'!!
+}])->get();
+// Result: $post->author is NULL!
+
+// ✅ CORRECT:
+$posts = Post::with(['author' => function ($q) {
+    $q->select('id', 'name', 'email'); // 'id' included!
+}])->select('id', 'user_id', 'title', 'slug')->get(); // 'user_id' included in parent!
+```
+
+---
+
+#### 5. Caching Strategy: Redis Application Cache vs MySQL 8.0
+
+MySQL 8.0 ne purana **Query Cache completely remove kar diya hai**. Kyun?
+Kyunki MySQL ka query cache ek **global mutex lock** use karta tha — kisi bhi table mein ek single row update hone par us table ke saare cached queries invalidate ho jaate the. High-traffic apps par yeh bottleneck ban jaata tha.
+
+##### Production Caching with Redis & Laravel Tags:
+```php
+use Illuminate\Support\Facades\Cache;
+
+class ProductController extends Controller
+{
+    public function show(string $slug)
+    {
+        $cacheKey = "product:slug:{$slug}";
+
+        // Cache for 1 hour, auto-fetch from DB if miss:
+        $product = Cache::tags(['products'])->remember($cacheKey, now()->addHour(), function () use ($slug) {
+            return Product::with(['category:id,name', 'images:id,product_id,url'])
+                ->select(['id', 'category_id', 'title', 'price', 'description'])
+                ->where('slug', $slug)
+                ->firstOrFail();
+        });
+
+        return view('products.show', compact('product'));
+    }
+}
+```
+
+###### Cache Invalidation on Model Observer:
+```php
+// app/Observers/ProductObserver.php
+namespace App\Observers;
+
+use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
+
+class ProductObserver
+{
+    public function saved(Product $product): void
+    {
+        // Specific product cache flush:
+        Cache::forget("product:slug:{$product->slug}");
+        // All products tagged cache clear:
+        Cache::tags(['products'])->flush();
+    }
+}
+```
+
+---
+
+#### 6. Laravel Octane & Persistent Connections
+
+Normal PHP-FPM architecture mein:
+- Har HTTP request aane par ek naya PHP process MySQL ke sath naya TCP connection banata hai, 3-way handshake karta hai, query execute karta hai, aur connection close karta hai.
+- 1,000 req/sec = 1,000 TCP handshakes/sec!
+
+##### In Laravel Octane (FrankenPHP / Swoole / RoadRunner):
+- PHP application memory mein alive rehti hai (Worker processes).
+- Database connections **persist** rehte hain across requests!
+- **Gotchas for 3-Year Devs in Octane:**
+  1. **Stale Transactions:** Agar kisi request mein unhandled exception aayi aur transaction rollback nahi hui, to agla request usi open transaction mein fas jaayega!
+  2. **Memory Leaks:** Singleton services ya static arrays har request par grow karte rahenge jab tak worker crash na ho.
+  3. **Connection Disconnect:** Idle database connections timeout ho sakte hain — `config/database.php` mein `'sticky' => true` aur automatic reconnection check zaroori hai.
+
+---
+
+#### 7. 3-Year Developer Performance Tuning Checklist
+
+| Area | Quick Audit Action | Expected Impact |
+|---|---|---|
+| **Slow Queries** | `DB::whenQueryingForLongerThan(200, ...)` configure karo | Production slow query visibility |
+| **Deep Pagination** | `paginate()` ko `cursorPaginate()` se replace karo feeds/APIs mein | 4000ms $\rightarrow$ 2ms on page 500+ |
+| **Batch Jobs** | `chunk()` ki jagah `chunkById()` lagao mutating queries par | 0% skipped rows, 100% data integrity |
+| **Memory Leaks** | Heavy exports mein `cursor()` stream use karo | RAM drops from 500MB to 15MB |
+| **Payload Bloat** | `select(['id', 'name'])` se columns limit karo | 70% faster model hydration |
+| **Caching** | Redis with `Cache::tags(['products'])` use karo | 95% DB read load offloaded |
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const perfSteps = [
+            {
+                title: 'Step 1: Threshold Alert & Identification',
+                level: 'Monitoring',
+                desc: 'Production logs mein warning aayi ki ek checkout query 2.4 seconds le rahi hai. AppServiceProvider mein DB::whenQueryingForLongerThan(200) ne exact SQL query aur caller route capture kiya.',
+                code: '// AppServiceProvider.php:\nDB::whenQueryingForLongerThan(200, function ($connection) {\n    Log::warning("Slow DB Query on [{$connection->getName()}]: " . request()->fullUrl());\n});'
+            },
+            {
+                title: 'Step 2: EXPLAIN Plan Inspection',
+                level: 'Query Audit',
+                desc: 'Slow query ko MySQL client mein EXPLAIN ANALYZE ke sath run kiya. Result: type: ALL, 1,200,000 rows examined, Using temporary; Using filesort. Missing composite index identified on orders(user_id, status, created_at).',
+                code: 'EXPLAIN ANALYZE\nSELECT id, total_amount, created_at FROM orders\nWHERE user_id = 4920 AND status = "completed"\nORDER BY created_at DESC LIMIT 20;\n-- Output: Table scan on orders (1.2M rows). Missing index!'
+            },
+            {
+                title: 'Step 3: Column Pruning & Hydration Cut',
+                level: 'Eloquent Tuning',
+                desc: 'Order::with("items")->get() chalane se orders aur items table ke 40 unused columns aur heavy JSON payloads hydrate ho rahe the. Specific select columns lagakar PHP memory footprint 80MB se 6MB par le aaye.',
+                code: '$orders = Order::select(["id", "user_id", "total_amount", "created_at"])\n    ->with(["items:id,order_id,product_id,quantity,price"])\n    ->where("user_id", $userId)\n    ->get();\n// Memory saved: 92%!'
+            },
+            {
+                title: 'Step 4: Cursor Pagination Surgery',
+                level: 'Deep Pagination',
+                desc: 'Users jab page 200 par scroll kar rahe the, to LIMIT 20 OFFSET 4000 ki wajah se MySQL 4,020 rows scan karke 4,000 throw kar raha tha. cursorPaginate(20) lagane se query O(1) keyset lookup ban gayi.',
+                code: '// Before: Order::paginate(20); // 1.8s on page 200\n// After: Order::orderBy("id", "desc")->cursorPaginate(20); // 2.1ms on page 200!\n// SQL: WHERE id < 948210 ORDER BY id DESC LIMIT 21'
+            },
+            {
+                title: 'Step 5: Batch Processing with chunkById',
+                level: 'Batch Processing',
+                desc: 'Nightly order reconciliation job mein chunk(1000) tha jo rows update hone par 50% records skip kar raha tha. chunkById(1000) lagakar 100% data integrity ensure ki aur memory flat 15MB rahi.',
+                code: 'Order::where("reconciled", false)\n    ->chunkById(1000, function ($orders) {\n        foreach ($orders as $order) {\n            $order->update(["reconciled" => true]);\n        }\n    });'
+            },
+            {
+                title: 'Step 6: Redis Application Tier Caching',
+                level: 'Caching Tier',
+                desc: 'High-frequency read queries (homepage categories, product pricing) ko Redis tags ke sath cache kiya. Model observer par automated invalidation hook lagayi. Database read load 85% kam ho gaya.',
+                code: '$products = Cache::tags(["catalog"])\n    ->remember("home:featured", now()->addHours(6), function () {\n        return Product::select(["id", "title", "price", "thumbnail"])\n            ->where("is_featured", true)\n            ->get();\n    });'
+            }
+        ];
+
+        function showPerfStep(index) {
+            document.querySelectorAll('#perfNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = perfSteps[index];
+            document.getElementById('perfContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showPerfStep(0);
+
+        function switchPerfTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

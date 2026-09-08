@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Data Types & Schema Design for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="02_MySQL_Indexing_BTrees_and_Query_Optimization.html" class="nav-btn">&larr; Previous: Eloquent CRUD</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="04_MySQL_Transactions_ACID_and_Locking_Internals.html" class="nav-btn">Next: Indexing & N+1 Problems &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Schema Design Decision Pipeline -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: New Feature Ke Liye Schema Design Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            "Orders" feature build karna hai — schema design karne ka step-by-step thought process dekhein:
+        </p>
+
+        <div class="stepper-nav" id="schNav">
+            <button class="step-chip active" onclick="showSchStep(0)">
+                <span class="step-num">01</span>
+                <span>Requirements</span>
+            </button>
+            <button class="step-chip" onclick="showSchStep(1)">
+                <span class="step-num">02</span>
+                <span>Entities Map</span>
+            </button>
+            <button class="step-chip" onclick="showSchStep(2)">
+                <span class="step-num">03</span>
+                <span>Column Types</span>
+            </button>
+            <button class="step-chip" onclick="showSchStep(3)">
+                <span class="step-num">04</span>
+                <span>Constraints</span>
+            </button>
+            <button class="step-chip" onclick="showSchStep(4)">
+                <span class="step-num">05</span>
+                <span>Indexes Plan</span>
+            </button>
+            <button class="step-chip" onclick="showSchStep(5)">
+                <span class="step-num">06</span>
+                <span>Migration Run</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="schContent">
+            <!-- Dynamic Content populated by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Data Types Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchSchTab(event, 'tab-cheatsheet')">📋 Column Types Cheatsheet</button>
+            <button class="tab-btn" onclick="switchSchTab(event, 'tab-enum')">⚠️ Enum vs PHP Enum</button>
+            <button class="tab-btn" onclick="switchSchTab(event, 'tab-timezone')">🕐 Timezone & DateTime</button>
+            <button class="tab-btn" onclick="switchSchTab(event, 'tab-migration')">🏗️ Production Migration</button>
+        </div>
+
+        <!-- Tab 1: Column Types Cheatsheet -->
+        <div id="tab-cheatsheet" class="tab-panel active">
+            <h5>Laravel Migration Column Types — Quick Decision Guide</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Situation</th>
+                        <th>Wrong Choice</th>
+                        <th>Right Choice</th>
+                        <th>Why?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Primary Key</td>
+                        <td><code>integer('id')</code></td>
+                        <td><code>id()</code> or <code>bigIncrements('id')</code></td>
+                        <td>BIGINT UNSIGNED = 18 quintillion rows, no negative IDs</td>
+                    </tr>
+                    <tr>
+                        <td>Foreign Key</td>
+                        <td><code>integer('user_id')</code></td>
+                        <td><code>foreignId('user_id')->constrained()</code></td>
+                        <td>Type must match parent PK exactly + auto-creates index + FK</td>
+                    </tr>
+                    <tr>
+                        <td>Price / Money</td>
+                        <td><code>float('price')</code></td>
+                        <td><code>decimal('price', 10, 2)</code></td>
+                        <td>Float has rounding errors — 1.1 + 2.2 ≠ 3.3!</td>
+                    </tr>
+                    <tr>
+                        <td>Status field</td>
+                        <td><code>enum('status', [...])</code></td>
+                        <td><code>string('status', 20)->default('pending')</code></td>
+                        <td>Enum = table rebuild to add new value; string = just INSERT</td>
+                    </tr>
+                    <tr>
+                        <td>Long text content</td>
+                        <td><code>string('body')</code></td>
+                        <td><code>mediumText('body')</code></td>
+                        <td>VARCHAR max 65KB; mediumText = 16MB for full articles</td>
+                    </tr>
+                    <tr>
+                        <td>Dynamic config</td>
+                        <td>Multiple boolean columns</td>
+                        <td><code>json('settings')</code></td>
+                        <td>JSON = flexible schema; no migration needed for new settings</td>
+                    </tr>
+                    <tr>
+                        <td>True/False flags</td>
+                        <td><code>tinyInteger('is_active')</code></td>
+                        <td><code>boolean('is_active')->default(false)</code></td>
+                        <td>boolean() is clearer intent + Model auto-casts to bool</td>
+                    </tr>
+                    <tr>
+                        <td>Future dates (after 2038)</td>
+                        <td><code>timestamp('scheduled_at')</code></td>
+                        <td><code>dateTime('scheduled_at')</code></td>
+                        <td>TIMESTAMP range: 1970–2038; DATETIME range: 1000–9999</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Enum vs PHP Enum -->
+        <div id="tab-enum" class="tab-panel">
+            <h5>MySQL ENUM vs PHP 8.1 Backed Enum + String Column</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                Har senior developer MySQL enum se kyun door rehte hain — aur modern solution kya hai:
+            </p>
+            <pre><code class="language-php">// BAD: MySQL ENUM
+// $table->enum('status', ['pending', 'shipped', 'delivered']);
+// Naya value 'processing' add karna chahte ho?
+// ALTER TABLE orders MODIFY status ENUM('pending','processing','shipped','delivered');
+// 50 million rows = 2+ ghante table lock! Production down!
+
+// GOOD: PHP 8.1 Backed Enum + string column
+// Migration:
+$table->string('status', 30)->default('pending')->index();
+
+// PHP Enum definition:
+enum OrderStatus: string
+{
+    case Pending    = 'pending';
+    case Processing = 'processing';
+    case Shipped    = 'shipped';
+    case Delivered  = 'delivered';
+    case Cancelled  = 'cancelled';
+
+    // Helper methods add kar sakte hain:
+    public function label(): string
+    {
+        return match($this) {
+            self::Pending    => 'Awaiting Payment',
+            self::Processing => 'Being Prepared',
+            self::Shipped    => 'Out for Delivery',
+            self::Delivered  => 'Delivered',
+            self::Cancelled  => 'Order Cancelled',
+        };
+    }
+
+    public function color(): string
+    {
+        return match($this) {
+            self::Pending    => 'yellow',
+            self::Processing => 'blue',
+            self::Shipped    => 'purple',
+            self::Delivered  => 'green',
+            self::Cancelled  => 'red',
+        };
+    }
+}
+
+// Order Model:
+protected $casts = [
+    'status' => OrderStatus::class,
+];
+
+// Usage (type-safe!):
+$order->status = OrderStatus::Shipped;
+$order->save();
+
+if ($order->status === OrderStatus::Pending) {
+    // Process payment...
+}
+
+// Naya status add karna (future mein)?
+// Sirf PHP Enum mein ek case add karo — NO schema change needed!</code></pre>
+        </div>
+
+        <!-- Tab 3: Timezone & DateTime -->
+        <div id="tab-timezone" class="tab-panel">
+            <h5>TIMESTAMP vs DATETIME — Laravel Timezone Handling Guide</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                India-based app mein IST mein dates dikhana aur UTC mein store karna — sahi setup:
+            </p>
+            <pre><code class="language-php">// config/app.php:
+'timezone' => 'Asia/Kolkata',  // IST (UTC+5:30)
+
+// config/database.php mein timezone:
+'options' => [
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '+05:30'",
+],
+// Ya: SET GLOBAL time_zone = '+05:30'; in MySQL
+
+// TIMESTAMP Columns: timezone-aware
+// - MySQL TIMESTAMP UTC mein store karta hai
+// - Read karte waqt server timezone mein convert karta hai
+// - Laravel Carbon automatically correct timezone mein return karta hai
+
+$user->created_at->format('d/m/Y h:i A');
+// Output: "08/09/2024 10:30 AM" (IST mein — automatic conversion!)
+
+// DATETIME Columns: timezone-naive
+// - Jo value doge, wahi store hogi — no conversion
+$meeting->scheduled_at = '2024-09-08 10:30:00';
+// Stored exactly as: 2024-09-08 10:30:00
+// Read: 2024-09-08 10:30:00 (same — no conversion)
+
+// Carbon ke sath explicit timezone:
+$carbon = Carbon::parse('2024-09-08 10:30:00', 'Asia/Kolkata');
+echo $carbon->toUtcString();    // UTC equivalent
+echo $carbon->toIso8601String(); // ISO format
+
+// API response mein timezone:
+return response()->json([
+    'created_at' => $user->created_at->toIso8601String(), // '2024-09-08T05:00:00+05:30'
+    'created_at_utc' => $user->created_at->utc()->toIso8601String(),
+]);</code></pre>
+        </div>
+
+        <!-- Tab 4: Production Migration -->
+        <div id="tab-migration" class="tab-panel">
+            <h5>Production-Ready Migration Pattern — Real-World Example</h5>
+            <p style="color:var(--slate-700); font-size:0.95rem;">
+                E-commerce <code>products</code> table ka complete migration jo production mein deploy karne ke liye ready hai:
+            </p>
+            <pre><code class="language-php">// php artisan make:migration create_products_table
+
+public function up(): void
+{
+    Schema::create('products', function (Blueprint $table) {
+        // 1. Primary Key
+        $table->id();
+
+        // 2. Foreign Keys (foreignId = unsignedBigInteger + FK + index automatically)
+        $table->foreignId('category_id')->constrained()->restrictOnDelete();
+        $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
+        $table->foreignId('created_by')->constrained('users');
+
+        // 3. Identifiers
+        $table->string('name', 255);
+        $table->string('slug', 255)->unique();   // SEO URL — must be unique
+        $table->string('sku', 50)->unique();     // Stock keeping unit
+
+        // 4. Content
+        $table->string('short_description', 500)->nullable();
+        $table->mediumText('full_description')->nullable();
+
+        // 5. Pricing (ALWAYS decimal for money!)
+        $table->decimal('price', 10, 2);
+        $table->decimal('compare_price', 10, 2)->nullable(); // Crossed-out price
+        $table->decimal('cost_price', 10, 2)->nullable();    // Internal cost
+
+        // 6. Inventory
+        $table->unsignedInteger('stock')->default(0);
+        $table->unsignedInteger('low_stock_threshold')->default(5);
+
+        // 7. Status (PHP Enum backed by string — NOT MySQL enum!)
+        $table->string('status', 20)->default('draft')->index();
+        $table->boolean('is_featured')->default(false)->index();
+        $table->boolean('is_digital')->default(false);
+
+        // 8. Flexible attributes (JSON for variant properties)
+        $table->json('attributes')->nullable();  // {'color': 'red', 'size': 'L'}
+        $table->json('seo_meta')->nullable();
+
+        // 9. Timestamps
+        $table->timestamps();
+        $table->softDeletes();
+
+        // 10. Composite Indexes (for common query patterns)
+        $table->index(['category_id', 'status', 'price']); // Category page filter
+        $table->index(['status', 'is_featured']);           // Featured products
+    });
+}
+
+public function down(): void
+{
+    Schema::dropIfExists('products');
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="02_MySQL_Indexing_BTrees_and_Query_Optimization.html" class="nav-btn">&larr; Previous: Eloquent CRUD</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="04_MySQL_Transactions_ACID_and_Locking_Internals.html" class="nav-btn">Next: Indexing & N+1 Problems &rarr;</a>
+    </div>
+
+    <!-- Hidden Raw Markdown Container -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 3: MySQL Data Types & Laravel Schema Design — Sahi Column, Sahi Size, Zero Regrets
+
+Ek 3-year Laravel developer ke career mein sabse frustrating moment hota hai jab 6 mahine purani production database mein koi column change karna ho — 50 million rows ke sath. `ALTER TABLE` 4 ghante tak table lock kar deta hai, aur aap socho: *"Kaash migration likhte waqt sochta!"*
+
+Is module mein hum cover karenge:
+- **Integer types** — `id()` se leke `tinyInteger()` tak, kab kya choose karein
+- **String vs Text** — VARCHAR(255) pe index kyun lag sakta hai lekin TEXT pe nahi
+- **Decimal vs Float** — billing mein float use karne ka ek real example jo hamare ek senior ne face kiya
+- **JSON columns** — Laravel mein sahi tarike se use karna
+- **Enum ka trap** — kyun senior devs `enum` column se door rehte hain
+- **Timezone nightmare** — `TIMESTAMP` vs `DATETIME` — aur Laravel ka Carbon kaise handle karta hai
+
+---
+
+#### 1. Integer Types — Primary Keys aur Foreign Keys Ka Sahi Choice
+
+Yeh sabse common confusion area hai. Neeche ek clear guide:
+
+```php
+// PRIMARY KEYS (Auto-Increment IDs):
+$table->id();                      // = BIGINT UNSIGNED AUTO_INCREMENT (0 to 18,446,744,073,709,551,615)
+$table->bigIncrements('id');       // Same as id() — dono equivalent hain
+
+// FOREIGN KEYS — HAMESHA match karo parent table ki PK se:
+$table->unsignedBigInteger('user_id');    // ✅ id() ke sath match — BIGINT UNSIGNED
+// $table->integer('user_id');            // ❌ WRONG! Signed integer — FK constraint fail karega!
+
+// SMALL TABLES (< 127 rows) jaise status flags, ratings:
+$table->tinyInteger('rating');             // -128 to 127
+$table->unsignedTinyInteger('star_count'); // 0 to 255
+$table->unsignedSmallInteger('page_number'); // 0 to 65,535
+
+// MEDIUM RANGE (< 2 billion rows):
+$table->unsignedInteger('view_count');    // 0 to 4,294,967,295
+
+// LARGE TABLES (billions of rows) — default use karo:
+$table->unsignedBigInteger('total_visits'); // 0 to 18 Quintillion
+```
+
+##### Real Migration Mistake Jo Hoti Hai:
+```php
+// PROBLEM: Yeh migration galat hai!
+Schema::create('orders', function (Blueprint $table) {
+    $table->id();                         // BIGINT UNSIGNED
+    $table->integer('user_id');           // ❌ INTEGER SIGNED — mismatch!
+    $table->foreign('user_id')->references('id')->on('users');
+    // ERROR: Foreign key type mismatch — migration fail ya silent data issue!
+});
+
+// FIX: 
+Schema::create('orders', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained('users'); // ✅ Automatically BIGINT UNSIGNED + FK
+    // Ya:
+    $table->unsignedBigInteger('user_id');
+    $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+});
+```
+
+> **Pro Tip:** `$table->foreignId('user_id')->constrained()` use karo — yeh automatically `unsignedBigInteger` + `foreign key constraint` + `index` teeno kaam karta hai ek line mein!
+
+---
+
+#### 2. String vs Text — Indexing aur Storage Ka Difference
+
+```php
+// VARCHAR — Fixed maximum length, index-able, row mein store hota hai:
+$table->string('name');          // VARCHAR(255) — default
+$table->string('email', 150);   // VARCHAR(150) — email ke liye 150 kaafi hai
+$table->string('slug', 200);    // Shorter = faster index!
+
+// TEXT — Large content, row ke baarehar store, index ke liye prefix chahiye:
+$table->text('description');     // Up to 65KB — short articles, product descriptions
+$table->mediumText('body');      // Up to 16MB — full blog posts
+$table->longText('raw_content'); // Up to 4GB — avoid karo!
+
+// CHAR — Fixed length (wastes space if shorter, fast comparison):
+$table->char('country_code', 2); // 'IN', 'US' — always 2 chars
+$table->char('currency', 3);     // 'INR', 'USD' — always 3 chars
+```
+
+##### VARCHAR vs TEXT — Kab Kya?
+
+| Factor | VARCHAR(255) | TEXT |
+|:---|:---:|:---:|
+| **Index Direct** | ✅ Yes | ❌ No (prefix only) |
+| **WHERE mein fast** | ✅ Yes | ⚠️ Slower |
+| **Default value** | ✅ Yes | ❌ No |
+| **Order By** | ✅ In-memory | ❌ Disk sort |
+| **Max size** | 65,535 bytes | 65,535 bytes (TEXT) |
+| **Use case** | Names, emails, slugs | Articles, bios, HTML |
+
+##### Text Column Pe Index Banana (Agar Zaroorat Ho):
+```php
+// Direct index nahi ban sakta TEXT par:
+$table->text('description');
+$table->index('description');  // ❌ ERROR!
+
+// Prefix index use karo:
+$table->index(DB::raw('description(100)')); // Pehle 100 chars pe index
+
+// Ya Generated Column use karo (MySQL 5.7+):
+$table->string('description_slug', 191)->nullable()->storedAs("SUBSTR(description, 1, 191)");
+$table->index('description_slug');
+```
+
+---
+
+#### 3. Decimal vs Float — Billing Bug Ka Sabse Bada Source
+
+Yeh ek real story hai. Ek e-commerce site par 6 mahine baad discover hua ki prices mein 0.001 ka difference aa raha tha orders table mein. Root cause: `float` column.
+
+```php
+// FLOAT / DOUBLE — Binary floating point (IEEE 754):
+// Hardware internally decimal ko binary mein convert karta hai
+// 0.1 + 0.2 = 0.30000000000000004 (exact nahi!)
+
+// Migration: $table->float('price');
+
+// PHP mein bhi same issue:
+$a = 1.1 + 2.2;
+var_dump($a == 3.3);  // bool(false) !! Never use == with floats
+
+// Database mein bhi:
+// SELECT 1.1 + 2.2 = 3.3;  -- Result: 0 (FALSE!) in float context
+
+// DECIMAL — Exact decimal arithmetic (stored as string internally):
+$table->decimal('price', 10, 2);
+// Total 10 digits, 2 after decimal: max value = 99,999,999.99
+
+// Real-world examples:
+$table->decimal('unit_price', 10, 2);       // Product price: Rs 99,999,999.99 max
+$table->decimal('tax_amount', 10, 4);       // Tax: 4 decimal places for precision
+$table->decimal('exchange_rate', 15, 6);    // Currency: 6 decimal places
+$table->decimal('wallet_balance', 15, 2);   // Wallet: large range needed
+
+// Model Casting — MUST DO:
+protected $casts = [
+    'price'          => 'decimal:2',  // Returns string, NOT float — exact!
+    'tax_amount'     => 'decimal:4',
+    'wallet_balance' => 'decimal:2',
+];
+
+// PHP Math with Decimals — bcmath functions use karo:
+$total = bcadd($price, $tax, 2);         // 10.50 + 1.20 = 11.70 (exact!)
+$discounted = bcsub($price, $discount, 2); // Exact subtraction
+$tax = bcmul($price, '0.18', 2);          // 18% tax exact
+```
+
+---
+
+#### 4. JSON Columns — Dynamic Data Ko Structured Store Karna
+
+JSON column tab useful hota hai jab:
+- Data structure future mein change ho sakti hai
+- Optional configuration/settings store karni ho
+- Different types ke records par different attributes hon
+
+```php
+// Migration:
+$table->json('meta')->nullable();
+$table->json('settings')->nullable();
+$table->json('address')->nullable();
+
+// Model Casting — Bahut zaroori hai!
+protected $casts = [
+    'meta'     => 'array',         // PHP array ke roop mein
+    'settings' => 'collection',    // Laravel Collection ke roop mein
+    'address'  => 'object',        // stdClass object ke roop mein
+];
+
+// Usage:
+$user->settings = ['theme' => 'dark', 'notifications' => true, 'lang' => 'hi'];
+$user->save();
+// MySQL mein store: {"theme":"dark","notifications":true,"lang":"hi"}
+
+echo $user->settings['theme']; // 'dark' — automatically decoded!
+
+// JSON ke andar query karna (MySQL 8.0 JSON operators):
+User::whereJsonContains('settings->notifications', true)->get();
+// SQL: WHERE JSON_CONTAINS(settings, 'true', '$.notifications')
+
+User::whereJsonPath('meta->role', 'admin')->get();
+// SQL: WHERE JSON_UNQUOTE(JSON_EXTRACT(meta, '$.role')) = 'admin'
+
+// JSON column pe index banana (Generated Column se):
+// Migration mein:
+$table->string('settings_theme', 50)->nullable()->storedAs("JSON_UNQUOTE(JSON_EXTRACT(settings, '$.theme'))");
+$table->index('settings_theme'); // Ab ye indexed hai!
+```
+
+---
+
+#### 5. Enum — Senior Devs Kyun Door Rehte Hain?
+
+```php
+// Tempting lagta hai:
+$table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled']);
+
+// Kyun Problematic Hai:
+// 1. Naya value add karna = Full table rebuild (old MySQL) ya ALGORITHM=COPY
+//    50 million rows table par ALTER TABLE 2 ghante tak!
+
+// 2. PHP side par string comparison se bugs:
+if ($order->status == 'Pending') { ... }  // Case sensitivity!
+
+// 3. Database mein readable hai lekin application logic tightly coupled:
+//    Agar 'processing' ko 'in_progress' rename karna ho — data migration + code change!
+
+// 4. Multiple enums alag-alag tables mein manage karna mushkil:
+//    Order status, Payment status, Shipment status — teen alag enum columns
+
+// BETTER APPROACH 1: String column + Constants/Enum in PHP:
+$table->string('status', 20)->default('pending')->index();
+
+// PHP Model mein:
+class Order extends Model
+{
+    const STATUS_PENDING    = 'pending';
+    const STATUS_PROCESSING = 'processing';
+    const STATUS_SHIPPED    = 'shipped';
+    const STATUS_DELIVERED  = 'delivered';
+    const STATUS_CANCELLED  = 'cancelled';
+
+    public function scopePending($query) { return $query->where('status', self::STATUS_PENDING); }
+    public function isPending(): bool { return $this->status === self::STATUS_PENDING; }
+}
+
+// PHP 8.1+ Backed Enum — BEST PRACTICE:
+enum OrderStatus: string
+{
+    case Pending    = 'pending';
+    case Processing = 'processing';
+    case Shipped    = 'shipped';
+    case Delivered  = 'delivered';
+    case Cancelled  = 'cancelled';
+}
+
+// Model casting with PHP Enum:
+protected $casts = [
+    'status' => OrderStatus::class,
+];
+
+$order->status = OrderStatus::Shipped;
+$order->save();
+echo $order->status->value;   // 'shipped'
+echo $order->status->name;    // 'Shipped'
+if ($order->status === OrderStatus::Pending) { ... } // Type-safe!
+
+// BETTER APPROACH 2: Lookup Table (for complex statuses with metadata):
+// statuses table: id, name, label, color, sort_order
+// orders table: status_id FK
+// Nayi status add karna = sirf ek INSERT query, no schema change!
+```
+
+---
+
+#### 6. Timestamps vs DateTime — Timezone Nightmare
+
+```php
+// TIMESTAMP:
+// - Range: 1970-01-01 to 2038-01-19 (Y2K38 problem!)
+// - MySQL server timezone ke mutabiq store/convert karta hai
+// - Automatic DEFAULT CURRENT_TIMESTAMP aur ON UPDATE CURRENT_TIMESTAMP
+
+$table->timestamps();     // created_at + updated_at — both TIMESTAMP
+$table->softDeletes();    // deleted_at — TIMESTAMP
+
+// DATETIME:
+// - Range: 1000-01-01 to 9999-12-31 (koi timezone conversion nahi)
+// - Exactly wahi store hota hai jo diya — timezone-naive
+// - Future dates ke liye ya timezone-independent data ke liye
+
+$table->dateTime('scheduled_at');  // Scheduled tasks, appointments
+$table->dateTime('birth_date');    // Birthdays — timezone matter nahi
+$table->date('expiry_date');       // Date only — visa expiry, subscription end
+
+// Laravel Timezone Configuration (.env aur config/app.php):
+// 'timezone' => 'Asia/Kolkata',  // IST — UTC+5:30
+// Database timestamps UTC mein store honge, Laravel automatically convert karega
+
+// Carbon — Laravel ka Datetime Library:
+$user = User::find(1);
+echo $user->created_at;                    // Carbon object
+echo $user->created_at->format('d M Y');  // "08 Sep 2024"
+echo $user->created_at->diffForHumans();  // "3 hours ago"
+echo $user->created_at->timezone('Asia/Kolkata')->format('H:i'); // IST time
+
+// GOTCHA: TIMESTAMP column 2038 mein wrap around ho jayega!
+// Long-term projects ke liye dateTime() use karo!
+```
+
+---
+
+#### 7. Production-Ready Migration Patterns
+
+##### Naming Conventions:
+```php
+// Tables: plural, snake_case
+// users, orders, product_categories, payment_transactions
+
+// Columns: singular, snake_case
+// user_id, created_at, total_amount, is_active
+
+// Indexes: tablename_columnname_type
+// users_email_unique, orders_user_id_index, products_sku_name_index
+
+// Foreign Keys: child_parentcolumn_foreign
+// orders_user_id_foreign (automatic Laravel naming)
+```
+
+##### Smart Migration Structure:
+```php
+Schema::create('products', function (Blueprint $table) {
+    // 1. PRIMARY KEY — always first
+    $table->id();
+
+    // 2. FOREIGN KEYS — early definition
+    $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
+    $table->foreignId('brand_id')->nullable()->constrained('brands')->nullOnDelete();
+    $table->foreignId('created_by')->constrained('users');
+
+    // 3. MAIN DATA COLUMNS
+    $table->string('name', 255);
+    $table->string('slug', 255)->unique();
+    $table->string('sku', 50)->unique();
+    $table->mediumText('description')->nullable();
+    $table->decimal('price', 10, 2);
+    $table->decimal('sale_price', 10, 2)->nullable();
+    $table->unsignedInteger('stock')->default(0);
+
+    // 4. STATUS / FLAG COLUMNS
+    $table->string('status', 20)->default('draft')->index(); // PHP Enum ke sath
+    $table->boolean('is_featured')->default(false)->index();
+
+    // 5. JSON / FLEXIBLE DATA
+    $table->json('attributes')->nullable();    // Color, size, etc.
+    $table->json('seo_meta')->nullable();      // SEO fields
+
+    // 6. TIMESTAMPS — always last
+    $table->timestamps();
+    $table->softDeletes();
+
+    // 7. COMPOSITE INDEXES (after all columns defined)
+    $table->index(['category_id', 'status']);           // Category listing page
+    $table->index(['is_featured', 'status', 'price']);  // Featured products sorted by price
+});
+```
+
+---
+
+#### Summary — Data Types Master Checklist For 3-Year Dev
+
+1. **`foreignId()->constrained()`** use karo — automatic unsignedBigInteger + FK + index teeno ek line mein.
+2. **Money = `decimal(10, 2)` ALWAYS** — Float kabhi nahi billing ke liye.
+3. **`enum` se bachke rehna** — PHP 8.1 Backed Enums + `string` column = flexible aur safe.
+4. **`timestamps()` range 2038 tak hai** — Long-term apps mein `dateTime()` prefer karo.
+5. **Text column pe direct index nahi banta** — Prefix index ya Generated Column use karo.
+6. **`foreignId()` ek shortcut hai** — `unsignedBigInteger` + `foreign()` + `index()` automatically.
+
+</textarea>
+
+    <script>
+        // 1. Render Markdown Content
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // 2. Schema Design Pipeline Stepper
+        const schSteps = [
+            {
+                title: 'Step 1: Requirements Gather Karo',
+                level: 'Planning',
+                desc: 'Feature requirements clearly list karo. "Orders" feature ke liye: user order karta hai, multiple products select karta hai, payment karta hai, delivery address deta hai, status track karta hai. Har entity aur relationship identify karo pehle.',
+                code: '// Requirements Analysis:\n// Orders Feature:\n// - Customer (User) -> multiple Orders (1:N)\n// - Order -> multiple Products (N:M via order_items)\n// - Order -> 1 Shipping Address (1:1 ya embedded JSON)\n// - Order -> multiple Status History records (1:N)\n// - Order -> 1 Payment record (1:1)'
+            },
+            {
+                title: 'Step 2: Entities aur Relationships Map Karo',
+                level: 'ER Design',
+                desc: 'Entities se tables banao. Relationships se foreign keys aur pivot tables banao. M:N relationships ke liye pivot table zaroori hai. Denormalization kab karein — address ko JSON mein embed karna better hai copy karne ke liye.',
+                code: '// Tables needed:\n// orders         -> id, user_id (FK), status, total, address JSON, timestamps\n// order_items     -> id, order_id (FK), product_id (FK), qty, unit_price, total\n// order_statuses  -> id, order_id (FK), status, note, created_by (FK), created_at'
+            },
+            {
+                title: 'Step 3: Har Column Ka Type Choose Karo',
+                level: 'Data Types',
+                desc: 'Har column ke liye sahi MySQL data type choose karo. Money columns ke liye DECIMAL, status ke liye string, address ke liye JSON, timestamps ke liye carbon-compatible types.',
+                code: '// Column Type Decisions:\n// id -> BIGINT UNSIGNED (id() method)\n// user_id -> BIGINT UNSIGNED FK (foreignId method)\n// status -> VARCHAR(20) with PHP Enum (NOT MySQL enum!)\n// total_amount -> DECIMAL(10,2) (NOT float!)\n// address -> JSON (embedded — denormalized for order history)'
+            },
+            {
+                title: 'Step 4: Constraints Add Karo',
+                level: 'Data Integrity',
+                desc: 'Database level constraints ensure karte hain ki galat data insert na ho, chahe application code buggy ho. Foreign keys cascades, unique constraints, NOT NULL, default values — yeh sab data integrity maintain karte hain.',
+                code: '// Constraints:\n$table->foreignId("user_id")->constrained()->restrictOnDelete();\n// restrictOnDelete = user delete nahi ho sakta agar orders hain\n\n$table->decimal("total_amount", 10, 2);\n// NOT NULL by default = total hamesha hona chahiye\n\n$table->string("order_number", 20)->unique();\n// Unique order number for customer reference'
+            },
+            {
+                title: 'Step 5: Index Strategy Plan Karo',
+                level: 'Performance',
+                desc: 'Common query patterns ke mutabiq indexes plan karo. user_id pe index zaroor hoga (user ke orders dekhne ke liye). Status + created_at composite index admin dashboard ke liye. Har foreign key automatically indexed hoti hai foreignId() se.',
+                code: '// Index Planning:\n// user_id -> auto-indexed via foreignId()\n// status -> single column index (common filter)\n// [status, created_at] -> composite (admin date filter)\n// order_number -> unique index already\n\n// Verify karo kaunsi queries common hongi:\n// 1. User ke saare orders (user_id)\n// 2. Admin pending orders (status, created_at)\n// 3. Order by number (order_number)'
+            },
+            {
+                title: 'Step 6: Migration Run Karo aur Verify Karo',
+                level: 'Deployment',
+                desc: 'php artisan migrate chalaao. Phir Tinker mein SHOW CREATE TABLE se actual MySQL schema verify karo. Confirm karo ki indexes sahi lage hain, foreign keys sahi hain, aur column types expected hain.',
+                code: '// Verify migration result in Tinker:\nDB::select("SHOW CREATE TABLE orders");\n// Check: Engine=InnoDB, charset=utf8mb4\n// Check: FOREIGN KEY constraints present\n// Check: INDEX on user_id, status\n\n// Show all indexes:\nDB::select("SHOW INDEX FROM orders");'
+            }
+        ];
+
+        function showSchStep(index) {
+            const chips = document.querySelectorAll('#schNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+            const step = schSteps[index];
+            const contentBox = document.getElementById('schContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showSchStep(0);
+
+        function switchSchTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

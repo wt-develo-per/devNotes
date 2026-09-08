@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core PHP - REST APIs, HTTP, Routing & PSR Standards</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="03_Core_PHP_Database_and_Security.html" class="nav-btn">&larr; Previous: Database & Security</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="05_Core_PHP_Testing_and_Best_Practices.html" class="nav-btn">Next: Testing & Best Practices &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: REST API Request-Response Lifecycle Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive REST API Request-Response Architecture Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Follow an incoming HTTP request step-by-step through a production-ready Core PHP API engine without frameworks:
+        </p>
+
+        <div class="stepper-nav" id="apiNav">
+            <button class="step-chip active" onclick="showApiStep(0)">1. Ingestion & Method</button>
+            <button class="step-chip" onclick="showApiStep(1)">2. Regex Route Matching</button>
+            <button class="step-chip" onclick="showApiStep(2)">3. Middleware Pipeline (Onion)</button>
+            <button class="step-chip" onclick="showApiStep(3)">4. Controller & Action Handler</button>
+            <button class="step-chip" onclick="showApiStep(4)">5. Response Envelope & Status</button>
+            <button class="step-chip" onclick="showApiStep(5)">6. Global Exception Handler</button>
+        </div>
+
+        <div class="step-content-box" id="apiContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Core PHP Architecture & Standards Deep-Dive Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchApiTab(event, 'atab-router')">🚀 1. Custom Router & Regex Param Dispatch</button>
+            <button class="tab-btn" onclick="switchApiTab(event, 'atab-jwt')">🔐 2. Native JWT Generator & Verifier</button>
+            <button class="tab-btn" onclick="switchApiTab(event, 'atab-psr')">📐 3. PSR Standards Master Matrix (PSR-4, 7, 15)</button>
+            <button class="tab-btn" onclick="switchApiTab(event, 'atab-composer')">📦 4. Composer Autoloading & Classmap Optimization</button>
+        </div>
+
+        <div id="atab-router" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Custom Regex Router: Dynamic parameter extraction (<code>/api/v1/users/{id}</code>) and HTTP method dispatching.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+namespace App\Core;
+
+class Router
+{
+    private array $routes = [];
+
+    public function get(string $path, array|callable $handler, array $middlewares = []): void
+    {
+        $this->addRoute('GET', $path, $handler, $middlewares);
+    }
+
+    public function post(string $path, array|callable $handler, array $middlewares = []): void
+    {
+        $this->addRoute('POST', $path, $handler, $middlewares);
+    }
+
+    public function addRoute(string $method, string $path, array|callable $handler, array $middlewares): void
+    {
+        // Convert route pattern /users/{id} to regex #^/users/(?P&lt;id&gt;[^/]+)$#
+        $pattern = preg_replace('#\{([a-zA-Z0-9_]+)\}#', '(?P&lt;$1&gt;[^/]+)', $path);
+        $regex = '#^' . $pattern . '$#';
+
+        $this->routes[] = [
+            'method'      =&gt; strtoupper($method),
+            'pattern'     =&gt; $path,
+            'regex'       =&gt; $regex,
+            'handler'     =&gt; $handler,
+            'middlewares' =&gt; $middlewares,
+        ];
+    }
+
+    public function dispatch(string $requestMethod, string $requestUri): void
+    {
+        $path = parse_url($requestUri, PHP_URL_PATH) ?? '/';
+
+        foreach ($this->routes as $route) {
+            if ($route['method'] !== $requestMethod) {
+                continue;
+            }
+
+            if (preg_match($route['regex'], $path, $matches)) {
+                // Filter named captures from regex matches
+                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+
+                // Run Middleware Pipeline
+                foreach ($route['middlewares'] as $middlewareClass) {
+                    $middleware = new $middlewareClass();
+                    $middleware->handle(); // Throws exception if unauthorized
+                }
+
+                // Execute Controller Handler
+                if (is_array($route['handler'])) {
+                    [$class, $method] = $route['handler'];
+                    $controller = new $class();
+                    $response = $controller-&gt;{$method}($params);
+                } else {
+                    $response = call_user_func($route['handler'], $params);
+                }
+
+                Response::json($response);
+                return;
+            }
+        }
+
+        Response::json(['error' =&gt; 'Route Not Found', 'path' =&gt; $path], 404);
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="atab-jwt" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">JWT Authentication from Scratch: Pure PHP implementation without external dependencies.</p>
+            <pre><code class="language-php">&lt;?php
+declare(strict_types=1);
+
+namespace App\Core;
+
+class SimpleJWT
+{
+    private static function base64UrlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    private static function base64UrlDecode(string $data): string
+    {
+        return base64_decode(strtr($data, '-_', '+/'));
+    }
+
+    public static function encode(array $payload, string $secret, int $expirySeconds = 3600): string
+    {
+        $header = ['typ' =&gt; 'JWT', 'alg' =&gt; 'HS256'];
+        $payload['iat'] = time();
+        $payload['exp'] = time() + $expirySeconds;
+
+        $encodedHeader  = self::base64UrlEncode(json_encode($header, JSON_THROW_ON_ERROR));
+        $encodedPayload = self::base64UrlEncode(json_encode($payload, JSON_THROW_ON_ERROR));
+
+        $signature = hash_hmac('sha256', "{$encodedHeader}.{$encodedPayload}", $secret, true);
+        $encodedSignature = self::base64UrlEncode($signature);
+
+        return "{$encodedHeader}.{$encodedPayload}.{$encodedSignature}";
+    }
+
+    public static function decode(string $token, string $secret): array
+    {
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            throw new \InvalidArgumentException('Malformed JWT token structure.');
+        }
+
+        [$encodedHeader, $encodedPayload, $encodedSignature] = $parts;
+
+        // Verify HMAC-SHA256 signature in constant time
+        $expectedSignature = self::base64UrlEncode(
+            hash_hmac('sha256', "{$encodedHeader}.{$encodedPayload}", $secret, true)
+        );
+
+        if (!hash_equals($expectedSignature, $encodedSignature)) {
+            throw new \RuntimeException('Invalid JWT signature.');
+        }
+
+        $payload = json_decode(self::base64UrlDecode($encodedPayload), true, 512, JSON_THROW_ON_ERROR);
+
+        if (isset($payload['exp']) && $payload['exp'] &lt; time()) {
+            throw new \RuntimeException('JWT token has expired.');
+        }
+
+        return $payload;
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="atab-psr" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">PHP Standards Recommendations (FIG): The standards that unite modern PHP frameworks.</p>
+            <pre><code class="language-php">&lt;?php
+/**
+ * Modern PHP Standards Reference (PHP FIG):
+ * -----------------------------------------------------------------------------
+ * PSR-1  : Basic Coding Standard (tags, encoding, namespaces, class &amp; method naming)
+ * PSR-4  : Autoloading Standard (maps namespaces directly to file system directories)
+ *          e.g. App\\Controllers\\UserController =&gt; src/Controllers/UserController.php
+ * PSR-7  : HTTP Message Interfaces (ServerRequestInterface, ResponseInterface, UriInterface)
+ *          Immutable value objects representing HTTP requests and responses.
+ * PSR-11 : Container Interface (ContainerInterface::get(), ContainerInterface::has())
+ *          Unified contract for Dependency Injection Containers used in Laravel &amp; Symfony.
+ * PSR-12 : Extended Coding Style Guide (standardized formatting, strict type placement, braces)
+ * PSR-15 : HTTP Server Request Handlers &amp; Middleware (MiddlewareInterface::process())
+ * -----------------------------------------------------------------------------
+ */
+
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+// Example PSR-15 Compliant Middleware
+class AuthMiddleware implements MiddlewareInterface
+{
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        $authHeader = $request-&gt;getHeaderLine('Authorization');
+        if (empty($authHeader) || !str_starts_with($authHeader, 'Bearer ')) {
+            // Return 401 Unauthorized PSR-7 Response
+            return new \Nyholm\Psr7\Response(401, ['Content-Type' =&gt; 'application/json'], json_encode(['error' =&gt; 'Unauthorized']));
+        }
+
+        // Delegate to next middleware / controller in the pipeline
+        return $handler-&gt;handle($request);
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="atab-composer" class="tab-panel">
+            <p style="color:#B45309; font-weight:600;">Composer Production Optimization: Classmaps, Dev/Prod flags &amp; memory tuning.</p>
+            <pre><code class="language-json">{
+    "name": "enterprise/core-php-api",
+    "description": "Production REST API built with modern Core PHP",
+    "type": "project",
+    "require": {
+        "php": "^8.2",
+        "vlucas/phpdotenv": "^5.5",
+        "psr/http-message": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "scripts": {
+        "optimize": [
+            "composer dump-autoload --optimize --classmap-authoritative --no-dev"
+        ]
+    }
+}</code></pre>
+            <div style="margin-top:10px; background:#f8fafc; border-left:4px solid #F59E0B; padding:10px 14px; font-size:0.9rem; color:#334155;">
+                <strong>⚡ Production Performance Tip:</strong> Running <code>composer dump-autoload -o -a --no-dev</code> pre-computes an associative array of all class-to-file locations. This achieves <strong>O(1) instant lookup time</strong> and prevents filesystem disk scans on every single web request.
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="03_Core_PHP_Database_and_Security.html" class="nav-btn">&larr; Previous: Database & Security</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="05_Core_PHP_Testing_and_Best_Practices.html" class="nav-btn">Next: Testing & Best Practices &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+
+### Core PHP — REST APIs, HTTP, Routing & PSR Standards
+
+Building APIs in raw PHP — without any framework — is the ultimate test of understanding. When you can build a fully functional JSON REST API with routing, middleware, authentication, and error handling from scratch, you will understand exactly what Laravel does for you and *why* it does it. This is senior-level PHP knowledge.
+
+> **20 YOE Expert Tip:** Laravel, Slim, aur Symfony sab under the hood same PHP HTTP concepts use karte hain. Jo developer pure PHP API bana sakta hai, woh Laravel mein kabhi blindly code nahi karta — woh *samajh* ke code karta hai.
+
+---
+
+#### 1. HTTP Fundamentals in PHP
+
+##### 1.1 Reading the Incoming Request
+
+```php
+<?php
+
+// HTTP Method
+$method = $_SERVER['REQUEST_METHOD'];  // GET, POST, PUT, PATCH, DELETE, OPTIONS
+
+// Request URI and path
+$uri     = $_SERVER['REQUEST_URI'];     // /api/users?page=2&sort=name
+$path    = parse_url($uri, PHP_URL_PATH); // /api/users
+$query   = parse_url($uri, PHP_URL_QUERY); // page=2&sort=name
+
+// Query parameters ($_GET — works for any method, not just GET)
+$page = (int)($_GET['page'] ?? 1);
+$sort = $_GET['sort'] ?? 'id';
+
+// Request headers — PHP adds HTTP_ prefix and uppercases them
+$accept      = $_SERVER['HTTP_ACCEPT']        ?? 'application/json';
+$contentType = $_SERVER['CONTENT_TYPE']       ?? '';
+$authHeader  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+$userAgent   = $_SERVER['HTTP_USER_AGENT']    ?? '';
+
+// Extract Bearer token from Authorization header
+$bearerToken = null;
+if (str_starts_with($authHeader, 'Bearer ')) {
+    $bearerToken = substr($authHeader, 7);
+}
+
+// Reading raw request body (for PUT, PATCH, JSON POST)
+$rawBody = file_get_contents('php://input');
+$body    = json_decode($rawBody, true);  // Decode JSON body to associative array
+
+// Validate JSON was valid
+if ($rawBody !== '' && $body === null) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid JSON body']);
+    exit;
+}
+
+// Client IP (consider proxies/load balancers)
+function getClientIp(): string {
+    $keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];
+    foreach ($keys as $key) {
+        if (!empty($_SERVER[$key])) {
+            // X-Forwarded-For can have multiple IPs: "203.0.113.0, 70.41.3.18"
+            return trim(explode(',', $_SERVER[$key])[0]);
+        }
+    }
+    return '0.0.0.0';
+}
+?>
+```
+
+##### 1.2 Sending the HTTP Response
+
+```php
+<?php
+
+// Setting HTTP status code
+http_response_code(200);  // OK
+http_response_code(201);  // Created
+http_response_code(400);  // Bad Request
+http_response_code(401);  // Unauthorized
+http_response_code(403);  // Forbidden
+http_response_code(404);  // Not Found
+http_response_code(409);  // Conflict
+http_response_code(422);  // Unprocessable Entity (validation failure)
+http_response_code(429);  // Too Many Requests
+http_response_code(500);  // Internal Server Error
+
+// Setting headers
+header('Content-Type: application/json; charset=utf-8');
+header('X-Request-Id: ' . bin2hex(random_bytes(8)));
+header('Cache-Control: no-cache, no-store, must-revalidate');
+
+// Redirect
+header('Location: /api/users', true, 302);
+exit;
+
+// Reusable JSON response helper
+function jsonResponse(mixed $data, int $status = 200, array $headers = []): never {
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
+
+    foreach ($headers as $name => $value) {
+        header("$name: $value");
+    }
+
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// Success responses
+function ok(mixed $data, string $message = 'Success'): never {
+    jsonResponse(['success' => true, 'message' => $message, 'data' => $data], 200);
+}
+
+function created(mixed $data, string $message = 'Created'): never {
+    jsonResponse(['success' => true, 'message' => $message, 'data' => $data], 201);
+}
+
+// Error responses
+function errorResponse(string $message, int $status = 400, array $errors = []): never {
+    $body = ['success' => false, 'message' => $message];
+    if (!empty($errors)) $body['errors'] = $errors;
+    jsonResponse($body, $status);
+}
+
+function notFound(string $message = 'Resource not found'): never {
+    errorResponse($message, 404);
+}
+
+function unauthorized(string $message = 'Authentication required'): never {
+    errorResponse($message, 401);
+}
+
+function forbidden(string $message = 'Access denied'): never {
+    errorResponse($message, 403);
+}
+
+function validationError(array $errors): never {
+    errorResponse('Validation failed.', 422, $errors);
+}
+?>
+```
+
+---
+
+#### 2. Building a Router from Scratch
+
+```php
+<?php
+
+class Router {
+    private array $routes   = [];
+    private array $middleware = [];
+    private string $prefix  = '';
+
+    // Register a route
+    public function addRoute(string $method, string $path, callable $handler, array $middleware = []): void {
+        $this->routes[] = [
+            'method'     => strtoupper($method),
+            'pattern'    => $this->pathToRegex($path),
+            'handler'    => $handler,
+            'middleware' => array_merge($this->middleware, $middleware),
+            'path'       => $path,
+        ];
+    }
+
+    // Shorthand methods
+    public function get(string $path, callable $handler, array $middleware = []): void {
+        $this->addRoute('GET', $this->prefix . $path, $handler, $middleware);
+    }
+
+    public function post(string $path, callable $handler, array $middleware = []): void {
+        $this->addRoute('POST', $this->prefix . $path, $handler, $middleware);
+    }
+
+    public function put(string $path, callable $handler, array $middleware = []): void {
+        $this->addRoute('PUT', $this->prefix . $path, $handler, $middleware);
+    }
+
+    public function patch(string $path, callable $handler, array $middleware = []): void {
+        $this->addRoute('PATCH', $this->prefix . $path, $handler, $middleware);
+    }
+
+    public function delete(string $path, callable $handler, array $middleware = []): void {
+        $this->addRoute('DELETE', $this->prefix . $path, $handler, $middleware);
+    }
+
+    // Route grouping with shared prefix and middleware
+    public function group(string $prefix, array $middleware, callable $callback): void {
+        $previousPrefix     = $this->prefix;
+        $previousMiddleware = $this->middleware;
+
+        $this->prefix     = $previousPrefix . $prefix;
+        $this->middleware = array_merge($this->middleware, $middleware);
+
+        $callback($this);
+
+        $this->prefix     = $previousPrefix;
+        $this->middleware = $previousMiddleware;
+    }
+
+    // Convert path like /users/{id} to a regex pattern
+    private function pathToRegex(string $path): string {
+        // {id} → (?P<id>[^/]+)  |  {id:\d+} → (?P<id>\d+)
+        $pattern = preg_replace('/\{(\w+)(?::([^}]+))?\}/', '(?P<$1>${2:-[^/]+})', $path);
+        $pattern = str_replace('${2:-[^/]+}', '[^/]+', $pattern);
+        // Re-do properly:
+        $pattern = preg_replace_callback(
+            '/\{(\w+)(?::([^}]+))?\}/',
+            fn($m) => '(?P<' . $m[1] . '>' . ($m[2] ?? '[^/]+') . ')',
+            $path
+        );
+        return '#^' . $pattern . '$#';
+    }
+
+    // Dispatch the current request
+    public function dispatch(): void {
+        $method = $_SERVER['REQUEST_METHOD'];
+        $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $uri    = '/' . trim($uri, '/');  // Normalize: /api/users
+
+        // Handle CORS preflight
+        if ($method === 'OPTIONS') {
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+            http_response_code(204);
+            exit;
+        }
+
+        foreach ($this->routes as $route) {
+            if ($route['method'] !== $method && $route['method'] !== 'ANY') continue;
+
+            if (preg_match($route['pattern'], $uri, $matches)) {
+                // Extract named route parameters
+                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+
+                // Build middleware pipeline and execute
+                $this->runMiddlewarePipeline(
+                    $route['middleware'],
+                    fn() => ($route['handler'])($params)
+                );
+                return;
+            }
+        }
+
+        // No route matched
+        jsonResponse(['success' => false, 'message' => "Route not found: $method $uri"], 404);
+    }
+
+    private function runMiddlewarePipeline(array $middlewareStack, callable $final): void {
+        $pipeline = array_reverse($middlewareStack);
+        $next     = $final;
+
+        foreach ($pipeline as $middlewareClass) {
+            $middleware = new $middlewareClass();
+            $currentNext = $next;
+            $next = fn() => $middleware->handle($currentNext);
+        }
+
+        $next();
+    }
+}
+?>
+```
+
+---
+
+#### 3. Middleware Pipeline
+
+```php
+<?php
+
+interface MiddlewareInterface {
+    public function handle(callable $next): void;
+}
+
+// Auth Middleware — validates JWT Bearer token
+class AuthMiddleware implements MiddlewareInterface {
+    public function handle(callable $next): void {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+
+        if (!str_starts_with($authHeader, 'Bearer ')) {
+            unauthorized('No bearer token provided.');
+        }
+
+        $token = substr($authHeader, 7);
+
+        try {
+            $payload = JwtService::verify($token);
+            // Store user info for downstream handlers
+            $GLOBALS['auth_user'] = $payload;
+        } catch (\RuntimeException $e) {
+            unauthorized('Invalid or expired token.');
+        }
+
+        $next();
+    }
+}
+
+// Admin Middleware — checks role after Auth
+class AdminMiddleware implements MiddlewareInterface {
+    public function handle(callable $next): void {
+        $user = $GLOBALS['auth_user'] ?? null;
+
+        if (!$user || $user['role'] !== 'admin') {
+            forbidden('Admin access required.');
+        }
+
+        $next();
+    }
+}
+
+// Rate Limiting Middleware
+class RateLimitMiddleware implements MiddlewareInterface {
+    private int $maxRequests;
+    private int $windowSeconds;
+
+    public function __construct(int $maxRequests = 60, int $windowSeconds = 60) {
+        $this->maxRequests   = $maxRequests;
+        $this->windowSeconds = $windowSeconds;
+    }
+
+    public function handle(callable $next): void {
+        $ip  = getClientIp();
+        $key = 'rate_limit:' . $ip . ':' . floor(time() / $this->windowSeconds);
+
+        // In production, use Redis for this
+        // Simple file-based implementation for demo
+        $cacheFile  = sys_get_temp_dir() . '/rate_' . md5($key) . '.json';
+        $data       = file_exists($cacheFile) ? json_decode(file_get_contents($cacheFile), true) : ['count' => 0, 'expires' => time() + $this->windowSeconds];
+
+        if (time() > $data['expires']) {
+            $data = ['count' => 0, 'expires' => time() + $this->windowSeconds];
+        }
+
+        $data['count']++;
+        file_put_contents($cacheFile, json_encode($data));
+
+        // Set rate limit headers
+        header('X-RateLimit-Limit: ' . $this->maxRequests);
+        header('X-RateLimit-Remaining: ' . max(0, $this->maxRequests - $data['count']));
+        header('X-RateLimit-Reset: ' . $data['expires']);
+
+        if ($data['count'] > $this->maxRequests) {
+            http_response_code(429);
+            jsonResponse(['success' => false, 'message' => 'Too many requests. Try again later.'], 429);
+        }
+
+        $next();
+    }
+}
+
+// JSON Body Middleware — parses and validates JSON input
+class JsonBodyMiddleware implements MiddlewareInterface {
+    public function handle(callable $next): void {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        $method      = $_SERVER['REQUEST_METHOD'];
+
+        if (in_array($method, ['POST', 'PUT', 'PATCH']) && str_contains($contentType, 'application/json')) {
+            $raw = file_get_contents('php://input');
+
+            if (!empty($raw)) {
+                $decoded = json_decode($raw, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    errorResponse('Invalid JSON: ' . json_last_error_msg(), 400);
+                }
+                $GLOBALS['request_body'] = $decoded;
+            }
+        }
+
+        $next();
+    }
+}
+?>
+```
+
+---
+
+#### 4. JWT Authentication — From Scratch
+
+```php
+<?php
+
+class JwtService {
+    private static string $algorithm = 'HS256';
+
+    // Sign and create a JWT token
+    public static function encode(array $payload, int $expiresInSeconds = 900): string {
+        $secret = $_ENV['JWT_SECRET'] ?? throw new \RuntimeException('JWT_SECRET not set!');
+
+        $header = ['alg' => self::$algorithm, 'typ' => 'JWT'];
+
+        $payload['iat'] = time();                          // Issued at
+        $payload['exp'] = time() + $expiresInSeconds;      // Expiry
+        $payload['jti'] = bin2hex(random_bytes(8));        // Unique token ID
+
+        $base64Header  = self::base64UrlEncode(json_encode($header));
+        $base64Payload = self::base64UrlEncode(json_encode($payload));
+
+        $signature = hash_hmac('sha256', "$base64Header.$base64Payload", $secret, true);
+        $base64Sig = self::base64UrlEncode($signature);
+
+        return "$base64Header.$base64Payload.$base64Sig";
+    }
+
+    // Verify and decode a JWT token
+    public static function verify(string $token): array {
+        $secret = $_ENV['JWT_SECRET'] ?? throw new \RuntimeException('JWT_SECRET not set!');
+
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            throw new \RuntimeException('Invalid token structure.');
+        }
+
+        [$base64Header, $base64Payload, $base64Sig] = $parts;
+
+        // Verify signature — timing-safe comparison!
+        $expectedSig = self::base64UrlEncode(
+            hash_hmac('sha256', "$base64Header.$base64Payload", $secret, true)
+        );
+
+        if (!hash_equals($expectedSig, $base64Sig)) {
+            throw new \RuntimeException('Invalid token signature.');
+        }
+
+        $payload = json_decode(self::base64UrlDecode($base64Payload), true);
+
+        // Check expiry
+        if (!isset($payload['exp']) || $payload['exp'] < time()) {
+            throw new \RuntimeException('Token has expired.');
+        }
+
+        return $payload;
+    }
+
+    private static function base64UrlEncode(string $data): string {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    private static function base64UrlDecode(string $data): string {
+        return base64_decode(strtr($data, '-_', '+/') . str_repeat('=', 3 - (3 + strlen($data)) % 4));
+    }
+}
+
+// Refresh Token Service — stores in database
+class TokenService {
+    public function __construct(private PDO $pdo) {}
+
+    public function issueTokenPair(array $user): array {
+        // Access token — short lived (15 minutes)
+        $accessToken = JwtService::encode([
+            'sub'   => $user['id'],
+            'email' => $user['email'],
+            'role'  => $user['role'],
+        ], 900);
+
+        // Refresh token — long lived (7 days), stored in DB for rotation
+        $refreshToken = bin2hex(random_bytes(64));
+        $hashedRefresh = hash('sha256', $refreshToken);  // Store only the hash!
+
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, created_at)
+             VALUES (:user_id, :hash, DATE_ADD(NOW(), INTERVAL 7 DAY), NOW())"
+        );
+        $stmt->execute([':user_id' => $user['id'], ':hash' => $hashedRefresh]);
+
+        return [
+            'access_token'  => $accessToken,
+            'refresh_token' => $refreshToken,  // Send the raw token to client
+            'token_type'    => 'Bearer',
+            'expires_in'    => 900,
+        ];
+    }
+
+    public function rotateRefreshToken(string $rawRefreshToken): array {
+        $hash = hash('sha256', $rawRefreshToken);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT rt.*, u.email, u.role FROM refresh_tokens rt
+             JOIN users u ON rt.user_id = u.id
+             WHERE rt.token_hash = :hash AND rt.expires_at > NOW() AND rt.revoked_at IS NULL"
+        );
+        $stmt->execute([':hash' => $hash]);
+        $record = $stmt->fetch();
+
+        if (!$record) {
+            // Token reuse detected — revoke ALL tokens for this user (theft detection)
+            if ($record === false) {
+                // Try to find user from a possibly revoked token
+                $oldStmt = $this->pdo->prepare(
+                    "SELECT user_id FROM refresh_tokens WHERE token_hash = :hash LIMIT 1"
+                );
+                $oldStmt->execute([':hash' => $hash]);
+                $old = $oldStmt->fetch();
+                if ($old) {
+                    $this->revokeAllUserTokens($old['user_id']);
+                }
+            }
+            throw new \RuntimeException('Invalid or expired refresh token.');
+        }
+
+        // Revoke the used token (rotation)
+        $this->pdo->prepare("UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = :hash")
+                  ->execute([':hash' => $hash]);
+
+        // Issue a new token pair
+        return $this->issueTokenPair([
+            'id'    => $record['user_id'],
+            'email' => $record['email'],
+            'role'  => $record['role'],
+        ]);
+    }
+
+    public function revokeAllUserTokens(int $userId): void {
+        $this->pdo->prepare("UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = :id AND revoked_at IS NULL")
+                  ->execute([':id' => $userId]);
+    }
+}
+?>
+```
+
+---
+
+#### 5. Complete REST API — Putting It All Together
+
+```php
+<?php
+// public/index.php — Entry point for the entire API
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
+// Global error handler — catch ALL uncaught exceptions
+set_exception_handler(function(\Throwable $e) {
+    $isDebug = filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $response = ['success' => false, 'message' => 'Internal Server Error'];
+
+    if ($isDebug) {
+        $response['debug'] = [
+            'exception' => get_class($e),
+            'message'   => $e->getMessage(),
+            'file'      => $e->getFile(),
+            'line'      => $e->getLine(),
+        ];
+    }
+
+    error_log($e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    jsonResponse($response, 500);
+});
+
+// Global CORS headers
+header('Access-Control-Allow-Origin: ' . ($_ENV['ALLOWED_ORIGIN'] ?? '*'));
+header('Access-Control-Allow-Credentials: true');
+
+$pdo         = Database::getConnection();
+$userRepo    = new UserRepository($pdo);
+$tokenService = new TokenService($pdo);
+$router      = new Router();
+
+// ─── Public Routes (No Auth Required) ───────────────────────────────────────
+
+$router->post('/api/auth/register', function() use ($userRepo, $tokenService) {
+    $body = $GLOBALS['request_body'] ?? [];
+
+    // Validate
+    $errors = [];
+    if (empty($body['name']))                                    $errors['name'][]     = 'Name is required.';
+    if (empty($body['email']))                                   $errors['email'][]    = 'Email is required.';
+    if (!filter_var($body['email'] ?? '', FILTER_VALIDATE_EMAIL)) $errors['email'][]  = 'Invalid email format.';
+    if (strlen($body['password'] ?? '') < 8)                    $errors['password'][] = 'Min 8 characters.';
+
+    if (!empty($errors)) validationError($errors);
+
+    // Check duplicate email
+    if ($userRepo->findByEmail($body['email'])) {
+        errorResponse('Email already registered.', 409);
+    }
+
+    $userId = $userRepo->create($body);
+    $user   = $userRepo->findById($userId);
+    $tokens = $tokenService->issueTokenPair($user);
+
+    created(['user' => $user, 'tokens' => $tokens], 'Registration successful!');
+}, [JsonBodyMiddleware::class]);
+
+$router->post('/api/auth/login', function() use ($pdo, $userRepo, $tokenService) {
+    $body  = $GLOBALS['request_body'] ?? [];
+    $email = $body['email']    ?? '';
+    $pass  = $body['password'] ?? '';
+
+    $user = loginUser($pdo, $email, $pass);
+    if (!$user) {
+        errorResponse('Invalid credentials.', 401);
+    }
+
+    $tokens = $tokenService->issueTokenPair($user);
+    ok(['user' => $user, 'tokens' => $tokens], 'Login successful!');
+}, [JsonBodyMiddleware::class]);
+
+$router->post('/api/auth/refresh', function() use ($tokenService) {
+    $body         = $GLOBALS['request_body'] ?? [];
+    $refreshToken = $body['refresh_token'] ?? '';
+
+    if (empty($refreshToken)) errorResponse('Refresh token required.', 400);
+
+    try {
+        $tokens = $tokenService->rotateRefreshToken($refreshToken);
+        ok($tokens, 'Tokens refreshed.');
+    } catch (\RuntimeException $e) {
+        unauthorized($e->getMessage());
+    }
+}, [JsonBodyMiddleware::class]);
+
+// ─── Protected Routes (Auth Required) ────────────────────────────────────────
+
+$router->group('/api', [AuthMiddleware::class, RateLimitMiddleware::class], function(Router $r) use ($userRepo, $tokenService) {
+
+    $r->get('/users/me', function() {
+        ok($GLOBALS['auth_user'], 'Profile fetched.');
+    });
+
+    $r->put('/users/me', function() use ($userRepo) {
+        $userId = $GLOBALS['auth_user']['sub'];
+        $body   = $GLOBALS['request_body'] ?? [];
+        $updated = $userRepo->update($userId, $body);
+        ok($userRepo->findById($userId), 'Profile updated.');
+    }, [JsonBodyMiddleware::class]);
+
+    $r->post('/auth/logout', function() use ($tokenService) {
+        $userId = $GLOBALS['auth_user']['sub'];
+        $tokenService->revokeAllUserTokens($userId);
+        ok(null, 'Logged out from all devices.');
+    });
+
+    // ─── Admin Only Routes ───────────────────────────────────────────────────
+    $r->group('/admin', [AdminMiddleware::class], function(Router $r) use ($userRepo) {
+
+        $r->get('/users', function() use ($userRepo) {
+            $page    = (int)($_GET['page'] ?? 1);
+            $perPage = min((int)($_GET['per_page'] ?? 15), 100);  // Max 100 per page
+            $role    = $_GET['role'] ?? '%';
+            ok($userRepo->paginate($page, $perPage, $role));
+        });
+
+        $r->get('/users/{id:\d+}', function(array $params) use ($userRepo) {
+            $user = $userRepo->findById((int)$params['id']);
+            if (!$user) notFound("User #{$params['id']} not found.");
+            ok($user);
+        });
+
+        $r->delete('/users/{id:\d+}', function(array $params) use ($userRepo) {
+            $deleted = $userRepo->softDelete((int)$params['id']);
+            if (!$deleted) notFound("User #{$params['id']} not found.");
+            ok(null, "User #{$params['id']} deleted.");
+        });
+    });
+});
+
+// Dispatch the request
+$router->dispatch();
+?>
+```
+
+---
+
+#### 6. Guzzle HTTP Client — Making External API Calls
+
+```php
+<?php
+// composer require guzzlehttp/guzzle
+
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ConnectException;
+
+class HttpClient {
+    private Client $client;
+
+    public function __construct(string $baseUrl = '', int $timeoutSeconds = 10) {
+        $this->client = new Client([
+            'base_uri'        => $baseUrl,
+            'timeout'         => $timeoutSeconds,
+            'connect_timeout' => 5,
+            'headers'         => [
+                'Accept'     => 'application/json',
+                'User-Agent' => 'MyApp/1.0',
+            ],
+        ]);
+    }
+
+    // GET request
+    public function get(string $url, array $queryParams = [], array $headers = []): array {
+        try {
+            $response = $this->client->get($url, [
+                'query'   => $queryParams,
+                'headers' => $headers,
+            ]);
+
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (ConnectException $e) {
+            throw new \RuntimeException("Connection failed: " . $e->getMessage());
+        } catch (RequestException $e) {
+            $statusCode = $e->getResponse()?->getStatusCode() ?? 500;
+            $body       = $e->getResponse()?->getBody()->getContents() ?? '';
+            throw new \RuntimeException("HTTP $statusCode: $body");
+        }
+    }
+
+    // POST JSON
+    public function post(string $url, array $data, array $headers = []): array {
+        $response = $this->client->post($url, [
+            'json'    => $data,
+            'headers' => $headers,
+        ]);
+        return json_decode($response->getBody()->getContents(), true);
+    }
+
+    // Authenticated request with Bearer token
+    public function withToken(string $token): static {
+        $new = clone $this;
+        $new->client = new Client([
+            'base_uri' => $this->client->getConfig('base_uri'),
+            'headers'  => ['Authorization' => "Bearer $token"],
+        ]);
+        return $new;
+    }
+}
+
+// Real-world example: calling a payment gateway
+class RazorpayService {
+    private HttpClient $http;
+
+    public function __construct() {
+        $keyId     = $_ENV['RAZORPAY_KEY_ID'];
+        $keySecret = $_ENV['RAZORPAY_KEY_SECRET'];
+        $token     = base64_encode("$keyId:$keySecret");
+
+        $this->http = (new HttpClient('https://api.razorpay.com/v1/'))
+            ->withToken($token);
+    }
+
+    public function createOrder(int $amountPaisa, string $currency = 'INR'): array {
+        return $this->http->post('orders', [
+            'amount'   => $amountPaisa,
+            'currency' => $currency,
+            'receipt'  => 'order_' . bin2hex(random_bytes(8)),
+        ]);
+    }
+
+    public function verifyWebhookSignature(string $rawBody, string $signature): bool {
+        $secret       = $_ENV['RAZORPAY_WEBHOOK_SECRET'];
+        $expectedSig  = hash_hmac('sha256', $rawBody, $secret);
+        return hash_equals($expectedSig, $signature);
+    }
+}
+
+// Concurrent HTTP requests (Guzzle Promises)
+use GuzzleHttp\Promise;
+
+function fetchMultipleApis(Client $client): array {
+    $promises = [
+        'users'    => $client->getAsync('https://api.example.com/users'),
+        'products' => $client->getAsync('https://api.example.com/products'),
+        'settings' => $client->getAsync('https://api.example.com/settings'),
+    ];
+
+    // Wait for ALL requests to complete (parallel, not sequential!)
+    $results = Promise\Utils::unwrap($promises);
+
+    return [
+        'users'    => json_decode($results['users']->getBody(), true),
+        'products' => json_decode($results['products']->getBody(), true),
+        'settings' => json_decode($results['settings']->getBody(), true),
+    ];
+}
+?>
+```
+
+---
+
+#### 7. PSR Standards — The PHP Standard Recommendations
+
+PSR (PHP Standards Recommendations) are agreed-upon standards by the PHP-FIG group. Every major framework follows them:
+
+| PSR | Name | What it Standardizes |
+| :--- | :--- | :--- |
+| **PSR-1** | Basic Coding Standard | Class names, method names, file encoding |
+| **PSR-2** | Coding Style (deprecated by PSR-12) | Indentation, braces, line length |
+| **PSR-3** | Logger Interface | `LoggerInterface` with `debug/info/warning/error/critical` |
+| **PSR-4** | Autoloading Standard | Namespace to directory mapping |
+| **PSR-6** | Caching Interface | `CacheItemPoolInterface`, `CacheItemInterface` |
+| **PSR-7** | HTTP Message Interface | `RequestInterface`, `ResponseInterface`, `StreamInterface` |
+| **PSR-11** | Container Interface | `ContainerInterface` (dependency injection containers) |
+| **PSR-12** | Extended Coding Style | Modern successor to PSR-2 |
+| **PSR-14** | Event Dispatcher | `EventDispatcherInterface`, `ListenerProviderInterface` |
+| **PSR-15** | HTTP Handlers | `RequestHandlerInterface`, `MiddlewareInterface` |
+| **PSR-17** | HTTP Factories | Factory interfaces for PSR-7 objects |
+| **PSR-18** | HTTP Client | `ClientInterface` for HTTP clients (Guzzle implements this) |
+
+##### PSR-3 Logger Implementation
+
+```php
+<?php
+// composer require psr/log monolog/monolog
+
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Handler\RotatingFileHandler;
+use Monolog\Formatter\JsonFormatter;
+
+function createLogger(string $channel = 'app'): Logger {
+    $logger = new Logger($channel);
+
+    // Console output (for development)
+    $logger->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+
+    // Rotating file log — keeps last 30 days (for production)
+    $rotatingHandler = new RotatingFileHandler(
+        __DIR__ . '/logs/app.log',
+        maxFiles: 30,
+        level: Logger::INFO
+    );
+    $rotatingHandler->setFormatter(new JsonFormatter());
+    $logger->pushHandler($rotatingHandler);
+
+    // Error-only log — separate file for errors
+    $errorHandler = new StreamHandler(__DIR__ . '/logs/error.log', Logger::ERROR);
+    $errorHandler->setFormatter(new JsonFormatter());
+    $logger->pushHandler($errorHandler);
+
+    return $logger;
+}
+
+$log = createLogger('api');
+
+// PSR-3 compliant logging with context
+$log->info('User logged in', ['user_id' => 42, 'ip' => getClientIp()]);
+$log->warning('Rate limit approaching', ['user_id' => 42, 'requests' => 55, 'limit' => 60]);
+$log->error('Payment gateway timeout', [
+    'order_id'   => 'ORD-999',
+    'gateway'    => 'razorpay',
+    'timeout_ms' => 5000,
+    'exception'  => $e->getMessage(),
+]);
+$log->critical('Database connection lost', ['host' => '127.0.0.1', 'error' => $e->getMessage()]);
+?>
+```
+
+##### PSR-11 Dependency Injection Container
+
+```php
+<?php
+// A simple DI container implementation
+class Container {
+    private array $bindings  = [];
+    private array $instances = [];
+
+    // Bind an interface to an implementation
+    public function bind(string $abstract, callable $factory): void {
+        $this->bindings[$abstract] = $factory;
+    }
+
+    // Bind as singleton — only one instance created
+    public function singleton(string $abstract, callable $factory): void {
+        $this->bindings[$abstract] = function() use ($abstract, $factory) {
+            if (!isset($this->instances[$abstract])) {
+                $this->instances[$abstract] = $factory($this);
+            }
+            return $this->instances[$abstract];
+        };
+    }
+
+    // Resolve a dependency
+    public function make(string $abstract): mixed {
+        if (isset($this->bindings[$abstract])) {
+            return ($this->bindings[$abstract])($this);
+        }
+
+        // Auto-resolve using reflection if no binding registered
+        return $this->resolve($abstract);
+    }
+
+    private function resolve(string $class): object {
+        $reflector   = new ReflectionClass($class);
+        $constructor = $reflector->getConstructor();
+
+        if (!$constructor) return new $class;
+
+        $dependencies = array_map(
+            fn(ReflectionParameter $param) => $this->make($param->getType()->getName()),
+            $constructor->getParameters()
+        );
+
+        return $reflector->newInstanceArgs($dependencies);
+    }
+}
+
+// Registering bindings (typically in a bootstrap file)
+$container = new Container();
+
+$container->singleton(PDO::class, fn() => Database::getConnection());
+$container->singleton(Logger::class, fn() => createLogger());
+$container->bind(UserRepository::class, fn($c) => new UserRepository($c->make(PDO::class)));
+$container->bind(TokenService::class, fn($c) => new TokenService($c->make(PDO::class)));
+
+// Resolving
+$userRepo = $container->make(UserRepository::class);
+$logger   = $container->make(Logger::class);
+?>
+```
+
+---
+
+#### 8. .htaccess — Apache URL Rewriting for Clean URLs
+
+```apache
+# public/.htaccess
+
+Options -MultiViews
+RewriteEngine On
+
+# Redirect HTTP to HTTPS (production only)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Send all requests to index.php (front controller pattern)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    # Cache static assets
+    <FilesMatch "\.(css|js|png|jpg|gif|svg|woff2)$">
+        Header set Cache-Control "public, max-age=31536000"
+    </FilesMatch>
+</IfModule>
+
+# Block access to sensitive files
+<FilesMatch "(\.env|composer\.(json|lock)|package\.json)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes
+
+# PHP settings overrides
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+    php_value max_execution_time 60
+</IfModule>
+```
+
+---
+
+#### 9. API Versioning & Response Envelope Standards
+
+```php
+<?php
+
+// Standard API Response Envelope (matches Laravel API Resource format)
+class ApiResponse {
+    public static function success(
+        mixed  $data,
+        string $message  = 'Success',
+        int    $status   = 200,
+        array  $meta     = []
+    ): never {
+        $body = [
+            'success'   => true,
+            'message'   => $message,
+            'data'      => $data,
+            'timestamp' => date('c'),  // ISO 8601
+        ];
+
+        if (!empty($meta)) $body['meta'] = $meta;
+
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    public static function paginated(array $paginatedResult, string $message = 'OK'): never {
+        self::success(
+            $paginatedResult['data'],
+            $message,
+            200,
+            [
+                'pagination' => [
+                    'total'        => $paginatedResult['total'],
+                    'per_page'     => $paginatedResult['per_page'],
+                    'current_page' => $paginatedResult['current_page'],
+                    'last_page'    => $paginatedResult['last_page'],
+                    'from'         => ($paginatedResult['current_page'] - 1) * $paginatedResult['per_page'] + 1,
+                    'to'           => min($paginatedResult['current_page'] * $paginatedResult['per_page'], $paginatedResult['total']),
+                ],
+            ]
+        );
+    }
+
+    public static function error(string $message, int $status = 400, array $errors = []): never {
+        $body = [
+            'success'   => false,
+            'message'   => $message,
+            'timestamp' => date('c'),
+        ];
+        if (!empty($errors)) $body['errors'] = $errors;
+
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($body, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+// Versioned API routing
+$router->group('/api/v1', [], function(Router $r) {
+    // v1 endpoints
+});
+
+$router->group('/api/v2', [], function(Router $r) {
+    // v2 endpoints with new features
+});
+?>
+```
+
+---
+
+#### Summary — Core PHP API Architecture
+
+```
+public/
+├── index.php              ← Front Controller (entry point)
+├── .htaccess              ← Rewrite rules (Apache)
+src/
+├── Core/
+│   ├── Router.php         ← URL router
+│   ├── Container.php      ← DI Container
+│   ├── Database.php       ← PDO singleton
+│   └── ApiResponse.php    ← Response helpers
+├── Middleware/
+│   ├── AuthMiddleware.php
+│   ├── RateLimitMiddleware.php
+│   └── JsonBodyMiddleware.php
+├── Services/
+│   ├── JwtService.php
+│   ├── TokenService.php
+│   └── RazorpayService.php
+├── Repositories/
+│   └── UserRepository.php
+└── Exceptions/
+    ├── NotFoundException.php
+    └── ValidationException.php
+.env                       ← Secrets (NEVER commit!)
+composer.json              ← Dependencies
+```
+
+| Concept | PHP Implementation | Laravel Equivalent |
+| :--- | :--- | :--- |
+| Front Controller | `public/index.php` | `public/index.php` |
+| Routing | Custom `Router` class | `routes/api.php` + `Route::` |
+| Middleware | `MiddlewareInterface` | `app/Http/Middleware/` |
+| DI Container | Custom `Container` | Laravel Service Container |
+| JWT | `JwtService` | `tymon/jwt-auth` or Sanctum |
+| HTTP Client | Guzzle `Client` | `Http::` facade (Guzzle inside) |
+| Logger | Monolog | `Log::` facade (Monolog inside) |
+| ENV Config | `vlucas/phpdotenv` | `config/` + `.env` |
+    
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Stepper Step 0
+            showApiStep(0);
+        });
+
+        // 2. Interactive REST API Lifecycle Steps Data
+        const apiSteps = [
+            {
+                title: "1. Request Ingestion & Method Normalization",
+                level: "STAGE 1: INGESTION",
+                desc: "The single entry point (public/index.php) inspects $_SERVER superglobals to safely extract the request path, HTTP method (GET, POST, PUT, DELETE), and handles method spoofing (_method header/body).",
+                code: "$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);\n$method = $_SERVER['REQUEST_METHOD'];\nif ($method === 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {\n    $method = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']);\n}"
+            },
+            {
+                title: "2. Regex Route Matching & Dynamic Parameter Capture",
+                level: "STAGE 2: ROUTING",
+                desc: "The router converts parameter placeholders like /api/v1/users/{id} into named regex groups to validate and extract path variables into typed parameters.",
+                code: "$pattern = '#^/api/v1/users/(?P<id>\\d+)$#';\nif (preg_match($pattern, $uri, $matches)) {\n    $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);\n    // $params = ['id' => '42']\n}"
+            },
+            {
+                title: "3. Middleware Pipeline (Onion Architecture)",
+                level: "STAGE 3: MIDDLEWARE",
+                desc: "Each request passes through a stacked chain of guards: CORS preflight check, IP-based rate limiting, Content-Type validation, and JWT bearer authentication.",
+                code: "class AuthMiddleware {\n    public function handle(): void {\n        $token = getBearerToken();\n        if (!$token || !SimpleJWT::verify($token, $_ENV['JWT_SECRET'])) {\n            http_response_code(401);\n            echo json_encode(['error' => 'Unauthorized']);\n            exit;\n        }\n    }\n}"
+            },
+            {
+                title: "4. Controller & Action Handler Execution",
+                level: "STAGE 4: CONTROLLER",
+                desc: "The matched controller class is instantiated (with PDO or Service dependencies injected), input is validated against a schema, and business logic executes.",
+                code: "class UserController {\n    public function __construct(private Database $db) {}\n\n    public function show(array $params): array {\n        $user = $this->db->find((int)$params['id']);\n        return ['data' => $user];\n    }\n}"
+            },
+            {
+                title: "5. Standardized JSON Envelope & HTTP Status Serialization",
+                level: "STAGE 5: RESPONSE",
+                desc: "Outputs consistent RFC 7807 problem details or standard JSend envelopes with precise HTTP status codes (200 OK, 201 Created, 422 Unprocessable Entity).",
+                code: "header('Content-Type: application/json; charset=utf-8');\nhttp_response_code($statusCode);\necho json_encode([\n    'success' => $statusCode < 400,\n    'data'    => $data,\n    'meta'    => ['timestamp' => time()]\n], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);"
+            },
+            {
+                title: "6. Global Exception Boundary & Error Logging",
+                level: "STAGE 6: ERROR GUARD",
+                desc: "A top-level try/catch or set_exception_handler intercepts uncaught exceptions, logs stack traces securely to disk, and delivers a sanitized JSON response without exposing database credentials.",
+                code: "set_exception_handler(function (Throwable $e) {\n    error_log($e->getMessage() . '\\n' . $e->getTraceAsString());\n    http_response_code(500);\n    echo json_encode(['error' => 'Internal Server Error', 'code' => 500]);\n    exit;\n});"
+            }
+        ];
+
+        function showApiStep(index) {
+            const chips = document.querySelectorAll('#apiNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = apiSteps[index];
+            const contentBox = document.getElementById('apiContent');
+            contentBox.innerHTML = 
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-pro">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-php">' + step.code + '</code></pre>';
+        }
+
+        // 3. Tab Switcher
+        function switchApiTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

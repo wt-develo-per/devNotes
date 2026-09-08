@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Mastery - Advanced SQL: Subqueries, CTEs & Window Functions for Laravel Developers</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="06_MySQL_Replication_High_Availability_and_Scaling.html" class="nav-btn">&larr; Previous: Transactions & ACID</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="08_Laravel_Architect_Essential_SQL_Queries_and_Optimization.html" class="nav-btn">Next: Performance Tuning & Optimization &rarr;</a>
+    </div>
+
+    <div id="content"></div>
+
+    <!-- Interactive: Complex Query Building Pipeline Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive: Complex Query Engineering Pipeline</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Raw client requirements se lekar production-ready, injection-safe SQL & Laravel implementation tak ka 6-step engineering flow:
+        </p>
+
+        <div class="stepper-nav" id="pipelineNav">
+            <button class="step-chip active" onclick="showPipelineStep(0)">
+                <span class="step-num">01</span>
+                <span>Requirement & Cost</span>
+            </button>
+            <button class="step-chip" onclick="showPipelineStep(1)">
+                <span class="step-num">02</span>
+                <span>Recursive CTE</span>
+            </button>
+            <button class="step-chip" onclick="showPipelineStep(2)">
+                <span class="step-num">03</span>
+                <span>Window Ranking</span>
+            </button>
+            <button class="step-chip" onclick="showPipelineStep(3)">
+                <span class="step-num">04</span>
+                <span>Single-Scan Aggregation</span>
+            </button>
+            <button class="step-chip" onclick="showPipelineStep(4)">
+                <span class="step-num">05</span>
+                <span>Laravel Encapsulation</span>
+            </button>
+            <button class="step-chip" onclick="showPipelineStep(5)">
+                <span class="step-num">06</span>
+                <span>Injection Audit</span>
+            </button>
+        </div>
+
+        <div class="step-content-box" id="pipelineContent"></div>
+    </div>
+
+    <!-- Lab Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchAdvTab(event, 'tab-cte')">&#127794; Recursive CTEs</button>
+            <button class="tab-btn" onclick="switchAdvTab(event, 'tab-window')">&#129680; Window Functions</button>
+            <button class="tab-btn" onclick="switchAdvTab(event, 'tab-cond')">&#128202; Conditional Aggregation</button>
+            <button class="tab-btn" onclick="switchAdvTab(event, 'tab-security')">&#128737;&#65039; Raw SQL Security</button>
+        </div>
+
+        <!-- Tab 1: Recursive CTEs -->
+        <div id="tab-cte" class="tab-panel active">
+            <h5>Recursive Common Table Expressions (CTE) — Hierarchy & Networks</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Category trees, nested comments, org charts, aur referral chains ko bina PHP loops ke 1 single query mein traverse karne ka gold standard.
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Role in Query</th>
+                        <th>Example in Hierarchy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Anchor Member</strong></td>
+                        <td>Recursion ka starting point define karta hai</td>
+                        <td><code>SELECT id, name, parent_id, 1 as depth FROM categories WHERE id = :rootId</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>UNION ALL</strong></td>
+                        <td>Anchor aur recursive results ko concatenate karta hai</td>
+                        <td>Must use <code>UNION ALL</code> (MySQL does not support UNION DISTINCT in recursive CTEs)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recursive Member</strong></td>
+                        <td>Pichle result set ke output ko join karke agle level rows nikalta hai</td>
+                        <td><code>SELECT c.id, c.name, c.parent_id, cp.depth + 1 FROM categories c JOIN category_path cp ON c.id = cp.parent_id</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Termination Condition</strong></td>
+                        <td>Cycle detection ya maximum depth guard</td>
+                        <td><code>WHERE cp.depth &lt; 10</code> (infinite loop se server bachaane ke liye)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top:14px;">
+                <pre><code class="language-sql">-- Full Recursive Category Breadcrumb in Laravel:
+$breadcrumbs = DB::select("
+    WITH RECURSIVE category_tree AS (
+        SELECT id, name, parent_id, 1 AS depth, CAST(name AS CHAR(1000)) AS path
+        FROM categories WHERE id = ?
+        UNION ALL
+        SELECT c.id, c.name, c.parent_id, ct.depth + 1, CONCAT(c.name, ' &gt; ', ct.path)
+        FROM categories c
+        INNER JOIN category_tree ct ON c.id = ct.parent_id
+        WHERE ct.depth &lt; 10
+    )
+    SELECT path FROM category_tree ORDER BY depth DESC LIMIT 1;
+", [$categoryId]);</code></pre>
+            </div>
+        </div>
+
+        <!-- Tab 2: Window Functions -->
+        <div id="tab-window" class="tab-panel">
+            <h5>Window Functions — MySQL 8.0+ Analytical Powerhouse</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Rows ko aggregate karke calculation karta hai bina unhe collapse kiye — Har row apni identity retain karti hai.
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Window Function</th>
+                        <th>Ties Handling</th>
+                        <th>Typical Laravel Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ROW_NUMBER()</code></td>
+                        <td>Unique row number (1, 2, 3, 4)</td>
+                        <td>Top 3 products per category, deduplicating records</td>
+                    </tr>
+                    <tr>
+                        <td><code>RANK()</code></td>
+                        <td>Gaps on ties (1, 2, 2, 4)</td>
+                        <td>Gaming leaderboards, competition rankings</td>
+                    </tr>
+                    <tr>
+                        <td><code>DENSE_RANK()</code></td>
+                        <td>No gaps on ties (1, 2, 2, 3)</td>
+                        <td>Salary tiers, customer VIP loyalty bands</td>
+                    </tr>
+                    <tr>
+                        <td><code>LAG(col, 1)</code></td>
+                        <td>Previous row value</td>
+                        <td>Day-over-day revenue delta, user login interval</td>
+                    </tr>
+                    <tr>
+                        <td><code>LEAD(col, 1)</code></td>
+                        <td>Next row value</td>
+                        <td>Time spent on page (next_event_time - current_event_time)</td>
+                    </tr>
+                    <tr>
+                        <td><code>SUM(col) OVER(...)</code></td>
+                        <td>Cumulative running sum</td>
+                        <td>Customer lifetime spend running balance on invoice PDF</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 3: Conditional Aggregation -->
+        <div id="tab-cond" class="tab-panel">
+            <h5>Conditional Aggregation — Single-Scan Executive Dashboards</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Admin dashboards ke 8 metrics ko 8 separate queries mein run karne ke bajaye ek hi disk pass mein fetch karo.
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
+                <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:12px;">
+                    <strong style="color:#e11d48;">&#10060; Beginner (6 Queries, 480ms):</strong>
+                    <pre style="margin-top:6px; font-size:0.85rem;"><code class="language-php">$total    = Order::count();
+$paid     = Order::where('status', 'paid')->count();
+$failed   = Order::where('status', 'failed')->count();
+$rev      = Order::where('status', 'paid')->sum('total');
+$refunds  = Order::where('status', 'refunded')->sum('total');</code></pre>
+                </div>
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px;">
+                    <strong style="color:#16a34a;">&#9989; 3-Year Pro (1 Query, 28ms):</strong>
+                    <pre style="margin-top:6px; font-size:0.85rem;"><code class="language-php">$stats = DB::table('orders')->selectRaw("
+    COUNT(*) AS total_orders,
+    COUNT(CASE WHEN status='paid' THEN 1 END) AS paid_cnt,
+    COUNT(CASE WHEN status='failed' THEN 1 END) AS failed_cnt,
+    COALESCE(SUM(CASE WHEN status='paid' THEN total ELSE 0 END), 0) AS rev,
+    COALESCE(SUM(CASE WHEN status='refunded' THEN total ELSE 0 END), 0) AS refunds
+")->first();</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Raw SQL Security -->
+        <div id="tab-security" class="tab-panel">
+            <h5>Raw SQL Security — Vulnerability vs Prevention</h5>
+            <p style="color:var(--text-muted); font-size:0.95rem;">
+                Laravel Query Builder ke raw methods mein SQL injection rokne ka definitive guide.
+            </p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Dangerous Pattern</th>
+                        <th>Safe Parameterized Pattern</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>whereRaw()</code></td>
+                        <td><code>->whereRaw("email = '$email'")</code></td>
+                        <td><code>->whereRaw("email = ?", [$email])</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>havingRaw()</code></td>
+                        <td><code>->havingRaw("SUM(total) &gt; $min")</code></td>
+                        <td><code>->havingRaw("SUM(total) &gt; ?", [$min])</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>orderByRaw()</code></td>
+                        <td><code>->orderByRaw($request->sort)</code></td>
+                        <td>Whitelist pattern: <code>['asc'=>'price ASC'][$sort] ?? 'id DESC'</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>selectRaw()</code></td>
+                        <td><code>->selectRaw("price * $rate as converted")</code></td>
+                        <td><code>->selectRaw("price * ? as converted", [$rate])</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="06_MySQL_Replication_High_Availability_and_Scaling.html" class="nav-btn">&larr; Previous: Transactions & ACID</a>
+        <a href="../index.html" class="nav-btn hub-btn">&#127968; Hub Index</a>
+        <a href="08_Laravel_Architect_Essential_SQL_Queries_and_Optimization.html" class="nav-btn">Next: Performance Tuning & Optimization &rarr;</a>
+    </div>
+
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### MySQL Mastery 7: Advanced SQL — Subqueries, CTEs & Window Functions in Laravel
+
+> *"Wo queries jo Eloquent se seedhi tarah nahi hoti — Raw SQL kab aur kaise zaroori ho jaati hai"*
+
+Jab aap Laravel mein 3 saal experience cross karte ho, to applications sirf basic `User::create()` ya `$user->orders()->get()` tak seemit nahi rehti. Ab aapko complex analytics dashboards, nested category trees, top-N per group leaderboards, running totals, aur high-performance reports banane padte hain.
+
+Agar aap yeh sab PHP collections (`Collection::filter()`, `Collection::groupBy()`, recursive PHP loops) mein karne lage, to server ki **RAM exhaust (OutOfMemory)** ho jaayegi aur API timeouts aane lagenge.
+
+Is module mein hum seekhenge:
+1. **Subqueries in Laravel** — `fromSub()`, `selectSub()`, `whereIn(closure)` bina PHP memory load kiye
+2. **WITH RECURSIVE CTEs** — Infinite category trees, comment threads, aur referral networks 1 single query mein
+3. **Window Functions (MySQL 8.0+)** — `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `LAG()`, `LEAD()` aur Running Totals
+4. **Conditional Aggregation** — 1 single table scan mein 10 dashboard metrics calculate karna
+5. **Anti-Joins & Exists Patterns** — `whereDoesntHave()` vs `NOT EXISTS` vs `LEFT JOIN ... WHERE IS NULL`
+6. **SQL Injection Defense in Raw Queries** — `DB::raw()`, `whereRaw()`, `orderByRaw()` ke deadly security gotchas
+
+---
+
+#### 1. Subqueries in Laravel — In-Memory Loops vs Database Pushdown
+
+##### The Year-1 Mistake (Pulling IDs into PHP Memory):
+```php
+// ❌ DANGEROUS PATTERN (Memory Hog & 2 Round-trips):
+// 50,000 active users ke IDs pehle PHP memory mein array banenge:
+$activeUserIds = User::where('status', 'active')->pluck('id')->toArray();
+
+// Fir MySQL ko 50,000 values ka massive IN clause bheja jayega:
+// SQL: SELECT * FROM orders WHERE user_id IN (1, 2, 3, ... 50000);
+// Result: Memory limit exceeded, MySQL max_allowed_packet error, query cache burst!
+$orders = Order::whereIn('user_id', $activeUserIds)->get();
+```
+
+##### The 3-Year Developer Approach (Database-Level Subquery):
+```php
+// ✅ CLEAN & OPTIMIZED (1 Single Query, Zero PHP Memory Overhead):
+$orders = Order::whereIn('user_id', function ($query) {
+    $query->select('id')
+          ->from('users')
+          ->where('status', 'active');
+})->get();
+
+// Generated SQL:
+// SELECT * FROM `orders` 
+// WHERE `user_id` IN (
+//     SELECT `id` FROM `users` WHERE `status` = 'active'
+// );
+// MySQL optimizer isko subquery semi-join mein convert karta hai -- extremely fast!
+```
+
+---
+
+##### Advanced Subquery: `addSelect()` with Subquery (`selectSub`)
+Maan lijiye aapko users ki list chahiye, aur har user ke sath unke **latest order ka total amount** aur **order date** display karni hai.
+
+###### ❌ The Beginner Trap (N+1 Query or Inefficient Joins):
+```php
+// Har user ke liye relation load karna ya full orders table join karna
+$users = User::all();
+foreach ($users as $user) {
+    $latestOrder = $user->orders()->latest()->first(); // N+1 Query disaster!
+}
+```
+
+###### ✅ The 3-Year Developer Solution (`addSelect` Subquery):
+```php
+use App\Models\User;
+use App\Models\Order;
+
+$users = User::query()
+    ->select('users.id', 'users.name', 'users.email')
+    ->selectSub(function ($query) {
+        $query->from('orders')
+              ->select('total_amount')
+              ->whereColumn('orders.user_id', 'users.id')
+              ->latest()
+              ->limit(1);
+    }, 'latest_order_amount')
+    ->selectSub(function ($query) {
+        $query->from('orders')
+              ->select('created_at')
+              ->whereColumn('orders.user_id', 'users.id')
+              ->latest()
+              ->limit(1);
+    }, 'latest_order_date')
+    ->paginate(20);
+
+// Har User model par directly `$user->latest_order_amount` access ho jayega!
+// Index on `orders(user_id, created_at DESC)` ke sath yeh microseconds mein execute hota hai.
+```
+
+---
+
+##### Derived Tables in Laravel: `fromSub()`
+Jab aapko kisi complex aggregated subquery ko ek virtual table ki tarah treat karke uspar further filter ya join lagana ho:
+
+```php
+// Goal: Har department ka average salary nikalo, fir unhi departments ko dikhao jinka avg > 75000:
+$departmentAvgQuery = DB::table('employees')
+    ->select('department_id', DB::raw('AVG(salary) as avg_salary'))
+    ->groupBy('department_id');
+
+$highPayingDepts = DB::table(function ($query) {
+    $query->from('employees')
+          ->select('department_id', DB::raw('AVG(salary) as avg_salary'))
+          ->groupBy('department_id');
+}, 'dept_averages')
+->join('departments', 'departments.id', '=', 'dept_averages.department_id')
+->where('dept_averages.avg_salary', '>', 75000)
+->select('departments.name', 'dept_averages.avg_salary')
+->get();
+
+// Generated SQL:
+// SELECT `departments`.`name`, `dept_averages`.`avg_salary`
+// FROM (
+//     SELECT `department_id`, AVG(salary) as avg_salary
+//     FROM `employees`
+//     GROUP BY `department_id`
+// ) AS `dept_averages`
+// INNER JOIN `departments` ON `departments`.`id` = `dept_averages`.`department_id`
+// WHERE `dept_averages`.`avg_salary` > 75000;
+```
+
+---
+
+#### 2. Common Table Expressions (CTEs) & Recursive Hierarchies
+
+MySQL 8.0+ mein Common Table Expressions (`WITH ... AS (...)`) introduce hue. Yeh complex nested subqueries ko readable banate hain aur **Recursive Hierarchical Data** (Category Trees, MLM referral networks, nested comments) ko solve karte hain.
+
+##### Non-Recursive CTE in Laravel:
+```php
+// Monthly Sales Report using CTE
+$sql = "
+    WITH monthly_summary AS (
+        SELECT 
+            DATE_FORMAT(created_at, '%Y-%m') AS sales_month,
+            COUNT(id) AS total_orders,
+            SUM(total_amount) AS revenue
+        FROM orders
+        WHERE status = 'completed'
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+    )
+    SELECT 
+        sales_month,
+        total_orders,
+        revenue,
+        ROUND(revenue / total_orders, 2) AS avg_order_value
+    FROM monthly_summary
+    WHERE revenue > 10000
+    ORDER BY sales_month DESC;
+";
+
+$reports = DB::select($sql);
+```
+
+---
+
+##### The Holy Grail: `WITH RECURSIVE` for Infinite Category Tree
+E-commerce ya CMS projects mein categories ki nesting hoti hai:
+`Electronics -> Computers -> Laptops -> Gaming Laptops`
+
+###### Table Schema:
+```sql
+CREATE TABLE categories (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    parent_id INT UNSIGNED NULL,
+    INDEX (parent_id)
+);
+```
+
+###### ❌ The Bad PHP Recursion Approach (Dozens of DB queries):
+```php
+// PHP mein recursive function jo har level par query chalta hai:
+function getCategoryPath($id) {
+    $cat = Category::find($id);
+    if ($cat->parent_id) {
+        return getCategoryPath($cat->parent_id) . ' > ' . $cat->name;
+    }
+    return $cat->name;
+}
+// Agar 50 categories render karni hain, to 150-200 queries lag jayengi!
+```
+
+###### ✅ The 3-Year Pro Solution: 1 Single Recursive SQL Query
+```php
+$subCategoryId = 42; // e.g. Gaming Laptops
+
+$breadcrumbs = DB::select("
+    WITH RECURSIVE category_path AS (
+        -- Anchor Member: Start with current category
+        SELECT id, name, parent_id, 1 AS depth
+        FROM categories
+        WHERE id = ?
+        
+        UNION ALL
+        
+        -- Recursive Member: Join parent of previous row
+        SELECT c.id, c.name, c.parent_id, cp.depth + 1
+        FROM categories c
+        INNER JOIN category_path cp ON c.id = cp.parent_id
+    )
+    SELECT id, name, depth 
+    FROM category_path 
+    ORDER BY depth DESC;
+", [$subCategoryId]);
+
+// Result: 1 single database roundtrip, microsecond execution!
+// Returns root -> parent -> child hierarchy in clean array format.
+```
+
+---
+
+#### 3. Window Functions (MySQL 8.0+) — Analytics Without Heavy Joins
+
+Window function table ke multiple rows par calculation karta hai, lekin normal `GROUP BY` ki tarah rows ko collapse nahi karta! Har row apni individual identity retain karti hai.
+
+##### Syntax Anatomy:
+```sql
+FUNCTION() OVER (
+    PARTITION BY group_column 
+    ORDER BY sort_column [ASC|DESC]
+    [ROWS BETWEEN ... AND ...]
+)
+```
+
+---
+
+##### 1. `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()` — Leaderboard & Top-N Per Group
+Har e-commerce project ka common requirement: **"Har category ke Top 3 highest selling products dikhao"**.
+
+Standard SQL mein iske liye bohot gande self-joins lagte hain. Window functions se yeh trivial hai:
+
+```php
+$topProductsSql = "
+    WITH ranked_products AS (
+        SELECT 
+            p.id,
+            p.category_id,
+            c.name AS category_name,
+            p.title,
+            p.total_sales,
+            ROW_NUMBER() OVER (
+                PARTITION BY p.category_id 
+                ORDER BY p.total_sales DESC
+            ) AS rank_in_cat
+        FROM products p
+        INNER JOIN categories c ON c.id = p.category_id
+        WHERE p.status = 'published'
+    )
+    SELECT category_name, title, total_sales, rank_in_cat
+    FROM ranked_products
+    WHERE rank_in_cat <= 3
+    ORDER BY category_name, rank_in_cat;
+";
+
+$top3PerCategory = DB::select($topProductsSql);
+```
+
+###### Difference: `ROW_NUMBER()` vs `RANK()` vs `DENSE_RANK()`
+| Function | Sales: 100, 100, 90 | Use Case |
+|---|---|---|
+| **`ROW_NUMBER()`** | 1, 2, 3 | Strict pagination, deduplication, unique numbering |
+| **`RANK()`** | 1, 1, 3 | Sports competitions, gaps allowed on ties |
+| **`DENSE_RANK()`** | 1, 1, 2 | Consecutive ranks, salary brackets without gaps |
+
+---
+
+##### 2. `LAG()` and `LEAD()` — Period-Over-Period Growth & Streak Analysis
+- `LAG(column, offset)`: Pichli row ki value fetch karta hai
+- `LEAD(column, offset)`: Agli row ki value fetch karta hai
+
+```php
+// Daily Sales Growth: Pichle din se compare karna:
+$growthReport = DB::select("
+    SELECT 
+        sales_date,
+        daily_revenue,
+        LAG(daily_revenue, 1) OVER (ORDER BY sales_date) AS prev_day_revenue,
+        ROUND(
+            (daily_revenue - LAG(daily_revenue, 1) OVER (ORDER BY sales_date)) / 
+            LAG(daily_revenue, 1) OVER (ORDER BY sales_date) * 100, 
+            2
+        ) AS growth_percentage
+    FROM daily_revenue_summary
+    ORDER BY sales_date DESC
+    LIMIT 30;
+");
+```
+
+---
+
+##### 3. Running Total (Cumulative Sum):
+```php
+// User ke order history ka running total (Cumulative Lifetime Spend):
+$ordersWithCumulative = DB::select("
+    SELECT 
+        id,
+        user_id,
+        created_at,
+        total_amount,
+        SUM(total_amount) OVER (
+            PARTITION BY user_id 
+            ORDER BY created_at ASC
+        ) AS cumulative_spent
+    FROM orders
+    WHERE status = 'completed'
+    ORDER BY user_id, created_at;
+");
+```
+
+---
+
+#### 4. Conditional Aggregation — Single Scan Dashboard Reporting
+
+E-commerce Admin Dashboard mein aapko cards dikhane hote hain:
+- Total Orders
+- Paid Orders Count
+- Pending Orders Count
+- Refunded Orders Count
+- Total Revenue
+- Refunded Amount
+
+##### ❌ The Novice Laravel Developer Approach (6 Separate Database Queries!):
+```php
+// 6 separate queries = 6 network roundtrips + 6 full table scans!
+$totalOrders     = Order::count();
+$paidOrders      = Order::where('status', 'paid')->count();
+$pendingOrders   = Order::where('status', 'pending')->count();
+$refundedOrders  = Order::where('status', 'refunded')->count();
+$totalRevenue    = Order::where('status', 'paid')->sum('total_amount');
+$refundedAmount  = Order::where('status', 'refunded')->sum('total_amount');
+```
+
+##### ✅ The 3-Year Pro Solution (Single Table Scan using `CASE WHEN`):
+```php
+$metrics = DB::table('orders')
+    ->selectRaw("
+        COUNT(*) AS total_orders,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END) AS paid_orders,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending_orders,
+        COUNT(CASE WHEN status = 'refunded' THEN 1 END) AS refunded_orders,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) AS total_revenue,
+        COALESCE(SUM(CASE WHEN status = 'refunded' THEN total_amount ELSE 0 END), 0) AS refunded_amount
+    ")
+    ->first();
+
+// Execution Time: 6x faster!
+// Ek hi index scan ya disk pass mein saara aggregation complete.
+```
+
+---
+
+#### 5. Anti-Joins & Exists Patterns — Finding Unmatched Records
+
+Requirement: **"Un sabhi users ko find karo jinhone pichle 90 dinon mein koi order place nahi kiya"**.
+
+##### Option A: `whereDoesntHave()` (Laravel Eloquent Standard)
+```php
+$inactiveUsers = User::whereDoesntHave('orders', function ($q) {
+    $q->where('created_at', '>=', now()->subDays(90));
+})->paginate(20);
+
+// Generated SQL:
+// SELECT * FROM `users`
+// WHERE NOT EXISTS (
+//     SELECT 1 FROM `orders` 
+//     WHERE `orders`.`user_id` = `users`.`id` 
+//       AND `created_at` >= '2026-06-10'
+// );
+```
+
+##### Option B: `LEFT JOIN ... WHERE ... IS NULL` (Fastest for Simple Missing Keys)
+```php
+// Users who never placed ANY order:
+$usersWithNoOrders = DB::table('users')
+    ->leftJoin('orders', 'users.id', '=', 'orders.user_id')
+    ->whereNull('orders.id')
+    ->select('users.id', 'users.name', 'users.email')
+    ->get();
+
+// Generated SQL:
+// SELECT `users`.`id`, `users`.`name`, `users`.`email`
+// FROM `users`
+// LEFT JOIN `orders` ON `users`.`id` = `orders`.`user_id`
+// WHERE `orders`.`id` IS NULL;
+```
+
+###### 💡 Rule of Thumb for 3-Year Devs:
+- Jab correlated subquery mein complex filtering ho -> `whereDoesntHave()` (`NOT EXISTS`) index efficiently use karta hai.
+- Jab simple outer missing foreign key check karni ho -> `LEFT JOIN ... WHERE NULL` aksar memory mein hash anti-join banke fastest hota hai.
+- `WHERE id NOT IN (SELECT user_id FROM orders)` se hamesha bachein! Agar subquery mein ek bhi `NULL` value aayi, to `NOT IN` hamesha empty result set dega (Three-Valued Logic trap).
+
+---
+
+#### 6. SQL Injection Defense in Raw Queries — 3-Year Security Check
+
+Laravel Eloquent ORM parameterized queries use karta hai, isliye standard methods (`where('name', $input)`) SQL injection immune hain. **Lekin jab aap `whereRaw()`, `selectRaw()`, ya `orderByRaw()` use karte ho, to developer hi vulnerability create karta hai!**
+
+##### ❌ The Critical Security Bug (Direct String Concatenation):
+```php
+// DANGEROUS! User input directly string mein concatenate ho gaya:
+$status = $request->input('status'); // Attacker inputs: "active' OR '1'='1"
+$users = DB::table('users')
+    ->whereRaw("status = '$status'") // 💥 SQL INJECTION VULNERABILITY!
+    ->get();
+
+// Attacker input in orderByRaw:
+$sortBy = $request->input('sort'); // Attacker inputs: "id; DROP TABLE users;--"
+$products = Product::orderByRaw($sortBy)->get(); // 💥 DATABASE DESTROYED!
+```
+
+##### ✅ Safe Parametric Raw Query in Laravel:
+```php
+// 1. Parameter Binding with '?' in whereRaw:
+$users = DB::table('users')
+    ->whereRaw("status = ? AND created_at >= ?", [$request->input('status'), now()->subYear()])
+    ->get();
+
+// 2. Strict Whitelisting for Dynamic Sorting:
+$allowedSorts = [
+    'price_asc'  => 'price ASC',
+    'price_desc' => 'price DESC',
+    'newest'     => 'created_at DESC',
+];
+
+$sortKey = $request->input('sort', 'newest');
+$orderClause = $allowedSorts[$sortKey] ?? 'created_at DESC';
+
+$products = Product::orderByRaw($orderClause)->paginate(20);
+```
+
+---
+
+#### 7. 3-Year Laravel Developer Production Checklist for Advanced SQL
+
+1. ⚡ **Never pull 10,000+ IDs into PHP** sirf agle `whereIn()` mein pass karne ke liye — closure subquery pass karein.
+2. 🌳 **Hierarchical data ke liye recursive PHP functions ban karein** — `WITH RECURSIVE` CTE use karein jo single round-trip mein execute hota hai.
+3. 🪟 **Top-N per group ke liye `ROW_NUMBER() OVER(PARTITION BY ...)`** use karein — heavy application-side chunking aur sorting avoid karein.
+4. 📊 **Dashboard summary stats ke liye 8 alag `count()` queries mat chalayein** — conditional aggregation (`COUNT(CASE WHEN ... THEN 1 END)`) se 1 scan mein kaam karein.
+5. 🛡️ **Kabhi bhi `$request->input()` ko `whereRaw()` ya `orderByRaw()` mein direct concatenate na karein** — hamesha bindings array ya strict whitelist use karein.
+
+</textarea>
+
+    <script>
+        const rawMarkdown = document.getElementById('markdown-content').value;
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        const pipelineSteps = [
+            {
+                title: 'Step 1: Requirement Analysis & Cost Estimation',
+                level: 'Architecture',
+                desc: 'Client ko category-wise top 3 performing products aur parent category breadcrumb chahiye. Pehle dekho: Kya yeh query 1,000 rows par chalegi ya 1,000,000? PHP collections mein 50,000 models hydrate karne ke bajaye sab kuch database engine par pushdown karna finalize karo.',
+                code: '// Don\'t do this in PHP memory:\n// $categories = Category::with(\'products\')->get();\n// $categories->map(fn($c) => $c->products->sortByDesc(\'sales\')->take(3));\n// Why: 50,000 models = 80MB PHP memory used!\n// Decision: Push to MySQL 8.0 CTE + Window function in 1 query.'
+            },
+            {
+                title: 'Step 2: Recursive Hierarchy (CTE)',
+                level: 'Recursive CTE',
+                desc: 'Nested categories ko 1 round-trip mein traverse karne ke liye WITH RECURSIVE define karo. Anchor query top root categories fetch karegi aur recursive query child nodes ko traverse karegi jab tak terminal condition reach na ho.',
+                code: 'WITH RECURSIVE category_tree AS (\n    -- Anchor member\n    SELECT id, name, parent_id, 1 AS depth\n    FROM categories WHERE parent_id IS NULL\n    UNION ALL\n    -- Recursive member\n    SELECT c.id, c.name, c.parent_id, ct.depth + 1\n    FROM categories c\n    INNER JOIN category_tree ct ON c.parent_id = ct.id\n    WHERE ct.depth < 10 -- Prevent cycle\n)'
+            },
+            {
+                title: 'Step 3: Window Function for Top-N Ranking',
+                level: 'Window Function',
+                desc: 'Har category ke andar products ko partition karke sales volume ke according ranking assign karo. ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY sales_volume DESC) har category ke liye alag 1, 2, 3 counter run karega bina rows aggregate ya collapse kiye.',
+                code: 'ranked_products AS (\n    SELECT id, category_id, title, sales_volume,\n           ROW_NUMBER() OVER (\n               PARTITION BY category_id \n               ORDER BY sales_volume DESC\n           ) AS rank_in_cat\n    FROM products WHERE status = \'published\'\n)'
+            },
+            {
+                title: 'Step 4: Single-Scan Conditional Aggregation',
+                level: 'Aggregation',
+                desc: 'Admin metrics ke liye 6 alag count queries chalane ke bajaye conditional CASE WHEN aggregation use karo. Ek hi table scan mein paid, pending, aur refunded revenue calculate ho jayegi.',
+                code: 'SELECT \n    c.name AS category_name,\n    r.title AS product_name,\n    r.sales_volume,\n    r.rank_in_cat\nFROM ranked_products r\nINNER JOIN category_tree c ON c.id = r.category_id\nWHERE r.rank_in_cat <= 3\nORDER BY c.depth ASC, c.name, r.rank_in_cat;'
+            },
+            {
+                title: 'Step 5: Laravel Query Builder Integration',
+                level: 'Laravel Integration',
+                desc: 'Is advanced query ko Laravel repository ya dedicated query action class mein encapsulate karo. Clean parameter bindings pass karo aur DB::select() se lightweight stdClass objects receive karo.',
+                code: 'class GetCategoryLeaderboardAction\n{\n    public function execute(int $maxDepth = 5): Collection\n    {\n        $sql = \"... CTE + Window Function Query ...\";\n        $records = DB::select($sql, [\'maxDepth\' => $maxDepth]);\n        return collect($records);\n    }\n}'
+            },
+            {
+                title: 'Step 6: Security & Injection Defense Audit',
+                level: 'Security Audit',
+                desc: 'Ensure karo ki user filters (category IDs, search keywords, date filters) hamesha PDO parameters (?) se bind ho rahe hain. Kabhi bhi string interpolation $var raw query blocks mein use na karein.',
+                code: '// SAFE PARAMETER BINDING:\nDB::select(\n    \'SELECT * FROM products WHERE category_id = :catId AND price >= :minPrice\',\n    [\n        \'catId\'    => $request->integer(\'category_id\'),\n        \'minPrice\' => $request->float(\'min_price\'),\n    ]\n);\n// SQL injection vector mathematically eliminated!'
+            }
+        ];
+
+        function showPipelineStep(index) {
+            document.querySelectorAll('#pipelineNav .step-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+            const step = pipelineSteps[index];
+            document.getElementById('pipelineContent').innerHTML =
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+                    '<h5 style="margin:0;">' + step.title + '</h5>' +
+                    '<span class="badge badge-sql">' + step.level + '</span>' +
+                '</div>' +
+                '<p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">' + step.desc + '</p>' +
+                '<pre style="margin:0;"><code class="language-sql">' + step.code + '</code></pre>';
+        }
+
+        showPipelineStep(0);
+
+        function switchAdvTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(p => p.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

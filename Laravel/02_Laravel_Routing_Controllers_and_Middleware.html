@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Masterclass — Advanced Routing, Controllers & Middleware</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="01_Laravel_Architecture_Lifecycle_and_Service_Container.html" class="nav-btn">&larr; Previous: Architecture & Container</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="03_Laravel_Requests_Validation_and_Security.html" class="nav-btn">Next: Requests & Validation &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: The Middleware Onion Pipeline Simulator -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive Middleware "Onion Pipeline" Visualizer</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click each layer to observe how an incoming HTTP Request enters through <strong>"Before"</strong> layers, executes the Controller, and passes back through <strong>"After" & "Terminable"</strong> layers:
+        </p>
+
+        <div class="stepper-nav" id="pipelineNav">
+            <button class="step-chip active" onclick="showPipeStep(0)">1. TrustProxies (Before)</button>
+            <button class="step-chip" onclick="showPipeStep(1)">2. StartSession (Before)</button>
+            <button class="step-chip" onclick="showPipeStep(2)">3. Authenticate (Before)</button>
+            <button class="step-chip" onclick="showPipeStep(3)">4. Rate Limiter / Throttle</button>
+            <button class="step-chip" onclick="showPipeStep(4)">5. Route Model Binding</button>
+            <button class="step-chip" onclick="showPipeStep(5)">6. Controller Action (Core)</button>
+            <button class="step-chip" onclick="showPipeStep(6)">7. Security Headers (After)</button>
+            <button class="step-chip" onclick="showPipeStep(7)">8. AuditLog (Terminable)</button>
+        </div>
+
+        <div class="step-content-box" id="pipeContent">
+            <!-- Dynamic Content Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Tabs for Middleware Evolution (Laravel 10 vs 11/12/13) -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchRouteTab(event, 'tab-l10-mw')">Laravel 10: Kernel.php Registration</button>
+            <button class="tab-btn" onclick="switchRouteTab(event, 'tab-l11-mw')">Laravel 11, 12 & 13: bootstrap/app.php</button>
+            <button class="tab-btn" onclick="switchRouteTab(event, 'tab-has-mw')">Modern Controller: HasMiddleware Contract</button>
+        </div>
+
+        <div id="tab-l10-mw" class="tab-panel active">
+            <p style="color:#991B1B; font-weight:600;">Laravel 10 Architecture: <code>app/Http/Kernel.php</code> me hardcoded arrays hote the.</p>
+            <pre><code class="language-php">&lt;?php
+// app/Http/Kernel.php (Legacy Laravel 10)
+namespace App\Http;
+
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
+
+class Kernel extends HttpKernel
+{
+    // 1. Global Middleware Stack (Har web & API request par chalega)
+    protected $middleware = [
+        \App\Http\Middleware\TrustProxies::class,
+        \Illuminate\Http\Middleware\HandleCors::class,
+        \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+        \App\Http\Middleware\TrimStrings::class,
+    ];
+
+    // 2. Middleware Groups (web vs api)
+    protected $middlewareGroups = [
+        'web' => [
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ],
+        'api' => [
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ],
+    ];
+
+    // 3. Route Middleware Aliases
+    protected $middlewareAliases = [
+        'auth'     => \App\Http\Middleware\Authenticate::class,
+        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'role'     => \App\Http\Middleware\CheckRole::class,
+    ];
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="tab-l11-mw" class="tab-panel">
+            <p style="color:#166534; font-weight:600;">Laravel 11, 12 & 13 Modern Architecture: Fluid chaining in <code>bootstrap/app.php</code>.</p>
+            <pre><code class="language-php">&lt;?php
+// bootstrap/app.php (Modern Laravel 11 / 12 / 13)
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        // 1. Global Middleware: append ya prepend karein
+        $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+
+        // 2. Route Middleware Aliases define karein
+        $middleware->alias([
+            'role'    => \App\Http\Middleware\CheckRole::class,
+            'tenant'  => \App\Http\Middleware\IdentifyTenant::class,
+        ]);
+
+        // 3. Web / API Group customization
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ForceJsonRequest::class,
+        ]);
+
+        // 4. Exclude specific routes from CSRF
+        $middleware->validateCsrfTokens(except: [
+            'stripe/webhook',
+            'api/v1/payments/razorpay-callback',
+        ]);
+
+        // 5. Middleware Priority / Sorting
+        $middleware->priority([
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\Authenticate::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
+    })-&gt;create();
+?&gt;</code></pre>
+        </div>
+
+        <div id="tab-has-mw" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Laravel 11+ Controller Middleware: <code>$this-&gt;middleware()</code> constructor deprecated! Use <code>HasMiddleware</code>.</p>
+            <pre><code class="language-php">&lt;?php
+namespace App\Http\Controllers;
+
+use App\Models\Invoice;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Http\Request;
+
+final class InvoiceController extends Controller implements HasMiddleware
+{
+    /**
+     * ✅ Modern Laravel 11/12/13 Standard:
+     * Static middleware definition with granular 'only' and 'except' filters.
+     */
+    public static function middleware(): array
+    {
+        return [
+            // Har method par chalega
+            'auth:sanctum',
+
+            // Sirf sensitive actions par chalega
+            new Middleware('subscribed', only: ['downloadPdf', 'export']),
+
+            // Admin verification sirf delete aur refund par
+            new Middleware('role:admin', only: ['destroy', 'refund']),
+
+            // Public method ko bypass karne ke liye
+            new Middleware('throttle:10,1', only: ['store']),
+        ];
+    }
+
+    public function index(Request $request) { /* ... */ }
+    public function show(Invoice $invoice) { /* ... */ }
+    public function downloadPdf(Invoice $invoice) { /* ... */ }
+    public function destroy(Invoice $invoice) { /* ... */ }
+}
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="01_Laravel_Architecture_Lifecycle_and_Service_Container.html" class="nav-btn">&larr; Previous: Architecture & Container</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="03_Laravel_Requests_Validation_and_Security.html" class="nav-btn">Next: Requests & Validation &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### Module 02: Advanced Routing, Controllers & Middleware Architecture
+
+Routing aur Middleware kisi bhi Laravel application ke gatekeepers hote hain. Agar aapka routing architecture poorly designed hai, toh aapka application slow hoga, vulnerable hoga aur usme duplicate logic fail jayega.
+
+Is module me hum pure **Senior Software Architect** level par Routing, Route Model Binding, Rate Limiting, Controller patterns aur Middleware Pipelines ko **Laravel 10, 11, 12 aur 13** ke differences ke sath master karenge.
+
+---
+
+#### 1. Routing Fundamentals & Modern Best Practices
+
+Laravel ka router Symfony ke `Routing` component par built hai lekin isme fluent syntax, model binding aur pipeline integration add kiya gaya hai.
+
+##### 1.1 HTTP Verbs & Definition Syntax
+
+```php
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
+
+// Standard HTTP Verbs
+Route::get('/users', [UserController::class, 'index'])->name('users.index');
+Route::post('/users', [UserController::class, 'store'])->name('users.store');
+Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
+Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');     // Full replacement
+Route::patch('/users/{id}', [UserController::class, 'updatePartial'])->name('users.patch'); // Partial update
+Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
+// Match multiple verbs for Webhook endpoints
+Route::match(['get', 'post'], '/webhooks/stripe', [StripeWebhookController::class, 'handle']);
+
+// Special fast-path routes (Bypasses controller overhead completely)
+Route::view('/privacy-policy', 'pages.privacy');
+Route::permanentRedirect('/old-docs', '/docs/v2'); // 301 Permanent Redirect
+Route::redirect('/promo', '/pricing', 302);        // 302 Temporary Redirect
+```
+
+> **Hinglish Tip:** Jab aapko static HTML view ya simple redirect karna ho, toh kabhi alag se Controller mat banaiye! `Route::view()` aur `Route::redirect()` use karne se controller instantiation ka CPU cycle bach jata hai aur application fast serve hoti hai.
+
+---
+
+#### 2. Route Parameters & Strict Regex Constraints
+
+Security audit me 40% issues tab aate hain jab route parameters ko validate nahi kiya jata aur malicious inputs DB queries me chale jaate hain.
+
+##### 2.1 Local Constraints vs Global Constraints
+
+```php
+// Local parameter constraints with fluent helpers
+Route::get('/orders/{id}', [OrderController::class, 'show'])
+    ->whereNumber('id'); // Only allows digits (0-9)
+
+Route::get('/users/{username}', [UserController::class, 'show'])
+    ->whereAlphaNumeric('username'); // Letters and numbers only
+
+Route::get('/invoices/{uuid}', [InvoiceController::class, 'show'])
+    ->whereUuid('uuid'); // Strict UUIDv4 pattern
+
+Route::get('/analytics/{ulid}', [AnalyticsController::class, 'show'])
+    ->whereUlid('ulid'); // Laravel 10+ ULID validation
+
+Route::get('/reports/{type}', [ReportController::class, 'generate'])
+    ->whereIn('type', ['daily', 'weekly', 'monthly', 'quarterly']); // Enum constraint
+
+// Custom complex Regex
+Route::get('/products/{sku}', [ProductController::class, 'show'])
+    ->where('sku', '[A-Z]{3}-[0-9]{4}'); // e.g. "PRD-2026"
+```
+
+##### 2.2 Global Parameter Constraints (In `AppServiceProvider`)
+
+Agar aap chahte hain ki poore project me jahan bhi `{id}` aaye wo **hamesha numeric** hi hona chahiye:
+
+```php
+// app/Providers/AppServiceProvider.php
+namespace App\Providers;
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // Global constraint: Har route parameter jiska naam 'id' hoga, wo automatically numeric ban jayega!
+        Route::pattern('id', '[0-9]+');
+        Route::pattern('uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+    }
+}
+```
+
+---
+
+#### 3. Route Model Binding (Under the Hood Deep Dive)
+
+Route Model Binding Laravel ka ek aisa feature hai jo route parameter ko automatically query karke **Eloquent Model instance** inject kar deta hai. Agar record nahi milta, toh automatic `404 Not Found` trigger ho jata hai.
+
+##### 3.1 Implicit Binding with Custom Column
+
+By default Laravel primary key (`id`) se bind karta hai. Lekin SEO-friendly slugs ke liye:
+
+```php
+// Route definition me column specify karein: {post:slug}
+Route::get('/posts/{post:slug}', [PostController::class, 'show']);
+
+// Controller me direct Post model inject hoga!
+class PostController extends Controller
+{
+    public function show(Post $post)
+    {
+        // $post already DB se fetch ho chuka hai WHERE slug = ? query chala kar!
+        return view('posts.show', ['post' => $post]);
+    }
+}
+```
+
+##### 3.2 Scoped Route Model Binding (Parent-Child Security)
+
+> **Critical Security Danger (IDOR Attack):** Agar route hai `/users/{user}/posts/{post}`, aur user ID 5 logged in hai, lekin wo URL me `/users/5/posts/99` pass karta hai (jahan post 99 kisi aur user 10 ka hai). Agar scoped binding nahi hogi, toh user 5 dusre user ki post access kar sakta hai!
+
+```php
+// ✅ Scoped Binding: Laravel enforce karta hai ki $post MUST belong to $user!
+Route::get('/users/{user}/posts/{post:slug}', [PostController::class, 'show'])
+    ->scopeBindings();
+
+// Under the hood query:
+// SELECT * FROM posts WHERE slug = ? AND user_id = ? LIMIT 1;
+// Agar match nahi hota toh 404 throw karega!
+```
+
+##### 3.3 Soft Deleted Models & Missing Model Fallbacks
+
+```php
+// 1. Soft-deleted record ko bhi bind karna (Admin dashboard ke liye)
+Route::get('/trash/users/{user}', [TrashUserController::class, 'show'])
+    ->withTrashed();
+
+// 2. Custom 404 response jab model exist na kare
+Route::get('/locations/{location:code}', [LocationController::class, 'show'])
+    ->missing(function (Request $request) {
+        return response()->json([
+            'error'   => 'RESOURCE_NOT_FOUND',
+            'message' => 'The requested location code does not exist in our active database.',
+        ], 404);
+    });
+```
+
+##### 3.4 Explicit Custom Binding (Complex Multi-Tenant Logic)
+
+```php
+// app/Providers/AppServiceProvider.php
+public function boot(): void
+{
+    Route::bind('active_user', function (string $value) {
+        return \App\Models\User::where('uuid', $value)
+            ->where('is_active', true)
+            ->whereNull('banned_at')
+            ->firstOrFail();
+    });
+}
+
+// Usage in route:
+Route::get('/profiles/{active_user}', [ProfileController::class, 'show']);
+```
+
+---
+
+#### 4. Route Organization: Senior Grouping Patterns
+
+Clean codebases me routes kabhi flat file me 500 lines nahi hoti. Unhe logical architecture me organize kiya jata hai:
+
+```php
+// 1. Controller Grouping (Eliminates repeated controller class names)
+Route::controller(OrderController::class)
+    ->prefix('orders')
+    ->name('orders.')
+    ->middleware(['auth:sanctum'])
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{order}', 'show')->name('show');
+        Route::post('/{order}/cancel', 'cancel')->name('cancel');
+        Route::post('/{order}/refund', 'refund')->name('refund')->middleware('role:admin');
+    });
+
+// 2. Subdomain Routing (Multi-tenant SaaS pattern)
+Route::domain('{tenant}.crm.example.com')->group(function () {
+    Route::get('/dashboard', [TenantDashboardController::class, 'index']);
+});
+
+// 3. API Versioning Grouping
+Route::prefix('v1')->name('api.v1.')->group(base_path('routes/api/v1.php'));
+Route::prefix('v2')->name('api.v2.')->group(base_path('routes/api/v2.php'));
+```
+
+---
+
+#### 5. Signed URLs & Temporary Access Security
+
+Signed URLs ek hash generate karti hain jo tamper-proof hoti hain. Agar koi user query parameters ko modify karega, toh signature invalid ho jayegi!
+
+```php
+use Illuminate\Support\Facades\URL;
+
+// 1. Generating a Temporary Signed URL (Valid for 30 minutes)
+$unsubscribeUrl = URL::temporarySignedRoute(
+    'newsletter.unsubscribe',
+    now()->addMinutes(30),
+    ['user' => $user->id]
+);
+// Output: https://myapp.com/unsubscribe/12?expires=1720000000&signature=a9b3c4...
+
+// 2. Protecting the Route with 'signed' Middleware:
+Route::get('/unsubscribe/{user}', [NewsletterController::class, 'unsubscribe'])
+    ->name('newsletter.unsubscribe')
+    ->middleware('signed');
+
+// 3. Manual validation inside controller (if not using middleware):
+if (! $request->hasValidSignature()) {
+    abort(401, 'This link has expired or has been altered.');
+}
+```
+
+---
+
+#### 6. Dynamic & Adaptive Rate Limiting (`RateLimiter` Facade)
+
+High traffic APIs me rate limiting har user ke liye same nahi hoti. Free users ko 60 req/min milti hain, jabki VIP users ko 500 req/min!
+
+```php
+// bootstrap/app.php ya AppServiceProvider::boot()
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Request;
+
+RateLimiter::for('api', function (Request $request) {
+    // Authenticated user
+    if ($user = $request->user()) {
+        return $user->isVip()
+            ? Limit::none()
+            : Limit::perMinute(300)->by($user->id)->response(function () {
+                return response()->json(['error' => 'VIP limit exceeded'], 429);
+            });
+    }
+
+    // Guest users: IP address based limit
+    return Limit::perMinute(60)->by($request->ip());
+});
+
+// Multiple tiered rate limits (10 per second AND 500 per hour)
+RateLimiter::for('downloads', function (Request $request) {
+    return [
+        Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()),
+        Limit::perHour(200)->by($request->user()?->id ?: $request->ip()),
+    ];
+});
+```
+
+---
+
+#### 7. Controllers: Single-Action / Invokable vs Resource Controllers
+
+##### 7.1 Resource Controller vs API Resource Controller
+
+```bash
+# Standard Web Resource (Includes create & edit HTML form methods)
+php artisan make:controller PostController --resource
+
+# API Resource (Excludes create & edit — only JSON REST endpoints)
+php artisan make:controller Api/PostController --api
+```
+
+##### 7.2 The Shallow Nesting Pattern (Senior Clean Architecture)
+
+Junior developers nested resources ko deeply nest kar dete hain, jisse messy URLs banti hain:
+
+```php
+// ❌ BAD: Deeply nested URL
+// GET /posts/1/comments/45/replies/3/likes
+Route::resource('posts.comments.replies.likes', LikeController::class);
+
+// ✅ SENIOR ARCHITECT: Shallow Nesting
+Route::resource('posts.comments', CommentController::class)->shallow();
+```
+
+Isse URLs clean banti hain:
+- `GET /posts/{post}/comments` (List comments of a post)
+- `POST /posts/{post}/comments` (Create comment on a post)
+- `GET /comments/{comment}` (Show specific comment — post_id ki zaroorat nahi hai!)
+- `PUT /comments/{comment}` (Update comment)
+- `DELETE /comments/{comment}` (Delete comment)
+
+##### 7.3 Single-Action (Invokable) Controllers
+
+Jab kisi controller me multiple unrelated methods daalne ki bajaye ek single specific business responsibility di jaati hai:
+
+```php
+namespace App\Http\Controllers;
+
+use App\Actions\ProcessMonthlyBillingAction;
+use App\Models\Company;
+use Illuminate\Http\JsonResponse;
+
+final class ProcessMonthlyBillingController
+{
+    public function __invoke(Company $company, ProcessMonthlyBillingAction $action): JsonResponse
+    {
+        $result = $action->execute($company);
+
+        return response()->json(['status' => 'billed', 'total' => $result->totalAmount]);
+    }
+}
+
+// In routes/web.php: No method name required!
+Route::post('/companies/{company}/bill', ProcessMonthlyBillingController::class);
+```
+
+---
+
+#### 8. Middleware Architecture: The Deep Pipeline Pattern
+
+Middleware **HTTP Request** aur **Controller** ke beech ka filter hota hai. Ye classic **Chain of Responsibility Pattern** implement karta hai.
+
+##### 8.1 The Lifecycle: Before vs After vs Terminable Middleware
+
+```php
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+final class PerformanceTrackerMiddleware
+{
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next, string $tag = 'general'): Response
+    {
+        // 1. BEFORE LOGIC: Controller run hone se pehle execute hota hai
+        $startTime = hrtime(true);
+        $request->attributes->set('start_time', $startTime);
+
+        // Request ko next middleware/controller me pass karein
+        $response = $next($request);
+
+        // 2. AFTER LOGIC: Controller return hone ke baad execute hota hai
+        $durationMs = (hrtime(true) - $startTime) / 1e6;
+        $response->headers->set('X-Execution-Time-Ms', sprintf('%.2f', $durationMs));
+        $response->headers->set('X-Metric-Tag', $tag);
+
+        return $response;
+    }
+
+    /**
+     * 3. TERMINABLE LOGIC: HTTP response browser ko send hone ke BAAD execute hota hai!
+     * Browser user ko response mil chuka hota hai, isliye logging ya heavy DB writes
+     * user ka request time delay nahi karte!
+     */
+    public function terminate(Request $request, Response $response): void
+    {
+        $startTime = $request->attributes->get('start_time');
+        $durationMs = (hrtime(true) - $startTime) / 1e6;
+
+        \Log::channel('performance')->info('Request finished', [
+            'url'      => $request->fullUrl(),
+            'method'   => $request->method(),
+            'status'   => $response->getStatusCode(),
+            'duration' => $durationMs . 'ms',
+            'user_id'  => $request->user()?->id,
+        ]);
+    }
+}
+```
+
+##### 8.2 Passing Parameters to Middleware
+
+```php
+// Middleware definition:
+public function handle(Request $request, Closure $next, string ...$roles): Response {
+    if (! in_array($request->user()?->role, $roles)) {
+        abort(403, 'Unauthorized access.');
+    }
+    return $next($request);
+}
+
+// In Route: Pass parameters separated by colon and comma
+Route::post('/admin/system-reboot', [SystemController::class, 'reboot'])
+    ->middleware('role:superadmin,devops');
+```
+
+---
+
+#### 9. Route Caching & Performance Optimization
+
+Production me har request par routes parse karna massive overhead hota hai.
+
+```bash
+# Production Optimization Command:
+php artisan route:cache
+
+# Cache clear karne ke liye:
+php artisan route:clear
+
+# Saare registered routes inspect karne ke liye (Filtered by path):
+php artisan route:list --path=api --except-vendor
+```
+
+> **20 YOE Senior Tip (Route Cache Rules):**
+> 1. Laravel 10 tak routes files me **Closures (`Route::get('/test', fn() => ...);`)** likhne se `route:cache` fail ho jata tha ya serialize issue deta tha. Laravel 11/12/13 me closure serialization support add ho chuka hai, lekin best practice yahi hai ki production routes hamesha Controller classes ya Action classes ko point karein.
+> 2. Named routes (`->name('orders.show')`) hamesha use karein. Inhe internally lookup table me index kiya jata hai jisse URL generation (`route('orders.show', $id)`) ultra-fast hoti hai.
+
+---
+
+#### 10. Senior Checklist — Routing, Controllers & Middleware
+
+1. [x] **Always apply parameter constraints**: Generic `{id}` ke sath `whereNumber('id')` ya global `Route::pattern()` use karein.
+2. [x] **Enforce Scoped Route Model Binding**: Multi-tenant ya parent-child routes me `scopeBindings()` zaroor lagayein IDOR vulnerability se bachne ke liye.
+3. [x] **Use Shallow Nesting**: Nested resources ko 2 level se deep kabhi mat le jayein (`shallow()` use karein).
+4. [x] **Adopt Invokable Single-Action Controllers**: Complex business workflows ke liye 500 lines ke generic controller ki jagah single-purpose action classes likhein.
+5. [x] **Use Terminable Middleware for Heavy Logging**: Audit logs aur metrics ko `terminate()` method me likhein taaki user ka HTTP response block na ho.
+6. [x] **Never use `$this->middleware()` in Controller constructors in Laravel 11+**: Hamesha `HasMiddleware` interface aur static `middleware()` method implement karein.
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Pipeline Step 0
+            showPipeStep(0);
+        });
+
+        // 2. Interactive Middleware Pipeline Data
+        const pipelineSteps = [
+            {
+                title: "1. TrustProxies (Before Middleware)",
+                type: "INCOMING BEFORE LAYER",
+                desc: "Validates incoming HTTP headers (X-Forwarded-For, X-Forwarded-Proto) from load balancers (AWS ALB, Cloudflare, Nginx) to ensure accurate client IP and HTTPS detection.",
+                code: "$request->setTrustedProxies(['10.0.0.0/8'], Request::HEADER_X_FORWARDED_FOR);"
+            },
+            {
+                title: "2. StartSession (Before Middleware)",
+                type: "SESSION INITIALIZER",
+                desc: "Reads the session cookie from the client request, loads session payload from the store (Redis/Database/File), and binds the SessionManager to the Request instance.",
+                code: "$session = $this->manager->driver();\n$session->setId($request->cookies->get($session->getName()));\n$this->startSession($request, $session);"
+            },
+            {
+                title: "3. Authenticate (Before Middleware)",
+                type: "SECURITY GATEWAY",
+                desc: "Inspects session state or Bearer Token (Sanctum/Passport). If invalid or expired, immediately aborts the pipeline and returns a 401 Unauthorized JSON response.",
+                code: "if ($this->auth->guard($guard)->guest()) {\n    throw new AuthenticationException('Unauthenticated.', $guards);\n}"
+            },
+            {
+                title: "4. Rate Limiter / Throttle (Before Middleware)",
+                type: "TRAFFIC PROTECTION",
+                desc: "Checks the sliding window counter in Redis/Cache for this IP or User ID. If the threshold (e.g. 60 req/min) is crossed, immediately returns 429 Too Many Requests.",
+                code: "if ($this->limiter->tooManyAttempts($key, $maxAttempts)) {\n    throw $this->buildException($key, $maxAttempts);\n}"
+            },
+            {
+                title: "5. Route Model Binding (SubstituteBindings)",
+                type: "MODEL RESOLUTION",
+                desc: "Inspects route parameters like {user:slug} and runs Eloquent queries (e.g., User::where('slug', $val)->firstOrFail()). Injects resolved models into route arguments.",
+                code: "$router->substituteImplicitBindings($route);"
+            },
+            {
+                title: "6. Controller Action (Core Application)",
+                type: "BUSINESS LOGIC CORE",
+                desc: "The HTTP Request reaches the Controller / Action class. FormRequests validate input data, domain services execute, database transactions persist, and a Response is created.",
+                code: "public function show(Post $post): JsonResponse {\n    return response()->json(new PostResource($post));\n}"
+            },
+            {
+                title: "7. Security Headers Middleware (After Middleware)",
+                type: "OUTGOING AFTER LAYER",
+                desc: "As the Response travels backwards out of the pipeline, after-middleware adds HTTP headers: Content-Security-Policy, X-Content-Type-Options, Strict-Transport-Security, and CORS.",
+                code: "$response = $next($request);\n$response->headers->set('X-Frame-Options', 'SAMEORIGIN');\nreturn $response;"
+            },
+            {
+                title: "8. AuditLog & Telemetry (Terminable Middleware)",
+                type: "ASYNC POST-RESPONSE TERMINATION",
+                desc: "Executes AFTER the HTTP response bytes have been completely flushed to the browser/client. Perfect for sending metrics to Datadog, recording audit logs, or cleaning up sockets.",
+                code: "public function terminate(Request $request, Response $response): void {\n    Log::channel('audit')->info('Request finished', ['status' => $response->getStatusCode()]);\n}"
+            }
+        ];
+
+        function showPipeStep(index) {
+            const chips = document.querySelectorAll('#pipelineNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = pipelineSteps[index];
+            const contentBox = document.getElementById('pipeContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${step.title}</h5>
+                    <span class="badge badge-pro">${step.type}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${step.desc}</p>
+                <pre style="margin:0;"><code class="language-php">${step.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchRouteTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

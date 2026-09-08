@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core PHP - Fundamentals to Advanced</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="02_Core_PHP_OOP_and_Advanced.html" class="nav-btn">Next: OOP & Advanced &rarr;</a>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: PHP Engine & Memory Lifecycle Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive PHP Engine Execution & Memory Lifecycle</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click through the Zend Engine pipeline to see how PHP transforms source code into machine execution and manages memory under the hood:
+        </p>
+
+        <div class="stepper-nav" id="phpEngineNav">
+            <button class="step-chip active" onclick="showEngineStep(0)">1. Lexing & Tokenization</button>
+            <button class="step-chip" onclick="showEngineStep(1)">2. AST Generation</button>
+            <button class="step-chip" onclick="showEngineStep(2)">3. Opcode Compilation</button>
+            <button class="step-chip" onclick="showEngineStep(3)">4. OPcache Shared RAM</button>
+            <button class="step-chip" onclick="showEngineStep(4)">5. PHP 8 JIT Machine Code</button>
+            <button class="step-chip" onclick="showEngineStep(5)">6. Zend VM & zval Refcounting</button>
+        </div>
+
+        <div class="step-content-box" id="engineContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Modern PHP 7 vs PHP 8 Syntax & Type System Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchPhpTab(event, 'ptab-match')">1. Match vs Switch (PHP 8)</button>
+            <button class="tab-btn" onclick="switchPhpTab(event, 'ptab-coalesce')">2. Null Coalescing (?? vs ??=)</button>
+            <button class="tab-btn" onclick="switchPhpTab(event, 'ptab-types')">3. Strict Types & Union Types</button>
+        </div>
+
+        <div id="ptab-match" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Match Expression: Strict Type Comparison (===), Returns a Value, and No Break Statements Needed.</p>
+            <pre><code class="language-php">&lt;?php
+// ❌ Old Switch (Loose comparison '==' causes nasty type bugs!):
+$statusCode = '200'; // String
+
+switch ($statusCode) {
+    case 200: // Integer 200 == '200' is TRUE in loose comparison!
+        $message = 'OK';
+        break;
+    default:
+        $message = 'Unknown';
+        break;
+}
+
+// ✅ Modern PHP 8+ Match Expression (Strict '===', returns value directly):
+$message = match ($statusCode) {
+    200      =&gt; 'OK (Integer)',
+    '200'    =&gt; 'OK (Exact String Match)',
+    301, 302 =&gt; 'Redirect',
+    404      =&gt; 'Not Found',
+    default  =&gt; 'Unknown Status',
+};
+
+// Match also supports complex boolean pattern expressions:
+$age = 22;
+$group = match (true) {
+    $age &lt; 13 =&gt; 'Child',
+    $age &lt; 20 =&gt; 'Teenager',
+    $age &gt;= 20 =&gt; 'Adult',
+};
+?&gt;</code></pre>
+        </div>
+
+        <div id="ptab-coalesce" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">Null Coalescing Operators: Eliminate verbose isset() checks cleanly.</p>
+            <pre><code class="language-php">&lt;?php
+// 1. PHP 5 Era (Verbose Ternary + isset):
+$page = isset($_GET['page']) ? $_GET['page'] : 1;
+
+// 2. PHP 7 Null Coalescing Operator (??):
+// Checks both isset() AND is not null in one stroke!
+$page = $_GET['page'] ?? 1;
+
+// Chained fallback lookup:
+$username = $_POST['username'] ?? $_SESSION['username'] ?? 'Guest';
+
+// 3. PHP 7.4+ Null Coalescing Assignment (??=):
+// Assigns value ONLY if the variable is null or unset!
+$config = [];
+$config['timeout'] ??= 30; // Sets 30
+$config['timeout'] ??= 60; // Still 30! Doesn't overwrite existing value.
+?&gt;</code></pre>
+        </div>
+
+        <div id="ptab-types" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Strict Types & Modern Union Types: Catch bugs at compile time.</p>
+            <pre><code class="language-php">&lt;?php
+// 🛡️ Always place at the VERY TOP of the file (Line 1):
+declare(strict_types=1);
+
+// PHP 8+ Union Types & Nullable Types:
+function calculateDiscount(int|float $price, ?float $discountRate = null): int|float
+{
+    if ($discountRate === null) {
+        return $price;
+    }
+
+    return $price - ($price * $discountRate);
+}
+
+// Valid calls:
+calculateDiscount(100, 0.2); // 80.0
+calculateDiscount(45.50);    // 45.50
+
+// ❌ Throws TypeError in strict_types mode:
+// calculateDiscount("100", "0.2"); // Fatal error: Uncaught TypeError!
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <span class="nav-btn disabled">&larr; Previous</span>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <a href="02_Core_PHP_OOP_and_Advanced.html" class="nav-btn">Next: OOP & Advanced &rarr;</a>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+
+### Core PHP — Fundamentals: Variables, Types, Operators & Control Flow
+
+PHP (Hypertext Preprocessor) is a **server-side scripting language** that powers over 75% of all websites on the internet — including WordPress, Facebook (historically), and Wikipedia. Unlike Node.js, PHP runs on the server and sends plain HTML to the browser. Every PHP script runs from top to bottom, making it easy to reason about.
+
+> **20 YOE Expert Tip:** PHP ka sab se bada strength yeh hai ki yeh "batteries included" language hai. File handling, database connectivity, email, JSON — sab built-in hai bina kisi npm install ke.
+
+---
+
+#### 1. PHP Syntax & Tags — How PHP Starts
+
+Every PHP file can mix HTML and PHP code. PHP code lives inside `<?php ... ?>` tags.
+
+```php
+<?php
+// This is a single-line comment
+# This is also a single-line comment
+
+/*
+  This is a
+  multi-line comment
+*/
+
+echo "Hello, World!";  // Outputs to browser
+print "Hello again!";  // Also outputs, but returns 1 (can be used in expressions)
+?>
+```
+
+**Key Rule:** PHP statements end with a semicolon `;`. Forgetting it is the #1 beginner bug.
+
+<span class="hinglish">PHP mein `<?php` se code start hota hai aur `?>` se khatam. Ek hi file mein HTML aur PHP dono likh sakte hain — yahi PHP ki sabse badi beauty hai beginners ke liye!</span>
+
+---
+
+#### 2. Variables & Data Types
+
+PHP is a **dynamically typed** language — you do NOT declare the type. PHP figures it out automatically.
+
+##### 2.1 Variable Declaration Rules
+- Variables start with `$` sign
+- Variable names are **case-sensitive**: `$name` ≠ `$Name`
+- Must start with a letter or underscore, NOT a number
+
+```php
+<?php
+$name    = "Rahul";         // String
+$age     = 25;              // Integer
+$salary  = 75000.50;        // Float (also called double)
+$isActive = true;           // Boolean (true/false)
+$nothing = null;            // Null — no value
+
+// Check the type of a variable
+echo gettype($name);        // string
+echo gettype($age);         // integer
+echo gettype($salary);      // double
+echo gettype($isActive);    // boolean
+echo gettype($nothing);     // NULL
+?>
+```
+
+##### 2.2 PHP Data Types Reference Table
+
+| Data Type | Example | Description |
+| :--- | :--- | :--- |
+| `string` | `"Hello PHP"` | Text in single or double quotes |
+| `integer` | `42`, `-100` | Whole numbers |
+| `float` / `double` | `3.14`, `99.99` | Decimal numbers |
+| `boolean` | `true`, `false` | True or false value |
+| `array` | `[1, 2, 3]` | Collection of values |
+| `object` | `new User()` | Instance of a class |
+| `null` | `null` | No value / empty |
+| `resource` | `fopen(...)` | External resource handle (file, DB) |
+
+##### 2.3 String Types: Single vs Double Quotes
+
+This is a critical PHP-specific concept that trips up beginners:
+
+```php
+<?php
+$city = "Mumbai";
+
+// Double quotes — Variables ARE parsed (interpolated)
+echo "I live in $city";        // Output: I live in Mumbai
+echo "I live in {$city}";      // Output: I live in Mumbai (safer syntax)
+
+// Single quotes — Variables are NOT parsed
+echo 'I live in $city';        // Output: I live in $city (literally)
+echo 'Cost: \n 100 Rs';        // \n is NOT treated as newline in single quotes
+?>
+```
+
+> **Senior Dev Rule:** Single quotes `''` are **faster** because PHP doesn't scan for variables inside them. Use double quotes only when you need variable interpolation.
+
+---
+
+#### 3. Constants
+
+Constants are like variables but their value **cannot be changed** after definition.
+
+```php
+<?php
+// Method 1: define() — works anywhere in the file
+define('DB_HOST', 'localhost');
+define('MAX_LOGIN_ATTEMPTS', 5);
+define('APP_ENV', 'production');
+
+// Method 2: const — used inside classes or at the top level
+const PI = 3.14159;
+const BASE_URL = 'https://myapp.com';
+
+echo DB_HOST;         // localhost  (No $ sign for constants!)
+echo MAX_LOGIN_ATTEMPTS; // 5
+
+// PHP built-in constants
+echo PHP_VERSION;     // e.g. 8.3.0
+echo PHP_EOL;         // End of line (\n on Linux, \r\n on Windows)
+echo PHP_INT_MAX;     // 9223372036854775807
+echo __FILE__;        // Absolute path of current file
+echo __LINE__;        // Current line number
+echo __DIR__;         // Directory of current file
+?>
+```
+
+<span class="hinglish">Constants ke aage `$` nahi hota — yeh PHP ka ek important rule hai. `define()` runtime mein kaam karta hai, jabki `const` compile time pe define hota hai. Laravel mein aap `.env` file ke values `define()` se ya `config()` helper se access karte ho.</span>
+
+---
+
+#### 4. Operators
+
+##### 4.1 Arithmetic Operators
+
+```php
+<?php
+$a = 20;
+$b = 6;
+
+echo $a + $b;   // 26 — Addition
+echo $a - $b;   // 14 — Subtraction
+echo $a * $b;   // 120 — Multiplication
+echo $a / $b;   // 3.333... — Division
+echo $a % $b;   // 2 — Modulus (remainder)
+echo $a ** $b;  // 64000000 — Exponentiation (2^6 = 64, so 20^6)
+
+// Increment / Decrement
+$x = 10;
+echo $x++;  // 10 (post-increment: returns THEN increments)
+echo $x;    // 11
+echo ++$x;  // 12 (pre-increment: increments THEN returns)
+echo $x--;  // 12 (post-decrement)
+echo $x;    // 11
+?>
+```
+
+##### 4.2 String Operators
+
+```php
+<?php
+$firstName = "Rahul";
+$lastName  = "Sharma";
+
+// Concatenation operator: . (dot)
+$fullName = $firstName . " " . $lastName;
+echo $fullName;  // Rahul Sharma
+
+// Concatenation assignment
+$message = "Hello, ";
+$message .= "World!";  // Same as: $message = $message . "World!"
+echo $message;  // Hello, World!
+?>
+```
+
+##### 4.3 Comparison Operators (Most Important!)
+
+```php
+<?php
+// == vs === is the MOST CRITICAL difference in PHP
+$num  = 0;
+$str  = "";
+$zero = "0";
+
+// Loose comparison (==): compares VALUE only, does type coercion
+var_dump(0 == "");    // bool(true)  ← DANGEROUS!
+var_dump(0 == "0");   // bool(true)
+var_dump(0 == false); // bool(true)
+var_dump(0 == null);  // bool(true)
+
+// Strict comparison (===): compares VALUE AND TYPE
+var_dump(0 === "");    // bool(false) ← Safe
+var_dump(0 === "0");   // bool(false)
+var_dump(0 === false); // bool(false)
+var_dump(0 === 0);     // bool(true)
+
+// Other comparison operators
+echo var_dump(10 != 20);   // bool(true)  — Not equal (loose)
+echo var_dump(10 !== 20);  // bool(true)  — Not identical (strict)
+echo var_dump(10 > 5);     // bool(true)
+echo var_dump(10 < 5);     // bool(false)
+echo var_dump(10 >= 10);   // bool(true)
+echo var_dump(10 <= 9);    // bool(false)
+
+// Spaceship operator (PHP 7+): returns -1, 0, or 1
+echo 5 <=> 10;  // -1 (left is less)
+echo 5 <=> 5;   //  0 (equal)
+echo 10 <=> 5;  //  1 (left is greater)
+?>
+```
+
+> **20 YOE Expert Warning:** Never use `==` for comparing user input or database values in security-sensitive code. Always use `===`. The `==` operator caused countless PHP security bugs in early codebases. Laravel's `Hash::check()` uses strict internal comparisons for this reason.
+
+##### 4.4 Logical Operators
+
+```php
+<?php
+$isLoggedIn = true;
+$isAdmin    = false;
+
+// AND — both must be true
+if ($isLoggedIn && $isAdmin) {
+    echo "Admin dashboard";
+}
+
+// OR — at least one must be true
+if ($isLoggedIn || $isAdmin) {
+    echo "Some access granted";
+}
+
+// NOT
+if (!$isAdmin) {
+    echo "Not an admin";
+}
+
+// Null coalescing operator (PHP 7+) — very useful!
+$username = $_GET['username'] ?? 'Guest';
+// Same as: isset($_GET['username']) ? $_GET['username'] : 'Guest'
+
+// Null coalescing assignment (PHP 7.4+)
+$config['timeout'] ??= 30;  // Set to 30 only if null or not set
+?>
+```
+
+---
+
+#### 5. Control Flow — if / else / match
+
+##### 5.1 if / elseif / else
+
+```php
+<?php
+$score = 85;
+
+if ($score >= 90) {
+    echo "Grade: A";
+} elseif ($score >= 80) {
+    echo "Grade: B";    // This runs!
+} elseif ($score >= 70) {
+    echo "Grade: C";
+} else {
+    echo "Grade: F";
+}
+
+// Ternary operator — short form of if/else
+$status = ($score >= 50) ? "Pass" : "Fail";
+echo $status;  // Pass
+?>
+```
+
+##### 5.2 switch Statement
+
+```php
+<?php
+$day = "Monday";
+
+switch ($day) {
+    case "Monday":
+    case "Tuesday":
+    case "Wednesday":
+    case "Thursday":
+    case "Friday":
+        echo "Weekday — Go to office!";
+        break;
+    case "Saturday":
+    case "Sunday":
+        echo "Weekend — Rest!";
+        break;
+    default:
+        echo "Invalid day!";
+}
+?>
+```
+
+##### 5.3 match Expression (PHP 8.0+ — Modern & Preferred)
+
+`match` is the modern, strict replacement for `switch`. It uses strict (`===`) comparison and is an **expression** (returns a value):
+
+```php
+<?php
+$status = 404;
+
+$message = match($status) {
+    200, 201 => "Success",
+    301, 302 => "Redirect",
+    400      => "Bad Request",
+    401      => "Unauthorized",
+    403      => "Forbidden",
+    404      => "Not Found",      // This matches!
+    500      => "Server Error",
+    default  => "Unknown Status",
+};
+
+echo $message;  // Not Found
+
+// match throws UnhandledMatchError if no match found and no default — this is SAFER than switch
+?>
+```
+
+<span class="hinglish">`match` PHP 8 ka sabse important addition hai. Laravel 10+ internals mein `match` extensively use hota hai. Switch se zyada safe hai kyunki yeh strict comparison karta hai aur automatically value return karta hai.</span>
+
+---
+
+#### 6. Loops
+
+##### 6.1 while Loop
+
+```php
+<?php
+$counter = 1;
+
+while ($counter <= 5) {
+    echo "Count: $counter\n";
+    $counter++;
+}
+// Count: 1, Count: 2 ... Count: 5
+?>
+```
+
+##### 6.2 do...while Loop
+
+```php
+<?php
+// Executes at LEAST ONCE — condition is checked AFTER the loop body
+$i = 10;
+
+do {
+    echo "This runs once even though condition is false: $i\n";
+    $i++;
+} while ($i < 5);  // 10 < 5 is false, but body ran once!
+?>
+```
+
+##### 6.3 for Loop
+
+```php
+<?php
+// Classic for loop — best when you know the exact number of iterations
+for ($i = 0; $i < 5; $i++) {
+    echo "Iteration: $i\n";
+}
+
+// Counting backwards
+for ($i = 10; $i >= 1; $i--) {
+    echo $i . " ";
+}
+// 10 9 8 7 6 5 4 3 2 1
+?>
+```
+
+##### 6.4 foreach Loop — Most Used in PHP
+
+```php
+<?php
+// Iterating over indexed arrays
+$fruits = ["apple", "banana", "cherry", "mango"];
+
+foreach ($fruits as $fruit) {
+    echo $fruit . "\n";
+}
+
+// Iterating with index (key => value)
+foreach ($fruits as $index => $fruit) {
+    echo "$index: $fruit\n";
+    // 0: apple, 1: banana, 2: cherry, 3: mango
+}
+
+// Iterating over associative arrays (key => value)
+$user = [
+    'name'  => 'Rahul',
+    'email' => 'rahul@example.com',
+    'age'   => 28,
+];
+
+foreach ($user as $key => $value) {
+    echo "$key: $value\n";
+    // name: Rahul | email: rahul@example.com | age: 28
+}
+?>
+```
+
+##### 6.5 break & continue
+
+```php
+<?php
+// break — exits the entire loop
+for ($i = 0; $i < 10; $i++) {
+    if ($i === 5) break;
+    echo $i . " ";  // 0 1 2 3 4
+}
+
+// continue — skips current iteration, moves to next
+for ($i = 0; $i < 10; $i++) {
+    if ($i % 2 === 0) continue;  // Skip even numbers
+    echo $i . " ";  // 1 3 5 7 9
+}
+
+// break with level (nested loops)
+for ($i = 0; $i < 3; $i++) {
+    for ($j = 0; $j < 3; $j++) {
+        if ($j === 1) break 2;  // Breaks BOTH loops
+        echo "$i,$j ";
+    }
+}
+?>
+```
+
+---
+
+#### 7. Functions
+
+##### 7.1 Defining & Calling Functions
+
+```php
+<?php
+// Basic function
+function greet($name) {
+    return "Hello, $name!";
+}
+
+echo greet("Rahul");  // Hello, Rahul!
+
+// Function with default parameter values
+function createUser($name, $role = 'viewer', $isActive = true) {
+    return [
+        'name'     => $name,
+        'role'     => $role,
+        'isActive' => $isActive,
+    ];
+}
+
+$user1 = createUser("Priya");                  // role: viewer, isActive: true
+$user2 = createUser("Admin", "admin", true);   // Explicit values
+
+// Type declarations (PHP 7+) — enforce input and output types
+function addNumbers(int $a, int $b): int {
+    return $a + $b;
+}
+
+echo addNumbers(5, 10);    // 15
+// echo addNumbers(5, "10"); // TypeError in strict mode!
+
+// Nullable types (PHP 7.1+)
+function findUser(?int $id): ?string {
+    if ($id === null) return null;
+    return "User #$id";
+}
+
+echo findUser(5);    // User #5
+echo findUser(null); // (nothing — returns null)
+?>
+```
+
+##### 7.2 Variable Functions & Anonymous Functions (Closures)
+
+```php
+<?php
+// Anonymous function (closure)
+$multiply = function(int $x, int $y): int {
+    return $x * $y;
+};
+
+echo $multiply(4, 5);  // 20
+
+// Arrow function (PHP 7.4+) — shorter syntax, captures outer variables automatically
+$multiplier = 3;
+$triple = fn($n) => $n * $multiplier;   // Automatically captures $multiplier
+echo $triple(7);  // 21
+
+// Passing functions as arguments (Higher-Order Functions)
+$numbers = [3, 1, 4, 1, 5, 9, 2, 6];
+usort($numbers, fn($a, $b) => $a <=> $b);  // Sort ascending with spaceship
+print_r($numbers);  // [1, 1, 2, 3, 4, 5, 6, 9]
+
+// array_map — apply a function to each element
+$doubled = array_map(fn($n) => $n * 2, [1, 2, 3, 4, 5]);
+print_r($doubled);  // [2, 4, 6, 8, 10]
+
+// array_filter — keep elements where callback returns true
+$evens = array_filter([1, 2, 3, 4, 5, 6], fn($n) => $n % 2 === 0);
+print_r($evens);  // [2, 4, 6]
+
+// array_reduce — reduce array to single value
+$sum = array_reduce([1, 2, 3, 4, 5], fn($carry, $item) => $carry + $item, 0);
+echo $sum;  // 15
+?>
+```
+
+##### 7.3 Variable-Length Arguments (Variadic Functions)
+
+```php
+<?php
+// ...$args collects all extra arguments into an array
+function sumAll(int ...$numbers): int {
+    return array_sum($numbers);
+}
+
+echo sumAll(1, 2, 3);           // 6
+echo sumAll(10, 20, 30, 40);    // 100
+
+// Spread operator — unpacks an array into arguments
+$vals = [5, 10, 15];
+echo sumAll(...$vals);  // 30
+?>
+```
+
+---
+
+#### 8. Arrays — PHP's Most Powerful Data Structure
+
+##### 8.1 Indexed Arrays
+
+```php
+<?php
+// Creating arrays
+$colors = ["red", "green", "blue"];
+$numbers = [10, 20, 30, 40, 50];
+$mixed  = [1, "two", 3.0, true, null];  // PHP arrays can mix types
+
+// Accessing elements (0-indexed)
+echo $colors[0];    // red
+echo $colors[2];    // blue
+
+// Modifying elements
+$colors[1] = "yellow";  // Replace green with yellow
+$colors[] = "purple";   // Append to end
+
+// Useful array functions
+echo count($colors);        // 4 (number of elements)
+echo implode(", ", $colors); // red, yellow, blue, purple (join into string)
+$parts = explode(",", "a,b,c"); // ["a", "b", "c"] (split string to array)
+
+// Sorting
+sort($numbers);     // Sort ascending (modifies in-place)
+rsort($numbers);    // Sort descending
+
+// Stack operations
+array_push($colors, "pink");   // Add to end
+$last = array_pop($colors);    // Remove from end
+
+// Queue operations
+array_unshift($colors, "white"); // Add to beginning
+$first = array_shift($colors);   // Remove from beginning
+
+// Search
+$found = in_array("blue", $colors);         // true/false
+$index = array_search("blue", $colors);     // returns index or false
+?>
+```
+
+##### 8.2 Associative Arrays (Key-Value Maps)
+
+```php
+<?php
+// Associative arrays — like objects in JS or dictionaries in Python
+$product = [
+    'id'       => 101,
+    'name'     => 'Laptop',
+    'price'    => 75000.00,
+    'inStock'  => true,
+    'tags'     => ['electronics', 'computer'],
+];
+
+// Accessing
+echo $product['name'];           // Laptop
+echo $product['price'];          // 75000
+echo $product['tags'][0];        // electronics
+
+// Adding / Modifying keys
+$product['discount'] = 5000;
+$product['price'] = 70000.00;
+
+// Removing a key
+unset($product['discount']);
+
+// Check if key exists
+if (isset($product['name'])) {
+    echo "Name exists: " . $product['name'];
+}
+
+// array_keys and array_values
+$keys   = array_keys($product);    // ['id', 'name', 'price', 'inStock', 'tags']
+$values = array_values($product);  // [101, 'Laptop', 70000, true, [...]]
+
+// array_merge — combine two arrays
+$defaults = ['color' => 'black', 'size' => 'M'];
+$custom   = ['color' => 'red', 'qty' => 2];
+$merged   = array_merge($defaults, $custom);
+// ['color' => 'red', 'size' => 'M', 'qty' => 2]
+
+// array_key_exists — safer than isset() for null values
+echo array_key_exists('name', $product);  // true
+?>
+```
+
+##### 8.3 Multidimensional Arrays
+
+```php
+<?php
+// Array of arrays (like a database result set)
+$users = [
+    ['id' => 1, 'name' => 'Rahul',  'role' => 'admin'],
+    ['id' => 2, 'name' => 'Priya',  'role' => 'editor'],
+    ['id' => 3, 'name' => 'Amit',   'role' => 'viewer'],
+    ['id' => 4, 'name' => 'Sneha',  'role' => 'editor'],
+];
+
+// Access nested values
+echo $users[0]['name'];  // Rahul
+echo $users[2]['role'];  // viewer
+
+// Loop through all users
+foreach ($users as $user) {
+    echo "{$user['name']} is an {$user['role']}\n";
+}
+
+// array_column — extract a column from a 2D array (very useful for DB results!)
+$names = array_column($users, 'name');
+// ["Rahul", "Priya", "Amit", "Sneha"]
+
+$nameById = array_column($users, 'name', 'id');
+// [1 => 'Rahul', 2 => 'Priya', 3 => 'Amit', 4 => 'Sneha']
+
+// usort — custom sort by a field
+usort($users, fn($a, $b) => strcmp($a['name'], $b['name']));
+// Sorts users alphabetically by name
+?>
+```
+
+---
+
+#### 9. String Functions — Complete Reference
+
+```php
+<?php
+$str = "  Hello, PHP World!  ";
+
+// Length
+echo strlen($str);              // 22 (includes spaces)
+echo mb_strlen("नमस्ते");       // 6 (multibyte for Unicode/UTF-8)
+
+// Trimming
+echo trim($str);                // "Hello, PHP World!"
+echo ltrim($str);               // "Hello, PHP World!  " (left trim)
+echo rtrim($str);               // "  Hello, PHP World!" (right trim)
+
+// Case conversion
+echo strtolower("HELLO");       // hello
+echo strtoupper("hello");       // HELLO
+echo ucfirst("rahul sharma");   // Rahul sharma
+echo ucwords("rahul sharma");   // Rahul Sharma
+
+// Searching
+echo strpos("Hello World", "World");  // 6 (first occurrence index)
+echo strrpos("Hello World", "l");     // 9 (last occurrence index)
+echo str_contains("Hello World", "World");  // true (PHP 8+)
+echo str_starts_with("Hello World", "Hello"); // true (PHP 8+)
+echo str_ends_with("Hello World", "World");   // true (PHP 8+)
+
+// Replacing
+echo str_replace("World", "PHP", "Hello World");  // Hello PHP
+echo str_ireplace("WORLD", "PHP", "Hello World"); // Hello PHP (case-insensitive)
+echo str_replace(["apple", "banana"], ["mango", "guava"], "I like apple and banana");
+// I like mango and guava
+
+// Substring
+echo substr("Hello World", 6);      // World (from index 6 to end)
+echo substr("Hello World", 6, 3);   // Wor (from 6, length 3)
+echo substr("Hello World", -5);     // World (from end)
+
+// Splitting & Joining
+$csv = "apple,banana,cherry";
+$arr = explode(",", $csv);          // ["apple", "banana", "cherry"]
+echo implode(" | ", $arr);          // apple | banana | cherry
+
+// Padding
+echo str_pad("42", 5, "0", STR_PAD_LEFT);   // 00042
+echo str_pad("Hi", 10, "*", STR_PAD_BOTH);  // ****Hi****
+
+// Repeat
+echo str_repeat("=-", 5);  // =-=-=-=-=-=-=-=-=-=-
+
+// Number formatting
+echo number_format(1234567.891, 2, '.', ',');  // 1,234,567.89
+
+// sprintf — formatted strings
+$price = 49.99;
+echo sprintf("Price: Rs. %.2f", $price);  // Price: Rs. 49.99
+echo sprintf("ID: %05d", 42);             // ID: 00042
+?>
+```
+
+---
+
+#### 10. Type Juggling & Type Casting
+
+```php
+<?php
+// PHP auto-converts types in operations — this is "Type Juggling"
+echo "5" + 3;      // 8 (string "5" coerced to int)
+echo "5 apples" + 3;  // 8 (only leading digits matter)
+echo "apples" + 3;    // 3 (non-numeric string = 0)
+
+// Explicit Type Casting
+$str = "42.7";
+$int   = (int)$str;     // 42  — truncates decimal
+$float = (float)$str;   // 42.7
+$bool  = (bool)$str;    // true (non-empty string)
+$arr   = (array)$str;   // ["42.7"]
+
+// intval, floatval, strval — alternative casting functions
+echo intval("0xFF", 16);  // 255 — parse hex string!
+echo intval("010", 8);    // 8   — parse octal string!
+echo intval("10", 2);     // 2   — parse binary string!
+
+// is_* functions — checking types
+var_dump(is_int(42));         // true
+var_dump(is_string("hello")); // true
+var_dump(is_array([1, 2, 3]));// true
+var_dump(is_null(null));      // true
+var_dump(is_bool(false));     // true
+var_dump(is_numeric("3.14")); // true (string that looks like a number)
+?>
+```
+
+<span class="hinglish">PHP mein type juggling bahut dangerous ho sakta hai. Jab `0 == "password"` true return karta hai, toh yeh real security vulnerability hai! Isliye always `===` use karo aur sanitization/validation kabhi skip mat karo. Laravel mein `validate()` method automatically yeh sab handle karta hai.</span>
+
+---
+
+#### 11. Superglobals — $_GET, $_POST, $_SESSION, $_COOKIE
+
+PHP provides special built-in global arrays accessible from anywhere:
+
+```php
+<?php
+// $_GET — URL query parameters (?name=Rahul&age=25)
+$name = $_GET['name'] ?? 'Guest';    // Null coalescing for safety
+$age  = (int)($_GET['age'] ?? 0);    // Cast to int to prevent injection
+
+// $_POST — Form submission data (POST request body)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email    = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    $password = $_POST['password'] ?? '';
+}
+
+// $_REQUEST — Contains both $_GET and $_POST (avoid in production)
+
+// $_SERVER — Server and execution environment info
+echo $_SERVER['REQUEST_METHOD'];  // GET, POST, PUT, DELETE
+echo $_SERVER['HTTP_HOST'];       // myapp.com
+echo $_SERVER['REQUEST_URI'];     // /users?page=2
+echo $_SERVER['REMOTE_ADDR'];     // Client's IP address
+echo $_SERVER['HTTP_USER_AGENT']; // Browser/client info
+
+// $_SESSION — Persistent data across requests (stored server-side)
+session_start();  // Must be called BEFORE any output!
+
+$_SESSION['user_id'] = 101;
+$_SESSION['username'] = 'Rahul';
+$_SESSION['role']     = 'admin';
+
+// Access session data
+if (isset($_SESSION['user_id'])) {
+    echo "Welcome, " . $_SESSION['username'];
+}
+
+// Destroy session (on logout)
+session_destroy();
+
+// $_COOKIE — Data stored in browser (stored client-side, NOT secure for sensitive data!)
+setcookie('theme', 'dark', time() + (86400 * 30), '/');  // Expires in 30 days
+echo $_COOKIE['theme'] ?? 'light';  // Read cookie value
+
+// $_FILES — Uploaded files
+if (isset($_FILES['profile_photo'])) {
+    $file = $_FILES['profile_photo'];
+    echo $file['name'];     // original_filename.jpg
+    echo $file['type'];     // image/jpeg
+    echo $file['size'];     // file size in bytes
+    echo $file['tmp_name']; // temporary server path
+    echo $file['error'];    // 0 = UPLOAD_ERR_OK
+
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        move_uploaded_file($file['tmp_name'], 'uploads/' . basename($file['name']));
+    }
+}
+?>
+```
+
+---
+
+#### 12. Error Handling
+
+##### 12.1 Error Types
+
+| Error Level | Constant | Description |
+| :--- | :--- | :--- |
+| Fatal | `E_ERROR` | Script stops immediately |
+| Warning | `E_WARNING` | Script continues but warns |
+| Notice | `E_NOTICE` | Minor issues (undefined variable) |
+| Parse | `E_PARSE` | Syntax error |
+| Deprecated | `E_DEPRECATED` | Old feature usage warning |
+
+##### 12.2 try / catch / finally
+
+```php
+<?php
+// Exception-based error handling (modern PHP way)
+function divideNumbers(int $a, int $b): float {
+    if ($b === 0) {
+        throw new InvalidArgumentException("Cannot divide by zero!");
+    }
+    return $a / $b;
+}
+
+try {
+    $result = divideNumbers(10, 0);
+    echo "Result: $result";
+} catch (InvalidArgumentException $e) {
+    echo "Validation Error: " . $e->getMessage();
+} catch (TypeError $e) {
+    echo "Type Error: " . $e->getMessage();
+} catch (\Exception $e) {
+    // Catch-all for any other exception
+    echo "An error occurred: " . $e->getMessage();
+} finally {
+    // ALWAYS runs — whether or not an exception occurred
+    echo "Cleanup done.";
+}
+
+// Custom Exception class
+class DatabaseException extends \RuntimeException {
+    public function __construct(string $message, private string $query = '') {
+        parent::__construct($message);
+    }
+
+    public function getQuery(): string {
+        return $this->query;
+    }
+}
+
+// Throw multiple exception types (PHP 8+)
+function processInput(mixed $input): string {
+    return match(true) {
+        !is_string($input)   => throw new TypeError("Must be a string"),
+        strlen($input) === 0 => throw new ValueError("Cannot be empty"),
+        default              => strtoupper($input),
+    };
+}
+?>
+```
+
+---
+
+#### 13. Working with Files
+
+```php
+<?php
+// Reading a file
+$content = file_get_contents('data.txt');  // Reads entire file into string
+$lines   = file('data.txt');               // Reads file into array (one element per line)
+
+// Writing to a file
+file_put_contents('log.txt', "New log entry\n");              // Overwrites
+file_put_contents('log.txt', "Append this\n", FILE_APPEND);  // Appends
+
+// Checking if file exists
+if (file_exists('data.txt')) {
+    echo "File size: " . filesize('data.txt') . " bytes";
+}
+
+// fopen — Manual file handle for large files (memory efficient)
+$handle = fopen('large_file.csv', 'r');  // 'r' = read, 'w' = write, 'a' = append
+
+while (!feof($handle)) {
+    $line = fgets($handle);  // Read one line at a time
+    // Process $line here
+}
+fclose($handle);  // Always close the handle!
+
+// Directory operations
+if (!is_dir('uploads')) {
+    mkdir('uploads', 0755, true);  // true = create nested directories
+}
+
+$files = scandir('uploads');  // Returns array of filenames in directory
+$files = array_diff($files, ['.', '..']);  // Remove . and .. entries
+
+// Path functions
+echo basename('/var/www/html/index.php');   // index.php
+echo dirname('/var/www/html/index.php');    // /var/www/html
+echo pathinfo('/var/www/index.php', PATHINFO_EXTENSION);  // php
+echo realpath('../config.php');             // Absolute resolved path
+?>
+```
+
+---
+
+#### 14. Date & Time
+
+```php
+<?php
+// Current timestamp
+echo time();                  // Unix timestamp (seconds since 1970-01-01)
+echo date('Y-m-d H:i:s');    // 2024-01-15 14:30:00 (current datetime)
+
+// Date formatting codes
+echo date('Y');    // 2024 (4-digit year)
+echo date('m');    // 01 (2-digit month)
+echo date('d');    // 15 (2-digit day)
+echo date('H');    // 14 (24-hour)
+echo date('h');    // 02 (12-hour)
+echo date('i');    // 30 (minutes)
+echo date('s');    // 00 (seconds)
+echo date('D');    // Mon (day abbreviation)
+echo date('l');    // Monday (full day name)
+echo date('N');    // 1 (Mon=1, Sun=7)
+echo date('U');    // Unix timestamp
+echo date('c');    // ISO 8601: 2024-01-15T14:30:00+05:30
+
+// mktime — create timestamp from specific date/time
+$birthday = mktime(0, 0, 0, 9, 15, 1995);  // Sep 15, 1995 midnight
+echo date('Y-m-d', $birthday);              // 1995-09-15
+
+// strtotime — parse English date strings (very powerful!)
+echo date('Y-m-d', strtotime('next Monday'));       // next Monday's date
+echo date('Y-m-d', strtotime('+30 days'));          // 30 days from now
+echo date('Y-m-d', strtotime('last day of this month')); // end of month
+echo date('Y-m-d', strtotime('-1 year'));           // same day last year
+
+// DateTime class (OOP approach — recommended for complex operations)
+$now = new DateTime();
+$future = new DateTime('+2 weeks');
+$past = new DateTime('2020-01-01');
+
+$interval = $now->diff($past);  // DateInterval object
+echo $interval->y . " years, " . $interval->m . " months ago";
+
+// Format with timezone
+$dt = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+echo $dt->format('Y-m-d H:i:s T');  // 2024-01-15 14:30:00 IST
+?>
+```
+
+<span class="hinglish">PHP mein date/time ke liye hamesha `DateTime` class use karo, na ki simple `date()` function. Laravel mein `Carbon` library `DateTime` ke upar built hai aur timezone handling, date manipulation, aur human-readable differences (`diffForHumans()`) ke liye bahut powerful hai!</span>
+
+---
+
+#### 15. PHP & JSON
+
+```php
+<?php
+// PHP Array/Object to JSON string
+$data = [
+    'user'    => ['id' => 1, 'name' => 'Rahul'],
+    'orders'  => [101, 102, 103],
+    'active'  => true,
+];
+
+$json = json_encode($data);
+// {"user":{"id":1,"name":"Rahul"},"orders":[101,102,103],"active":true}
+
+$prettyJson = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+// JSON string to PHP Array/Object
+$jsonString = '{"name":"Priya","age":25,"city":"Mumbai"}';
+
+$array  = json_decode($jsonString, true);   // true = return as associative array
+$object = json_decode($jsonString);          // false/null = return as stdClass object
+
+echo $array['name'];    // Priya
+echo $object->name;     // Priya
+
+// Error handling for JSON
+$bad = json_decode('{invalid json}', true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo "JSON Error: " . json_last_error_msg();
+}
+
+// Building a JSON API response
+function jsonResponse(array $data, int $statusCode = 200): void {
+    http_response_code($statusCode);
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Origin: *');
+    echo json_encode([
+        'success' => $statusCode < 400,
+        'data'    => $data,
+    ]);
+    exit;
+}
+
+jsonResponse(['user' => ['id' => 1, 'name' => 'Rahul']]);
+?>
+```
+
+---
+
+#### Summary Cheat Sheet
+
+| Concept | Key Syntax | Remember |
+| :--- | :--- | :--- |
+| Variables | `$name = "value"` | Always starts with `$` |
+| Constants | `define('NAME', val)` | No `$`, uppercase convention |
+| Strict compare | `===` instead of `==` | Always use `===` in security code |
+| Null coalesce | `$x = $y ?? 'default'` | PHP 7+ replacement for isset ternary |
+| String concat | `"Hello " . $name` | Use `.` not `+` |
+| Arrow function | `fn($x) => $x * 2` | PHP 7.4+, auto-captures outer vars |
+| match | `match($val) { 1 => 'a' }` | PHP 8+, strict, returns value |
+| foreach | `foreach ($arr as $k => $v)` | Most used PHP loop |
+| Superglobals | `$_GET`, `$_POST`, `$_SESSION` | Always sanitize before using! |
+| JSON | `json_encode()` / `json_decode()` | Second param `true` for array |
+    
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Engine Step 0
+            showEngineStep(0);
+        });
+
+        // 2. Interactive Engine Steps Data
+        const engineSteps = [
+            {
+                title: "1. Lexing & Tokenization (Lexical Scanner)",
+                phase: "STAGE 1: CODE TOKENIZATION",
+                desc: "The Zend engine scans your raw PHP text file character-by-character and breaks it into semantic tokens (T_VARIABLE, T_ECHO, T_CONSTANT_ENCAPSED_STRING).",
+                code: "$tokens = token_get_all('<?php echo $name;');\n// Outputs: [T_OPEN_TAG, T_ECHO, ' ', T_VARIABLE '$name', ';']"
+            },
+            {
+                title: "2. AST (Abstract Syntax Tree) Generation",
+                phase: "STAGE 2: SYNTAX TREE PARSER",
+                desc: "The parser converts flat tokens into a hierarchical tree representing grammar, expressions, and precedence, verifying syntax correctness.",
+                code: "// AST Node representation:\nZend_AST_STMT_LIST\n  └── Zend_AST_ECHO\n        └── Zend_AST_VAR ('name')"
+            },
+            {
+                title: "3. Opcode Compilation (Zend Virtual Machine Opcodes)",
+                phase: "STAGE 3: BYTECODE COMPILATION",
+                desc: "The compiler traverses the AST and generates low-level Zend Virtual Machine opcodes (ZEND_FETCH_R, ZEND_ECHO, ZEND_RETURN). Each opcode has operands and a handler.",
+                code: "OPLINE 0: ZEND_FETCH_R (cv: $name) -> result: ~0\nOPLINE 1: ZEND_ECHO    (var: ~0)\nOPLINE 2: ZEND_RETURN  (const: 1)"
+            },
+            {
+                title: "4. OPcache Shared Memory Optimization",
+                phase: "STAGE 4: IN-MEMORY BYTECODE CACHE",
+                desc: "OPcache intercepts opcodes and stores them in shared RAM. On subsequent requests, Steps 1, 2, and 3 are skipped entirely! The server runs straight from memory.",
+                code: "// In php.ini:\nopcache.enable=1\nopcache.memory_consumption=256\nopcache.validate_timestamps=0 // Zero disk read!"
+            },
+            {
+                title: "5. PHP 8 JIT (Just-In-Time) Native Machine Code",
+                phase: "STAGE 5: CPU MACHINE CODE COMPILER",
+                desc: "PHP 8's Tracing JIT monitors frequently executed bytecode loops ('hot code') and compiles opcodes directly into native x86/ARM machine instructions for direct CPU execution.",
+                code: "// In php.ini:\nopcache.jit_buffer_size=100M\nopcache.jit=tracing // Compiles hot opcodes to native CPU instructions!"
+            },
+            {
+                title: "6. Zend VM Execution & zval Reference-Counting",
+                phase: "STAGE 6: RUNTIME & MEMORY MANAGEMENT",
+                desc: "Zend VM executes opcodes. Every PHP variable is a 'zval' struct containing type and value. Memory is managed via reference-counting and a circular-reference Garbage Collector.",
+                code: "struct _zval_struct {\n    zend_value value;\n    union { struct { zend_uchar type; ... } v; };\n    uint32_t refcount; // Increments when copied, decrements when unset\n};"
+            }
+        ];
+
+        function showEngineStep(index) {
+            const chips = document.querySelectorAll('#phpEngineNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = engineSteps[index];
+            const contentBox = document.getElementById('engineContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${step.title}</h5>
+                    <span class="badge badge-pro">${step.phase}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${step.desc}</p>
+                <pre style="margin:0;"><code class="language-php">${step.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchPhpTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

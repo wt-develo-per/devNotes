@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Masterclass — Testing (Pest/PHPUnit), CI/CD & Production DevOps</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./marked.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="nav-bar">
+        <a href="07_Laravel_Caching_Redis_and_Performance_Tuning.html" class="nav-btn">&larr; Previous: Caching & Redis</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next (Completed) &rarr;</span>
+    </div>
+
+    <!-- Rendered Markdown Container -->
+    <div id="content"></div>
+
+    <!-- Interactive Component 1: Zero-Downtime Deployment Stepper -->
+    <div class="lifecycle-stepper">
+        <h4 style="margin-top:0; border:none;">Interactive Zero-Downtime Deployment Pipeline Simulator</h4>
+        <p style="color:var(--text-muted); font-size:0.95rem;">
+            Click through each phase of an enterprise Blue-Green / Symlink deployment to see how high-traffic Laravel applications update without losing a single HTTP request or queue job:
+        </p>
+
+        <div class="stepper-nav" id="deployNav">
+            <button class="step-chip active" onclick="showDeployStep(0)">1. Build New Release</button>
+            <button class="step-chip" onclick="showDeployStep(1)">2. Atomic Database Migration</button>
+            <button class="step-chip" onclick="showDeployStep(2)">3. Warm Production Cache</button>
+            <button class="step-chip" onclick="showDeployStep(3)">4. Atomic Symlink Switch</button>
+            <button class="step-chip" onclick="showDeployStep(4)">5. Graceful Queue & Octane Reload</button>
+            <button class="step-chip" onclick="showDeployStep(5)">6. Old Release Pruning</button>
+        </div>
+
+        <div class="step-content-box" id="deployContent">
+            <!-- Injected by JS -->
+        </div>
+    </div>
+
+    <!-- Interactive Component 2: Modern Testing Tabs (Pest vs PHPUnit vs Fakes) -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTestTab(event, 'ttab-pest')">1. Pest v3 Functional & Arch Tests</button>
+            <button class="tab-btn" onclick="switchTestTab(event, 'ttab-api')">2. HTTP Feature Testing (ActingAs & Factories)</button>
+            <button class="tab-btn" onclick="switchTestTab(event, 'ttab-fakes')">3. Service Fakes (Http, Mail & Queue)</button>
+        </div>
+
+        <div id="ttab-pest" class="tab-panel active">
+            <p style="color:#166534; font-weight:600;">Pest v3: Elegant functional syntax + Architectural Rules enforcement.</p>
+            <pre><code class="language-php">&lt;?php
+// tests/Feature/OrderCreationTest.php
+use App\Models\User;
+use App\Models\Product;
+
+it('allows authenticated users to purchase in-stock products', function () {
+    // 1. Arrange: Factory creation
+    $user = User::factory()->create();
+    $product = Product::factory()->create(['stock' => 5, 'price' => 2000]);
+
+    // 2. Act: Authenticated HTTP Post
+    $response = $this->actingAs($user)->postJson('/api/v1/orders', [
+        'items' => [
+            ['id' => $product->id, 'qty' => 2]
+        ]
+    ]);
+
+    // 3. Assert: Expectations
+    $response->assertCreated()
+        ->assertJsonPath('data.total_amount', 4000);
+
+    expect($product->fresh()->stock)->toBe(3);
+});
+
+// 🛡️ Pest Architecture Test (Guarantees team adheres to Clean Architecture!):
+test('controllers do not directly access database queries')
+    ->expect('App\Http\Controllers')
+    ->not->toUse(['Illuminate\Support\Facades\DB', 'Illuminate\Database\Eloquent\Builder'])
+    ->ignoring('App\Http\Controllers\RawReportExportController');
+?&gt;</code></pre>
+        </div>
+
+        <div id="ttab-api" class="tab-panel">
+            <p style="color:#0284C7; font-weight:600;">HTTP Feature Testing: Database transactions + Model Factory recycling.</p>
+            <pre><code class="language-php">&lt;?php
+namespace Tests\Feature;
+
+use App\Models\Invoice;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+final class InvoiceApiTest extends TestCase
+{
+    // Transactional rollback after every test method:
+    use RefreshDatabase;
+
+    public function test_user_cannot_view_another_users_invoice(): void
+    {
+        // Arrange: 2 distinct users
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+
+        $invoice = Invoice::factory()->for($owner)->create([
+            'amount' => 15000,
+            'status' => 'paid',
+        ]);
+
+        // Act: Intruder tries to read owner's invoice
+        $response = $this->actingAs($intruder)->getJson("/api/v1/invoices/{$invoice->id}");
+
+        // Assert: 403 Forbidden
+        $response->assertForbidden();
+    }
+}
+?&gt;</code></pre>
+        </div>
+
+        <div id="ttab-fakes" class="tab-panel">
+            <p style="color:#581C87; font-weight:600;">Service Fakes: 100% test isolation — Zero network calls, zero external SMS/Emails!</p>
+            <pre><code class="language-php">&lt;?php
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
+use App\Mail\OrderShippedMail;
+use App\Jobs\SyncWithWarehouseJob;
+
+test('order completion dispatches email, queue job, and calls logistics webhook', function () {
+    // 1. Fake all external systems
+    Http::fake([
+        'api.logistics.com/*' => Http::response(['tracking_number' => 'FEDEX-9988'], 200),
+    ]);
+    Mail::fake();
+    Queue::fake();
+
+    $order = Order::factory()->create(['status' => 'processing']);
+
+    // 2. Trigger Action
+    $action = app(\App\Actions\CompleteOrderAction::class);
+    $action->execute($order);
+
+    // 3. Assert Fakes
+    Mail::assertQueued(OrderShippedMail::class, fn($mail) => $mail->hasTo($order->customer_email));
+    Queue::assertPushed(SyncWithWarehouseJob::class);
+    Http::assertSent(fn($req) => $req->url() === 'https://api.logistics.com/v1/shipments');
+});
+?&gt;</code></pre>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <a href="07_Laravel_Caching_Redis_and_Performance_Tuning.html" class="nav-btn">&larr; Previous: Caching & Redis</a>
+        <a href="../index.html" class="nav-btn hub-btn">🏠 Hub Index</a>
+        <span class="nav-btn disabled">Next (Completed) &rarr;</span>
+    </div>
+
+    <!-- Raw Markdown Document -->
+    <textarea id="markdown-content" style="display:none; white-space:pre;">
+### Module 08: Testing (Pest v3 / PHPUnit), CI/CD & Production DevOps
+
+Software Engineering me ek famous axiom hai: **"Code without automated tests is legacy code the moment it is written."**
+
+Jab aap ek high-scale enterprise Laravel application build karte hain, toh aap har deployment par manual clicking karke check nahi kar sakte ki pura system sahi chal raha hai ya nahi. Aapko **Automated Test Suites (Pest v3 / PHPUnit 11)**, **Docker Containerization**, **GitHub Actions CI/CD pipelines**, aur **Zero-Downtime Symlink Deployments** ki zaroorat hoti hai.
+
+Is module me hum explore karenge ki kaise **Senior Staff Architects** 100% reliable test-driven production environments maintain karte hain **Laravel 10, 11, 12 aur 13** me.
+
+---
+
+#### 1. The Modern Testing Ecosystem: Pest v3 vs PHPUnit 11
+
+* **PHPUnit:** Classic class-based xUnit architecture. Solid, robust, lekin verbose boilerplate syntax hota hai.
+* **Pest v3:** Modern functional testing framework built on top of PHPUnit. Ye Laravel ka official community standard ban chuka hai (Laravel 11+ project create karte waqt Pest default recommend hota hai).
+
+##### 1.1 Syntax Comparison: PHPUnit vs Pest v3
+
+**PHPUnit 11 Style (Class & Method Based):**
+```php
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use App\Models\User;
+
+class AuthTest extends TestCase
+{
+    public function test_user_can_authenticate_with_valid_password(): void
+    {
+        $user = User::factory()->create(['password' => 'secret123']);
+
+        $response = $this->post('/login', [
+            'email'    => $user->email,
+            'password' => 'secret123',
+        ]);
+
+        $response->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
+    }
+}
+```
+
+**Pest v3 Style (Concise Functional & Fluent Expectations):**
+```php
+use App\Models\User;
+
+it('authenticates user with valid credentials', function () {
+    $user = User::factory()->create(['password' => 'secret123']);
+
+    $response = $this->post('/login', [
+        'email'    => $user->email,
+        'password' => 'secret123',
+    ]);
+
+    $response->assertRedirect('/dashboard');
+    $this->assertAuthenticatedAs($user);
+});
+```
+
+##### 1.2 Pest Architecture Testing (`arch()`)
+
+Pest v3 ka sabse powerful feature hai **Architecture Testing** — ye compile time par check karta hai ki pure project ke developers architecture rules follow kar rahe hain ya nahi!
+
+```php
+// tests/Feature/ArchitectureTest.php
+
+// 1. Enforce strict type declarations in every file:
+arch('all application files use strict types')
+    ->expect('App')
+    ->toUseStrictTypes();
+
+// 2. Prevent debugging dumps in production code:
+arch('no dd or dump statements in application')
+    ->expect(['App', 'routes'])
+    ->not->toUse(['dd', 'dump', 'ray', 'var_dump']);
+
+// 3. Keep Controllers thin (No DB queries in Controllers!):
+arch('controllers do not access DB facades directly')
+    ->expect('App\Http\Controllers')
+    ->not->toUse('Illuminate\Support\Facades\DB');
+
+// 4. Ensure all Models extend Eloquent:
+arch('models extend eloquent')
+    ->expect('App\Models')
+    ->toExtend(\Illuminate\Database\Eloquent\Model::class);
+```
+
+---
+
+#### 2. Database Testing & Modern Model Factories
+
+##### 2.1 The `RefreshDatabase` Trait
+
+Database tests me har test ke baad data reset hona chahiye taaki ek test dusre test ko pollute na kare:
+
+```php
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class); // In Pest tests/Pest.php
+```
+
+* **Under the hood:** Test suite start hone par migrations run karta hai. Uske baad **har individual test method ko DB transaction ke andar wrap karta hai**. Test khatam hote hi transaction rollback kar deta hai — disk I/O zero ho jata hai aur tests ultra-fast execute hote hain!
+
+##### 2.2 Model Factories with States & Sequences
+
+```php
+namespace Database\Factories;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+class UserFactory extends Factory
+{
+    public function definition(): array
+    {
+        return [
+            'name'              => fake()->name(),
+            'email'             => fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'password'          => 'password', // Auto-hashed in L11+
+            'is_admin'          => false,
+        ];
+    }
+
+    // Custom State Method:
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+            'role'     => 'super-admin',
+        ]);
+    }
+
+    // Sequence for distributed mock attributes:
+    public function withTiers(): static
+    {
+        return $this->sequence(
+            ['tier' => 'bronze'],
+            ['tier' => 'silver'],
+            ['tier' => 'gold'],
+        );
+    }
+}
+
+// Usage in tests:
+$admin = User::factory()->admin()->create();
+$users = User::factory()->count(3)->withTiers()->create();
+```
+
+---
+
+#### 3. Enterprise Service Fakes (Zero Network Overhead)
+
+Tests run karte waqt **kabhi bhi real external services** (Stripe, Twilio, SendGrid, AWS S3) call nahi honi chahiye. Network call slow hoti hai, fail ho sakti hai, aur real money charge kar sakti hai!
+
+##### 3.1 `Http::fake()` — Mocking External APIs
+
+```php
+use Illuminate\Support\Facades\Http;
+
+test('it handles Stripe card decline gracefully', function () {
+    // Mock Stripe response:
+    Http::fake([
+        'api.stripe.com/v1/charges' => Http::response([
+            'error' => [
+                'message' => 'Your card was declined.',
+                'code'    => 'card_declined',
+            ]
+        ], 402),
+    ]);
+
+    $response = $this->postJson('/api/checkout', ['token' => 'tok_declined']);
+
+    $response->assertStatus(422)
+        ->assertJsonPath('error.message', 'Your card was declined.');
+
+    // Assert that Stripe API was indeed called with expected parameters:
+    Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
+        return $request->url() === 'https://api.stripe.com/v1/charges'
+            && $request['currency'] === 'usd';
+    });
+});
+```
+
+##### 3.2 Time Travel in Tests (`$this->travel()`)
+
+Trial expiration aur subscription renewal test karte waqt real me wait karne ki zaroorat nahi hai:
+
+```php
+test('subscription expires after 30 days of inactivity', function () {
+    $user = User::factory()->create();
+    $subscription = Subscription::factory()->for($user)->create([
+        'starts_at' => now(),
+        'ends_at'   => now()->addDays(30),
+    ]);
+
+    expect($subscription->isActive())->toBeTrue();
+
+    // 🚀 Fast-forward time by 31 days instantly!
+    $this->travel(31)->days();
+
+    expect($subscription->fresh()->isActive())->toBeFalse();
+
+    // Reset back to present time:
+    $this->travelBack();
+});
+```
+
+---
+
+#### 4. Production Containerization (Docker for Laravel)
+
+Production deployment ke liye multi-stage Docker build standard hai:
+
+##### 4.1 Production `Dockerfile` (PHP 8.3 / 8.4-FPM)
+
+```dockerfile
+# Stage 1: Build & Composer Dependencies
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+# Stage 2: Final Production Runtime
+FROM php:8.4-fpm-alpine
+
+# Install system dependencies & PHP extensions
+RUN apk add --no-cache \
+    nginx supervisor curl icu-dev libpng-dev libjpeg-turbo-dev \
+    libzip-dev oniguruma-dev linux-headers $PHPIZE_DEPS \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo_mysql bcmath gd intl opcache zip pcntl
+
+WORKDIR /var/www/html
+
+# Copy application source code
+COPY . .
+COPY --from=vendor /app/vendor ./vendor
+
+# Copy production PHP & OPcache configs
+COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
+# Set permissions for www-data
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+EXPOSE 9000
+CMD ["php-fpm"]
+```
+
+---
+
+#### 5. CI/CD Pipeline (GitHub Actions Workflow)
+
+Har git push ya pull request par automated quality checks execute hone chahiye:
+
+```yaml
+# .github/workflows/ci.yml
+name: Laravel CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-suite:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, bcmath, redis, opcache
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run Static Analysis (PHPStan / Larastan)
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G
+
+      - name: Run Automated Tests (Pest)
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: test_db
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          REDIS_HOST: 127.0.0.1
+        run: ./vendor/bin/pest --parallel --colors=always
+```
+
+---
+
+#### 6. Zero-Downtime Atomic Symlink Deployment
+
+Agar aap live server par direct `git pull` karte hain, toh code update hone aur dependencies install hone ke beech 30-40 seconds tak website 500 error ya class-not-found throw kar sakti hai!
+
+##### 6.1 The Symlink Directory Structure
+
+```
+/var/www/myapp/
+├── current -> /var/www/myapp/releases/20260908120000  ← (Nginx document root points here!)
+├── shared/
+│   ├── .env
+│   └── storage/
+└── releases/
+    ├── 20260908100000
+    ├── 20260908110000
+    └── 20260908120000 (Active release)
+```
+
+##### 6.2 The 6-Step Atomic Deployment Script
+
+```bash
+#!/bin/bash
+set -e # Exit immediately if any command fails
+
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+RELEASE_DIR="/var/www/myapp/releases/$TIMESTAMP"
+SHARED_DIR="/var/www/myapp/shared"
+
+echo "Deploying release: $TIMESTAMP..."
+
+# 1. Clone repository into new release directory
+git clone --depth 1 git@github.com:myorg/myapp.git $RELEASE_DIR
+cd $RELEASE_DIR
+
+# 2. Symlink shared .env and persistent storage
+ln -sfn $SHARED_DIR/.env $RELEASE_DIR/.env
+rm -rf $RELEASE_DIR/storage
+ln -sfn $SHARED_DIR/storage $RELEASE_DIR/storage
+
+# 3. Install production dependencies
+composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+# 4. Atomic Database Migrations
+php artisan migrate --force
+
+# 5. Compile production caches
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# 6. ATOMIC SWITCH: Switch symlink in 0.001 milliseconds!
+ln -sfn $RELEASE_DIR /var/www/myapp/current
+
+# 7. Graceful Worker Reloads (Zero job loss)
+php artisan horizon:terminate || php artisan queue:restart
+systemctl reload php8.4-fpm
+
+echo "Deployment completed successfully with ZERO downtime!"
+```
+
+---
+
+#### 7. Senior Checklist — Testing & Production DevOps
+
+1. [x] **Enforce Pest Architecture Tests (`arch()`)** in CI/CD to prevent junior developers from adding `dd()` or violating Layered Architecture.
+2. [x] **Always fake external APIs with `Http::fake()`** to ensure tests run offline, fast (< 5 seconds), and never hit live credit card processors.
+3. [x] **Use `RefreshDatabase` trait** to wrap tests in DB transactions instead of repeatedly dropping and re-migrating the entire schema.
+4. [x] **Run automated CI checks** (Pint, Larastan Level 8, Pest) on every pull request before merging to `main`.
+5. [x] **Never run `git pull` directly in production web roots**: Always use atomic symlink-based deployments (Blue-Green / Envoy / Deployer).
+6. [x] **Always trigger `horizon:terminate` / `queue:restart` after deployment** so workers reload updated code into memory without dropping in-flight jobs.
+    </textarea>
+
+    <!-- Markdown Engine & Interactive Scripts -->
+    <script>
+        // 1. Markdown Parsing & Copy Code Buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawContent = document.getElementById('markdown-content').value;
+            document.getElementById('content').innerHTML = marked.parse(rawContent);
+
+            // Add Copy buttons to all pre code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(pre.innerText).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+
+            // Initialize Deploy Step 0
+            showDeployStep(0);
+        });
+
+        // 2. Interactive Deployment Data
+        const deploySteps = [
+            {
+                title: "1. Build New Release in Isolated Directory",
+                phase: "STAGE 1: ISOLATED ARTIFACT",
+                desc: "Git clone runs into a brand new timestamped folder (/var/www/releases/20260908120000). The current live website is completely untouched and unaffected!",
+                code: "git clone --depth 1 git@github.com:org/app.git /var/www/releases/$TIMESTAMP\ncomposer install --no-dev --optimize-autoloader"
+            },
+            {
+                title: "2. Atomic Database Migrations (Zero-Downtime Safe)",
+                phase: "STAGE 2: SCHEMA SYNC",
+                desc: "Run php artisan migrate --force. Database tables and columns are updated. Notice: Migrations must be backward compatible with currently running code!",
+                code: "php artisan migrate --force\n// Output: Migrating 2026_09_08_add_status_column... Done (0.04s)"
+            },
+            {
+                title: "3. Warm Production Cache Files",
+                phase: "STAGE 3: PERFORMANCE COMPILATION",
+                desc: "Pre-compile configuration, routes, events, and blade views into single optimized PHP arrays before any user traffic touches the new release.",
+                code: "php artisan config:cache\nphp artisan route:cache\nphp artisan view:cache\nphp artisan event:cache"
+            },
+            {
+                title: "4. The Atomic Symlink Switch (0.001ms)",
+                phase: "STAGE 4: INSTANT TRAFFIC CUTOVER",
+                desc: "Linux filesystem atomic operation: ln -sfn switches the 'current' pointer to the new release. Not a single incoming HTTP request drops or sees a broken state!",
+                code: "ln -sfn /var/www/releases/20260908120000 /var/www/myapp/current\n// Nginx instantly serves new release on the very next TCP packet!"
+            },
+            {
+                title: "5. Graceful Queue & Octane Worker Reload",
+                phase: "STAGE 5: DAEMON REFRESH",
+                desc: "Workers finish their currently in-flight jobs, cleanly shut down, and restart with the fresh codebase. Zero dropped jobs, zero corrupted transactions!",
+                code: "php artisan horizon:terminate\nphp artisan queue:restart\nsystemctl reload php8.4-fpm"
+            },
+            {
+                title: "6. Prune Old Releases (Disk Space Protection)",
+                phase: "STAGE 6: GARBAGE COLLECTION",
+                desc: "Keep the last 5 releases for instant rollback capability (ln -sfn to previous release if needed), and delete older releases to prevent disk fill-up.",
+                code: "cd /var/www/myapp/releases && ls -1t | tail -n +6 | xargs rm -rf\n// Retains last 5 releases. Deployment Complete!"
+            }
+        ];
+
+        function showDeployStep(index) {
+            const chips = document.querySelectorAll('#deployNav .step-chip');
+            chips.forEach((c, idx) => {
+                c.classList.toggle('active', idx === index);
+            });
+
+            const step = deploySteps[index];
+            const contentBox = document.getElementById('deployContent');
+            contentBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h5 style="margin:0;">${step.title}</h5>
+                    <span class="badge badge-pro">${step.phase}</span>
+                </div>
+                <p style="color:var(--slate-700); font-size:0.95rem; margin-bottom:12px;">${step.desc}</p>
+                <pre style="margin:0;"><code class="language-bash">${step.code}</code></pre>
+            `;
+        }
+
+        // 3. Tab Switcher
+        function switchTestTab(evt, tabId) {
+            document.querySelectorAll('.tab-container .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-container .tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            evt.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
