@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 05: Production AI Architecture & Cost Optimization | AI for Laravel Developers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #161f38;
+      --bg-code: #0b1120;
+      --accent: #ec4899;
+      --accent-glow: rgba(236, 72, 153, 0.25);
+      --accent-secondary: #38bdf8;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #ec4899;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Reading Progress Bar */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ec4899, #8b5cf6, #38bdf8);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #ec4899, #be185d);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(180deg, rgba(236, 72, 153, 0.08) 0%, rgba(10, 14, 26, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(236, 72, 153, 0.15);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      color: #fbcfe8;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #fbcfe8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 950px;
+      line-height: 1.6;
+    }
+
+    /* Tab Navigation */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(139, 92, 246, 0.15));
+      color: #fbcfe8;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.25);
+    }
+
+    /* Section Panels */
+    .section-panel {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(236, 72, 153, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+    }
+
+    .callout.tip {
+      border-left-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    .callout-header {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .callout.tip .callout-header { color: #6ee7b7; }
+    .callout.warning .callout-header { color: #fde68a; }
+    .callout.danger .callout-header { color: var(--accent-rose); }
+    .callout .callout-header { color: #fbcfe8; }
+
+    /* Code Blocks */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .code-filename {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code {
+      background: rgba(236, 72, 153, 0.15);
+      color: #fbcfe8;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    /* Grids & Tables */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .info-box h4 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0f172a;
+      color: #fbcfe8;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-pink { background: rgba(236, 72, 153, 0.2); color: #fbcfe8; border: 1px solid rgba(236, 72, 153, 0.4); }
+    .badge-blue { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #fbcfe8;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AI Track</span>
+      <span>AI for Laravel Developers</span>
+    </a>
+    <div class="nav-links">
+      <a href="04_Function_Calling_and_AI_Agents.html" class="nav-btn">⬅️ Module 04</a>
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-semantic-cache" class="nav-btn primary">💰 Semantic Cache</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">⚡ Module 05 • Production Scale & DevOps</div>
+      <h1 class="hero-title">Production AI Architecture, Horizon Queues & Cost Optimization</h1>
+      <p class="hero-desc">
+        AI features ko production scale par chalana expensive aur challenging hota hai. Is module mein hum master karenge <strong>Laravel Horizon</strong> background queues, <strong>Multi-Model Fallback Chains</strong> (zero downtime jab OpenAI down ho), <strong>Redis Semantic Vector Caching</strong> (API bills ko 70% slash karne ka secret), aur <strong>Per-Tenant Token Budgeting</strong> with live cost tracking!
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-crisis-pillars', this)">🚨 1. The Production AI Crisis</button>
+      <button class="tab-btn" onclick="switchTab('sec-horizon-queues', this)">⚡ 2. Laravel Horizon AI Queues</button>
+      <button class="tab-btn" onclick="switchTab('sec-fallback-chains', this)">🔄 3. Multi-Model Fallbacks</button>
+      <button class="tab-btn" onclick="switchTab('sec-semantic-cache', this)">💰 4. Redis Semantic Caching</button>
+      <button class="tab-btn" onclick="switchTab('sec-tenant-budgeting', this)">📊 5. Tenant Token Budgeting</button>
+      <button class="tab-btn" onclick="switchTab('sec-enterprise-job', this)">🏗️ 6. Full Enterprise Job & CostTracker</button>
+      <button class="tab-btn" onclick="switchTab('sec-monitoring-cheatsheet', this)">📋 7. Horizon Audit & Cheatsheet</button>
+    </div>
+
+
+    <!-- SECTION 1: THE PRODUCTION AI CRISIS -->
+    <section id="sec-crisis-pillars" class="section-panel active">
+      <div class="card">
+        <div class="card-title">🚨 The 4 Realities of the Production AI Crisis</div>
+        <div class="card-subtitle">Kyun toy AI apps production scale par aate hi crash hoti hain aur $2,000 ka surprise bill generate karti hain.</div>
+
+        <p>
+          Local development mein single user ke liye <code>Prism::text()-&gt;generate()</code> chalana aasan lagta hai. Lekin jab 2,000 active users aapke SaaS par aate hain, toh AI architecture traditional MySQL CRUD se 100x zyada volatile behave karti hai:
+        </p>
+
+        <div class="grid-2">
+          <div class="info-box" style="border-top: 3px solid var(--accent-rose);">
+            <h4>1. Latency &amp; Worker Starvation</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              Traditional database query <strong>15ms</strong> mein complete hoti hai. AI reasoning call <strong>4,000ms se 35,000ms</strong> leti hai! Agar synchronous controllers mein call kiya, toh 50 concurrent users aapke poore PHP-FPM web pool ko freeze kar denge.
+            </p>
+          </div>
+
+          <div class="info-box" style="border-top: 3px solid var(--accent-amber);">
+            <h4>2. Runaway Token Costs</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              RAG pipelines mein har query ke saath 3,000 tokens ka context context window mein inject hota hai. 1,000 users * 10 queries/day = 30 Million tokens/day! Without caching, <strong>mahine ka OpenAI bill $1,800+ ban jata hai.</strong>
+            </p>
+          </div>
+
+          <div class="info-box" style="border-top: 3px solid var(--accent-purple);">
+            <h4>3. 3rd-Party API Outages &amp; 429 Throttling</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              OpenAI aur Anthropic ke server incidents hote rehte hain (HTTP 500, 502, 503). Agar aapka backend single provider par hardcoded hai, toh aapka SaaS downtime face karega chahe aapka apna server 100% healthy ho!
+            </p>
+          </div>
+
+          <div class="info-box" style="border-top: 3px solid var(--accent-secondary);">
+            <h4>4. Rogue Multi-Tenant Abuse</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              Bina token limits ke, ek single customer loop script likh kar aapka 80% quota 1 ghante mein exhaust kar sakta hai, jisse baki paying customers ko <em>"Quota Exceeded"</em> errors milne lagenge.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.75rem 0 0.75rem; font-size: 1.15rem;">🏛️ The 4 Pillars of Production AI Engineering</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Pillar</th>
+              <th>Laravel Solution</th>
+              <th>Business Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Asynchronous Offload</strong></td>
+              <td>Laravel Horizon + Dedicated Redis AI Queues</td>
+              <td>Zero web server freezing; handles 10,000+ jobs gracefully</td>
+            </tr>
+            <tr>
+              <td><strong>2. High Availability</strong></td>
+              <td>Multi-Model Fallback Chain (OpenAI ➔ Claude ➔ Groq)</td>
+              <td><strong>99.99% Uptime</strong> even during total OpenAI blackouts</td>
+            </tr>
+            <tr>
+              <td><strong>3. Semantic Caching</strong></td>
+              <td>Redis Vector Similarity Caching</td>
+              <td><strong>70% Bill Reduction</strong> + 5ms instant responses</td>
+            </tr>
+            <tr>
+              <td><strong>4. Financial Defense</strong></td>
+              <td>Per-Tenant Token Limits &amp; RateLimiter Middleware</td>
+              <td>Predictable margins; blocks abusive automated scripts</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: LARAVEL HORIZON AI QUEUES -->
+    <section id="sec-horizon-queues" class="section-panel">
+      <div class="card">
+        <div class="card-title">⚡ Laravel Horizon Queues: Dedicated AI Workers &amp; Sizing</div>
+        <div class="card-subtitle">Kyun AI jobs ko standard queues mein mix nahi kiya jata aur Horizon configuration kaise tune karein.</div>
+
+        <p>
+          Ek standard Laravel app mein jobs fast hoti hain (e.g. <code>SendPasswordResetNotification</code> takes 120ms). Agar aapne usi <code>default</code> queue mein ek 25-second ka heavy AI document parsing job daal diya, toh <strong>aapke sabhi transactional emails 30 second line mein latak jayenge!</strong>
+        </p>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Dedicated Redis Queue Topology</h3>
+        <p>Production mein hum AI ko kam se kam 2 dedicated priority queues dete hain:</p>
+        <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.7; margin-bottom: 1rem;">
+          <li><code>ai-high</code>: User-facing interactive background tasks (e.g. user waiting on screen with progress bar). Fast supervisor with 10 workers.</li>
+          <li><code>ai-batch</code>: Heavy bulk operations (e.g. 100-page PDF ingestion, nightly CRM summaries). Dedicated long-timeout worker.</li>
+        </ul>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">2. Horizon Configuration (config/horizon.php)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">config/horizon.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>'environments' =&gt; [
+    'production' =&gt; [
+        // Standard fast application jobs
+        'supervisor-default' =&gt; [
+            'connection' =&gt; 'redis',
+            'queue'      =&gt; ['default', 'notifications', 'mail'],
+            'balance'    =&gt; 'simple',
+            'processes'  =&gt; 5,
+            'tries'      =&gt; 3,
+            'timeout'    =&gt; 60,
+        ],
+
+        // Dedicated Real-time AI Supervisor
+        'supervisor-ai-high' =&gt; [
+            'connection'   =&gt; 'redis',
+            'queue'        =&gt; ['ai-high'],
+            'balance'      =&gt; 'auto',
+            'minProcesses' =&gt; 2,
+            'maxProcesses' =&gt; 12,
+            'tries'        =&gt; 3,
+            'timeout'      =&gt; 180, // 3 minutes timeout for reasoning models
+        ],
+
+        // Heavy Batch Processing Supervisor (PDF Ingestion)
+        'supervisor-ai-batch' =&gt; [
+            'connection'   =&gt; 'redis',
+            'queue'        =&gt; ['ai-batch'],
+            'balance'      =&gt; 'simple',
+            'processes'    =&gt; 3,
+            'tries'        =&gt; 2,
+            'timeout'      =&gt; 600, // 10 minutes max for massive PDF files
+        ],
+    ],
+],</code></pre>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">3. The ShouldBeUnique Guard (Preventing Double Billing)</h3>
+        <p>
+          Impatience ke chalte user "Generate Summary" button par 4 baar click kar sakta hai. <code>ShouldBeUnique</code> interface ensure karta hai ki ek hi document ke liye simultaneously do expensive AI jobs queue mein add na hon:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Jobs/SummarizeDocumentJob.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
+class SummarizeDocumentJob implements ShouldQueue, ShouldBeUnique
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    // Retry settings for transient API failures
+    public int $tries = 3;
+    public array $backoff = [10, 30, 90]; // Exponential backoff allows rate limit window to reset!
+
+    public function __construct(
+        public int $documentId,
+        public int $tenantId
+    ) {
+        $this-&gt;onQueue('ai-high');
+    }
+
+    /**
+     * Unique lock identifier in Redis
+     */
+    public function uniqueId(): string
+    {
+        return "summarize_doc_{$this-&gt;documentId}";
+    }
+
+    /**
+     * Lock expiry time in seconds
+     */
+    public int $uniqueFor = 300; // 5 minutes lock
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: MULTI-MODEL FALLBACK CHAINS & CIRCUIT BREAKERS -->
+    <section id="sec-fallback-chains" class="section-panel">
+      <div class="card">
+        <div class="card-title">🔄 Multi-Model Fallback Chains &amp; Circuit Breakers</div>
+        <div class="card-subtitle">Zero-downtime architecture jo OpenAI outages par automatic Claude ya Groq par failover karta hai.</div>
+
+        <p>
+          2024–2026 mein koi bhi enterprise production SaaS sirf ek AI provider par depend nahi reh sakta. Jab OpenAI status page par red incident aata hai, toh aapka customer portal bina 1 second ke downtime ke <strong>automatically fallback provider par switch ho jana chahiye!</strong>
+        </p>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">The 3-Tier Multi-Provider Fallback Service</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/ResilientAiService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+namespace App\Services;
+
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Text\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+
+class ResilientAiService
+{
+    /**
+     * Generate text with 3-tier fallback and Redis circuit breaker
+     */
+    public function generate(string $prompt, string $systemPrompt = ''): Response
+    {
+        // 1. Check Circuit Breaker for Primary Provider (OpenAI)
+        if (! Cache::has('ai_circuit:openai:tripped')) {
+            try {
+                return Prism::text()
+                    -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+                    -&gt;withSystemPrompt($systemPrompt)
+                    -&gt;withPrompt($prompt)
+                    -&gt;generate();
+            } catch (\Throwable $e) {
+                $this-&gt;recordFailure('openai', $e);
+            }
+        }
+
+        // 2. Secondary Fallback: Anthropic Claude 3.5 Sonnet
+        if (! Cache::has('ai_circuit:anthropic:tripped')) {
+            try {
+                Log::warning("OpenAI down or tripped. Failing over to Anthropic Claude...");
+                return Prism::text()
+                    -&gt;using(Provider::Anthropic, 'claude-3-5-sonnet-20241022')
+                    -&gt;withSystemPrompt($systemPrompt)
+                    -&gt;withPrompt($prompt)
+                    -&gt;generate();
+            } catch (\Throwable $e) {
+                $this-&gt;recordFailure('anthropic', $e);
+            }
+        }
+
+        // 3. Emergency High-Speed Fallback: Groq Llama 3.3 (Free / Ultra-fast)
+        Log::critical("Both OpenAI and Claude failed! Engaging Emergency Groq fallback...");
+        return Prism::text()
+            -&gt;using(Provider::Groq, 'llama-3.3-70b-versatile')
+            -&gt;withSystemPrompt($systemPrompt)
+            -&gt;withPrompt($prompt)
+            -&gt;generate();
+    }
+
+    /**
+     * Trip circuit breaker if 3 failures occur within 2 minutes
+     */
+    protected function recordFailure(string $provider, \Throwable $e): void
+    {
+        Log::error("Provider [{$provider}] error: " . $e-&gt;getMessage());
+
+        $failures = Cache::increment("ai_failures:{$provider}");
+        if ($failures === 1) {
+            Cache::put("ai_failures:{$provider}", 1, now()-&gt;addMinutes(2));
+        }
+
+        // Trip the circuit for 5 minutes after 3 failures
+        if ($failures &gt;= 3) {
+            Log::alert("🚨 TRIP CIRCUIT: [{$provider}] has failed 3 times! Bypassing for 5 minutes.");
+            Cache::put("ai_circuit:{$provider}:tripped", true, now()-&gt;addMinutes(5));
+            Cache::forget("ai_failures:{$provider}");
+        }
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout tip">
+          <div class="callout-header">💡 Why the Circuit Breaker is Critical</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Agar OpenAI down ho aur har request 30 seconds baad timeout error de, toh circuit breaker ke bina aapka har user 30 seconds wait karega tab jaakar Claude par switch hoga. <strong>Circuit Breaker</strong> 3 failures ke baad OpenAI ko 5 minute ke liye ignore kar deta hai, jisse agle sabhi users direct Claude par <strong>0ms failover latency</strong> ke saath serve hote hain!
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: REDIS SEMANTIC CACHING -->
+    <section id="sec-semantic-cache" class="section-panel">
+      <div class="card">
+        <div class="card-title">💰 Redis Semantic Vector Caching: Slash 70% Off AI Bills</div>
+        <div class="card-subtitle">Kyun standard MD5 caching AI mein fail hoti hai aur Semantic Caching kaise 5ms instant answer deti hai.</div>
+
+        <p>
+          Customer support aur e-commerce SaaS mein <strong>60% se 80% customer queries identical intent wali hoti hain</strong>:
+          <br><em>Customer A:</em> "Where can I download my GST invoice?"
+          <br><em>Customer B:</em> "How to get invoice for GST tax?"
+          <br><em>Customer C:</em> "Invoice download procedure please"
+        </p>
+
+        <div class="callout danger">
+          <div class="callout-header">❌ The Flaw of Traditional Cache::remember()</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Agar aap <code>Cache::remember('ai_' . md5($prompt))</code> karenge, toh Customer A, B, aur C ke MD5 hashes completely alag honge. Result: Teenon requests par $0.04-$0.04 ka expensive OpenAI call hoga aur teeno ko 10-second loader wait karna padega!
+          </p>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Semantic Cache Architecture (Cosine Similarity &gt; 0.94)</h3>
+        <p>
+          Semantic Caching mein hum previous answers ko unke <strong>Embedding Vector</strong> ke saath store karte hain. Nayi query aane par hum $0.00002 ki micro-embedding call karke check karte hain: <em>"Kya kisi previous answered query se 94% match hai?"</em> Agar haan, toh <strong>5ms mein cached answer return hota hai bina kisi LLM generation cost ke!</strong>
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/SemanticCacheService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+namespace App\Services;
+
+use App\Models\SemanticCacheEntry;
+use Pgvector\Laravel\Vector;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+
+class SemanticCacheService
+{
+    /**
+     * Look up semantic cache for identical intent (Threshold: 0.94)
+     */
+    public function get(string $prompt, int $tenantId): ?string
+    {
+        // 1. Generate fast embedding for the user prompt ($0.00002 cost)
+        $embedResponse = Prism::embeddings()
+            -&gt;using(Provider::OpenAI, 'text-embedding-3-small')
+            -&gt;fromInput($prompt)
+            -&gt;generate();
+
+        $queryVector = new Vector($embedResponse-&gt;embeddings[0]-&gt;embedding);
+
+        // 2. Query cache table with Cosine Similarity
+        $hit = SemanticCacheEntry::query()
+            -&gt;where('tenant_id', $tenantId)
+            -&gt;select('id', 'response_text')
+            -&gt;selectRaw('1 - (embedding &lt;=&gt; ?) AS similarity', [$queryVector])
+            -&gt;whereRaw('1 - (embedding &lt;=&gt; ?) &gt;= 0.94', [$queryVector]) // 94% semantic match
+            -&gt;orderByRaw('embedding &lt;=&gt; ? ASC', [$queryVector])
+            -&gt;first();
+
+        if ($hit) {
+            $hit-&gt;increment('hit_count');
+            return $hit-&gt;response_text;
+        }
+
+        return null;
+    }
+
+    /**
+     * Store new prompt &amp; answer with embedding vector
+     */
+    public function put(string $prompt, string $response, int $tenantId): void
+    {
+        $embedResponse = Prism::embeddings()
+            -&gt;using(Provider::OpenAI, 'text-embedding-3-small')
+            -&gt;fromInput($prompt)
+            -&gt;generate();
+
+        SemanticCacheEntry::create([
+            'tenant_id'     =&gt; $tenantId,
+            'prompt'        =&gt; $prompt,
+            'response_text' =&gt; $response,
+            'embedding'     =&gt; new Vector($embedResponse-&gt;embeddings[0]-&gt;embedding),
+            'hit_count'     =&gt; 0,
+        ]);
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="margin: 1.5rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">📊 Real-World ROI Calculation (10,000 queries/day)</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Architecture</th>
+              <th>Average Latency</th>
+              <th>Monthly OpenAI Bill</th>
+              <th>Savings</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Without Semantic Cache</strong></td>
+              <td>~4,200 ms</td>
+              <td>$1,200.00 / month</td>
+              <td>$0 (Baseline)</td>
+            </tr>
+            <tr>
+              <td><strong>With Semantic Cache (72% Hit Rate)</strong></td>
+              <td><strong>~320 ms</strong></td>
+              <td><strong>$360.00 / month</strong></td>
+              <td><strong>$840.00 / mo (70% Saved!)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: TENANT TOKEN BUDGETING & RATE LIMITING -->
+    <section id="sec-tenant-budgeting" class="section-panel">
+      <div class="card">
+        <div class="card-title">📊 Per-Tenant Token Budgeting, Cost Quotas &amp; Rate Limiting</div>
+        <div class="card-subtitle">Multi-tenant SaaS financial protection: User plans, token meters aur RateLimiter guards.</div>
+
+        <p>
+          Agar aapka customer $19/month ka starter plan pay kar raha hai, toh aap use unlimited $0.05 wale GPT-4o calls nahi de sakte. Production SaaS mein **Token Metering aur Quota Enforcement** mandatory hai.
+        </p>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Database Architecture: Tenant AI Usage Meter</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">database/migrations/create_tenant_ai_usage_table.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>Schema::create('tenant_ai_usages', function (Blueprint $table) {
+    $table-&gt;id();
+    $table-&gt;foreignId('tenant_id')-&gt;index();
+    $table-&gt;date('usage_date')-&gt;index(); // Partitioned by date for fast aggregation
+    $table-&gt;unsignedBigInteger('input_tokens')-&gt;default(0);
+    $table-&gt;unsignedBigInteger('output_tokens')-&gt;default(0);
+    $table-&gt;unsignedBigInteger('cost_in_microcents')-&gt;default(0); // $0.01 = 1,000 microcents
+    $table-&gt;timestamps();
+
+    $table-&gt;unique(['tenant_id', 'usage_date']);
+});</code></pre>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Middleware: EnsureTenantHasAiCredits</h3>
+        <p>Request LLM tak pahunchne se pehle hi check karein ki tenant ne apna monthly quota exceed toh nahi kiya:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Http/Middleware/EnsureTenantHasAiCredits.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class EnsureTenantHasAiCredits
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $tenant = $request-&gt;user()?-&gt;tenant;
+
+        if (! $tenant) {
+            abort(403, 'Tenant context missing.');
+        }
+
+        // Get monthly token limit based on subscription plan
+        $monthlyLimit = match ($tenant-&gt;plan) {
+            'enterprise' =&gt; 5_000_000,
+            'pro'        =&gt; 500_000,
+            default      =&gt; 25_000, // Free Tier
+        };
+
+        $currentUsage = $tenant-&gt;getMonthlyTokenUsage();
+
+        if ($currentUsage &gt;= $monthlyLimit) {
+            return response()-&gt;json([
+                'error'         =&gt; 'Monthly AI quota exceeded.',
+                'current_usage' =&gt; $currentUsage,
+                'monthly_limit' =&gt; $monthlyLimit,
+                'upgrade_url'   =&gt; route('billing.upgrade'),
+            ], 402); // 402 Payment Required
+        }
+
+        return $next($request);
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">3. Real-Time Rate Limiter in AppServiceProvider</h3>
+        <p>Spam bot scripts ko rokne ke liye per-minute limits enforce karein:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Providers/AppServiceProvider.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+
+public function boot(): void
+{
+    RateLimiter::for('ai-chat', function (Request $request) {
+        $tenantId = $request-&gt;user()?-&gt;tenant_id ?? $request-&gt;ip();
+
+        return Limit::perMinute(15)
+            -&gt;by($tenantId)
+            -&gt;response(fn () =&gt; response()-&gt;json([
+                'error' =&gt; 'Too many AI requests. Please slow down (Limit: 15 req/min).'
+            ], 429));
+    });
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: FULL ENTERPRISE AI JOB & COST TRACKER -->
+    <section id="sec-enterprise-job" class="section-panel">
+      <div class="card">
+        <div class="card-title">🏗️ Enterprise AI Job &amp; Live CostTracker Service</div>
+        <div class="card-subtitle">End-to-end background queued job with Horizon tagging, cost calculation aur Reverb broadcasting.</div>
+
+        <p>
+          Yahan production-grade <strong>ProcessDocumentAiJob</strong> aur <strong>CostTrackerService</strong> implementation hai jo automated billing metrics aur live frontend push updates ko handle karta hai:
+        </p>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. CostTrackerService Implementation</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/CostTrackerService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+namespace App\Services;
+
+use App\Models\TenantAiUsage;
+use Illuminate\Support\Facades\DB;
+
+class CostTrackerService
+{
+    /**
+     * Pricing table per 1,000,000 tokens in microcents ($1.00 = 100,000,000 microcents)
+     */
+    protected const PRICING = [
+        'gpt-4o-mini' =&gt; ['input' =&gt; 15_000_000, 'output' =&gt; 60_000_000],  // $0.15 / $0.60
+        'gpt-4o'      =&gt; ['input' =&gt; 250_000_000, 'output' =&gt; 1000_000_000],// $2.50 / $10.00
+        'claude-3-5'  =&gt; ['input' =&gt; 300_000_000, 'output' =&gt; 1500_000_000],// $3.00 / $15.00
+        'deepseek-r1' =&gt; ['input' =&gt; 14_000_000, 'output' =&gt; 28_000_000],  // $0.14 / $0.28
+    ];
+
+    /**
+     * Record token usage and calculate financial cost
+     */
+    public function record(int $tenantId, string $model, int $inputTokens, int $outputTokens): void
+    {
+        $rates = self::PRICING[$model] ?? self::PRICING['gpt-4o-mini'];
+
+        $inputCost  = (int) (($inputTokens / 1_000_000) * $rates['input']);
+        $outputCost = (int) (($outputTokens / 1_000_000) * $rates['output']);
+        $totalCost  = $inputCost + $outputCost;
+
+        $today = now()-&gt;toDateString();
+
+        DB::table('tenant_ai_usages')-&gt;upsert(
+            [
+                'tenant_id'           =&gt; $tenantId,
+                'usage_date'          =&gt; $today,
+                'input_tokens'        =&gt; $inputTokens,
+                'output_tokens'       =&gt; $outputTokens,
+                'cost_in_microcents'  =&gt; $totalCost,
+                'created_at'          =&gt; now(),
+                'updated_at'          =&gt; now(),
+            ],
+            uniqueBy: ['tenant_id', 'usage_date'],
+            update: [
+                'input_tokens'       =&gt; DB::raw("input_tokens + {$inputTokens}"),
+                'output_tokens'      =&gt; DB::raw("output_tokens + {$outputTokens}"),
+                'cost_in_microcents' =&gt; DB::raw("cost_in_microcents + {$totalCost}"),
+                'updated_at'         =&gt; now(),
+            ]
+        );
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. ProcessDocumentAiJob (Horizon Queued Job)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Jobs/ProcessDocumentAiJob.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Jobs;
+
+use App\Models\KnowledgeDocument;
+use App\Services\ResilientAiService;
+use App\Services\CostTrackerService;
+use App\Events\DocumentProcessedEvent;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
+class ProcessDocumentAiJob implements ShouldQueue, ShouldBeUnique
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $tries = 3;
+    public array $backoff = [15, 45, 120];
+
+    public function __construct(
+        public int $documentId,
+        public int $tenantId
+    ) {
+        $this-&gt;onQueue('ai-batch');
+    }
+
+    public function uniqueId(): string
+    {
+        return "process_doc_{$this-&gt;documentId}";
+    }
+
+    /**
+     * Horizon Tagging: Allows searching jobs by Tenant &amp; Doc in dashboard!
+     */
+    public function tags(): array
+    {
+        return ["tenant:{$this-&gt;tenantId}", "doc:{$this-&gt;documentId}", "ai-pipeline"];
+    }
+
+    public function handle(ResilientAiService $ai, CostTrackerService $costTracker): void
+    {
+        $doc = KnowledgeDocument::findOrFail($this-&gt;documentId);
+
+        // Run multi-provider fallback AI analysis
+        $response = $ai-&gt;generate(
+            prompt: "Summarize this enterprise policy in 3 key action points: " . $doc-&gt;raw_text,
+            systemPrompt: "You are an executive documentation analyst."
+        );
+
+        // Update Document Record
+        $doc-&gt;update([
+            'summary'     =&gt; $response-&gt;text,
+            'status'      =&gt; 'processed',
+        ]);
+
+        // Audit &amp; Track Token Billing
+        $costTracker-&gt;record(
+            tenantId: $this-&gt;tenantId,
+            model: 'gpt-4o-mini',
+            inputTokens: $response-&gt;usage-&gt;promptTokens,
+            outputTokens: $response-&gt;usage-&gt;completionTokens
+        );
+
+        // Live WebSockets Push to Frontend via Laravel Reverb!
+        broadcast(new DocumentProcessedEvent(
+            documentId: $this-&gt;documentId,
+            tenantId: $this-&gt;tenantId,
+            summary: $response-&gt;text
+        ))-&gt;toOthers();
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: MONITORING, PEST TESTING & CHEATSHEET -->
+    <section id="sec-monitoring-cheatsheet" class="section-panel">
+      <div class="card">
+        <div class="card-title">📋 Horizon Monitoring, Pest Testing &amp; Quick Cheatsheet</div>
+        <div class="card-subtitle">Failed job alerting, automated Pest queue tests aur complete architecture reference guide.</div>
+
+        <p>
+          AI background queues ko production mein monitor karna aur automated unit tests se verify karna zaroori hai taaki silent failures na hon:
+        </p>
+
+        <h3 style="color: #fbcfe8; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Testing Queued AI Jobs with Pest PHP</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">tests/Feature/ProcessDocumentJobTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+use App\Jobs\ProcessDocumentAiJob;
+use App\Models\User;
+use App\Models\KnowledgeDocument;
+use Illuminate\Support\Facades\Queue;
+
+it('dispatches ProcessDocumentAiJob on dedicated ai-batch queue with unique lock', function () {
+    Queue::fake();
+
+    $user = User::factory()-&gt;create();
+    $doc  = KnowledgeDocument::factory()-&gt;create(['tenant_id' =&gt; $user-&gt;tenant_id]);
+
+    $response = $this-&gt;actingAs($user)-&gt;postJson("/api/documents/{$doc-&gt;id}/summarize");
+
+    $response-&gt;assertAccepted(); // 202 Accepted status
+
+    // Assert that the job was pushed to the dedicated ai-batch queue
+    Queue::assertPushedOn('ai-batch', ProcessDocumentAiJob::class);
+
+    // Assert unique lock id exists to prevent double-billing
+    Queue::assertPushed(function (ProcessDocumentAiJob $job) use ($doc) {
+        return $job-&gt;documentId === $doc-&gt;id &amp;&amp; 
+               $job-&gt;uniqueId() === "process_doc_{$doc-&gt;id}";
+    });
+});</code></pre>
+        </div>
+
+        <h3 style="color: #fbcfe8; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Slack Alert on AI Job Exhaustion (EventServiceProvider)</h3>
+        <p>Jab koi AI job 3 retries ke baad fail ho jaye, toh Slack webhook par immediate alert trigger karein:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Listeners/SendAiJobFailedAlert.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Support\Facades\Http;
+
+class SendAiJobFailedAlert
+{
+    public function handle(JobFailed $event): void
+    {
+        if (str_contains($event-&gt;job-&gt;getQueue(), 'ai-')) {
+            Http::post(config('services.slack.webhook_url'), [
+                'text' =&gt; "🚨 *AI Horizon Worker Failed!*\n" .
+                          "*Queue:* {$event-&gt;job-&gt;getQueue()}\n" .
+                          "*Job:* {$event-&gt;job-&gt;resolveName()}\n" .
+                          "*Exception:* " . $event-&gt;exception-&gt;getMessage()
+            ]);
+        }
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="margin: 1.75rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">📋 Module 05 Quick Reference Cheatsheet</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Architecture Strategy</th>
+              <th>Laravel Implementation</th>
+              <th>Key Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Dedicated AI Queues</strong></td>
+              <td><code>$this-&gt;onQueue('ai-high')</code></td>
+              <td>Prevents AI from choking regular email &amp; auth queues</td>
+            </tr>
+            <tr>
+              <td><strong>Prevent Double Spend</strong></td>
+              <td><code>implements ShouldBeUnique</code></td>
+              <td>Locks concurrent clicks on the same document in Redis</td>
+            </tr>
+            <tr>
+              <td><strong>Exponential Backoff</strong></td>
+              <td><code>public array $backoff = [15, 45, 120];</code></td>
+              <td>Allows 3rd-party rate limit counters to reset cleanly</td>
+            </tr>
+            <tr>
+              <td><strong>Circuit Breaker</strong></td>
+              <td><code>Cache::put('ai_circuit:openai', true, 300)</code></td>
+              <td>0ms instant failover when OpenAI is down</td>
+            </tr>
+            <tr>
+              <td><strong>Semantic Caching</strong></td>
+              <td>Cosine similarity &gt; 0.94 in PostgreSQL/Redis</td>
+              <td><strong>70% API cost reduction</strong> + 5ms responses</td>
+            </tr>
+            <tr>
+              <td><strong>Tenant Quota Guard</strong></td>
+              <td><code>EnsureTenantHasAiCredits</code> middleware</td>
+              <td>Stops runaway billing and rogue customer scraping</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.1)); border-color: rgba(99, 102, 241, 0.4); margin-top: 2rem;">
+          <h3 style="color: #c7d2fe; margin-bottom: 0.5rem;">⏭️ Upcoming Next: Module 06</h3>
+          <p style="color: #cbd5e1; margin-bottom: 1rem;">
+            <strong>Module 06: Multimodal AI &amp; Vision Workflows (OCR, Invoices &amp; Audio)</strong> mein hum seekhenge:
+          </p>
+          <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.7;">
+            <li>Beyond Text: GPT-4o Vision &amp; Claude 3.5 Sonnet se messy invoices, receipts aur IDs se structured data extract karna</li>
+            <li>KYC document verification aur automated data matching in Laravel</li>
+            <li>OpenAI Whisper API se voice notes aur audio calls ka real-time text transcription</li>
+            <li>S3 storage pre-signed URLs securely vision models ko pass karna</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p>AI for Laravel Developers Masterclass Suite • Production Grade & Enterprise Tested</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Learning Portal Home</a> • 
+      <a href="01_AI_Roadmap_and_Setup.html">Module 01</a> • 
+      <a href="02_Laravel_AI_Tooling_and_LLM_Foundations.html">Module 02</a> • 
+      <a href="03_RAG_and_PostgreSQL_pgvector.html">Module 03</a> • 
+      <a href="04_Function_Calling_and_AI_Agents.html">Module 04</a> • 
+      <a href="#sec-crisis-pillars">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(sectionId);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy to Clipboard
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('pre code') || codeBlock.querySelector('pre');
+      if (!code) return;
+
+      navigator.clipboard.writeText(code.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+  </script>
+</body>
+</html>

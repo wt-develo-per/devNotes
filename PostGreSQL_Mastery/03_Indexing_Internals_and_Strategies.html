@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 03: Indexing Internals & Strategies | PostgreSQL Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-pg: #336791;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #336791, #38bdf8, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #336791, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #336791);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(51, 103, 145, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-pg);
+      filter: blur(100px);
+      opacity: 0.3;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border-color: rgba(56, 189, 248, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-pg); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-code);
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: rgba(255, 255, 255, 0.02);
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .styled-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">PG</span>
+      PostgreSQL Mastery
+    </a>
+    <div class="nav-links">
+      <a href="02_Advanced_Data_Types_JSONB_and_Constraints.html" class="nav-btn">⬅️ Previous: Advanced Types</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 03</span>
+      <h1 class="hero-title">Indexing Internals &amp; Strategies</h1>
+      <p class="hero-desc">
+        Beginner-friendly deep dive into PostgreSQL Indexing. Understand how B-Trees, GIN, GiST, and BRIN indexes work under the hood. Learn the critical differences between MySQL's Clustered Indexes and PostgreSQL's Heap storage model.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-heap-vs-clustered', this)"><span class="sidebar-icon">🧱</span> 1. Heap vs Clustered (MySQL Bridge)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-btree', this)"><span class="sidebar-icon">🌲</span> 2. B-Tree Internals</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-gin', this)"><span class="sidebar-icon">🐘</span> 3. GIN (Inverted Indexes)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-gist', this)"><span class="sidebar-icon">🗺️</span> 4. GiST (Geospatial & KNN)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-brin', this)"><span class="sidebar-icon">📈</span> 5. BRIN (Time-Series)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-advanced', this)"><span class="sidebar-icon">🚀</span> 6. Advanced Indexing Strategies</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: HEAP VS CLUSTERED -->
+        <section id="sec-heap-vs-clustered" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧱 Core Storage • Part 1 • The MySQL Mental Bridge</div>
+              <h2 class="panel-title">PostgreSQL Heap vs MySQL Clustered Index</h2>
+              <p class="panel-subtitle">
+                MySQL (InnoDB) aur PostgreSQL data ko disk par bilkul alag tarike se store karte hain. Is difference ko samjhe bina aap PostgreSQL indexing ko optimize nahi kar sakte.
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+              <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: InnoDB Clustered Index vs PostgreSQL Heap</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                • <strong>MySQL (InnoDB):</strong> Table ka data physically Primary Key ke order mein B-Tree format mein store hota hai. Isko <strong>Clustered Index</strong> bolte hain. Agar aap non-primary key par index banate ho (Secondary Index), to usme physical row nahi, balki <code>Primary Key</code> stored hoti hai. Engine pehle Secondary Index me search karega, phir Primary Key milegi, phir Clustered index me jaa kar row uthayega. (Isse <strong>Double Lookup</strong> kehte hain).<br><br>
+                • <strong>PostgreSQL (Heap Storage):</strong> Table ka data random 8KB pages (Heap) mein unordered store hota hai. <strong>PostgreSQL mein Clustered Index jaisa kuch nahi hota!</strong> Primary Key ho ya Secondary Index, dono directly Heap row ka <strong>Physical Address (ctid)</strong> store karte hain. Iska matlab PostgreSQL mein har index lookup direct O(1) hop mein row tak pahuchta hai! Double lookup penalty nahi hoti.
+              </p>
+            </div>
+
+            <div class="diagram-container">
+              <div class="diagram-title">Visualizing Storage Architecture Differences</div>
+              <div class="diagram-grid">
+                <div class="diagram-card info-card">
+                  <h4 style="color:#38bdf8; margin-bottom:10px;">🐬 MySQL InnoDB (Clustered)</h4>
+                  <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                    Secondary Index (e.g. <code>email</code>) → points to <code>Primary Key (ID: 5)</code> → Points to <code>Physical Row Data</code>.<br>
+                    <strong>Cost:</strong> 2 B-Tree traversals for secondary lookups.
+                  </p>
+                </div>
+                <div class="diagram-card success-card">
+                  <h4 style="color:#10b981; margin-bottom:10px;">🐘 PostgreSQL (Heap + ctid)</h4>
+                  <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                    Index (e.g. <code>email</code>) → points directly to <code>ctid (Block 4, Offset 12)</code> → Fetches <code>Physical Row Data</code> from Heap.<br>
+                    <strong>Cost:</strong> 1 B-Tree traversal + 1 direct Heap pointer fetch. Faster secondary lookups!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Seeing the hidden "ctid" pointer</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- In PostgreSQL, every row has a hidden system column called 'ctid'
+-- It represents the physical location of the row version within its table.
+
+SELECT ctid, id, name FROM users LIMIT 3;
+
+/* Output:
+   ctid   | id | name 
+---------+----+-------
+ (0,1)   | 1  | Alice
+ (0,2)   | 2  | Bob
+ (0,3)   | 3  | Charlie
+
+ (0,1) means: Page 0, Tuple Offset 1.
+ All PostgreSQL indexes store this exact (page, offset) tuple!
+*/
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: B-TREE -->
+        <section id="sec-btree" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🌲 Index Types • Part 2 • The Default Standard</div>
+              <h2 class="panel-title">B-Tree Internals &amp; Index-Only Scans</h2>
+              <p class="panel-subtitle">
+                B-Tree (Balanced Tree) PostgreSQL ka default indexing mechanism hai. Ye range queries, sorting aur exact match (<code>=, &lt;, &gt;, BETWEEN</code>) ke liye perfect hai.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-icon">⚖️</div>
+                <div class="concept-title">Balanced &amp; Predictable</div>
+                <div class="concept-desc">
+                  B-Tree "Balanced" hoti hai, iska matlab kisi bhi record ko dhundne mein hamesha same number of steps lagte hain (e.g., Depth of 3 ya 4 for millions of rows), resulting in O(log N) lookup time.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">🏃</div>
+                <div class="concept-title">Index-Only Scans (The Holy Grail)</div>
+                <div class="concept-desc">
+                  Jab aap <code>SELECT email FROM users WHERE email='x@x.com'</code> karte hain, toh PG ko Heap table read karne ki zaroorat nahi! Data sirf index me hi mil jata hai. Isse <strong>Index-Only Scan</strong> kehte hain (Ultra fast!).
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • B-Tree Index Creation</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- By default, creating an index uses B-Tree
+CREATE INDEX idx_users_email ON users (email);
+
+-- You can explicitly specify the method (useful for readability)
+CREATE INDEX idx_orders_amount ON orders USING btree (amount);
+
+-- Multi-column (Composite) B-Tree
+-- Order matters! Filtering by status first, then created_at
+CREATE INDEX idx_orders_status_date ON orders (status, created_at DESC);
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: GIN INDEXES -->
+        <section id="sec-gin" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🐘 Specialized Indexes • Part 3 • JSON & Arrays</div>
+              <h2 class="panel-title">GIN (Generalized Inverted Index)</h2>
+              <p class="panel-subtitle">
+                MySQL developers struggle with JSON querying. PostgreSQL solves this elegantly using GIN. GIN index book ke peeche diye gaye "Glossary/Index" ki tarah kaam karta hai—ek keyword kis-kis row me aya hai, ye fast track karta hai.
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+              <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: JSON Indexing</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                MySQL mein JSON ke specific key ko index karne ke liye pehle ek <strong>Generated Virtual Column</strong> banana padta hai, aur us par normal B-Tree index lagana padta hai. Bahut zyada boilerplate! <br><br>
+                PostgreSQL me aap directly pure JSONB document par GIN index laga dete ho, aur ab JSON ki kisi bhi key/value par arbitrary filter lagao, wo GIN index se ultra-fast result dega. No virtual columns needed!
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Supercharging JSONB with GIN</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- Table with JSONB schema-less payload
+CREATE TABLE events (
+    id SERIAL PRIMARY KEY,
+    payload JSONB NOT NULL
+);
+
+-- 1. Standard GIN Index (Indexes keys AND values)
+CREATE INDEX idx_events_payload ON events USING gin (payload);
+
+-- Query using the containment operator @&gt; uses the GIN index perfectly
+SELECT * FROM events 
+WHERE payload @&gt; '{"user_id": 123, "action": "login"}';
+
+-- 2. Optimized GIN Index for JSON Path queries (Faster, smaller size)
+CREATE INDEX idx_events_path ON events USING gin (payload jsonb_path_ops);
+
+-- Also great for Array searching (Does an array contain a specific tag?)
+CREATE TABLE articles (
+    title TEXT,
+    tags TEXT[]
+);
+CREATE INDEX idx_articles_tags ON articles USING gin (tags);
+-- Query: SELECT * FROM articles WHERE tags @&gt; ARRAY['postgres', 'performance'];
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: GiST INDEXES -->
+        <section id="sec-gist" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🗺️ Specialized Indexes • Part 4 • Spatial & KNN</div>
+              <h2 class="panel-title">GiST (Generalized Search Tree)</h2>
+              <p class="panel-subtitle">
+                GiST indexes geometric data (PostGIS), ranges, aur Nearest Neighbor (KNN) searches ke liye design kiye gaye hain. "Find 10 closest restaurants to my GPS location" jaise queries me B-Tree fail ho jata hai, par GiST dominate karta hai.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-icon">📍</div>
+                <div class="concept-title">Spatial Bounding Boxes</div>
+                <div class="concept-desc">
+                  GiST items ko bounding boxes me group karta hai. Agar ek user ka radius us bounding box se bahar hai, toh uske andar ke millions of locations check karne ki zaroorat hi nahi hoti.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">⏳</div>
+                <div class="concept-title">Range Overlaps</div>
+                <div class="concept-desc">
+                  "Kya do booking time periods overlap kar rahe hain?" <code>&amp;&amp;</code> (overlap) operator ke saath GiST indexes SaaS reservation systems me double-booking prevent karte hain.
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • GiST Implementation</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- Using GiST for EXCLUDE constraints (Preventing overlapping bookings)
+CREATE TABLE room_bookings (
+    room_id INT,
+    booking_period TSTZRANGE,
+    EXCLUDE USING gist (room_id WITH =, booking_period WITH &amp;&amp;)
+);
+
+-- Using GiST for Full-Text Search
+CREATE INDEX idx_documents_search ON documents 
+USING gist (to_tsvector('english', document_text));
+
+-- PostGIS Geospatial (Finding nearest location using &lt;-&gt; distance operator)
+-- Requires PostGIS extension
+CREATE INDEX idx_places_location ON places USING gist (geom);
+
+SELECT name FROM places 
+ORDER BY geom &lt;-&gt; ST_SetSRID(ST_MakePoint(-71.06, 42.36), 4326) 
+LIMIT 5; -- K-Nearest Neighbor (KNN) ultra fast search
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 5: BRIN INDEXES -->
+        <section id="sec-brin" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📈 Big Data Indexes • Part 5 • Time-Series</div>
+              <h2 class="panel-title">BRIN (Block Range Index)</h2>
+              <p class="panel-subtitle">
+                Jab aapke paas Billions of rows hon (e.g. IoT sensor logs, Financial tick data), toh normal B-Tree index ka size RAM se bada ho jata hai. Wahan <strong>BRIN</strong> index kaam ata hai, jo 1000x chota hota hai!
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+              <h4 style="color: #38bdf8; margin-bottom: 8px;">💡 How BRIN Works (The Min/Max Trick)</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                BRIN individual rows ko index nahi karta! Ye PostgreSQL physical data blocks (pages) ka ek group banata hai (default 128 pages = 1MB), aur sirf us block range ka <strong>MIN</strong> aur <strong>MAX</strong> value store karta hai.<br><br>
+                Example: Block 1-128 me timestamps <code>Jan 1 to Jan 5</code> hain. Query aayi: "Get logs for Feb 10". BRIN dekhega Max value Jan 5 hai, so wo pure 1MB block ko completely skip kar dega! Disk I/O saved!<br>
+                <em>Constraint: Data hamesha sequentially insert hona chahiye (like logs/timestamps) jisme naturally order maintain ho.</em>
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Massive Table BRIN Index</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- Table with 500 Million IoT temperature readings
+CREATE TABLE iot_metrics (
+    sensor_id INT,
+    temperature NUMERIC,
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- B-Tree on 500M rows could take 10GB+ of RAM.
+-- BRIN index will take maybe 5MB!
+CREATE INDEX idx_iot_metrics_brin ON iot_metrics USING brin (recorded_at);
+
+-- Querying the logs efficiently
+SELECT avg(temperature) FROM iot_metrics 
+WHERE recorded_at BETWEEN '2023-10-01' AND '2023-10-31';
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 6: ADVANCED STRATEGIES -->
+        <section id="sec-advanced" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚀 Advanced • Part 6 • Pro Level SQL</div>
+              <h2 class="panel-title">Advanced Indexing Strategies</h2>
+              <p class="panel-subtitle">
+                Senior Database Engineers sirf B-Tree use nahi karte, wo query pattern ke hisab se smart indexes banate hain. Let's look at Partial Indexes, Expression Indexes, and Covering Indexes.
+              </p>
+            </div>
+
+            <div class="diagram-grid" style="margin-bottom: 2rem;">
+              <div class="diagram-card success-card">
+                <h4 style="color:#10b981; margin-bottom:10px;">✂️ Partial Indexes</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Index sirf un rows par banaiye jo frequently query hote hain. E.g., App me 1M orders hain, par sirf 5k 'pending' hote hain. Sirf pending par index banayein! Index size drastically chota ho jayega.
+                </p>
+              </div>
+              <div class="diagram-card info-card">
+                <h4 style="color:#38bdf8; margin-bottom:10px;">🧪 Expression Indexes</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Agar aap query me hamesha function lagate ho (e.g. <code>LOWER(email)</code>), to us function ki pre-computed value par index banayein. Normal B-Tree <code>LOWER()</code> ko use nahi kar payega.
+                </p>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Partial &amp; Covering Indexes</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- 1. Partial Index (Incredible Space &amp; Speed Saver)
+-- Only index users who have not verified their email.
+CREATE INDEX idx_unverified_users ON users (email) WHERE is_verified = false;
+
+-- 2. Expression Index (Function-based)
+-- Without this, WHERE LOWER(email) = 'xyz' will do a FULL TABLE SCAN!
+CREATE INDEX idx_users_lower_email ON users (LOWER(email));
+
+-- 3. Covering Index (The INCLUDE Clause)
+-- We search by 'company_id', but we also need to SELECT 'status' and 'total'.
+-- Instead of doing a heap fetch for status/total, INCLUDE them inside the B-Tree leaf node!
+CREATE INDEX idx_orders_company_cov ON orders (company_id) INCLUDE (status, total);
+
+-- The query below now becomes an "Index Only Scan" (0 heap page reads!)
+SELECT status, total FROM orders WHERE company_id = 45;
+</code></pre>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      // Prevent default anchor click behavior
+      event.preventDefault();
+      
+      // Remove active classes
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      // Add active classes
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      // Scroll to top of main content
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

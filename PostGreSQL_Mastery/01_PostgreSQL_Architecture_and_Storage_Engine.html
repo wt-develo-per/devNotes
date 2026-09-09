@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 01: PostgreSQL Architecture, Process Model & Storage Engine Internals | PostgreSQL Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-pg: #336791;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Reading Progress Bar */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #336791, #38bdf8, #818cf8);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #336791, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #336791);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(180deg, rgba(51, 103, 145, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 980px;
+      line-height: 1.65;
+    }
+
+    /* Tab Navigation */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(51, 103, 145, 0.35), rgba(56, 189, 248, 0.2));
+      color: #7dd3fc;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Section Panels */
+    .section-panel, .panel-section {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active, .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .panel-card, .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel-header { margin-bottom: 1.5rem; }
+    .panel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+    .panel-title, .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    .panel-subtitle, .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* Grids & Boxes */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .concept-card, .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .concept-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .concept-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .concept-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Alert / Callout Boxes */
+    .alert-box, .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .alert-box.alert-warning { border-left-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08); }
+    .alert-box.alert-danger { border-left-color: var(--accent-rose); background: rgba(244, 63, 94, 0.08); }
+    .alert-box.alert-info { border-left-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
+    .alert-icon { font-size: 1.5rem; line-height: 1; }
+    .alert-content { flex: 1; }
+    .alert-title { font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem; }
+
+    .callout-card {
+      background: linear-gradient(135deg, rgba(51, 103, 145, 0.15), rgba(56, 189, 248, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    /* Diagram Containers */
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .diagram-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #7dd3fc;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+    .diagram-card {
+      border-radius: 10px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      background: rgba(10, 14, 26, 0.6);
+    }
+    .diagram-card.danger-card { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+    .diagram-card.success-card { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+
+    /* Code Blocks */
+    .code-container, .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0d1527;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code, td code {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 1.25rem 0;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0c1527;
+      color: #7dd3fc;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">PostgreSQL Mastery</span>
+      <span>Enterprise Architecture (4+ YOE)</span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-gotchas-checklist" class="nav-btn primary" onclick="switchTab('sec-gotchas-checklist', document.querySelectorAll('.tab-btn')[6])">⚡ Senior Checklist</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">🐘 Module 01 • The Deep Engine Architecture</div>
+      <h1 class="hero-title">PostgreSQL Architecture, Process Model &amp; Storage Engine</h1>
+      <p class="hero-desc">
+        A 4 YOE Backend Engineer doesn't just write queries—they master <strong>Postmaster process isolation, Shared Buffers memory hierarchy, 8KB Page/Tuple byte layout, MVCC (xmin/xmax), WAL Crash Recovery, and Autovacuum tuning</strong>.
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-process-model', this)">⚙️ 1. Process Model &amp; Memory Hierarchy</button>
+      <button class="tab-btn" onclick="switchTab('sec-storage-engine', this)">📦 2. 8KB Page Layout &amp; Storage Engine</button>
+      <button class="tab-btn" onclick="switchTab('sec-mvcc-internals', this)">🔄 3. MVCC, Tuple Headers &amp; Visibility</button>
+      <button class="tab-btn" onclick="switchTab('sec-vacuum-tuning', this)">🧹 4. Bloat, VACUUM &amp; Autovacuum Tuning</button>
+      <button class="tab-btn" onclick="switchTab('sec-wal-checkpoints', this)">📝 5. WAL, Checkpoints &amp; Crash Recovery</button>
+      <button class="tab-btn" onclick="switchTab('sec-psql-catalogs', this)">🔍 6. psql Mastery &amp; System Catalogs</button>
+      <button class="tab-btn" onclick="switchTab('sec-gotchas-checklist', this)">🏆 7. Gotchas, TXID Wraparound &amp; Cheatsheet</button>
+    </div>
+
+
+    <!-- SECTION 1: PROCESS MODEL & MEMORY HIERARCHY -->
+    <section id="sec-process-model" class="panel-section active">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">⚙️ Core Architecture • Part 1 • Process Model &amp; Memory Layout</div>
+          <h2 class="panel-title">PostgreSQL Multi-Process Architecture &amp; Memory Hierarchy</h2>
+          <p class="panel-subtitle">
+            MySQL ke thread-based model ke opposite, PostgreSQL ek <strong>process-based fork architecture</strong> use karta hai. Ek 4 YOE Senior Engineer ko pata hona chahiye ki har connection server memory ko kaise affect karta hai aur core background daemons ka kya role hai.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Process vs Thread Architecture</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL (Thread-per-connection):</strong> Single <code>mysqld</code> process chalta hai. Har client connection ke liye ek lightweight OS thread banta hai (~256KB RAM). Connection establishment bohot fast hoti hai.<br>
+            • <strong>PostgreSQL (Process-per-connection):</strong> Master process (<code>postmaster</code>) har connection ke liye pura OS process <code>fork()</code> karta hai (~5MB - 10MB RAM). Crash isolation perfect hoti hai (ek client crash se baki server safe rehta hai), lekin high connections par CPU context-switching badh jaata hai.<br>
+            • <strong>Production Impact:</strong> MySQL mein aap <code>max_connections = 500</code> aasaani se rakh sakte the. PostgreSQL mein 500 connections par server choke ho jayega; isiliye PostgreSQL mein <strong>PgBouncer connection pooling mandatory</strong> hoti hai!
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <div class="diagram-title">PostgreSQL High-Level Architectural Flow</div>
+          <div class="diagram-grid">
+            <div class="diagram-card" style="border-color: rgba(56, 189, 248, 0.3);">
+              <h4 style="color:#7dd3fc; margin-bottom:10px;">1. Client &amp; Postmaster</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • Client connects to port 5432.<br>
+                • <strong>Postmaster</strong> daemon connection authenticate karta hai.<br>
+                • Postmaster <code>fork()</code> call karke ek dedicated <strong>Backend Process</strong> create karta hai.<br>
+                • Backend process client lifecycle tak zinda rehta hai.
+              </p>
+            </div>
+            <div class="diagram-card" style="border-color: rgba(168, 85, 247, 0.3);">
+              <h4 style="color:#c084fc; margin-bottom:10px;">2. Shared Memory Area</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • <strong>Shared Buffers:</strong> 8KB table/index pages cache (~25% of system RAM).<br>
+                • <strong>WAL Buffers:</strong> Uncommitted transaction logs (~16MB).<br>
+                • <strong>Lock Space:</strong> Table, row &amp; advisory locks hash table.<br>
+                • <strong>pg_xact (CLOG):</strong> Transaction commit status bits (2 bits per txid).
+              </p>
+            </div>
+            <div class="diagram-card" style="border-color: rgba(16, 185, 129, 0.3);">
+              <h4 style="color:#6ee7b7; margin-bottom:10px;">3. Background Helper Daemons</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • <strong>Background Writer (bgwriter):</strong> Flushes dirty shared buffers smoothly.<br>
+                • <strong>Checkpointer:</strong> Periodic full flush of dirty buffers to disk.<br>
+                • <strong>WAL Writer:</strong> Writes WAL buffers to disk.<br>
+                • <strong>Autovacuum Daemon:</strong> Dead tuples cleanup &amp; statistics.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🧠 Memory Allocation: Shared vs Local Process Memory</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          MySQL ke <code>innodb_buffer_pool_size</code> ke sath compare karein:
+        </p>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🏢</div>
+            <div class="concept-title">shared_buffers vs innodb_buffer_pool</div>
+            <div class="concept-desc">
+              MySQL mein <code>innodb_buffer_pool_size</code> server RAM ka <strong>70% - 80%</strong> set kiya jata hai. Lekin PostgreSQL mein <code>shared_buffers</code> sirf <strong>25%</strong> rakha jata hai! Kyu? Kyunki PostgreSQL baki 50-60% RAM ko Linux OS kernel ke <strong>Page Cache</strong> ke liye chhod deta hai (double buffering synergy).
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">⚡</div>
+            <div class="concept-title">work_mem (Allocated Per Operation!)</div>
+            <div class="concept-desc">
+              MySQL ke <code>sort_buffer_size</code> jaisa, lekin PostgreSQL mein <code>work_mem</code> per-connection ya per-query nahi hota, balki <em>per-sort / per-hash operation</em> allocate hota hai! Agar ek complex query mein 4 <code>ORDER BY</code> aur 2 <code>Hash Joins</code> hain, toh wo query <strong>6 × work_mem</strong> RAM le sakti hai!
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🛠️</div>
+            <div class="concept-title">maintenance_work_mem</div>
+            <div class="concept-desc">
+              Heavy maintenance jobs jaise <code>VACUUM</code>, <code>CREATE INDEX</code>, aur <code>ALTER TABLE ADD FOREIGN KEY</code> ke liye use hota hai. Default 64MB bohot slow hota hai; production servers par ise <strong>1GB - 2GB</strong> set karein.
+            </div>
+          </div>
+        </div>
+
+        <div class="code-container" style="margin-top:28px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Inspecting Active Server Processes &amp; Memory Settings</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Check current backend process ID and memory parameters
+SELECT pg_backend_pid() AS my_process_id;
+
+SHOW shared_buffers;           -- E.g. '16GB' or '128MB' (Compare with MySQL innodb_buffer_pool_size)
+SHOW work_mem;                 -- E.g. '4MB' (Compare with MySQL sort_buffer_size)
+SHOW maintenance_work_mem;     -- E.g. '1GB'
+
+-- 2. Inspect all active backend processes (Equivalent to MySQL: SHOW FULL PROCESSLIST;)
+SELECT 
+    pid, 
+    usename, 
+    application_name, 
+    client_addr, 
+    state, 
+    wait_event_type, 
+    wait_event, 
+    NOW() - query_start AS query_duration,
+    query 
+FROM pg_stat_activity 
+WHERE state != 'idle' 
+ORDER BY query_start ASC;
+
+-- 3. Check background writer and checkpointer activity metrics
+SELECT 
+    checkpoints_timed, 
+    checkpoints_req, 
+    checkpoint_write_time, 
+    checkpoint_sync_time, 
+    buffers_checkpoint, 
+    buffers_clean, 
+    maxwritten_clean, 
+    buffers_backend 
+FROM pg_stat_bgwriter;</code></pre>
+        </div>
+
+        <div class="callout-card" style="margin-top:24px;">
+          <h4 style="color:#7dd3fc; margin-bottom:8px;">🎯 4 YOE Architectural Rule:</h4>
+          <p style="margin-bottom:0;">
+            Agar <code>checkpoints_req</code> (forced checkpoints due to WAL size) <code>checkpoints_timed</code> (scheduled checkpoints) se zyada hai, iska matlab aapka WAL generation bohot fast hai aur checkpoint interval chhota pad raha hai! You must increase <code>max_wal_size</code> to reduce disk I/O thrashing.
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: 8KB PAGE LAYOUT & STORAGE ENGINE -->
+    <section id="sec-storage-engine" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">📦 Storage Architecture • Part 2 • 8KB Block Anatomy &amp; On-Disk Layout</div>
+          <h2 class="panel-title">Storage Engine Internals: The Anatomy of an 8KB Page</h2>
+          <p class="panel-subtitle">
+            PostgreSQL table rows ko flat files mein dump nahi karta. Har table disk par <strong>8192-byte (8KB) Pages (Blocks)</strong> ke structured array mein store hoti hai. Samajhiye byte-level page layout aur ctid pointer arithmetic.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Clustered Tables vs Heap Tables</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL InnoDB (Clustered Index / IOT):</strong> MySQL mein table ka data Primary Key ke B-Tree ke leaf nodes mein physically sorted store hota hai. Secondary indexes row data ko directly point nahi karte; wo Primary Key value store karte hain (Double-lookup penalty)!<br>
+            • <strong>PostgreSQL (Heap Storage Model):</strong> PostgreSQL mein tables un-ordered <strong>Heaps</strong> hoti hain. Row kisi bhi 8KB block mein jahan jagah mile insert ho jati hai. Sabhi indexes (including Primary Key!) row ke physical disk address <code>ctid = (block_number, tuple_offset)</code> ko directly point karte hain!<br>
+            • <strong>Page Size:</strong> MySQL InnoDB <strong>16KB pages</strong> use karta hai, jabki PostgreSQL <strong>8KB pages</strong> use karta hai. Chhota 8KB page OLTP random queries ke liye memory efficient hota hai.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">📁</div>
+            <div class="concept-title">Physical File Segmentation (1GB Limit)</div>
+            <div class="concept-desc">
+              Har table filesystem par <code>$PGDATA/base/&lt;db_oid&gt;/&lt;filenode&gt;</code> file mein hoti hai. PostgreSQL kisi bhi single file ko <strong>1GB</strong> se bada nahi banata. Agar table 5GB hai, toh disk par <code>16384</code>, <code>16384.1</code>, <code>16384.2</code> segments ban jaate hain.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">📐</div>
+            <div class="concept-title">The Fixed 8192-Byte Page Standard</div>
+            <div class="concept-desc">
+              Linux OS page standard 4KB hota hai, jabki PostgreSQL ka default <strong>BLCKSZ = 8192 bytes</strong> hota hai. Har Disk Read ya Write operation minimum 1 pura 8KB block fetch karta hai (kabhi single row akeli nahi aati).
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🍞</div>
+            <div class="concept-title">TOAST (Oversized Attributes)</div>
+            <div class="concept-desc">
+              Kyunki ek row 8KB se badi nahi ho sakti, agar koi column (TEXT, JSONB, BYTEA) <strong>~2KB (1/4th block)</strong> se bada hota hai, toh PostgreSQL use transparently compress karke alag <code>pg_toast</code> table mein out-of-line store karta hai.
+            </div>
+          </div>
+        </div>
+
+        <div class="diagram-container">
+          <div class="diagram-title">Byte-Level Anatomy of an 8KB PostgreSQL Block (Page)</div>
+          <div class="diagram-grid">
+            <div class="diagram-card" style="grid-column: 1 / -1; border-color: rgba(56, 189, 248, 0.4);">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.7; color:#cbd5e1;">
+                +-------------------------------------------------------------------------------+<br>
+                |  <strong>1. PAGE HEADER (24 Bytes)</strong>                                                    |<br>
+                |  pd_lsn (8B) | pd_checksum (2B) | pd_flags (2B) | <strong>pd_lower (2B)</strong> | <strong>pd_upper (2B)</strong> |<br>
+                +-------------------------------------------------------------------------------+<br>
+                |  <strong>2. LINE POINTERS ARRAY (ItemIds: 4 Bytes each)</strong> &#x25BC; Grows Downwards         |<br>
+                |  ItemId[1] (offset, flags, len) | ItemId[2] | ItemId[3] ...                   |<br>
+                + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +<br>
+                |  &#x25BC; pd_lower points here                                                     |<br>
+                |                                                                               |<br>
+                |                          <strong>FREE SPACE HOLE</strong>                             |<br>
+                |                  (Shrinks as rows are inserted)                               |<br>
+                |                                                                               |<br>
+                |  &#x25B2; pd_upper points here                                                     |<br>
+                + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +<br>
+                |  <strong>3. TUPLE DATA (Rows)</strong> &#x25B2; Grows Upwards from Byte 8192                       |<br>
+                |  Tuple 3 (Data) | Tuple 2 (Data) | Tuple 1 (Data)                             |<br>
+                +-------------------------------------------------------------------------------+<br>
+                |  <strong>4. SPECIAL SPACE</strong> (Index pages only, e.g. B-tree left/right sibling links)     |<br>
+                +-------------------------------------------------------------------------------+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🎯 Understanding <code>ctid</code>: The Physical Tuple Pointer</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          PostgreSQL mein har row ka ek hidden system attribute hota hai jise <code>ctid</code> kehte hain. Iska format hota hai <code>(block_number, tuple_index)</code>:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Inspecting Physical Tuple Addresses (ctid)</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Create sample table and inspect physical ctid
+CREATE TABLE users_demo (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100)
+);
+
+INSERT INTO users_demo (name, email) VALUES 
+('Rahul Sharma', 'rahul@example.com'),
+('Priya Patel', 'priya@example.com');
+
+-- Query the hidden ctid column
+SELECT ctid, id, name, email FROM users_demo;
+
+-- OUTPUT:
+--   ctid   | id |     name     |       email
+-- ---------+----+--------------+-------------------
+--  (0,1)   |  1 | Rahul Sharma | rahul@example.com
+--  (0,2)   |  2 | Priya Patel  | priya@example.com
+--
+-- Interpretation: (0, 1) means: Page/Block 0, ItemId Line Pointer #1!</code></pre>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🔬 Deep Inspection with <code>pageinspect</code> Extension</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Senior DBAs disk par 8KB block ke bytes ko decode karne ke liye PostgreSQL ka native <code>pageinspect</code> extension use karte hain:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Using pageinspect to read raw disk blocks</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Enable page inspection extension
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+
+-- 2. Inspect raw page header of Block 0
+SELECT 
+    lsn, 
+    checksum, 
+    flags, 
+    lower AS free_space_start_offset, 
+    upper AS free_space_end_offset, 
+    special, 
+    pagesize 
+FROM page_header(get_raw_page('users_demo', 0));
+
+-- 3. Inspect individual Line Pointers (ItemIds) and Tuple Headers inside Block 0
+SELECT 
+    lp, 
+    lp_off AS byte_offset, 
+    lp_flags, 
+    lp_len AS tuple_byte_length, 
+    t_xmin, 
+    t_xmax, 
+    t_ctid 
+FROM heap_page_items(get_raw_page('users_demo', 0));</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: MVCC INTERNALS & VISIBILITY -->
+    <section id="sec-mvcc-internals" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🔄 Concurrency Internals • Part 3 • MVCC, Tuple Headers &amp; Visibility</div>
+          <h2 class="panel-title">Multi-Version Concurrency Control (MVCC) Under the Hood</h2>
+          <p class="panel-subtitle">
+            PostgreSQL ka golden rule: <em>"Readers never block Writers, Writers never block Readers."</em> Yeh guarantee MVCC ke hidden tuple headers (<code>xmin</code> / <code>xmax</code>) ke through achieve hoti hai.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Undo Log vs Heap Tuple Versioning</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL (Undo Log Model):</strong> Jab aap MySQL mein <code>UPDATE users SET name='Pankaj'</code> karte hain, MySQL usi 16KB block mein row ko <strong>in-place modify</strong> karta hai, aur purana data alag <strong>Undo Log (Rollback Segment)</strong> mein bhej deta hai. Purane readers Undo log padhte hain.<br>
+            • <strong>PostgreSQL (No Undo Log!):</strong> PostgreSQL mein Undo Log hota hi nahi hai! Jab aap <code>UPDATE</code> karte hain, purana row table ke andar hi rehta hai (sirf <code>xmax</code> mark hota hai), aur ek <strong>brand new row table heap mein insert</strong> hoti hai (with new <code>xmin</code>).<br>
+            • <strong>The Consequence:</strong> MySQL mein updates se Undo tablespace grow hota hai. PostgreSQL mein updates se <strong>main table bloat</strong> hoti hai! Yahi reason hai ki PostgreSQL ko <code>VACUUM</code> ki zaroorat padti hai, jabki MySQL ko nahi!
+          </p>
+        </div>
+
+        <div class="alert-box alert-danger">
+          <div class="alert-icon">⚡</div>
+          <div class="alert-content">
+            <div class="alert-title">The Shocking Truth About UPDATEs in PostgreSQL</div>
+            <p>
+              Traditional relational databases (jaise Oracle ya MySQL InnoDB) row ko in-place update karte hain aur old values ko Undo Log mein bhejte hain. <strong>PostgreSQL mein koi in-place UPDATE nahi hota!</strong><br>
+              PostgreSQL mein <code>UPDATE</code> statement physically <strong>ek INSERT (naya tuple) + ek DELETE (purane tuple par xmax mark karna)</strong> hota hai! Agar aap ek row ko 50 baar update karte hain, toh disk par 50 alag physical tuples ban jaate hain!
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🧬 Anatomy of the 23-Byte Heap Tuple Header</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Har row ke aage ek 23-byte ka compact header attach hota hai jisme transaction metadata hoti hai:
+        </p>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🟢</div>
+            <div class="concept-title">t_xmin (Creating Transaction ID)</div>
+            <div class="concept-desc">
+              Jis transaction ne is row ko <code>INSERT</code> kiya tha, uska 32-bit Transaction ID (txid). Yeh batata hai ki row kab create hui.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🔴</div>
+            <div class="concept-title">t_xmax (Expiring Transaction ID)</div>
+            <div class="concept-desc">
+              Agar row active hai toh <code>t_xmax = 0</code>. Agar row ko kisi transaction ne <code>UPDATE</code> ya <code>DELETE</code> kiya hai, toh uska txid yahan store hota hai.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">📍</div>
+            <div class="concept-title">t_ctid (Version Forwarding Pointer)</div>
+            <div class="concept-desc">
+              Agar row update ho chuki hai, toh purane tuple ka <code>t_ctid</code> naye updated tuple ke physical block address ko point karta hai (version chain).
+            </div>
+          </div>
+        </div>
+
+        <div class="diagram-container">
+          <div class="diagram-title">Visual Step-by-Step Row Mutation in MVCC</div>
+          <div class="diagram-grid">
+            <div class="diagram-card" style="border-color: rgba(16, 185, 129, 0.4);">
+              <h4 style="color:#6ee7b7; margin-bottom:8px;">Step 1: INSERT (txid: 200)</h4>
+              <p style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+                Row 1: [Rahul | rahul@mail.com]<br>
+                <strong>xmin: 200</strong><br>
+                <strong>xmax: 0</strong> (Alive)<br>
+                ctid: (0, 1)<br>
+                <em>Visible to any transaction starting after 200 commits.</em>
+              </p>
+            </div>
+
+            <div class="diagram-card" style="border-color: rgba(245, 158, 11, 0.4);">
+              <h4 style="color:#fde68a; margin-bottom:8px;">Step 2: UPDATE (txid: 250)</h4>
+              <p style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+                Old Tuple: [Rahul | rahul@mail.com]<br>
+                xmin: 200 | <strong>xmax: 250</strong> (Dead)<br>
+                ctid points to &#x25B6; <strong>(0, 2)</strong><br><br>
+                New Tuple: [Rahul S. | rahul@mail.com]<br>
+                <strong>xmin: 250</strong> | xmax: 0 (Alive)
+              </p>
+            </div>
+
+            <div class="diagram-card" style="border-color: rgba(239, 68, 68, 0.4);">
+              <h4 style="color:#f87171; margin-bottom:8px;">Step 3: DELETE (txid: 300)</h4>
+              <p style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+                Active Tuple: [Rahul S.]<br>
+                xmin: 250<br>
+                <strong>xmax: 300</strong> (Marked Dead)<br><br>
+                <em>Row physically exists on disk! Not visible to txid &gt; 300.</em>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📸 How Snapshots Determine Visibility</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Jab koi query run hoti hai, PostgreSQL memory mein ek <strong>Snapshot</strong> create karta hai jiska internal format hota hai: <code>xmin:xmax:xip_list</code>:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Inspecting Transaction IDs and Snapshots</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Check current transaction ID
+SELECT pg_current_xact_id();
+
+-- 2. Inspect active snapshot of current session
+SELECT pg_current_snapshot();
+-- Example Output: '1020:1025:1021,1023'
+-- Explanation:
+-- 1020 (xmin): All txids &lt; 1020 are COMMITTED and visible.
+-- 1025 (xmax): All txids &gt;= 1025 started AFTER this snapshot and are INVISIBLE.
+-- 1021, 1023 (xip): In-progress active transactions (invisible).
+
+-- 3. Live Demo: Inspect xmin/xmax on a real table
+CREATE TABLE balance (
+    account_id INT PRIMARY KEY,
+    amount NUMERIC(10,2)
+);
+
+INSERT INTO balance VALUES (1, 5000.00);
+
+-- Query the hidden xmin &amp; xmax columns directly
+SELECT xmin, xmax, ctid, account_id, amount FROM balance;
+
+-- Update balance and observe new tuple creation
+UPDATE balance SET amount = 7500.00 WHERE account_id = 1;
+
+-- Notice that xmin changed and ctid jumped from (0,1) to (0,2)!
+SELECT xmin, xmax, ctid, account_id, amount FROM balance;</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: TABLE BLOAT & VACUUM TUNING -->
+    <section id="sec-vacuum-tuning" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🧹 Table Maintenance • Part 4 • Bloat, VACUUM &amp; Autovacuum Tuning</div>
+          <h2 class="panel-title">Table Bloat, VACUUM Mechanics &amp; Production Autovacuum Tuning</h2>
+          <p class="panel-subtitle">
+            MVCC ka dark side: Dead tuples table aur indexes ko bloated kar dete hain, jisse disk space waste hoti hai aur sequential scans 10x slow ho jaate hain. Samajhiye VACUUM, HOT updates aur autovacuum ke core configuration levers.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Why Doesn't MySQL Need VACUUM?</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL (Automatic Purge Threads):</strong> MySQL InnoDB mein background <code>innodb_purge_threads</code> hote hain. Jab sabhi active transactions commit ho jaati hain, toh purge threads Undo Log ke purane versions ko background mein bina table ko disturb kiye clean kar dete hain. MySQL tables mein dead tuples ka heap bloat nahi banta.<br>
+            • <strong>PostgreSQL (Autovacuum Mandatory):</strong> Kyunki PostgreSQL mein dead rows main table file ke andar hi rehti hain, PostgreSQL ko <strong>Autovacuum Daemon</strong> chalana padta hai jo har 8KB page ko scan karke dead line pointers ko mark karta hai aur <code>Free Space Map (_fsm)</code> update karta hai.<br>
+            • <strong>Warning:</strong> Agar MySQL developer PostgreSQL par switch karke autovacuum ko ignore karega, toh 6 mahine mein tables 5x bloated ho jayengi aur server out of disk ho jayega!
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🗺️</div>
+            <div class="concept-title">Free Space Map (_fsm)</div>
+            <div class="concept-desc">
+              Har table ke sath ek <code>_fsm</code> file banti hai jo har 8KB block mein available unallocated bytes ko track karti hai. Iske bina PostgreSQL ko har naye insert ke liye disk file grow karni padti.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">👁️</div>
+            <div class="concept-title">Visibility Map (_vm) &amp; Index-Only Scans</div>
+            <div class="concept-desc">
+              Har 8KB page ke liye 2 bits track hote hain: <em>"Kya is page ke sabhi tuples sabhi transactions ke liye visible hain?"</em> Agar yes, toh index scan direct result return kar sakta hai bina main heap table ko touch kiye (<strong>Index-Only Scan</strong>)!
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🚀</div>
+            <div class="concept-title">HOT (Heap-Only Tuples) Optimization</div>
+            <div class="concept-desc">
+              Agar aapka <code>UPDATE</code> kisi index column ko touch nahi karta aur usi 8KB page mein space hai, toh PostgreSQL naye index entries create nahi karta! Naya tuple usi page ke purane tuple se directly chain ho jata hai.
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚔️ Standard VACUUM vs VACUUM FULL vs pg_repack</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th>Lock Taken</th>
+                <th>Reclaims OS Disk Space?</th>
+                <th>Production Safe?</th>
+                <th>When to Use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>VACUUM (Standard)</strong></td>
+                <td>ShareUpdateExclusiveLock (Allows reads &amp; writes)</td>
+                <td>❌ No (Keeps space in internal FSM)</td>
+                <td>✅ 100% Safe anytime</td>
+                <td>Routine maintenance, dead tuple cleanup, updates VM.</td>
+              </tr>
+              <tr>
+                <td><strong>VACUUM FULL</strong></td>
+                <td><strong>AccessExclusiveLock</strong> (Blocks ALL reads &amp; writes)</td>
+                <td>✅ Yes (Shrinks file size on disk)</td>
+                <td>🚨 <strong>DANGEROUS</strong> (Can take hours)</td>
+                <td>Maintenance windows only when table is 80%+ bloated.</td>
+              </tr>
+              <tr>
+                <td><strong>pg_repack</strong> (Extension)</td>
+                <td>Lightweight locks (Allows live reads &amp; writes)</td>
+                <td>✅ Yes (Shrinks file on disk online)</td>
+                <td>✅ Enterprise Standard</td>
+                <td>Zero-downtime online table bloat reclamation.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚙️ Enterprise Autovacuum Tuning Formula</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          PostgreSQL ke default settings 2005 ke hardware ke liye hain (<code>scale_factor = 0.20</code>). Iska matlab 100 Million rows ki table par autovacuum tab tak trigger nahi hoga jab tak <strong>20 Million rows</strong> update ya delete na ho jayein! Isko turant tune karein:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">INI • /etc/postgresql/postgresql.conf Autovacuum Settings</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># --- PRODUCTION AUTOVACUUM TUNING ---
+
+# 1. Trigger threshold: 5% modifications instead of default 20%
+autovacuum_vacuum_scale_factor = 0.05
+autovacuum_vacuum_threshold = 1000
+
+# 2. Parallel Workers: Increase from 3 to 5-8 on modern multicore servers
+autovacuum_max_workers = 6
+
+# 3. I/O Cost Budget: Defaults (200 cost, 2ms sleep) choke vacuum on SSDs!
+# Increase cost limit so vacuum runs 10x faster without artificially pausing
+autovacuum_vacuum_cost_limit = 2000
+autovacuum_vacuum_cost_delay = 2ms
+
+# 4. Dedicated maintenance memory for vacuum worker allocations
+maintenance_work_mem = 1024MB</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Monitoring Dead Tuples &amp; Bloat in Real-Time</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Check live vs dead tuples and last vacuum timestamps
+SELECT 
+    schemaname, 
+    relname AS table_name, 
+    n_live_tup AS live_rows, 
+    n_dead_tup AS dead_rows, 
+    ROUND(n_dead_tup::NUMERIC / NULLIF(n_live_tup + n_dead_tup, 0) * 100, 2) AS dead_tuple_percent,
+    last_vacuum, 
+    last_autovacuum, 
+    last_analyze 
+FROM pg_stat_user_tables 
+ORDER BY n_dead_tup DESC 
+LIMIT 10;
+
+-- Custom per-table autovacuum tuning for ultra-high write audit logs
+ALTER TABLE audit_logs SET (
+    autovacuum_vacuum_scale_factor = 0.01,
+    autovacuum_vacuum_threshold = 500
+);</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: WAL & CHECKPOINTS -->
+    <section id="sec-wal-checkpoints" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">📝 ACID Durability • Part 5 • WAL, Checkpoints &amp; Crash Recovery</div>
+          <h2 class="panel-title">Write-Ahead Logging (WAL), Checkpoint Mechanics &amp; Crash Recovery</h2>
+          <p class="panel-subtitle">
+            Har <code>COMMIT</code> par agar PostgreSQL pura 8KB data page disk par likhta, toh disk I/O chauthai second mein choke ho jata. Samajhiye WAL ka sequential append model, LSN arithmetic aur crash recovery pipeline.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Dual Logs (Redo + Binlog) vs Unified WAL</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL (Dual Logs):</strong> MySQL mein do alag logging systems hote hain: <strong>Redo Log (ib_logfile)</strong> jo InnoDB crash recovery handle karta hai, aur <strong>Binlog (mysql-bin)</strong> jo replication aur point-in-time recovery handle karta hai. Iske liye MySQL ko internally Two-Phase Commit (XA 2PC) chalana padta hai.<br>
+            • <strong>PostgreSQL (Unified WAL):</strong> PostgreSQL mein koi Binlog alag se nahi hota! Ek single, elegant <strong>Write-Ahead Log (WAL)</strong> crash recovery bhi karta hai, streaming replication bhi karta hai, aur point-in-time backups bhi karta hai.<br>
+            • <strong>LSN vs GTID:</strong> MySQL replication mein <strong>GTID</strong> (Global Transaction Identifier) use hota hai, jabki PostgreSQL mein pure byte-level <strong>LSN (Log Sequence Number)</strong> offset use hota hai.
+          </p>
+        </div>
+
+        <div class="alert-box alert-info">
+          <div class="alert-icon">💡</div>
+          <div class="alert-content">
+            <div class="alert-title">The Core Principle of Write-Ahead Logging</div>
+            <p>
+              <strong>"No data page can be written to disk before the WAL record describing that change has been flushed to durable storage!"</strong><br>
+              PostgreSQL shared buffers mein dirty pages ko memory mein rakhta hai, aur sirf chhota sequential binary log (WAL) disk par sync (<code>fsync</code>) karta hai. Isse random disk writes avoid hote hain aur 100x high transaction throughput milta hai.
+            </p>
+          </div>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🔢</div>
+            <div class="concept-title">LSN (Log Sequence Number)</div>
+            <div class="concept-desc">
+              WAL stream mein har byte ka ek unique 64-bit integer address hota hai (e.g. <code>0/16B38E0</code>). Har 8KB data page ke header mein <code>pd_lsn</code> hota hai jo batata hai ki is page par aakhri modification kis LSN par hui thi.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🛑</div>
+            <div class="concept-title">Checkpoint: The I/O Baseline</div>
+            <div class="concept-desc">
+              Checkpoint ek point-in-time barrier hota hai. Checkpointer sabhi memory ke dirty shared buffers ko disk par flush karta hai aur control file (<code>pg_control</code>) ko update karta hai. Iske pehle ke old WAL segments recycle ho jaate hain.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🛡️</div>
+            <div class="concept-title">Torn Page &amp; full_page_writes</div>
+            <div class="concept-desc">
+              Agar OS power failure ke waqt 8KB block ka sirf 4KB likh paaye (Torn Page corruption), toh standard recovery fail ho jayegi. Isiliye checkpoint ke baad kisi page ke first modification par PostgreSQL <strong>pura 8KB block WAL mein likhta hai</strong> (<code>full_page_writes = on</code>).
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🔄 Crash Recovery Walkthrough: The REDO Pipeline</h3>
+
+        <div class="diagram-container">
+          <div class="diagram-title">How PostgreSQL Recovers Uncommitted State After Power Failure</div>
+          <div class="diagram-grid">
+            <div class="diagram-card" style="border-color: rgba(56, 189, 248, 0.4);">
+              <h4 style="color:#7dd3fc; margin-bottom:8px;">1. Read pg_control</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                Crash ke baad jab server boot hota hai, toh sabse pehle <code>$PGDATA/global/pg_control</code> read karta hai aur last successful <strong>Checkpoint REDO LSN</strong> locate karta hai.
+              </p>
+            </div>
+
+            <div class="diagram-card" style="border-color: rgba(245, 158, 11, 0.4);">
+              <h4 style="color:#fde68a; margin-bottom:8px;">2. Replay REDO Log</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                Checkpoint LSN se aage jitne bhi WAL records hain, unhe sequential order mein replay kiya jata hai. Agar <code>page.pd_lsn &gt;= record.lsn</code> hai, toh replay skip ho jata hai (already on disk).
+              </p>
+            </div>
+
+            <div class="diagram-card" style="border-color: rgba(16, 185, 129, 0.4);">
+              <h4 style="color:#6ee7b7; margin-bottom:8px;">3. Rollback &amp; Open</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                Uncommitted transactions ko abort mark kiya jata hai in <code>pg_xact</code> (CLOG). Database completely consistent state mein open ho jata hai with ZERO data loss!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚙️ Production Checkpoint Tuning Levers</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Frequent checkpoints disk I/O spikes create karte hain. Production servers ke liye smooth checkpointing enable karein:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">INI • postgresql.conf Checkpoint Parameters</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># Checkpoint time interval: 15 to 30 minutes in production
+checkpoint_timeout = 15min
+
+# Maximum WAL generated before forcing an unexpected checkpoint
+# Increase from 1GB to 16GB-32GB on modern storage
+max_wal_size = 16GB
+min_wal_size = 2GB
+
+# Smooth Checkpointing: Spread the writes over 90% of the timeout
+# This prevents sudden disk write IOPS spikes!
+checkpoint_completion_target = 0.9
+
+# Keep full page writes enabled for crash safety
+full_page_writes = on
+
+# WAL Buffer size
+wal_buffers = 16MB</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Inspecting WAL Activity &amp; Calculating Write Volume</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Check current WAL insert position
+SELECT pg_current_wal_lsn();
+
+-- 2. Measure bytes written between two time intervals
+WITH before_bench AS (
+    SELECT pg_current_wal_lsn() AS lsn
+),
+after_bench AS (
+    -- Run heavy queries here...
+    SELECT pg_current_wal_lsn() AS lsn
+)
+SELECT pg_size_pretty(pg_wal_lsn_diff(after_bench.lsn, before_bench.lsn)) AS wal_bytes_generated
+FROM before_bench, after_bench;
+
+-- 3. Check WAL file location and archive status
+SELECT pg_walfile_name(pg_current_wal_lsn());</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: PSQL MASTERY & SYSTEM CATALOGS -->
+    <section id="sec-psql-catalogs" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🔍 CLI &amp; Metadata • Part 6 • psql Mastery &amp; System Catalogs</div>
+          <h2 class="panel-title">Enterprise psql CLI Mastery &amp; System Catalog Deep Dives</h2>
+          <p class="panel-subtitle">
+            Production outage ke dauraan GUI tools (pgAdmin / DBeaver) connect nahi hote ya slow ho jaate hain. Senior backend engineers terminal mein <code>psql</code> aur internal system catalogs (<code>pg_class</code>, <code>pg_stat_*</code>) se real-time diagnostics run karte hain.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL to 🐘 PostgreSQL CLI Rosetta Stone</h4>
+          <div class="table-container" style="margin: 8px 0 0;">
+            <table class="styled-table" style="font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>Task</th>
+                  <th>MySQL Command</th>
+                  <th>PostgreSQL Equivalent</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Connect to DB</strong></td>
+                  <td><code>mysql -u root -p -D my_db</code></td>
+                  <td><code>psql -U postgres -d my_db</code></td>
+                </tr>
+                <tr>
+                  <td><strong>List Databases</strong></td>
+                  <td><code>SHOW DATABASES;</code></td>
+                  <td><code>\l</code> or <code>\l+</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Switch Database</strong></td>
+                  <td><code>USE other_db;</code></td>
+                  <td><code>\c other_db</code></td>
+                </tr>
+                <tr>
+                  <td><strong>List Tables</strong></td>
+                  <td><code>SHOW TABLES;</code></td>
+                  <td><code>\dt</code> or <code>\dt+</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Describe Schema</strong></td>
+                  <td><code>DESCRIBE users;</code> or <code>SHOW CREATE TABLE users;</code></td>
+                  <td><code>\d+ users</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Active Queries</strong></td>
+                  <td><code>SHOW FULL PROCESSLIST;</code></td>
+                  <td><code>SELECT pid, usename, state, query FROM pg_stat_activity;</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Kill Stuck Query</strong></td>
+                  <td><code>KILL 1234;</code></td>
+                  <td><code>SELECT pg_terminate_backend(1234);</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:24px 0 16px;">💻 The Ultimate Senior <code>.psqlrc</code> Configuration</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Apne local ya remote server ke home directory (<code>~/.psqlrc</code>) par yeh file save karein. Yeh psql ko ek high-speed command center bana deti hai:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">PSQLRC • ~/.psqlrc Production Configuration</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Always measure execution time for every query (Like MySQL profiling)
+\timing on
+
+-- Auto-switch to vertical layout (expanded mode) for wide columns (Like MySQL \G)
+\x auto
+
+-- Display explicit 'NULL' instead of confusing empty spaces
+\pset null 'NULL'
+
+-- Customize border formatting (compact unicode borders)
+\pset border 2
+
+-- Interactive prompt: Shows User@Database and Transaction Status (%R)
+\set PROMPT1 '%[%033[1;36m%]%n%[%033[0m%]@%[%033[1;34m%]%/%[%033[0m%]%R%# '
+
+-- Ignore case in searches
+\set IGNORECASE 1</code></pre>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚡ Essential psql Slash Commands Cheatsheet</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>Description</th>
+                <th>Senior Power Tip</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>\d+ &lt;table&gt;</code></td>
+                <td>Table structure, column types, storage (plain/extended), and index definitions.</td>
+                <td>Shows child partitions and referenced foreign keys.</td>
+              </tr>
+              <tr>
+                <td><code>\di+</code></td>
+                <td>Lists all indexes with physical disk allocation size.</td>
+                <td>Spot oversized indexes consuming more space than tables!</td>
+              </tr>
+              <tr>
+                <td><code>\watch &lt;sec&gt;</code></td>
+                <td>Repeats the previous query every N seconds in a live loop.</td>
+                <td>Example: <code>SELECT * FROM pg_stat_activity; \watch 2</code> (Live CLI dashboard!).</td>
+              </tr>
+              <tr>
+                <td><code>\conninfo</code></td>
+                <td>Shows current connected host IP, port, user, and SSL cipher.</td>
+                <td>Verify if you are connected to Primary or Read-Replica.</td>
+              </tr>
+              <tr>
+                <td><code>\ef &lt;function&gt;</code></td>
+                <td>Opens stored function / procedure in terminal text editor (Vim/Nano).</td>
+                <td>Edit and recompile stored procedures directly in DB!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🔬 Critical System Catalog Diagnostic Queries</h3>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Top 10 Largest Tables with Table vs Index Sizes</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>SELECT 
+    schemaname,
+    relname AS table_name,
+    pg_size_pretty(pg_table_size(relid)) AS data_size,
+    pg_size_pretty(pg_indexes_size(relid)) AS index_size,
+    pg_size_pretty(pg_total_relation_size(relid)) AS total_size
+FROM pg_catalog.pg_statio_user_tables
+ORDER BY pg_total_relation_size(relid) DESC
+LIMIT 10;</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Shared Buffers Cache Hit Ratio (Should be &gt; 99%)</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>SELECT 
+    datname AS database_name,
+    blks_read,
+    blks_hit,
+    ROUND(blks_hit::NUMERIC / NULLIF(blks_hit + blks_read, 0) * 100, 2) AS cache_hit_ratio_percent
+FROM pg_stat_database
+WHERE datname = current_database();
+-- If cache_hit_ratio is &lt; 98%, your shared_buffers is too small or queries lack indexes!</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Finding Unused Indexes Wasting Write IOPS</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Spot indexes that have never been used by the query planner
+SELECT 
+    schemaname,
+    relname AS table_name,
+    indexrelname AS index_name,
+    idx_scan AS number_of_scans,
+    pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
+FROM pg_stat_user_indexes
+JOIN pg_index USING (indexrelid)
+WHERE indisunique IS FALSE
+  AND idx_scan = 0
+ORDER BY pg_relation_size(indexrelid) DESC;</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Terminating Long-Running or Blocking Queries</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Soft Cancel: Gracefully requests query to abort (SIGINT)
+SELECT pg_cancel_backend(12345);
+
+-- Hard Terminate: Kills the backend process immediately (SIGTERM)
+-- Use this if a query is holding locks and blocking other sessions (Like MySQL: KILL 12345;)
+SELECT pg_terminate_backend(12345);</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: GOTCHAS, TXID WRAPAROUND & CHEATSHEET -->
+    <section id="sec-gotchas-checklist" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🏆 Senior Architect • Part 7 • Gotchas, TXID Wraparound &amp; Cheatsheet</div>
+          <h2 class="panel-title">Senior Architectural Gotchas, TXID Wraparound &amp; Production Cheatsheet</h2>
+          <p class="panel-subtitle">
+            4 YOE Senior Backend interviews ka favorite topic: <strong>Transaction ID (TXID) Wraparound Catastrophe</strong>, connection spike bottlenecks, aur complete 8-Module PostgreSQL Mastery roadmap.
+          </p>
+        </div>
+
+        <div class="alert-box alert-danger">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-content">
+            <div class="alert-title">The TXID Wraparound Catastrophe (Every Senior Engineer Must Know)</div>
+            <p>
+              PostgreSQL mein Transaction IDs <strong>32-bit unsigned integers</strong> hote hain (Max ~4.29 Billion).<br>
+              PostgreSQL circular modular arithmetic use karta hai: kisi bhi waqt 2.14 Billion txids "past" mein hote hain, aur 2.14 Billion txids "future" mein.<br>
+              <strong>The Catastrophe:</strong> Agar aapki database 2.14 Billion transactions run kar leti hai aur old rows freeze nahi hoti hain, toh past transactions wrap around hokar "FUTURE" ban jaayengi—jisse pura table data achanak gayab (invisible) ho jayega!<br>
+              <strong>PostgreSQL Protection:</strong> Agar <code>age(datfrozenxid)</code> 200 Million pahuchti hai, toh aggressive freeze autovacuum trigger hota hai. Agar age 2.13 Billion ho jaaye aur problem solve na ho, toh <strong>PostgreSQL data loss prevent karne ke liye completely shut down ho jata hai</strong> aur sirf single-user mode mein restart hota hai!
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🔍 Monitoring Database Transaction ID Age</h3>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Checking Database TXID Wraparound Danger</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Check TXID age for all databases (Danger zone if &gt; 1,000,000,000)
+SELECT 
+    datname,
+    age(datfrozenxid) AS oldest_unfrozen_xid_age,
+    2^31 - 1000000 - age(datfrozenxid) AS transactions_until_emergency_shutdown
+FROM pg_database
+ORDER BY oldest_unfrozen_xid_age DESC;
+
+-- If oldest_unfrozen_xid_age is high, trigger manual freeze on the offending table:
+-- VACUUM (FREEZE, ANALYZE) critical_table;</code></pre>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚔️ Architectural Comparison: PostgreSQL vs MySQL</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>PostgreSQL</th>
+                <th>MySQL (InnoDB)</th>
+                <th>Senior Engineering Trade-off</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Connection Model</strong></td>
+                <td>Process-per-connection (fork)</td>
+                <td>Thread-per-connection</td>
+                <td>PG has strong process memory isolation, but requires PgBouncer pooling.</td>
+              </tr>
+              <tr>
+                <td><strong>UPDATE Internals</strong></td>
+                <td>INSERT new tuple + mark old dead</td>
+                <td>In-place update with Undo Log</td>
+                <td>PG requires regular VACUUM to prevent bloat; MySQL avoids heap bloat.</td>
+              </tr>
+              <tr>
+                <td><strong>Crash Isolation</strong></td>
+                <td>Single backend segfault isolates cleanly</td>
+                <td>Thread crash can kill mysqld daemon</td>
+                <td>PostgreSQL is significantly more resilient to buggy C extensions.</td>
+              </tr>
+              <tr>
+                <td><strong>Default Block Size</strong></td>
+                <td>8192 Bytes (8 KB)</td>
+                <td>16384 Bytes (16 KB)</td>
+                <td>PG handles small random OLTP reads efficiently with less I/O amplification.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:32px 0 16px;">🗺️ The Complete 8-Module PostgreSQL Mastery Curriculum</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Topic</th>
+                <th>Core Focus Areas</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background: rgba(56, 189, 248, 0.08);">
+                <td><strong>Module 01</strong></td>
+                <td><strong>Architecture &amp; Storage Engine</strong></td>
+                <td>Process Model, 8KB Pages, MVCC, VACUUM, WAL &amp; Checkpoints</td>
+                <td><span style="color:#6ee7b7; font-weight:bold;">✅ Active Completed</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 02</strong></td>
+                <td>Advanced Data Types &amp; JSONB</td>
+                <td>UUIDv7, TIMESTAMPTZ, Arrays, JSONB indexing &amp; EXCLUDE constraints</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 03</strong></td>
+                <td>Indexing Internals &amp; Strategies</td>
+                <td>B-Tree, GIN, GiST, BRIN, Partial Indexes &amp; Covering Indexes</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 04</strong></td>
+                <td>Transactions &amp; Concurrency Control</td>
+                <td>Isolation Levels (SSI), Row Locks, SKIP LOCKED &amp; Advisory Locks</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 05</strong></td>
+                <td>Execution Plans &amp; EXPLAIN ANALYZE</td>
+                <td>Query Planner, Buffers, Seq vs Index Scans, Join Algorithms</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 06</strong></td>
+                <td>Advanced SQL &amp; Window Functions</td>
+                <td>Recursive CTEs, Windowing, GROUPING SETS &amp; UPSERT ON CONFLICT</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 07</strong></td>
+                <td>Partitioning &amp; Scaling</td>
+                <td>Declarative Range/List/Hash Partitioning, Pruning, Foreign Data Wrappers</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 08</strong></td>
+                <td>Replication, High Availability &amp; Pooling</td>
+                <td>Streaming Replication, Logical Sync, PgBouncer &amp; PITR Backups</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout-card" style="margin-top:32px; text-align:center; padding:2rem;">
+          <h3 style="color:#f8fafc; font-size:1.4rem; margin-bottom:12px;">🐘 Module 01 Completed!</h3>
+          <p style="color:#94a3b8; max-width:800px; margin:0 auto 20px; font-size:1rem; line-height:1.6;">
+            Aapne PostgreSQL ke process model, 8KB block structure, MVCC lifecycle, WAL crash recovery aur autovacuum tuning ko successfully master kar liya hai.
+          </p>
+          <a href="../index.html" class="nav-btn primary" style="padding:0.75rem 1.75rem; font-size:1rem; text-decoration:none; display:inline-flex;">
+            🏠 Return to Learning Portal Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p><strong>PostgreSQL Advanced Architecture Mastery Suite</strong> • 4+ YOE Enterprise Engineering Track</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Portal Hub</a> • 
+      <a href="#sec-process-model">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching Function
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.panel-section, .section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy Code Function
+    function copyCode(button) {
+      const container = button.closest('.code-container') || button.closest('.code-block');
+      if (!container) return;
+      const codeElement = container.querySelector('pre code') || container.querySelector('pre');
+      if (!codeElement) return;
+
+      navigator.clipboard.writeText(codeElement.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress Bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+
+    // Sync tabs with URL hash
+    function syncHash() {
+      if (window.location.hash) {
+        const targetId = window.location.hash.substring(1);
+        const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(targetId));
+        if (targetBtn) switchTab(targetId, targetBtn);
+      }
+    }
+    window.addEventListener('DOMContentLoaded', syncHash);
+    window.addEventListener('hashchange', syncHash);
+  </script>
+</body>
+</html>

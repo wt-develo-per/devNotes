@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 04: Classes, OOPs & Decorators | TypeScript for Node.js</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #3178c6; /* TypeScript Blue */
+      --accent-glow: rgba(49, 120, 198, 0.25);
+      --accent-ts: #3178c6;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #3178c6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3178c6, #f43f5e);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(49, 120, 198, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-rose);
+      filter: blur(100px);
+      opacity: 0.15;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(244, 63, 94, 0.1);
+      color: var(--accent-rose);
+      border: 1px solid rgba(244, 63, 94, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(244, 63, 94, 0.1);
+      color: var(--accent-rose);
+      border-color: rgba(244, 63, 94, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-ts); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(244, 63, 94, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-rose);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-class { color: #4ec9b0; font-weight: bold; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-decorator { color: #dcdcaa; font-style: italic; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">TS</span>
+      TypeScript for Node.js
+    </a>
+    <div class="nav-links">
+      <a href="03_Generics_and_Utility_Types.html" class="nav-btn">⬅️ Previous: Generics</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 04</span>
+      <h1 class="hero-title">Classes, OOPs &amp; Decorators</h1>
+      <p class="hero-desc">
+        Modern Node.js frameworks (jaise NestJS ya TypeORM) Object-Oriented Programming aur Decorators (`@`) pe chalte hain. JavaScript mein Classes thodi adhuri hain, par TypeScript inhe Java/C# jaisa powerful bana deta hai.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-oops', this)"><span class="sidebar-icon">🧱</span> 1. TypeScript OOPs Basics</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-implements', this)"><span class="sidebar-icon">📐</span> 2. Implements vs Extends</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-decorators', this)"><span class="sidebar-icon">✨</span> 3. What are Decorators?</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-decorator-action', this)"><span class="sidebar-icon">🚀</span> 4. Decorators in Action</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: OOPs Basics -->
+        <section id="sec-oops" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧱 Structure • Part 1 • Access Modifiers</div>
+              <h2 class="panel-title">TypeScript OOPs (Public, Private, Protected)</h2>
+              <p class="panel-subtitle">
+                Vanilla JS classes mein sab kuch public hota hai. TypeScript aapko data encapsulation deta hai.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-emerald)">🟢 public (Default)</div>
+                <div class="concept-desc">
+                  Class ke andar aur bahar kahin se bhi access kiya ja sakta hai.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-rose)">🔴 private</div>
+                <div class="concept-desc">
+                  Sirf usi class ke methods use kar sakte hain. Instance (object) se direct access nahi hota. Good for internal state.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-amber)">🟠 protected</div>
+                <div class="concept-desc">
+                  Class ke andar AUR un classes mein jo isko <code>extend</code> karti hain (child classes) wahan access allowed hai.
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Class Constructor Shortcut</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">class</span> <span class="ts-class">DatabaseService</span> {
+    <span class="ts-comment">// 'readonly' means it can only be set once inside the constructor</span>
+    <span class="ts-keyword">private</span> <span class="ts-keyword">readonly</span> connectionString: <span class="ts-type">string</span>;
+    <span class="ts-keyword">public</span> isConnected: <span class="ts-type">boolean</span> = <span class="ts-keyword">false</span>;
+
+    <span class="ts-keyword">constructor</span>(url: <span class="ts-type">string</span>) {
+        <span class="ts-keyword">this</span>.connectionString = url;
+    }
+
+    <span class="ts-keyword">public</span> connect() {
+        console.log(`Connecting to ${<span class="ts-keyword">this</span>.connectionString}`);
+        <span class="ts-keyword">this</span>.isConnected = <span class="ts-keyword">true</span>;
+    }
+}
+
+<span class="ts-comment">// 💡 THE TS SHORTCUT (Parameter Properties)</span>
+<span class="ts-comment">// Constructor mein access modifier lagane se TS automatically </span>
+<span class="ts-comment">// usko class property bana deta hai aur assign bhi kar deta hai!</span>
+<span class="ts-keyword">class</span> <span class="ts-class">UserService</span> {
+    <span class="ts-keyword">constructor</span>(
+        <span class="ts-keyword">private</span> db: <span class="ts-type">DatabaseService</span>,  <span class="ts-comment">// Auto-assigned!</span>
+        <span class="ts-keyword">public</span> tableName: <span class="ts-type">string</span> = <span class="ts-string">"users"</span>
+    ) {}
+
+    <span class="ts-keyword">public</span> fetchUsers() {
+        <span class="ts-comment">// this.db is perfectly available here!</span>
+    }
+}
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Implements vs Extends -->
+        <section id="sec-implements" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📐 Architecture • Part 2 • Contracts</div>
+              <h2 class="panel-title">Implements vs Extends</h2>
+              <p class="panel-subtitle">
+                Backend architecture (Solid principles) mein Interface ek "Contract" ki tarah kaam karta hai. Classes us contract ko `implement` karti hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Interfaces for Classes</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// Contract: Any Logger class MUST have these two methods.</span>
+<span class="ts-keyword">interface</span> <span class="ts-type">ILogger</span> {
+    log(message: <span class="ts-type">string</span>): <span class="ts-type">void</span>;
+    error(message: <span class="ts-type">string</span>): <span class="ts-type">void</span>;
+}
+
+<span class="ts-comment">// implements: "Main promise karta hu ki main ILogger ki saari shartein manunga"</span>
+<span class="ts-keyword">class</span> <span class="ts-class">ConsoleLogger</span> <span class="ts-keyword">implements</span> <span class="ts-type">ILogger</span> {
+    <span class="ts-keyword">public</span> log(message: <span class="ts-type">string</span>) {
+        console.log(`[INFO]: ${message}`);
+    }
+    
+    <span class="ts-keyword">public</span> error(message: <span class="ts-type">string</span>) {
+        console.error(`[ERROR]: ${message}`);
+    }
+}
+
+<span class="ts-comment">// Ab aap easily dependency injection kar sakte hain!</span>
+<span class="ts-keyword">class</span> <span class="ts-class">OrderController</span> {
+    <span class="ts-comment">// Yahan humne class ka naam nahi, Interface ka naam diya.</span>
+    <span class="ts-comment">// Isse hum kal ko "ConsoleLogger" ki jagah "FileLogger" bhej sakte hain bina code change kiye!</span>
+    <span class="ts-keyword">constructor</span>(<span class="ts-keyword">private</span> logger: <span class="ts-type">ILogger</span>) {}
+}
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Decorators Basics -->
+        <section id="sec-decorators" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">✨ Metaprogramming • Part 3 • The Magic Symbol</div>
+              <h2 class="panel-title">What are Decorators (`@`)?</h2>
+              <p class="panel-subtitle">
+                Agar aapne NestJS, TypeORM, ya Angular dekha hai, toh wahan <code>@Get()</code> ya <code>@Entity()</code> use hota hai. Yeh Decorators hain.
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(49, 120, 198, 0.15); border: 1px solid rgba(49, 120, 198, 0.4);">
+              <h4 style="color: #3178c6; margin-bottom: 8px;">🤔 Simple Definition</h4>
+              <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">
+                Decorator ek normal JavaScript function hota hai jo ek <strong>Class, Method, ya Property</strong> ke upar lagaya jata hai usko modify ya track karne ke liye. Yeh aapko boilerplate code chupa kar metaprogramming karne deta hai.<br><br>
+                <em>Note: Decorators use karne ke liye <code>tsconfig.json</code> mein <code>"experimentalDecorators": true</code> on karna zaruri hai.</em>
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Creating a basic Class Decorator</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// 1. Humne ek Decorator function banaya</span>
+<span class="ts-keyword">function</span> <span class="ts-decorator">Timestamped</span>(constructor: <span class="ts-type">Function</span>) {
+    <span class="ts-comment">// Hum dynamically class ke andar ek property add kar rahe hain!</span>
+    constructor.prototype.createdAt = <span class="ts-keyword">new</span> Date();
+}
+
+<span class="ts-comment">// 2. Usko Class ke upar use kiya</span>
+<span class="ts-decorator">@Timestamped</span>
+<span class="ts-keyword">class</span> <span class="ts-class">Article</span> {
+    <span class="ts-keyword">constructor</span>(<span class="ts-keyword">public</span> title: <span class="ts-type">string</span>) {}
+}
+
+<span class="ts-keyword">const</span> doc = <span class="ts-keyword">new</span> Article(<span class="ts-string">"TypeScript Decorators"</span>);
+<span class="ts-comment">// TS compiler won't know about createdAt directly unless casted,</span>
+<span class="ts-comment">// but at runtime doc.createdAt will have the current Date!</span>
+console.log((doc <span class="ts-keyword">as</span> <span class="ts-type">any</span>).createdAt); 
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Decorators in Action -->
+        <section id="sec-decorator-action" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚀 Framework Level • Part 4 • Under the Hood</div>
+              <h2 class="panel-title">Decorators in Action (Method Decorators)</h2>
+              <p class="panel-subtitle">
+                Frameworks route handling (jaise <code>@Get('/users')</code>) aur validation ke liye Method decorators use karte hain. Chaliye ek simple `Execution Time Logger` decorator banate hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Measuring Execution Time via Decorator</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// Method Decorator function</span>
+<span class="ts-keyword">function</span> <span class="ts-decorator">LogExecutionTime</span>(target: <span class="ts-type">any</span>, propertyKey: <span class="ts-type">string</span>, descriptor: <span class="ts-type">PropertyDescriptor</span>) {
+    <span class="ts-keyword">const</span> originalMethod = descriptor.value; <span class="ts-comment">// The actual function (e.g., processData)</span>
+
+    <span class="ts-comment">// Hum us function ko override (wrap) kar rahe hain</span>
+    descriptor.value = <span class="ts-keyword">async</span> <span class="ts-keyword">function</span> (...args: <span class="ts-type">any</span>[]) {
+        console.time(propertyKey); <span class="ts-comment">// Start timer</span>
+        
+        <span class="ts-keyword">const</span> result = <span class="ts-keyword">await</span> originalMethod.apply(<span class="ts-keyword">this</span>, args); <span class="ts-comment">// Run actual function</span>
+        
+        console.timeEnd(propertyKey); <span class="ts-comment">// Stop timer & print</span>
+        <span class="ts-keyword">return</span> result;
+    };
+    <span class="ts-keyword">return</span> descriptor;
+}
+
+<span class="ts-keyword">class</span> <span class="ts-class">DataProcessor</span> {
+    
+    <span class="ts-decorator">@LogExecutionTime</span>
+    <span class="ts-keyword">async</span> processData() {
+        <span class="ts-comment">// Simulate heavy work</span>
+        <span class="ts-keyword">await</span> <span class="ts-keyword">new</span> Promise(resolve =&gt; setTimeout(resolve, 1500));
+        <span class="ts-keyword">return</span> <span class="ts-string">"Processing Complete"</span>;
+    }
+}
+
+<span class="ts-keyword">const</span> processor = <span class="ts-keyword">new</span> DataProcessor();
+<span class="ts-comment">// Output will automatically print: "processData: 1.503s" without writing console logs inside the method!</span>
+processor.processData();
+</code></pre>
+            </div>
+
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 20px;">
+              <h4 style="color: #10b981; margin-bottom: 8px;">✅ Why this is amazing for Backend Devs</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Is approach se business logic (apka asli code) bilkul saaf rehta hai. Validation, Logging, Authentication checks... sab aap Decorators (`@IsAdmin()`, `@Validate()`) ke through method ke upar add kar sakte hain. Yehi NestJS ka core design pattern hai!
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

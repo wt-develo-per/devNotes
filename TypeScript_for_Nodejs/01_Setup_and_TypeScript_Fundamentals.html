@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 01: Setup & TypeScript Fundamentals | TypeScript for Node.js</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #3178c6; /* TypeScript Blue */
+      --accent-glow: rgba(49, 120, 198, 0.25);
+      --accent-ts: #3178c6;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #3178c6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3178c6, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(49, 120, 198, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-ts);
+      filter: blur(100px);
+      opacity: 0.3;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(49, 120, 198, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(49, 120, 198, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(49, 120, 198, 0.1);
+      color: var(--accent);
+      border-color: rgba(49, 120, 198, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(49, 120, 198, 0.15);
+      color: var(--accent-ts);
+      border: 1px solid rgba(49, 120, 198, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-ts); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(49, 120, 198, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-ts);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">TS</span>
+      TypeScript for Node.js
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 01</span>
+      <h1 class="hero-title">Setup &amp; TypeScript Fundamentals</h1>
+      <p class="hero-desc">
+        Node.js ke liye TypeScript kyun zaruri hai? Kaise <code>tsconfig.json</code> ko configure karein, aur TypeScript ke core primitives (string, number, any, unknown) ko Node.js environment mein effectively kaise use karein.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-intro', this)"><span class="sidebar-icon">🚀</span> 1. TypeScript in Node.js?</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-setup', this)"><span class="sidebar-icon">⚙️</span> 2. The Golden tsconfig.json</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-types', this)"><span class="sidebar-icon">🧱</span> 3. Basic Primitive Types</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-collections', this)"><span class="sidebar-icon">📦</span> 4. Arrays, Tuples & Enums</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-advanced-any', this)"><span class="sidebar-icon">🚨</span> 5. any vs unknown (Advanced)</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: Intro -->
+        <section id="sec-intro" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚀 Fundamentals • Part 1 • The "Why"</div>
+              <h2 class="panel-title">Why TypeScript for Node.js Backend?</h2>
+              <p class="panel-subtitle">
+                Jab JavaScript aasan hai aur bina compile kiye chalti hai, toh backend developers TypeScript ki taraf kyun shift ho rahe hain?
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-icon">🛡️</div>
+                <div class="concept-title">Runtime Errors = 0</div>
+                <div class="concept-desc">
+                  JS mein "Cannot read property 'email' of undefined" error server pe aane ke baad pata chalta hai. TS mein yeh error code likhte time (compile time) hi IDE pakad leta hai. 
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">🧠</div>
+                <div class="concept-title">Auto-Complete Magic</div>
+                <div class="concept-desc">
+                  Jab aap database query chalate hain, TS pehle se jaanta hai ki <code>User</code> object mein kaunsi properties hain. Postman check karne ki zaroorat nahi padti!
+                </div>
+              </div>
+            </div>
+
+            <div class="callout-card" style="background: linear-gradient(135deg, rgba(49, 120, 198, 0.15), rgba(8, 12, 20, 0.15)); border: 1px solid rgba(49, 120, 198, 0.4); margin: 20px 0;">
+              <h4 style="color: #3178c6; margin-bottom: 8px;">💡 The Compiler Mental Model</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Node.js directly TypeScript execute nahi kar sakta (Deno aur Bun kar sakte hain, par Node nahi). <br>
+                Iska matlab <code>server.ts</code> hamesha pehle transpile hota hai <code>server.js</code> mein, aur phir Node.js us <code>.js</code> file ko run karta hai. <strong>Types sirf development time ke liye hote hain, production JavaScript mein unka koi nishaan nahi hota!</strong>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Setup & tsconfig -->
+        <section id="sec-setup" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">⚙️ Configuration • Part 2 • Best Practices</div>
+              <h2 class="panel-title">Node.js Setup &amp; The Golden tsconfig</h2>
+              <p class="panel-subtitle">
+                TypeScript Node project start karna bahut simple hai. Hum development ke liye <code>tsx</code> ya <code>ts-node-dev</code> use karte hain, aur production ke liye compile karte hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">BASH • Initializing a Project</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment"># 1. Initialize Node project</span>
+npm init -y
+
+<span class="ts-comment"># 2. Install TypeScript and Node types as dev dependencies</span>
+npm install typescript @types/node tsx --save-dev
+
+<span class="ts-comment"># 3. Initialize tsconfig.json</span>
+npx tsc --init
+</code></pre>
+            </div>
+
+            <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">The Perfect tsconfig.json for Node.js (ES2022)</h3>
+            <p style="color: #94a3b8; margin-bottom: 15px;">
+              Default <code>tsconfig.json</code> bahut purani JavaScript generate karta hai. Backend developers ko hamesha Node ke latest features (like async/await without polyfills) use karne chahiye.
+            </p>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">JSON • tsconfig.json</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>{
+  "compilerOptions": {
+    <span class="ts-comment">/* Language and Environment */</span>
+    "target": "ES2022",         <span class="ts-comment">// Node 18+ natively supports ES2022</span>
+    "module": "CommonJS",       <span class="ts-comment">// Standard for Node.js (or NodeNext for ES Modules)</span>
+    "rootDir": "./src",         <span class="ts-comment">// Aapka TypeScript code kahan hai</span>
+    "outDir": "./dist",         <span class="ts-comment">// Compile hui JS file kahan jayegi</span>
+
+    <span class="ts-comment">/* Type Checking - Enable Strict Mode! */</span>
+    "strict": true,             <span class="ts-comment">// YEH SABSE ZARURI HAI!</span>
+    "noImplicitAny": true,      <span class="ts-comment">// 'any' ko prevent karta hai</span>
+    "strictNullChecks": true,   <span class="ts-comment">// "Cannot read property of undefined" se bachata hai</span>
+
+    <span class="ts-comment">/* Modules */</span>
+    "esModuleInterop": true,    <span class="ts-comment">// Import CommonJS packages smoothly</span>
+    "skipLibCheck": true,       <span class="ts-comment">// Speeds up compilation</span>
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+</code></pre>
+            </div>
+            
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 20px;">
+              <h4 style="color: #10b981; margin-bottom: 8px;">🔥 Developer Tool: tsx</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Pehle log `nodemon` + `ts-node` use karte the, jo kaafi slow tha. Ab modern Node.js apps mein <strong><code>npx tsx watch src/server.ts</code></strong> use hota hai. Yeh instantly compile aur reload karta hai (esbuild under the hood use karta hai).
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 3: Primitives -->
+        <section id="sec-types" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧱 Basics • Part 3 • Core Types</div>
+              <h2 class="panel-title">Basic Primitive Types</h2>
+              <p class="panel-subtitle">
+                TypeScript implicitly types deduce (infer) kar leta hai, par API request/response mein humein explicit types define karne padte hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Basic Typing</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// Explicitly specifying types (Variable declaration)</span>
+<span class="ts-keyword">let</span> username: <span class="ts-type">string</span> = "alex_dev";
+<span class="ts-keyword">let</span> age: <span class="ts-type">number</span> = 28;
+<span class="ts-keyword">let</span> isActive: <span class="ts-type">boolean</span> = true;
+
+<span class="ts-comment">// Type Inference (TS is smart, it knows this is a string)</span>
+<span class="ts-keyword">let</span> dbConnectionUrl = "postgres://user:pass@localhost:5432/mydb"; 
+<span class="ts-comment">// You don't need to write ': string' here!</span>
+
+<span class="ts-comment">// Function typing: Type the arguments AND the return type</span>
+<span class="ts-keyword">function</span> calculateTax(amount: <span class="ts-type">number</span>, taxRate: <span class="ts-type">number</span>): <span class="ts-type">number</span> {
+    <span class="ts-keyword">return</span> amount + (amount * taxRate);
+}
+
+<span class="ts-comment">// Optional parameters (using ?)</span>
+<span class="ts-keyword">function</span> logMessage(msg: <span class="ts-type">string</span>, userId?: <span class="ts-type">number</span>): <span class="ts-type">void</span> {
+    <span class="ts-keyword">if</span> (userId) {
+        console.log(`[User ${userId}]: ${msg}`);
+    } <span class="ts-keyword">else</span> {
+        console.log(`[System]: ${msg}`);
+    }
+}
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Arrays, Tuples & Enums -->
+        <section id="sec-collections" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📦 Collections • Part 4 • Structuring Data</div>
+              <h2 class="panel-title">Arrays, Tuples &amp; Enums</h2>
+              <p class="panel-subtitle">
+                Arrays aur Constants ko TypeScript mein strict boundary dena zaroori hai.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card info-card">
+                <h4 style="color:#3178c6; margin-bottom:10px;">📚 Arrays</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  <code>string[]</code> ya <code>Array&lt;string&gt;</code> use karke list of items define karein.
+                  <code>let roles: string[] = ['admin', 'user'];</code>
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:#10b981; margin-bottom:10px;">🏷️ Tuples</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Fixed length array jisme har position ka type fix ho. E.g., Database pagination return: <code>[number, any[]]</code> (total count aur rows).
+                </p>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Enums vs Const Enums</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// Enum: Database status ya Roles define karne ke liye</span>
+<span class="ts-keyword">enum</span> OrderStatus {
+    PENDING = 'PENDING',
+    SHIPPED = 'SHIPPED',
+    DELIVERED = 'DELIVERED',
+    CANCELLED = 'CANCELLED'
+}
+
+<span class="ts-comment">// Type safe function argument</span>
+<span class="ts-keyword">function</span> updateStatus(orderId: <span class="ts-type">number</span>, status: <span class="ts-type">OrderStatus</span>) {
+    <span class="ts-comment">// Database query here...</span>
+}
+
+updateStatus(101, OrderStatus.SHIPPED); <span class="ts-comment">// ✅ Works perfectly</span>
+<span class="ts-comment">// updateStatus(101, 'DELIVERED'); ❌ TS Error! Requires the enum type.</span>
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 5: any vs unknown -->
+        <section id="sec-advanced-any" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚨 Advanced • Part 5 • The Developer Trap</div>
+              <h2 class="panel-title">The "any" Disease vs The "unknown" Savior</h2>
+              <p class="panel-subtitle">
+                TypeScript use karte time <code>any</code> use karna matlab TypeScript compiler ko switch off kar dena. 3-year experienced backend dev ko yeh samajhna zaroori hai.
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">❌ The Problem with `any`</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Agar aap API se aaya data <code>any</code> type mein hold karte ho, toh aap us variable pe koi bhi method bula sakte ho (e.g. <code>data.push()</code> ya <code>data.trim()</code>). Agar data waisa nahi hua toh Node.js runtime pe crash ho jayega. <strong>Never use any!</strong>
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 20px;">
+              <h4 style="color: #10b981; margin-bottom: 8px;">✅ The Solution: `unknown`</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                <code>unknown</code> TypeScript ka Type-Safe <code>any</code> hai. Yeh aapko allow karta hai third-party unknown data (like Express <code>req.body</code>) hold karne ka, lekin yeh aapko us data ko use nahi karne dega <strong>jab tak aap uska type check nahi karte (Type Narrowing).</strong>
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Type Narrowing in Action</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">let</span> externalApiData: <span class="ts-type">unknown</span>;
+
+<span class="ts-comment">// Fetching some data...</span>
+externalApiData = "hello world";
+
+<span class="ts-comment">// ❌ ERROR: Object is of type 'unknown'.</span>
+<span class="ts-comment">// console.log(externalApiData.toUpperCase()); </span>
+
+<span class="ts-comment">// ✅ Solution: Type Checking (Narrowing) first</span>
+<span class="ts-keyword">if</span> (<span class="ts-keyword">typeof</span> externalApiData === "string") {
+    <span class="ts-comment">// Now TS knows for sure it is a string inside this block!</span>
+    console.log(externalApiData.toUpperCase()); 
+}
+</code></pre>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

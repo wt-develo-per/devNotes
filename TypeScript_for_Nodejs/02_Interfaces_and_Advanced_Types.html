@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 02: Interfaces & Advanced Types | TypeScript for Node.js</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #3178c6; /* TypeScript Blue */
+      --accent-glow: rgba(49, 120, 198, 0.25);
+      --accent-ts: #3178c6;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #3178c6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3178c6, #a855f7);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(49, 120, 198, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-purple);
+      filter: blur(100px);
+      opacity: 0.2;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(168, 85, 247, 0.1);
+      color: var(--accent-purple);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(168, 85, 247, 0.1);
+      color: var(--accent-purple);
+      border-color: rgba(168, 85, 247, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-ts); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(168, 85, 247, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-purple);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">TS</span>
+      TypeScript for Node.js
+    </a>
+    <div class="nav-links">
+      <a href="01_Setup_and_TypeScript_Fundamentals.html" class="nav-btn">⬅️ Previous: Setup</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 02</span>
+      <h1 class="hero-title">Interfaces vs Type Aliases &amp; Advanced Types</h1>
+      <p class="hero-desc">
+        Node.js apps mein complex Objects aur Database Models ko kaise define karein? Is module mein hum explore karenge sabse common interview question: `interface` aur `type` mein kya difference hai?
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-interface-type', this)"><span class="sidebar-icon">📐</span> 1. Interface vs Type</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-union', this)"><span class="sidebar-icon">🔗</span> 2. Union & Intersection</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-assertions', this)"><span class="sidebar-icon">⚠️</span> 3. Type Assertions (as)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-guards', this)"><span class="sidebar-icon">🛡️</span> 4. Type Guards (Narrowing)</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: Interface vs Type -->
+        <section id="sec-interface-type" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📐 Core Concepts • Part 1 • The Big Debate</div>
+              <h2 class="panel-title">Interface vs Type Aliases</h2>
+              <p class="panel-subtitle">
+                Donon lagbhag ek jaisa kaam karte hain (object ka shape define karna), lekin inke under-the-hood behaviors kaafi alag hote hain. Node.js backend mein kab kya use karein?
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card info-card">
+                <h4 style="color:var(--accent-ts); margin-bottom:10px;">📐 `interface` (The Blueprint)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Hamesha sirf <strong>Objects</strong> (ya classes) ke liye use hota hai. Iski ek special property hoti hai: "Declaration Merging". Yani aap same naam ke do interfaces bana sakte hain, aur wo automatically merge ho jayenge.<br>
+                  <em>Best for:</em> Database Entity definitions, Express Request objects ko extend karna.
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">🏷️ `type` (The Alias)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Type koi naya blueprint nahi banata, sirf kisi bhi type ka "nickname" rakhta hai. Ye primitive (string/number), union, aur tuples ke liye use ho sakta hai.<br>
+                  <em>Best for:</em> Complex unions (e.g. `Success | Error`), utility types, ya simple primitives ko naam dena.
+                </p>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Syntax Differences</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// --- INTERFACE EXAMPLE ---</span>
+<span class="ts-keyword">interface</span> <span class="ts-type">User</span> {
+    id: <span class="ts-type">number</span>;
+    email: <span class="ts-type">string</span>;
+}
+
+<span class="ts-comment">// Declaration Merging (Only works with Interface!)</span>
+<span class="ts-keyword">interface</span> <span class="ts-type">User</span> {
+    createdAt: <span class="ts-type">Date</span>;
+}
+<span class="ts-comment">// Now 'User' automatically has id, email, AND createdAt. </span>
+<span class="ts-comment">// This is exactly how we add 'req.user' to Express!</span>
+
+
+<span class="ts-comment">// --- TYPE ALIAS EXAMPLE ---</span>
+<span class="ts-keyword">type</span> <span class="ts-type">Status</span> = <span class="ts-string">'PENDING'</span> | <span class="ts-string">'ACTIVE'</span>; <span class="ts-comment">// You CANNOT do this with interface!</span>
+
+<span class="ts-keyword">type</span> <span class="ts-type">Product</span> = {
+    id: <span class="ts-type">number</span>;
+    price: <span class="ts-type">number</span>;
+}
+
+<span class="ts-comment">// type Product = { name: string } ❌ ERROR! Duplicate identifier 'Product'</span>
+</code></pre>
+            </div>
+            
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <h4 style="color: #10b981; margin-bottom: 8px;">💡 Pro Tip for Backend</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                API Response payloads, Database schemas (Prisma/TypeORM models), aur external libraries ko extend karne ke liye hamesha <code>interface</code> use karein. Baaki choti moti unions aur primitives ke liye <code>type</code> use karein.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Union & Intersection -->
+        <section id="sec-union" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🔗 Types Composition • Part 2 • Connecting Shapes</div>
+              <h2 class="panel-title">Union (|) &amp; Intersection (&amp;)</h2>
+              <p class="panel-subtitle">
+                TypeScript ki sabse badi power hai types ko jodne (combine karne) ki ability.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-ts)">Union (OR) <code>|</code></div>
+                <div class="concept-desc">
+                  Yeh variable either Type A ka ho sakta hai YA Type B ka. Zyadatar API responses jahan `SuccessData` ya `ErrorData` return hota hai.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-purple)">Intersection (AND) <code>&amp;</code></div>
+                <div class="concept-desc">
+                  Yeh variable ko dono Type A AUR Type B ki sabhi properties fulfill karni padengi. Multiple interfaces ko merge karke bada object banane ke kaam aata hai.
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Unions & Intersections</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// 1. UNION TYPES (One or the other)</span>
+<span class="ts-keyword">type</span> <span class="ts-type">StringOrNumber</span> = <span class="ts-type">string</span> | <span class="ts-type">number</span>;
+
+<span class="ts-keyword">function</span> getUserId(id: <span class="ts-type">StringOrNumber</span>) {
+    <span class="ts-comment">// Agar id string hai toh uppercase karein, warna string me convert karein</span>
+    <span class="ts-keyword">if</span> (<span class="ts-keyword">typeof</span> id === <span class="ts-string">'string'</span>) {
+        <span class="ts-keyword">return</span> id.toUpperCase();
+    }
+    <span class="ts-keyword">return</span> id.toString();
+}
+
+<span class="ts-comment">// 2. INTERSECTION TYPES (Combine multiple objects)</span>
+<span class="ts-keyword">interface</span> <span class="ts-type">Timestamps</span> {
+    createdAt: <span class="ts-type">Date</span>;
+    updatedAt: <span class="ts-type">Date</span>;
+}
+
+<span class="ts-keyword">interface</span> <span class="ts-type">Document</span> {
+    title: <span class="ts-type">string</span>;
+    content: <span class="ts-type">string</span>;
+}
+
+<span class="ts-comment">// Combine both!</span>
+<span class="ts-keyword">type</span> <span class="ts-type">DatabaseDocument</span> = <span class="ts-type">Document</span> &amp; <span class="ts-type">Timestamps</span>;
+
+<span class="ts-keyword">const</span> article: <span class="ts-type">DatabaseDocument</span> = {
+    title: <span class="ts-string">"TypeScript Guide"</span>,
+    content: <span class="ts-string">"..."</span>,
+    createdAt: <span class="ts-keyword">new</span> Date(),
+    updatedAt: <span class="ts-keyword">new</span> Date()
+};
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Assertions -->
+        <section id="sec-assertions" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">⚠️ Safety Overrides • Part 3 • Type Assertions</div>
+              <h2 class="panel-title">Type Assertions (`as`)</h2>
+              <p class="panel-subtitle">
+                Kabhi kabhi developer TS Compiler se zyada janta hai (For example, DOM events ya DB raw queries). Wahan hum TS ko force karte hain ki "Trust me, main janta hu iska type kya hai".
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">⚠️ Warning: "as" can be dangerous!</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Type assertion runtime pe data change nahi karta, yeh sirf compile-time par error chupata hai. Agar data aapke assertion se match nahi karta, toh Node.js crash ho sakta hai! Use it rarely.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Type Assertion</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">const</span> rawJsonResponse = <span class="ts-string">'{"name":"Pankaj", "role":"admin"}'</span>;
+<span class="ts-keyword">const</span> parsedData = JSON.parse(rawJsonResponse); <span class="ts-comment">// Type is 'any'</span>
+
+<span class="ts-comment">// Hamein pata hai ki ye string aayega, let's tell TS:</span>
+<span class="ts-keyword">interface</span> <span class="ts-type">ParsedUser</span> {
+    name: <span class="ts-type">string</span>;
+    role: <span class="ts-type">string</span>;
+}
+
+<span class="ts-comment">// Way 1: using 'as' (Recommended)</span>
+<span class="ts-keyword">const</span> user = parsedData <span class="ts-keyword">as</span> <span class="ts-type">ParsedUser</span>;
+console.log(user.name); 
+
+<span class="ts-comment">// ❗ The Non-Null Assertion Operator (!)</span>
+<span class="ts-comment">// Sometimes TS thinks something might be null/undefined, but you know it isn't.</span>
+<span class="ts-keyword">let</span> jwtSecret: <span class="ts-type">string</span> | <span class="ts-type">undefined</span> = process.env.JWT_SECRET;
+
+<span class="ts-comment">// Using ! tells TS: "I guarantee this will NEVER be null/undefined"</span>
+<span class="ts-keyword">const</span> secretForToken: <span class="ts-type">string</span> = jwtSecret!; 
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Type Guards -->
+        <section id="sec-guards" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🛡️ Runtime Checks • Part 4 • Narrowing</div>
+              <h2 class="panel-title">Type Guards (Safe Narrowing)</h2>
+              <p class="panel-subtitle">
+                Jab ek variable `Union` type ka hota hai (A | B), toh usko properly handle karne ke liye "Type Guards" (if statements) use karne padte hain. Isko TypeScript mein "Narrowing" kehte hain.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card info-card">
+                <h4 style="color:var(--accent-ts); margin-bottom:10px;">1. `typeof` Guard</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Primitives ke liye (string, number, boolean) use karein. <br>
+                  <code>if (typeof value === 'string')</code>
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">2. `in` Guard</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Objects ke liye check karta hai ki kya us object mein koi specific property exist karti hai ya nahi. <br>
+                  <code>if ('email' in userObj)</code>
+                </p>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Type Guards</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">interface</span> <span class="ts-type">Admin</span> {
+    name: <span class="ts-type">string</span>;
+    privileges: <span class="ts-type">string</span>[];
+}
+
+<span class="ts-keyword">interface</span> <span class="ts-type">Employee</span> {
+    name: <span class="ts-type">string</span>;
+    startDate: <span class="ts-type">Date</span>;
+}
+
+<span class="ts-keyword">type</span> <span class="ts-type">UnknownUser</span> = <span class="ts-type">Admin</span> | <span class="ts-type">Employee</span>;
+
+<span class="ts-keyword">function</span> printUserInfo(user: <span class="ts-type">UnknownUser</span>) {
+    <span class="ts-comment">// console.log(user.privileges); ❌ ERROR: Property 'privileges' does not exist on type 'Employee'.</span>
+    
+    <span class="ts-comment">// Type Guard using 'in'</span>
+    <span class="ts-keyword">if</span> (<span class="ts-string">'privileges'</span> <span class="ts-keyword">in</span> user) {
+        <span class="ts-comment">// In this block, TS knows 100% that 'user' is an Admin!</span>
+        console.log(`Admin privileges: ${user.privileges.join(', ')}`);
+    } <span class="ts-keyword">else</span> {
+        <span class="ts-comment">// In this block, TS knows it MUST be an Employee!</span>
+        console.log(`Employee started on: ${user.startDate}`);
+    }
+}
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

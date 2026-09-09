@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Module 15 — Advanced Eloquent &amp; Database Performance (Hinglish) | ShopSphere Pro</title>
+<meta name="description" content="Master production Laravel Eloquent and Database Performance in Hinglish — N+1 elimination, billion-row memory streaming with chunkById, subqueries, composite indexing, and pessimistic concurrency locks."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1422;
+  --bg-card: #141929;
+  --bg-code: #0d1117;
+  --border: #1e2d4a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+  --accent-pink: #ec4899;
+  --accent-indigo: #6366f1;
+  --gradient-card: linear-gradient(145deg, #141929, #0f1422);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+.hero {
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a1608 50%, #0a0e1a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 40px 50px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fcd34d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  background: linear-gradient(135deg, #e2e8f0 0%, #f59e0b 45%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 780px;
+  margin-bottom: 30px;
+}
+.hero-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.hero-stats {
+  display: flex;
+  gap: 30px;
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.hero-stat-val { font-size: 1.6rem; font-weight: 800; color: var(--accent-amber); }
+.hero-stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.progress-bar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 14px 40px; }
+.progress-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+.progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent-amber), var(--accent-purple));
+  transition: width 0.6s ease;
+}
+.layout { max-width: 1200px; margin: 0 auto; padding: 40px; }
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 32px;
+}
+.snav-btn {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+.snav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+.snav-btn.active {
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+  font-weight: 600;
+}
+.snav-btn .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.section-panel { display: none; }
+.section-panel.active { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s;
+}
+.card:hover { border-color: rgba(245, 158, 11, 0.25); }
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.card-sm { padding: 20px; }
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid #1e2d4a;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 18px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1e2d4a;
+}
+.code-lang {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+.code-filename {
+  font-size: 0.78rem;
+  color: #fcd34d;
+  font-family: 'JetBrains Mono', monospace;
+}
+.copy-btn {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 5px;
+  padding: 4px 10px;
+  color: #fcd34d;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.copy-btn:hover { background: rgba(245, 158, 11, 0.2); }
+.copy-btn.copied { color: var(--accent-green); border-color: rgba(16, 185, 129, 0.5); }
+pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: #c9d1d9;
+}
+.kw { color: #ff7b72; font-weight: 600; }
+.fn { color: #d2a8ff; }
+.str { color: #a5d6ff; }
+.cm { color: #8b949e; font-style: italic; }
+.num { color: #79c0ff; }
+.cl { color: #ffa657; }
+.ph { color: #56d364; }
+.anno { color: #58a6ff; }
+.alert {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  margin: 18px 0;
+  border-left: 4px solid;
+}
+.alert-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 2px; }
+.alert-body { font-size: 0.88rem; line-height: 1.65; }
+.alert-body strong { font-weight: 600; display: block; margin-bottom: 4px; }
+.alert-info { background: rgba(59, 130, 246, 0.08); border-color: var(--accent-blue); color: #93c5fd; }
+.alert-success { background: rgba(16, 185, 129, 0.08); border-color: var(--accent-green); color: #6ee7b7; }
+.alert-warn { background: rgba(245, 158, 11, 0.08); border-color: var(--accent-amber); color: #fcd34d; }
+.alert-danger { background: rgba(239, 68, 68, 0.08); border-color: var(--accent-red); color: #fca5a5; }
+.compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+.compare-table th {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(245, 158, 11, 0.3);
+}
+.compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.compare-table tr:hover td { background: rgba(255, 255, 255, 0.02); color: var(--text-primary); }
+.compare-table .good { color: var(--accent-green); font-weight: 600; }
+.compare-table .warn { color: var(--accent-amber); font-weight: 600; }
+.compare-table .bad { color: var(--accent-red); font-weight: 600; }
+.cheatsheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cheat-card { background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; }
+.cheat-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fcd34d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.cheat-item { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #a5d6ff; margin-bottom: 8px; }
+.cheat-item span { color: var(--text-muted); font-size: 0.74rem; display: block; font-family: 'Inter', sans-serif; }
+.section-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-subtitle { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 28px; }
+.practice-box {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(139, 92, 246, 0.06));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+}
+.practice-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fcd34d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.practice-tasks { list-style: none; }
+.practice-tasks li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.practice-tasks li::before { content: '→'; color: #fcd34d; flex-shrink: 0; font-weight: 700; }
+.practice-tasks li:last-child { border-bottom: none; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 40px;
+}
+.footer span { color: #fcd34d; font-weight: 600; }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 4px; }
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px; }
+  .layout { padding: 24px 20px; }
+  .two-col { grid-template-columns: 1fr; }
+  .hero-stats { gap: 16px; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Important Gap #2 &bull; Hinglish Masterclass</div>
+    <h1>Advanced Eloquent &amp; Database Performance (Hinglish Guide)</h1>
+    <p>Junior developer database ko dumb data store samajhta hai aur saari processing PHP memory mein karta hai. Ek Senior Laravel Architect computation ko database engine par push karta hai! Seekhiye N+1 elimination, billion-row generator streaming, recursive CTEs, window functions, composite indexing, aur high-concurrency race condition locking.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">&#x26A1; N+1 Prevention &amp; Strict Mode</span>
+      <span class="hero-tag">&#x1F4CA; withCount &amp; withAggregate</span>
+      <span class="hero-tag">&#x1F9E0; chunkById &amp; Lazy Streaming</span>
+      <span class="hero-tag">&#x1F527; Subqueries &amp; Window Functions</span>
+      <span class="hero-tag">&#x1F5C4;&#xFE0F; Composite Indexing &amp; EXPLAIN</span>
+      <span class="hero-tag">&#x1F512; Pessimistic &amp; Optimistic Locking</span>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hero-stat-val">100x</div><div class="hero-stat-label">Query Speedup</div></div>
+      <div><div class="hero-stat-val">&lt; 15MB</div><div class="hero-stat-label">RAM On 1M Rows</div></div>
+      <div><div class="hero-stat-val">0</div><div class="hero-stat-label">Inventory Race Bugs</div></div>
+      <div><div class="hero-stat-val">100%</div><div class="hero-stat-label">Strict Mode Active</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-bar-inner">
+    <span style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap">Progress:</span>
+    <div class="progress-track"><div id="prog-fill" class="progress-fill" style="width:14.3%"></div></div>
+    <span id="prog-pct" style="font-size:0.8rem;font-weight:700;color:var(--accent-amber);min-width:38px">14.3%</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="section-nav">
+  <button class="snav-btn active" onclick="showSection('sec-overview',this)"><span class="dot" style="background:#f59e0b"></span>Overview</button>
+  <button class="snav-btn" onclick="showSection('sec-nplus1',this)"><span class="dot" style="background:#ef4444"></span>N+1 &amp; Strict Mode</button>
+  <button class="snav-btn" onclick="showSection('sec-memory',this)"><span class="dot" style="background:#10b981"></span>Memory &amp; Streaming</button>
+  <button class="snav-btn" onclick="showSection('sec-subqueries',this)"><span class="dot" style="background:#8b5cf6"></span>Subqueries &amp; CTEs</button>
+  <button class="snav-btn" onclick="showSection('sec-indexes',this)"><span class="dot" style="background:#06b6d4"></span>Indexing &amp; EXPLAIN</button>
+  <button class="snav-btn" onclick="showSection('sec-concurrency',this)"><span class="dot" style="background:#ec4899"></span>Concurrency &amp; Locks</button>
+  <button class="snav-btn" onclick="showSection('sec-cheatsheet',this)"><span class="dot" style="background:#6366f1"></span>Cheatsheet</button>
+</div>
+
+
+<!-- SECTION 1: OVERVIEW -->
+<div id="sec-overview" class="section-panel active">
+  <div class="section-title">&#x1F680; The ORM Penalty &amp; Senior Engineering Rules</div>
+  <p class="section-subtitle">Eloquent ORM developers ko supernatural speed aur developer experience deta hai, lekin under-the-hood har database row ko ek heavy PHP class instance ("Hydration") mein transform karta hai. Jaaniye kaise abstraction penalty ko defeat karte hain.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; The Hidden Cost of Eloquent Model Hydration</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Jab aap <code>User::all()</code> likhte hain, toh PHP memory mein har single user row ke liye ek heavy Model object instantiate hota hai jisme attributes, original state, casts, dates, aur active relationship buffers load hote hain:</p>
+
+    <div class="two-col">
+      <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:20px">
+        <h4 style="color:#fca5a5;margin-bottom:10px">&#x274C; Naive Junior Pattern (Memory Hog)</h4>
+        <div class="code-block" style="margin:8px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">ProductController.php (Naive)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// 10,000 products hydrate honge PHP RAM mein</span>
+$products = <span class="cl">Product</span>::<span class="fn">all</span>();
+
+<span class="kw">foreach</span> ($products <span class="kw">as</span> $p) {
+    <span class="cm">// Har product ke liye DB query fire hogi (N+1!)</span>
+    <span class="kw">echo</span> $p->category->name;
+    <span class="kw">echo</span> $p->reviews-><span class="fn">avg</span>(<span class="str">'rating'</span>); <span class="cm">// Memory collection calculation!</span>
+}</pre>
+        </div>
+        <p style="font-size:0.8rem;color:#fca5a5">RAM: ~140MB &bull; Time: 2,400ms &bull; SQL Queries: 20,001 queries!</p>
+      </div>
+
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-sm);padding:20px">
+        <h4 style="color:#6ee7b7;margin-bottom:10px">&#x2705; Optimized Senior Pattern (Laser Fast)</h4>
+        <div class="code-block" style="margin:8px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">ProductController.php (Architect Standard)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Sirf required columns aur SQL aggregates fetch karo</span>
+$products = <span class="cl">Product</span>::<span class="fn">select</span>([<span class="str">'id'</span>, <span class="str">'name'</span>, <span class="str">'category_id'</span>])
+    -><span class="fn">with</span>([<span class="str">'category:id,name'</span>])
+    -><span class="fn">withAvg</span>(<span class="str">'reviews'</span>, <span class="str">'rating'</span>)
+    -><span class="fn">paginate</span>(<span class="num">20</span>);</pre>
+        </div>
+        <p style="font-size:0.8rem;color:#6ee7b7">RAM: ~4MB &bull; Time: 18ms &bull; SQL Queries: Sirf 2 queries!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F3C6; Real-World Performance Benchmark: Naive vs Optimized</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Naive Eloquent</th>
+          <th>Optimized Eloquent</th>
+          <th>DB::table Query Builder</th>
+          <th>Improvement Factor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>10,000 Rows Hydration</strong></td>
+          <td class="bad">138 MB RAM</td>
+          <td class="good">8.2 MB RAM</td>
+          <td class="good">4.1 MB RAM</td>
+          <td class="good">&#x1F680; 17x Less Memory</td>
+        </tr>
+        <tr>
+          <td><strong>Execution Time</strong></td>
+          <td class="bad">1,850 ms</td>
+          <td class="good">64 ms</td>
+          <td class="good">21 ms</td>
+          <td class="good">&#x26A1; 29x Faster</td>
+        </tr>
+        <tr>
+          <td><strong>Queries Executed</strong></td>
+          <td class="bad">10,001 queries</td>
+          <td class="good">2 queries</td>
+          <td class="good">1 query (JOIN)</td>
+          <td class="good">&#x1F6E1;&#xFE0F; 99.98% Query Drop</td>
+        </tr>
+        <tr>
+          <td><strong>CPU Load Peak</strong></td>
+          <td class="bad">98% (High Contention)</td>
+          <td class="good">6% (Idle)</td>
+          <td class="good">4% (Idle)</td>
+          <td class="good">&#x1F4CA; 16x Lower Server Load</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F9E0; The 5 Golden Rules of Senior Eloquent Performance</div>
+    <div class="card-grid">
+      <div class="card-sm" style="background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#fcd34d;margin-bottom:6px">Rule 1: Push Computation to SQL</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">Kabhie bhi <code>$items->sum('price')</code> PHP memory mein calculate mat karo jab SQL <code>SUM()</code>, <code>AVG()</code>, aur <code>COUNT()</code> C++ level par microsecond mein kar sakta hai.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#fca5a5;margin-bottom:6px">Rule 2: Zero Naked SELECT *</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">Agar aapko table se sirf 3 columns chahiye, toh unneeded bulky <code>TEXT</code>, <code>JSON</code>, aur description columns fetch karke network packet aur PHP RAM mat phulao.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#6ee7b7;margin-bottom:6px">Rule 3: Strict Mode in Development</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)"><code>Model::preventLazyLoading(!app()->isProduction())</code> lagao taaki koi bhi N+1 query code review se bach kar production tak na pahunch sake.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#93c5fd;margin-bottom:6px">Rule 4: Stream, Don't Slurp</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">Exporting ya batch updates ke liye kabhie <code>all()</code> ya plain <code>chunk()</code> use mat karo; hamesha <code>chunkById()</code> ya <code>lazyById()</code> generator streams use karo.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#c084fc;margin-bottom:6px">Rule 5: Locks on Financial Transactions</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">Inventory deduction aur wallet balance balance update karte waqt race condition se bachne ke liye hamesha <code>lockForUpdate()</code> use karein.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 2: N+1 & STRICT MODE -->
+<div id="sec-nplus1" class="section-panel">
+  <div class="section-title">&#x1F6E1;&#xFE0F; Eradicating N+1 &amp; Strict Eloquent Mode</div>
+  <p class="section-subtitle">N+1 query problem Laravel applications ka sabse deadly performance silent killer hai. Seekhiye Strict Mode enable karna, selective eager loading, aur SQL level aggregates.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F6A8; Strict Mode: Catching N+1 Violations at Development Runtime</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel developers ke liye sabse best guardrail yeh hai ki development environment mein lazy loading ko physically ban kar diya jaye:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Providers/AppServiceProvider.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppProviders;
+
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseEloquentModel</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportServiceProvider</span>;
+
+<span class="kw">class</span> <span class="cl">AppServiceProvider</span> <span class="kw">extends</span> <span class="cl">ServiceProvider</span>
+{
+    <span class="kw">public function</span> <span class="fn">boot</span>(): <span class="kw">void</span>
+    {
+        <span class="cm">/*
+         * MASTER STROKE: Model::shouldBeStrict() teen cheezein ek sath activate karta hai:
+         * 1. preventLazyLoading() => N+1 query hone par Exception throw karega!
+         * 2. preventSilentlyDiscardingAttributes() => Mass assignment errors pakdega!
+         * 3. preventAccessingMissingAttributes() => Typo in model properties catch karega!
+         */</span>
+        <span class="cl">Model</span>::<span class="fn">shouldBeStrict</span>(! $this->app-><span class="fn">isProduction</span>());
+
+        <span class="cm">// Production mein crash nahi karna, sirf logs mein alert bhejna:</span>
+        <span class="kw">if</span> ($this->app-><span class="fn">isProduction</span>()) {
+            <span class="cl">Model</span>::<span class="fn">handleLazyLoadingViolationUsing</span>(<span class="kw">function</span> ($model, $relation) {
+                <span class="cl">Log</span>::<span class="fn">warning</span>(<span class="str">"N+1 Lazy Loading Violation Detected in Production: Class "</span> . <span class="fn">get_class</span>($model) . <span class="str">" -> Relation '{$relation}'"</span>);
+            });
+        }
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4DC; Advanced Eager Loading Patterns (Selective Columns &amp; Query Constraints)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Jab multiple nested relations load karne hon, toh pure tables ko select mat karein. Dekhiye targeted eager loading syntax:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Controllers/OrderController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseEloquentRelationsHasMany</span>;
+
+<span class="kw">class</span> <span class="cl">OrderController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">index</span>()
+    {
+        $orders = <span class="cl">Order</span>::<span class="fn">query</span>()
+            <span class="cm">// 1. Parent table se sirf zaroori columns lo (Always include foreign keys!)</span>
+            -><span class="fn">select</span>([<span class="str">'id'</span>, <span class="str">'uuid'</span>, <span class="str">'user_id'</span>, <span class="str">'total'</span>, <span class="str">'status'</span>, <span class="str">'created_at'</span>])
+            <span class="cm">// 2. Relation se selective columns fetch karo (Foreign key 'id' MUST be selected!)</span>
+            -><span class="fn">with</span>([
+                <span class="str">'user:id,name,email,avatar_url'</span>,
+                
+                <span class="cm">// 3. Nested Eager Loading with Closure Constraints</span>
+                <span class="str">'items'</span> => <span class="kw">function</span> (<span class="cl">HasMany</span> $query) {
+                    $query-><span class="fn">select</span>([<span class="str">'id'</span>, <span class="str">'order_id'</span>, <span class="str">'product_id'</span>, <span class="str">'quantity'</span>, <span class="str">'price'</span>])
+                          -><span class="fn">where</span>(<span class="str">'quantity'</span>, <span class="str">'>'</span>, <span class="num">0</span>)
+                          -><span class="fn">with</span>([<span class="str">'product:id,name,sku,thumbnail_url'</span>]);
+                },
+            ])
+            -><span class="fn">latest</span>()
+            -><span class="fn">paginate</span>(<span class="num">25</span>);
+
+        <span class="kw">return</span> <span class="cl">OrderResource</span>::<span class="fn">collection</span>($orders);
+    }
+}</pre>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">&#x26A0;&#xFE0F;</span>
+      <div class="alert-body">
+        <strong>CRITICAL FOREIGN KEY WARNING:</strong><br/>
+        Jab aap <code>with('user:name,email')</code> likhte hain aur <code>id</code> chhod dete hain, toh Eloquent relation link nahi kar payega aur <code>$order->user</code> NULL ho jayega! Hamesha primary key aur related foreign keys include karein (e.g. <code>'user:id,name,email'</code>).
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x26A1; Push Aggregates to SQL: withCount, withSum, withAvg</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Kabhie bhi relation load karke PHP collection loop mein count ya average mat nikalo. Single efficient SQL subquery use karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">ProductCatalogController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// &#x274C; FATAL MISTAKE: Har product ke saare hazaron reviews hydrate hote hain</span>
+<span class="cm">// $product->reviews->avg('rating'); // 50,000 objects in memory!</span>
+
+<span class="cm">// &#x2705; PRODUCTION ARCHITECT PATTERN: SQL Aggregates</span>
+$products = <span class="cl">Product</span>::<span class="fn">query</span>()
+    -><span class="fn">select</span>([<span class="str">'id'</span>, <span class="str">'name'</span>, <span class="str">'price'</span>, <span class="str">'category_id'</span>])
+    <span class="cm">// 1. Count approved reviews</span>
+    -><span class="fn">withCount</span>([<span class="str">'reviews'</span> => <span class="kw">fn</span>($q) => $q-><span class="fn">where</span>(<span class="str">'is_approved'</span>, <span class="kw">true</span>)])
+    <span class="cm">// 2. Average rating directly in SQL</span>
+    -><span class="fn">withAvg</span>(<span class="str">'reviews'</span>, <span class="str">'rating'</span>)
+    <span class="cm">// 3. Total items sold sum</span>
+    -><span class="fn">withSum</span>(<span class="str">'orderItems'</span>, <span class="str">'quantity'</span>)
+    <span class="cm">// 4. Filter products directly by SQL calculated count (no PHP loop filter)</span>
+    -><span class="fn">having</span>(<span class="str">'reviews_count'</span>, <span class="str">'>='</span>, <span class="num">5</span>)
+    -><span class="fn">orderByDesc</span>(<span class="str">'reviews_avg_rating'</span>)
+    -><span class="fn">paginate</span>(<span class="num">20</span>);
+
+<span class="cm">/*
+ * Attributes directly accessible on model:
+ * $product->reviews_count;
+ * $product->reviews_avg_rating;
+ * $product->order_items_sum_quantity;
+ * Zero extra queries fire hoti hain!
+ */</span></pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 3: MILLION-ROW MEMORY MANAGEMENT -->
+<div id="sec-memory" class="section-panel">
+  <div class="section-title">&#x1F9E0; Million-Row Memory Management &amp; Streaming</div>
+  <p class="section-subtitle">Ek lakh ya 10 lakh rows ko bina <code>Allowed memory size of 134217728 bytes exhausted</code> crash ke process karna. Seekhiye <code>chunkById()</code>, PHP Generators, aur bulk <code>upsert()</code>.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; The Memory Crash Trap: all() vs chunk() vs chunkById()</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">High-volume data pipelines mein in teeno methods ka difference samajhna bohot critical hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">MemoryComparisonDemo.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// &#x274C; CATASTROPHIC: 500,000 orders ek sath array mein fetch karta hai</span>
+<span class="cm">// PHP RAM instantly 512MB cross karke Fatal Out-Of-Memory throw karegi</span>
+$orders = <span class="cl">Order</span>::<span class="fn">all</span>();
+
+<span class="cm">// &#x26A0;&#xFE0F; DANGEROUS: chunk(1000) LIMIT/OFFSET use karta hai (OFFSET 100000 pe database freeze!)</span>
+<span class="cl">Order</span>::<span class="fn">chunk</span>(<span class="num">1000</span>, <span class="kw">function</span> ($chunk) {
+    <span class="cm">// Slows down progressively as OFFSET grows</span>
+});
+
+<span class="cm">// &#x2705; PRODUCTION HERO: chunkById(1000) Primary Key index cursor use karta hai (WHERE id > last_id)</span>
+<span class="cm">// Constant speed from row 1 to row 10,000,000! Constant ~12MB RAM!</span>
+<span class="cl">Order</span>::<span class="fn">chunkById</span>(<span class="num">1000</span>, <span class="kw">function</span> ($chunk) {
+    <span class="kw">foreach</span> ($chunk <span class="kw">as</span> $order) {
+        $order-><span class="fn">processMonthlyArchive</span>();
+    }
+});</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F41B; The Catastrophic "Updating Inside chunk()" Bug</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Yeh ek aisi silent bug hai jo har saal hazaron developers ke data ko corrupt karti hai. Dekhiye kya hota hai jab aap <code>chunk()</code> ke andar records update karte hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">TheSilentBug.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// &#x274C; DEADLY BUG: Har batch mein 50% records skip ho jayenge!</span>
+<span class="cl">User</span>::<span class="fn">where</span>(<span class="str">'status'</span>, <span class="str">'pending'</span>)-><span class="fn">chunk</span>(<span class="num">100</span>, <span class="kw">function</span> ($users) {
+    <span class="kw">foreach</span> ($users <span class="kw">as</span> $user) {
+        $user-><span class="fn">update</span>([<span class="str">'status'</span> => <span class="str">'processed'</span>]);
+    }
+});
+
+<span class="cm">/*
+ * KYUN SKIP HOTE HAIN?
+ * 1. Chunk 1: WHERE status='pending' LIMIT 100 OFFSET 0 => Pehle 100 users 'processed' ho gaye.
+ * 2. Chunk 2: WHERE status='pending' LIMIT 100 OFFSET 100!
+ *    Lekin pehle 100 toh ab 'pending' rahe hi nahi! Database unhe list se hata deta hai.
+ *    Toh OFFSET 100 actual mein record 101-200 ke bajaye record 201-300 utha lega!
+ *    Record 101-200 KABHIE PROCESS HI NAHI HUE!
+ */</span>
+
+<span class="cm">// &#x2705; FIX: Hamesha chunkById() use karein!</span>
+<span class="cl">User</span>::<span class="fn">where</span>(<span class="str">'status'</span>, <span class="str">'pending'</span>)-><span class="fn">chunkById</span>(<span class="num">100</span>, <span class="kw">function</span> ($users) {
+    <span class="kw">foreach</span> ($users <span class="kw">as</span> $user) {
+        $user-><span class="fn">update</span>([<span class="str">'status'</span> => <span class="str">'processed'</span>]);
+    }
+});
+<span class="cm">// chunkById query banata hai: WHERE status='pending' AND id > 100 LIMIT 100. ZERO SKIPS!</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x26A1; Lazy Collections: Elegant Generator Streaming</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">PHP Generators ke upar built <code>lazyById()</code> collection methods (map, filter, reduce) ko infinite streams par memory-leak-free execute karne deta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">ExportOrdersCsvJob.php (Streaming 1M Rows to CSV)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppJobs;
+
+<span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesStorage</span>;
+
+<span class="kw">class</span> <span class="cl">ExportOrdersCsvJob</span>
+{
+    <span class="kw">public function</span> <span class="fn">handle</span>()
+    {
+        $handle = <span class="fn">fopen</span>(<span class="str">'php://temp'</span>, <span class="str">'r+'</span>);
+        <span class="fn">fputcsv</span>($handle, [<span class="str">'Order #'</span>, <span class="str">'Customer'</span>, <span class="str">'Total'</span>, <span class="str">'Status'</span>]);
+
+        <span class="cm">/*
+         * lazyById() 1,000 rows ke batches fetch karta hai aur
+         * ek-ek karke yield karta hai. Pure process mein memory
+         * consumption 15MB se upar kabhie nahi jati chahe 10 lakh rows hon!
+         */</span>
+        <span class="cl">Order</span>::<span class="fn">select</span>([<span class="str">'id'</span>, <span class="str">'order_number'</span>, <span class="str">'user_id'</span>, <span class="str">'total'</span>, <span class="str">'status'</span>])
+            -><span class="fn">with</span>([<span class="str">'user:id,name'</span>])
+            -><span class="fn">lazyById</span>(<span class="num">1000</span>)
+            -><span class="fn">each</span>(<span class="kw">function</span> (<span class="cl">Order</span> $order) <span class="kw">use</span> ($handle) {
+                <span class="fn">fputcsv</span>($handle, [
+                    $order->order_number,
+                    $order->user?->name ?? <span class="str">'Guest'</span>,
+                    $order->total,
+                    $order->status,
+                ]);
+            });
+
+        <span class="fn">rewind</span>($handle);
+        <span class="cl">Storage</span>::<span class="fn">disk</span>(<span class="str">'s3'</span>)-><span class="fn">putStream</span>(<span class="str">'exports/orders.csv'</span>, $handle);
+        <span class="fn">fclose</span>($handle);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F680; Bulk Database Operations: insert &amp; upsert</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Loop ke andar <code>$product->save()</code> likhna ek huge bottleneck hai. Bulk <code>upsert()</code> single SQL statement mein hazaron rows insert ya update karta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">InventorySyncService.php (High-Speed Bulk Upsert)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppServices;
+
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+
+<span class="kw">class</span> <span class="cl">InventorySyncService</span>
+{
+    <span class="kw">public function</span> <span class="fn">syncWarehouseStock</span>(<span class="kw">array</span> $warehouseItems)
+    {
+        <span class="cm">/*
+         * upsert($values, $uniqueBy, $updateColumns)
+         * 1st Arg: Array of records to insert
+         * 2nd Arg: Unique column(s) identifying existing rows (e.g. 'sku')
+         * 3rd Arg: Columns to update IF the record already exists
+         * 
+         * 5,000 items update karne ke liye 5,000 individual queries ke bajaye
+         * sirf 1 single MySQL "ON DUPLICATE KEY UPDATE" query execute hoti hai!
+         */</span>
+        <span class="cl">Product</span>::<span class="fn">upsert</span>(
+            $warehouseItems,
+            [<span class="str">'sku'</span>],
+            [<span class="str">'stock'</span>, <span class="str">'warehouse_code'</span>, <span class="str">'updated_at'</span>]
+        );
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 4: SUBQUERIES, CTES & WINDOW FUNCTIONS -->
+<div id="sec-subqueries" class="section-panel">
+  <div class="section-title">&#x1F527; Advanced Subqueries, CTEs &amp; Window Functions</div>
+  <p class="section-subtitle">Complex reporting aur analytical dashboards ke liye multiple round-trip queries karne ke bajaye single database execution mein derived columns, tree hierarchies, aur ranked leaderboards calculate karein.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F50E; Select Subqueries: addSelect() &amp; orderBySub()</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Imagine karo customer table list karte waqt har customer ka latest order date aur amount dikhana hai. Junior developer loop chalata hai, Senior developer scalar subquery inject karta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">CustomerReportController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+
+<span class="kw">class</span> <span class="cl">CustomerReportController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">index</span>()
+    {
+        <span class="cm">// Subquery: Har user ka most recent order amount nikaalo</span>
+        $latestOrderAmount = <span class="cl">Order</span>::<span class="fn">select</span>(<span class="str">'total'</span>)
+            -><span class="fn">whereColumn</span>(<span class="str">'orders.user_id'</span>, <span class="str">'users.id'</span>)
+            -><span class="fn">latest</span>(<span class="str">'created_at'</span>)
+            -><span class="fn">limit</span>(<span class="num">1</span>);
+
+        <span class="cm">// Subquery: Har user ki latest order date</span>
+        $lastOrderDate = <span class="cl">Order</span>::<span class="fn">select</span>(<span class="str">'created_at'</span>)
+            -><span class="fn">whereColumn</span>(<span class="str">'orders.user_id'</span>, <span class="str">'users.id'</span>)
+            -><span class="fn">latest</span>(<span class="str">'created_at'</span>)
+            -><span class="fn">limit</span>(<span class="num">1</span>);
+
+        $users = <span class="cl">User</span>::<span class="fn">query</span>()
+            -><span class="fn">select</span>([<span class="str">'id'</span>, <span class="str">'name'</span>, <span class="str">'email'</span>])
+            <span class="cm">// Injects scalar values directly into the User model instance</span>
+            -><span class="fn">selectSub</span>($latestOrderAmount, <span class="str">'last_order_amount'</span>)
+            -><span class="fn">selectSub</span>($lastOrderDate, <span class="str">'last_order_date'</span>)
+            <span class="cm">// Order users directly by their subquery value in SQL!</span>
+            -><span class="fn">orderByDesc</span>($latestOrderAmount)
+            -><span class="fn">paginate</span>(<span class="num">20</span>);
+
+        <span class="cm">/*
+         * Accessible on model:
+         * $user->last_order_amount;
+         * $user->last_order_date;
+         * Single ultra-fast query execution!
+         */</span>
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>($users);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F333; Recursive CTEs: Navigating Infinite-Depth Category Hierarchies</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">E-commerce mein categories nested hoti hain: <em>Electronics &rarr; Computers &rarr; Laptops &rarr; Gaming</em>. PHP recursive functions chalane ke bajaye single Common Table Expression (CTE) query use karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">CategoryBreadcrumbService.php (Recursive CTE)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppServices;
+
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesDB</span>;
+
+<span class="kw">class</span> <span class="cl">CategoryBreadcrumbService</span>
+{
+    <span class="kw">public function</span> <span class="fn">getAncestorsTree</span>(<span class="kw">int</span> $categoryId): <span class="kw">array</span>
+    {
+        <span class="cm">/*
+         * Recursive CTE (WITH RECURSIVE)
+         * Leaf category se shuru karke root parent tak single query mein traverse karta hai.
+         * Unlimited depth &bull; Zero recursion stack overflow in PHP!
+         */</span>
+        $ancestors = <span class="cl">DB</span>::<span class="fn">select</span>(<span class="str">"
+            WITH RECURSIVE category_path AS (
+                -- Anchor Member: Starting target category
+                SELECT id, name, parent_id, 1 as depth
+                FROM categories
+                WHERE id = ?
+
+                UNION ALL
+
+                -- Recursive Member: Traverse upwards to parent_id
+                SELECT c.id, c.name, c.parent_id, cp.depth + 1
+                FROM categories c
+                INNER JOIN category_path cp ON cp.parent_id = c.id
+            )
+            SELECT id, name, depth
+            FROM category_path
+            ORDER BY depth DESC
+        "</span>, [$categoryId]);
+
+        <span class="kw">return</span> $ancestors;
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F3C5; Window Functions: Top N Records Per Category (No PHP Loops)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Har category ke <strong>Top 3 best-selling products</strong> dikhane ke liye SQL <code>ROW_NUMBER() OVER (PARTITION BY ...)</code> window function best practice hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">ProductLeaderboardController.php (Window Function)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpControllers;
+
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesDB</span>;
+
+<span class="kw">class</span> <span class="cl">ProductLeaderboardController</span> <span class="kw">extends</span> <span class="cl">Controller</span>
+{
+    <span class="kw">public function</span> <span class="fn">topProductsPerCategory</span>()
+    {
+        <span class="cm">/*
+         * Subquery using Window Function ROW_NUMBER()
+         * Har category_id ke andar products ko sales_count ke hisaab se rank karta hai:
+         * 1, 2, 3, 4... Category badalne par rank wapas 1 se reset ho jata hai!
+         */</span>
+        $rankedProductsSubquery = <span class="cl">Product</span>::<span class="fn">query</span>()
+            -><span class="fn">select</span>([
+                <span class="str">'id'</span>,
+                <span class="str">'name'</span>,
+                <span class="str">'category_id'</span>,
+                <span class="str">'price'</span>,
+                <span class="str">'sales_count'</span>,
+                <span class="cl">DB</span>::<span class="fn">raw</span>(<span class="str">'ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY sales_count DESC) as rank_in_cat'</span>),
+            ]);
+
+        <span class="cm">// Outer query filters only rank &lt;= 3</span>
+        $topThreePerCategory = <span class="cl">DB</span>::<span class="fn">table</span>($rankedProductsSubquery, <span class="str">'ranked'</span>)
+            -><span class="fn">join</span>(<span class="str">'categories'</span>, <span class="str">'categories.id'</span>, <span class="str">'='</span>, <span class="str">'ranked.category_id'</span>)
+            -><span class="fn">select</span>([
+                <span class="str">'categories.name as category_name'</span>,
+                <span class="str">'ranked.name as product_name'</span>,
+                <span class="str">'ranked.price'</span>,
+                <span class="str">'ranked.sales_count'</span>,
+                <span class="str">'ranked.rank_in_cat'</span>,
+            ])
+            -><span class="fn">where</span>(<span class="str">'ranked.rank_in_cat'</span>, <span class="str">'&lt;='</span>, <span class="num">3</span>)
+            -><span class="fn">orderBy</span>(<span class="str">'categories.name'</span>)
+            -><span class="fn">orderBy</span>(<span class="str">'ranked.rank_in_cat'</span>)
+            -><span class="fn">get</span>();
+
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([<span class="str">'data'</span> => $topThreePerCategory]);
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 5: INDEXING & EXPLAIN -->
+<div id="sec-indexes" class="section-panel">
+  <div class="section-title">&#x1F5C4;&#xFE0F; Database Indexing, Composite Indexes &amp; EXPLAIN</div>
+  <p class="section-subtitle">Indexes database ke phone directory hote hain. Bina index ke har query pure table ka "Full Table Scan" karti hai. Seekhiye Leftmost Prefix Rule, EXPLAIN plans read karna, aur JSON columns par B-Tree indexing.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F52C; The Leftmost Prefix Rule: Anatomy of Composite Indexes</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Agar aapne composite index banaya: <code>$table->index(['user_id', 'status', 'created_at']);</code>, toh MySQL is index ko har query par use nahi kar sakta! Samajhiye Leftmost Prefix Rule:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">database/migrations/create_orders_table.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseMigrationsMigration</span>;
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseSchemaBlueprint</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesSchema</span>;
+
+<span class="kw">return new class extends</span> <span class="cl">Migration</span>
+{
+    <span class="kw">public function</span> <span class="fn">up</span>(): <span class="kw">void</span>
+    {
+        <span class="cl">Schema</span>::<span class="fn">table</span>(<span class="str">'orders'</span>, <span class="kw">function</span> (<span class="cl">Blueprint</span> $table) {
+            <span class="cm">// Composite Index on (user_id, status, created_at)</span>
+            $table-><span class="fn">index</span>([<span class="str">'user_id'</span>, <span class="str">'status'</span>, <span class="str">'created_at'</span>], <span class="str">'idx_orders_user_status_date'</span>);
+        });
+    }
+};</pre>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Query WHERE Clause</th>
+          <th>Uses Composite Index?</th>
+          <th>Why? (Leftmost Rule Analysis)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>WHERE user_id = 5</code></td>
+          <td class="good">&#x2705; YES (Index Prefix A)</td>
+          <td>Index ka first leftmost column <code>user_id</code> matched hai. Ultra-fast lookup.</td>
+        </tr>
+        <tr>
+          <td><code>WHERE user_id = 5 AND status = 'paid'</code></td>
+          <td class="good">&#x2705; YES (Prefix A + B)</td>
+          <td>Pehle dono columns match ho rahe hain. Extremely efficient.</td>
+        </tr>
+        <tr>
+          <td><code>WHERE user_id = 5 AND status = 'paid' ORDER BY created_at</code></td>
+          <td class="good">&#x2705; YES (Covering A + B + C)</td>
+          <td>Filtering + Sorting dono index se ho jati hain. Zero filesort!</td>
+        </tr>
+        <tr>
+          <td><code>WHERE status = 'paid'</code></td>
+          <td class="bad">&#x274C; NO (Full Table Scan!)</td>
+          <td>Leftmost column <code>user_id</code> missing hai. Index totally useless ho gaya!</td>
+        </tr>
+        <tr>
+          <td><code>WHERE status = 'paid' AND created_at > '2026-01-01'</code></td>
+          <td class="bad">&#x274C; NO (Full Table Scan!)</td>
+          <td>Again, starting prefix <code>user_id</code> absent hai. Pura table scan hoga.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F50D; Deciphering EXPLAIN: Catching Red Flags in Query Plans</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel <code>toSql()</code> ya <code>explain()</code> method se query execution plan inspect karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">ExplainInspectionDemo.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// Query execution plan inspect karo directly collection mein</span>
+$plan = <span class="cl">Order</span>::<span class="fn">where</span>(<span class="str">'user_id'</span>, <span class="num">12</span>)
+    -><span class="fn">where</span>(<span class="str">'status'</span>, <span class="str">'paid'</span>)
+    -><span class="fn">explain</span>();
+
+<span class="fn">dd</span>($plan);
+
+<span class="cm">/*
+ * CRITICAL EXPLAIN FLAGS TO LOOK FOR:
+ * 
+ * &#x2705; GOOD:
+ * type: 'ref' or 'range' or 'const'
+ * key: 'idx_orders_user_status_date' (Index successfully picked!)
+ * Extra: 'Using index' (Covering index - data B-Tree se hi nikal gaya, table row touch nahi hui)
+ * 
+ * &#x274C; DANGEROUS:
+ * type: 'ALL' (Full Table Scan - 100% table read!)
+ * rows: 500,000 (Database 5 lakh rows scan kar raha hai)
+ * Extra: 'Using filesort' (MySQL RAM/Disk par alag se sorting kar raha hai)
+ * Extra: 'Using temporary' (Temporary memory table create ho rahi hai)
+ */</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F9E9; Indexing Virtual Generated Columns for JSON Data</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">MySQL JSON columns (e.g. <code>attributes->color</code>) directly index nahi ho sakte. Laravel mein Virtual Generated Column bana kar us par B-Tree index lagayein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">database/migrations/add_json_index_to_products.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseMigrationsMigration</span>;
+<span class="kw">use</span> <span class="cl">IlluminateDatabaseSchemaBlueprint</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesSchema</span>;
+
+<span class="kw">return new class extends</span> <span class="cl">Migration</span>
+{
+    <span class="kw">public function</span> <span class="fn">up</span>(): <span class="kw">void</span>
+    {
+        <span class="cl">Schema</span>::<span class="fn">table</span>(<span class="str">'products'</span>, <span class="kw">function</span> (<span class="cl">Blueprint</span> $table) {
+            <span class="cm">/*
+             * 1. Create Virtual Generated Column that extracts JSON attribute:
+             *    Zero extra storage cost! Value on-the-fly extract hoti hai.
+             */</span>
+            $table-><span class="fn">string</span>(<span class="str">'brand_extracted'</span>)
+                  -><span class="fn">virtualAs</span>(<span class="str">"json_unquote(json_extract(`attributes`, '$.brand'))"</span>)
+                  -><span class="fn">after</span>(<span class="str">'attributes'</span>);
+
+            <span class="cm">// 2. Create B-Tree Index on the virtual column</span>
+            $table-><span class="fn">index</span>(<span class="str">'brand_extracted'</span>, <span class="str">'idx_products_json_brand'</span>);
+        });
+    }
+};
+
+<span class="cm">// Ab JSON query instant 1ms mein execute hogi:</span>
+<span class="cl">Product</span>::<span class="fn">where</span>(<span class="str">'attributes->brand'</span>, <span class="str">'Apple'</span>)-><span class="fn">get</span>(); <span class="cm">// Uses idx_products_json_brand!</span></pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 6: CONCURRENCY & LOCKS -->
+<div id="sec-concurrency" class="section-panel">
+  <div class="section-title">&#x1F512; Concurrency, Locking &amp; High-Volume Transactions</div>
+  <p class="section-subtitle">Flash sales aur inventory management mein jab 100 users ek sath aakhri bachi hui 1 item par click karte hain, toh race condition paida hoti hai. Seekhiye Pessimistic Locking, Optimistic Versioning, aur Deadlock retry handling.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; The Flash Sale Race Condition (The Overselling Nightmare)</div>
+    <div class="two-col">
+      <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:18px">
+        <h4 style="color:#fca5a5;margin-bottom:8px">&#x274C; Vulnerable Code (Race Condition)</h4>
+        <div class="code-block" style="margin:6px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">VulnerableCheckout.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Stock = 1 item remaining</span>
+$product = <span class="cl">Product</span>::<span class="fn">find</span>($id);
+
+<span class="kw">if</span> ($product->stock >= <span class="num">1</span>) {
+    <span class="cm">// Dono users yahan True evaluate karte hain!</span>
+    $product->stock = $product->stock - <span class="num">1</span>;
+    $product-><span class="fn">save</span>();
+    <span class="cm">// Stock ban gaya: -1 (Oversold!)</span>
+}</pre>
+        </div>
+        <p style="font-size:0.8rem;color:#fca5a5">Dono requests ne stock 1 read kiya, dono ne deduct kiya, 1 physical item ke 2 orders book ho gaye!</p>
+      </div>
+
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-sm);padding:18px">
+        <h4 style="color:#6ee7b7;margin-bottom:8px">&#x2705; Solution: Atomic Decrement or Lock</h4>
+        <div class="code-block" style="margin:6px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">AtomicDecrement.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Direct Atomic SQL UPDATE</span>
+$affected = <span class="cl">Product</span>::<span class="fn">where</span>(<span class="str">'id'</span>, $id)
+    -><span class="fn">where</span>(<span class="str">'stock'</span>, <span class="str">'>='</span>, <span class="num">1</span>)
+    -><span class="fn">decrement</span>(<span class="str">'stock'</span>, <span class="num">1</span>);
+
+<span class="kw">if</span> ($affected === <span class="num">0</span>) {
+    <span class="kw">throw new</span> <span class="cl">OutOfStockException</span>();
+}</pre>
+        </div>
+        <p style="font-size:0.8rem;color:#6ee7b7">Database row-level atomic decrement karti hai. Sirf 1st request success hogi, 2nd request ko affected rows 0 milega!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F510; Pessimistic Locking: lockForUpdate()</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Jab multi-step checkout workflow ho jisme inventory deduct karni hai, promo code use mark karna hai, aur wallet debit karna ho, toh <code>lockForUpdate()</code> row ko transaction ke khatam hone tak lock kar deta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Services/OrderCheckoutService.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppServices;
+
+<span class="kw">use</span> <span class="cl">AppExceptionsInsufficientStockException</span>;
+<span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesDB</span>;
+
+<span class="kw">class</span> <span class="cl">OrderCheckoutService</span>
+{
+    <span class="kw">public function</span> <span class="fn">purchaseFlashSaleItem</span>(<span class="cl">User</span> $user, <span class="kw">int</span> $productId, <span class="kw">int</span> $quantity)
+    {
+        <span class="cm">/*
+         * DB::transaction($callback, $attempts = 5)
+         * 2nd argument 5 attempts tak deadlocks ko automatically catch karke
+         * transaction retry karta hai!
+         */</span>
+        <span class="kw">return</span> <span class="cl">DB</span>::<span class="fn">transaction</span>(<span class="kw">function</span> () <span class="kw">use</span> ($user, $productId, $quantity) {
+            <span class="cm">/*
+             * lockForUpdate() generates: SELECT * FROM products WHERE id = ? FOR UPDATE
+             * MySQL is row par exclusive write lock laga deta hai.
+             * Doosri concurrent request tab tak wait karegi jab tak yeh transaction
+             * COMMIT ya ROLLBACK nahi ho jata!
+             */</span>
+            $product = <span class="cl">Product</span>::<span class="fn">where</span>(<span class="str">'id'</span>, $productId)
+                -><span class="fn">lockForUpdate</span>()
+                -><span class="fn">firstOrFail</span>();
+
+            <span class="kw">if</span> ($product->stock &lt; $quantity) {
+                <span class="kw">throw new</span> <span class="cl">InsufficientStockException</span>(<span class="str">"Product out of stock!"</span>);
+            }
+
+            <span class="cm">// 1. Deduct stock safely</span>
+            $product->stock -= $quantity;
+            $product-><span class="fn">save</span>();
+
+            <span class="cm">// 2. Create order record</span>
+            $order = <span class="cl">Order</span>::<span class="fn">create</span>([
+                <span class="str">'user_id'</span>      => $user->id,
+                <span class="str">'order_number'</span> => <span class="str">'ORD-'</span> . <span class="fn">strtoupper</span>(<span class="fn">uniqid</span>()),
+                <span class="str">'total'</span>        => $product->price * $quantity,
+                <span class="str">'status'</span>       => <span class="str">'paid'</span>,
+            ]);
+
+            <span class="kw">return</span> $order;
+        }, <span class="num">5</span>); <span class="cm">// Up to 5 retries on deadlock</span>
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F551; Optimistic Locking (The Version Column Pattern)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">High-read low-write systems mein pessimistic locks database connections ko hold karke rakhte hain. Optimistic locking row ko lock nahi karti, balki <code>version</code> column check karti hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">OptimisticLockingService.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppServices;
+
+<span class="kw">use</span> <span class="cl">AppExceptionsConcurrentModificationException</span>;
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+
+<span class="kw">class</span> <span class="cl">OptimisticLockingService</span>
+{
+    <span class="kw">public function</span> <span class="fn">updatePrice</span>(<span class="cl">Product</span> $product, <span class="kw">float</span> $newPrice)
+    {
+        $currentVersion = $product->version;
+
+        <span class="cm">/*
+         * UPDATE products 
+         * SET price = ?, version = version + 1 
+         * WHERE id = ? AND version = ?
+         */</span>
+        $affected = <span class="cl">Product</span>::<span class="fn">where</span>(<span class="str">'id'</span>, $product->id)
+            -><span class="fn">where</span>(<span class="str">'version'</span>, $currentVersion)
+            -><span class="fn">update</span>([
+                <span class="str">'price'</span>   => $newPrice,
+                <span class="str">'version'</span> => $currentVersion + <span class="num">1</span>,
+            ]);
+
+        <span class="kw">if</span> ($affected === <span class="num">0</span>) {
+            <span class="kw">throw new</span> <span class="cl">ConcurrentModificationException</span>(
+                <span class="str">"Another administrator modified this product simultaneously. Please refresh."</span>
+            );
+        }
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 7: CHEATSHEET & ACTION PLAN -->
+<div id="sec-cheatsheet" class="section-panel">
+  <div class="section-title">&#x1F4CB; Senior Performance Cheatsheet &amp; Profiling</div>
+  <p class="section-subtitle">Real-time slow query detectors, profiler setup, method cheat cards, aur pre-deployment production database audit checklist.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F6A8; Real-Time Slow Query Listener</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Agar staging ya production mein koi bhi query 100 milliseconds se zyada time le, toh turant warning log ya Slack notification trigger karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Providers/AppServiceProvider.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppProviders;
+
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesDB</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesLog</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportServiceProvider</span>;
+
+<span class="kw">class</span> <span class="cl">AppServiceProvider</span> <span class="kw">extends</span> <span class="cl">ServiceProvider</span>
+{
+    <span class="kw">public function</span> <span class="fn">boot</span>(): <span class="kw">void</span>
+    {
+        <span class="cm">// Listen to all SQL queries executed during requests/jobs</span>
+        <span class="cl">DB</span>::<span class="fn">listen</span>(<span class="kw">function</span> ($query) {
+            <span class="kw">if</span> ($query->time > <span class="num">100</span>) { <span class="cm">// duration in milliseconds</span>
+                <span class="cl">Log</span>::<span class="fn">warning</span>(<span class="str">"Slow Query Detected ({$query->time}ms)"</span>, [
+                    <span class="str">'sql'</span>      => $query->sql,
+                    <span class="str">'bindings'</span> => $query->bindings,
+                    <span class="str">'url'</span>      => <span class="fn">request</span>()-><span class="fn">fullUrl</span>(),
+                ]);
+            }
+        });
+
+        <span class="cm">// Automated test suite mein agar koi query 200ms se slow ho toh test fail kar do</span>
+        <span class="kw">if</span> ($this->app-><span class="fn">runningUnitTests</span>()) {
+            <span class="cl">DB</span>::<span class="fn">whenQueryingForLongerThan</span>(<span class="num">200</span>, <span class="kw">function</span> ($connection) {
+                <span class="cl">Log</span>::<span class="fn">error</span>(<span class="str">"Database performance threshold exceeded in test suite!"</span>);
+            });
+        }
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x26A1; Eloquent Performance Method Quick Reference</div>
+    <div class="cheatsheet-grid">
+      <div class="cheat-card">
+        <div class="cheat-title">Eager Loading &amp; Aggregates</div>
+        <div class="cheat-item">with(['rel:id,name']) <span>Selective column eager loading</span></div>
+        <div class="cheat-item">withCount('reviews') <span>Count rows via SQL subselect</span></div>
+        <div class="cheat-item">withAvg('reviews', 'rating') <span>Average calculation in SQL</span></div>
+        <div class="cheat-item">withSum('items', 'total') <span>Sum calculation directly in DB</span></div>
+        <div class="cheat-item">loadMissing('rel') <span>Lazy eager load if not already loaded</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Streaming &amp; Memory</div>
+        <div class="cheat-item">chunkById(1000, fn) <span>Cursor chunking by primary key</span></div>
+        <div class="cheat-item">lazyById(1000) <span>Generator LazyCollection stream</span></div>
+        <div class="cheat-item">cursor() <span>Single PDO statement stream</span></div>
+        <div class="cheat-item">upsert($rows, $keys, $upd) <span>High-speed batch upsert</span></div>
+        <div class="cheat-item">select(['id', 'col']) <span>Strip unused bulky text columns</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Subqueries &amp; Concurrency</div>
+        <div class="cheat-item">addSelect(['alias' => $q]) <span>Scalar subquery column injection</span></div>
+        <div class="cheat-item">fromSub($query, 'alias') <span>Derived table joins</span></div>
+        <div class="cheat-item">lockForUpdate() <span>Pessimistic exclusive write lock</span></div>
+        <div class="cheat-item">sharedLock() <span>Shared read lock</span></div>
+        <div class="cheat-item">DB::transaction(fn, 5) <span>Transaction with automatic deadlock retries</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; Pre-Flight Production Performance Checklist</div>
+    <div class="practice-box">
+      <div class="practice-title">Database Audit Guardrails</div>
+      <ul class="practice-tasks">
+        <li><strong>Strict Mode Active:</strong> <code>Model::shouldBeStrict()</code> enabled in local/testing environments to halt any un-eager loaded relationships before production release.</li>
+        <li><strong>Zero Unbounded SELECTs:</strong> Every catalog, search, and list query selects explicit columns (no <code>SELECT *</code> on tables with <code>TEXT</code> or <code>JSON</code> columns).</li>
+        <li><strong>No PHP Memory Loops for Aggregates:</strong> Replaced all <code>$model->relation->sum()</code> and <code>count()</code> calls with <code>withCount()</code>, <code>withSum()</code>, or SQL subqueries.</li>
+        <li><strong>Leftmost Composite Verification:</strong> Confirmed that multi-column query filters (e.g. <code>user_id + status + created_at</code>) match the exact column order of composite indexes.</li>
+        <li><strong>Cursor-Based Batch Jobs:</strong> Converted all scheduled cron tasks and export jobs to <code>chunkById()</code> or <code>lazyById()</code> to prevent memory overflow.</li>
+        <li><strong>Concurrency Shielding:</strong> Protected all balance deductions and inventory updates inside <code>DB::transaction()</code> with <code>lockForUpdate()</code> or atomic <code>decrement()</code> statements.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert alert-success" style="padding:22px">
+    <span class="alert-icon" style="font-size:1.6rem">&#x1F389;</span>
+    <div class="alert-body">
+      <strong style="font-size:1.05rem;color:#6ee7b7">Important Gap #2 (Advanced Eloquent &amp; Performance) Hinglish Version Complete!</strong>
+      Aapne N+1 Eradication, Million-Row Generator Streaming, Subqueries, Composite Indexing, aur Concurrency Locks ko natural Hinglish mein complete master kar liya hai.<br/><br/>
+      <strong>Next Step:</strong> Module 16 &mdash; CI/CD, Docker Containerization &amp; Production Deployment (Important Gap #3).
+    </div>
+  </div>
+</div>
+
+</div><!-- end layout -->
+
+<footer class="footer">
+  <p>ShopSphere Pro &mdash; <span>Module 15: Advanced Eloquent Performance &amp; Database Mastery (Hinglish)</span> | Full-Stack Laravel Developer Series</p>
+  <p style="margin-top:6px;font-size:0.78rem">Important Gap #2 (Hinglish Edition) COMPLETE &bull; Next: Module 16 &mdash; CI/CD, Docker &amp; Production Deployment</p>
+</footer>
+
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+  var panel = document.getElementById(id);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(function() {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+var sectionOrder = [
+  'sec-overview',
+  'sec-nplus1',
+  'sec-memory',
+  'sec-subqueries',
+  'sec-indexes',
+  'sec-concurrency',
+  'sec-cheatsheet'
+];
+
+function updateProgress() {
+  var active = document.querySelector('.section-panel.active');
+  if (!active) return;
+  var idx = sectionOrder.indexOf(active.id);
+  var pct = Math.round(((idx + 1) / sectionOrder.length) * 100);
+  var fill = document.getElementById('prog-fill');
+  var label = document.getElementById('prog-pct');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = pct + '%';
+}
+
+updateProgress();
+</script>
+</body>
+</html>

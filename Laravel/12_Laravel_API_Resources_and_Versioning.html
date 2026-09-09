@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Module 12 — Laravel API Resources & Versioning (Hinglish) | ShopSphere Pro</title>
+<meta name="description" content="Master production Laravel API development in Hinglish — JsonResource, whenLoaded relationship protection, URI/Header versioning, dynamic rate limiting, and Sanctum tokens."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1422;
+  --bg-card: #141929;
+  --bg-code: #0d1117;
+  --border: #1e2d4a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+  --accent-pink: #ec4899;
+  --accent-indigo: #6366f1;
+  --gradient-card: linear-gradient(145deg, #141929, #0f1422);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+.hero {
+  background: linear-gradient(135deg, #0a0e1a 0%, #061e24 50%, #0a0e1a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 40px 50px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #67e8f9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  background: linear-gradient(135deg, #e2e8f0 0%, #06b6d4 45%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 780px;
+  margin-bottom: 30px;
+}
+.hero-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.hero-stats {
+  display: flex;
+  gap: 30px;
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.hero-stat-val { font-size: 1.6rem; font-weight: 800; color: var(--accent-cyan); }
+.hero-stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.progress-bar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 14px 40px; }
+.progress-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+.progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  transition: width 0.6s ease;
+}
+.layout { max-width: 1200px; margin: 0 auto; padding: 40px; }
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 32px;
+}
+.snav-btn {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+.snav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+.snav-btn.active {
+  background: rgba(6, 182, 212, 0.16);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #67e8f9;
+  font-weight: 600;
+}
+.snav-btn .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.section-panel { display: none; }
+.section-panel.active { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s;
+}
+.card:hover { border-color: rgba(6, 182, 212, 0.25); }
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.card-sm { padding: 20px; }
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid #1e2d4a;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 18px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1e2d4a;
+}
+.code-lang {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+.code-filename {
+  font-size: 0.78rem;
+  color: #67e8f9;
+  font-family: 'JetBrains Mono', monospace;
+}
+.copy-btn {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 5px;
+  padding: 4px 10px;
+  color: #67e8f9;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.copy-btn:hover { background: rgba(6, 182, 212, 0.2); }
+.copy-btn.copied { color: var(--accent-green); border-color: rgba(16, 185, 129, 0.5); }
+pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: #c9d1d9;
+}
+.kw { color: #ff7b72; font-weight: 600; }
+.fn { color: #d2a8ff; }
+.str { color: #a5d6ff; }
+.cm { color: #8b949e; font-style: italic; }
+.num { color: #79c0ff; }
+.cl { color: #ffa657; }
+.ph { color: #56d364; }
+.anno { color: #58a6ff; }
+.alert {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  margin: 18px 0;
+  border-left: 4px solid;
+}
+.alert-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 2px; }
+.alert-body { font-size: 0.88rem; line-height: 1.65; }
+.alert-body strong { font-weight: 600; display: block; margin-bottom: 4px; }
+.alert-info { background: rgba(59, 130, 246, 0.08); border-color: var(--accent-blue); color: #93c5fd; }
+.alert-success { background: rgba(16, 185, 129, 0.08); border-color: var(--accent-green); color: #6ee7b7; }
+.alert-warn { background: rgba(245, 158, 11, 0.08); border-color: var(--accent-amber); color: #fcd34d; }
+.alert-danger { background: rgba(239, 68, 68, 0.08); border-color: var(--accent-red); color: #fca5a5; }
+.compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+.compare-table th {
+  background: rgba(6, 182, 212, 0.1);
+  color: #67e8f9;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(6, 182, 212, 0.3);
+}
+.compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.compare-table tr:hover td { background: rgba(255, 255, 255, 0.02); color: var(--text-primary); }
+.compare-table .good { color: var(--accent-green); font-weight: 600; }
+.compare-table .warn { color: var(--accent-amber); font-weight: 600; }
+.compare-table .bad { color: var(--accent-red); font-weight: 600; }
+.cheatsheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cheat-card { background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; }
+.cheat-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #67e8f9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.cheat-item { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #a5d6ff; margin-bottom: 8px; }
+.cheat-item span { color: var(--text-muted); font-size: 0.74rem; display: block; font-family: 'Inter', sans-serif; }
+.section-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-subtitle { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 28px; }
+.practice-box {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.06), rgba(59, 130, 246, 0.06));
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+}
+.practice-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #67e8f9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.practice-tasks { list-style: none; }
+.practice-tasks li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.practice-tasks li::before { content: '→'; color: #67e8f9; flex-shrink: 0; font-weight: 700; }
+.practice-tasks li:last-child { border-bottom: none; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.flow-step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.flow-step:last-child { border-bottom: none; }
+.flow-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(6, 182, 212, 0.15);
+  border: 2px solid var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.flow-body h4 { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.flow-body p { font-size: 0.84rem; color: var(--text-secondary); }
+.hl-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+.hl-item { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.hl-label { font-size: 0.73rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.hl-value { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+.footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 40px;
+}
+.footer span { color: #67e8f9; font-weight: 600; }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 4px; }
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px; }
+  .layout { padding: 24px 20px; }
+  .two-col { grid-template-columns: 1fr; }
+  .hero-stats { gap: 16px; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Critical Gap #2 &bull; Hinglish Masterclass</div>
+    <h1>Laravel API Resources &amp; Versioning (Hinglish Guide)</h1>
+    <p>Direct Eloquent models return karne ka zamana gaya! Jaaniye kaise enterprise production mein API Resources ke zariye database schema ko public API contract se decouple karte hain, N+1 leaks ko whenLoaded() se rokte hain, aur URI/Header versioning implement karte hain.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">&#x1F504; JsonResource &amp; Collections</span>
+      <span class="hero-tag">&#x1F6E1;&#xFE0F; whenLoaded() Protection</span>
+      <span class="hero-tag">&#x1F517; URI &amp; Header Versioning</span>
+      <span class="hero-tag">&#x23F1;&#xFE0F; Tiered Rate Limiting</span>
+      <span class="hero-tag">&#x1F510; Sanctum Token Abilities</span>
+      <span class="hero-tag">&#x1F4CA; Standardized JSON Schema</span>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hero-stat-val">100%</div><div class="hero-stat-label">Decoupled Architecture</div></div>
+      <div><div class="hero-stat-val">0</div><div class="hero-stat-label">Accidental Data Leaks</div></div>
+      <div><div class="hero-stat-val">V1 &amp; V2</div><div class="hero-stat-label">Zero Breaking Changes</div></div>
+      <div><div class="hero-stat-val">Tiered</div><div class="hero-stat-label">Rate Limiter Defense</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-bar-inner">
+    <span style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap">Progress:</span>
+    <div class="progress-track"><div id="prog-fill" class="progress-fill" style="width:12.5%"></div></div>
+    <span id="prog-pct" style="font-size:0.8rem;font-weight:700;color:var(--accent-cyan);min-width:38px">12.5%</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="section-nav">
+  <button class="snav-btn active" onclick="showSection('sec-overview',this)"><span class="dot" style="background:#06b6d4"></span>Overview</button>
+  <button class="snav-btn" onclick="showSection('sec-resource',this)"><span class="dot" style="background:#3b82f6"></span>JsonResource</button>
+  <button class="snav-btn" onclick="showSection('sec-collection',this)"><span class="dot" style="background:#10b981"></span>Collections</button>
+  <button class="snav-btn" onclick="showSection('sec-versioning',this)"><span class="dot" style="background:#f59e0b"></span>Versioning</button>
+  <button class="snav-btn" onclick="showSection('sec-ratelimit',this)"><span class="dot" style="background:#ec4899"></span>Rate Limiting</button>
+  <button class="snav-btn" onclick="showSection('sec-auth',this)"><span class="dot" style="background:#8b5cf6"></span>Sanctum Tokens</button>
+  <button class="snav-btn" onclick="showSection('sec-advanced',this)"><span class="dot" style="background:#ef4444"></span>Error Contracts</button>
+  <button class="snav-btn" onclick="showSection('sec-cheatsheet',this)"><span class="dot" style="background:#6366f1"></span>Cheatsheet</button>
+</div>
+
+
+<!-- SECTION 1: OVERVIEW & WHY API RESOURCES -->
+<div id="sec-overview" class="section-panel active">
+  <div class="section-title">&#x1F310; API Resources Kyun Zaroori Hain? (The Decoupling Layer)</div>
+  <p class="section-subtitle">Direct Eloquent model return karna ek fatal security aur architectural blunder hai. Jaaniye kaise API Resources aapke database schema ko public mobile/frontend consumers se protect karte hain.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; The Direct Model Return Disaster</div>
+    <p style="color:var(--text-secondary);margin-bottom:18px">Jab junior developers <code>return response()-&gt;json($user);</code> likhte hain, toh teen massive problems paida hoti hain:</p>
+
+    <div class="two-col">
+      <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:20px">
+        <h4 style="color:#fca5a5;margin-bottom:10px">&#x274C; Antipattern: Direct Model Return</h4>
+        <div class="code-block" style="margin:8px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">UserController.php (Antipattern)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Controller — Fatal flaw! Database columns leak ho jati hain</span>
+<span class="kw">public function</span> <span class="fn">show</span>(<span class="cl">User</span> $user) {
+    <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>($user);
+}</pre>
+        </div>
+        <ul style="padding-left:18px;font-size:0.83rem;color:#fca5a5;line-height:1.7;margin-top:10px">
+          <li><strong>Sensitive Data Leaks:</strong> <code>stripe_id</code>, <code>two_factor_secret</code>, ya internal audit columns galti se JSON mein nikal jate hain.</li>
+          <li><strong>Breaking Mobile Apps:</strong> Agar kal aapne database migration mein <code>full_name</code> ko <code>name</code> kiya, toh published iOS/Android apps turant crash ho jayengi!</li>
+          <li><strong>Formatting Chaos:</strong> Prices kabhi <code>"1200.00"</code> string hoti hain, kabhi <code>1200</code> integer. Dates kabhi timestamp hoti hain kabhi non-standard string.</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-sm);padding:20px">
+        <h4 style="color:#6ee7b7;margin-bottom:10px">&#x2705; Production Pattern: Laravel API Resource</h4>
+        <div class="code-block" style="margin:8px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">UserController.php (Production Standard)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Controller — Clean contract! Sirf explicit fields return hoti hain</span>
+<span class="kw">public function</span> <span class="fn">show</span>(<span class="cl">User</span> $user) {
+    <span class="kw">return new</span> <span class="cl">UserResource</span>($user);
+}</pre>
+        </div>
+        <ul style="padding-left:18px;font-size:0.83rem;color:#6ee7b7;line-height:1.7;margin-top:10px">
+          <li><strong>100% Strict Contract:</strong> Sirf wahi fields bahar jayengi jo aapne explicitly whitelist ki hain. Zero accidental leaks!</li>
+          <li><strong>Schema Independence:</strong> Database column ka naam kuch bhi ho, JSON key ka naam wahi rahega jo frontend expect karta hai.</li>
+          <li><strong>Consistent Formatting:</strong> ISO 8601 dates, formatted currencies, aur nested relations hamesha predictable format mein aate hain.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F3DB;&#xFE0F; The 3-Tier API Architecture</div>
+    <div class="card-grid">
+      <div class="card-sm" style="background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#67e8f9;margin-bottom:8px">1. Database Layer</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">MySQL/Postgres tables, migrations, raw columns, foreign keys, aur indexes. Ye internal details hain jo sirf backend ko pata honi chahiye.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#93c5fd;margin-bottom:8px">2. Eloquent Model Layer</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">Business logic, relationships, scopes, mutators, aur domain events. Model ka kaam business rules chalana hai, JSON format banana nahi.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#6ee7b7;margin-bottom:8px">3. API Resource Layer (Presenter)</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary)">Public API Contract! Model data ko transform karke client-facing clean JSON shape deta hai. Is layer ke badalne se database par koi asar nahi padta.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 2: SINGLE RESOURCE & WHENLOADED -->
+<div id="sec-resource" class="section-panel">
+  <div class="section-title">&#x1F504; Single Resource: JsonResource &amp; whenLoaded()</div>
+  <p class="section-subtitle">Data transform karna, ISO 8601 formatting, aur <code>whenLoaded()</code> ke zariye N+1 query leaks ko 100% block karna.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E0;&#xFE0F; API Resource Generate Karna</div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><span class="code-filename">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm"># Single resource class generate karo</span>
+php artisan make:resource OrderResource
+php artisan make:resource ProductResource</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4DC; Production Implementation: OrderResource</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Dekhiye kaise <code>whenLoaded()</code> aur conditional attributes enterprise level par data expose karte hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Resources/OrderResource.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpResources;
+
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpResourcesJsonJsonResource</span>;
+
+<span class="kw">class</span> <span class="cl">OrderResource</span> <span class="kw">extends</span> <span class="cl">JsonResource</span>
+{
+    <span class="cm">/**
+     * Transform the resource into an array.
+     */</span>
+    <span class="kw">public function</span> <span class="fn">toArray</span>(<span class="cl">Request</span> $request): <span class="kw">array</span>
+    {
+        <span class="kw">return</span> [
+            <span class="str">'id'</span>           => (<span class="kw">string</span>) $this->uuid, <span class="cm">// Never expose auto-increment integer IDs!</span>
+            <span class="str">'order_number'</span> => $this->order_number,
+            <span class="str">'status'</span>       => $this->status,
+            
+            <span class="cm">// Consistent monetary formatting</span>
+            <span class="str">'pricing'</span> => [
+                <span class="str">'subtotal'</span>     => (<span class="kw">float</span>) $this->subtotal,
+                <span class="str">'tax'</span>          => (<span class="kw">float</span>) $this->tax_amount,
+                <span class="str">'total'</span>        => (<span class="kw">float</span>) $this->total,
+                <span class="str">'currency'</span>     => <span class="str">'PKR'</span>,
+                <span class="str">'formatted'</span>    => <span class="str">'PKR '</span> . <span class="fn">number_format</span>($this->total, <span class="num">2</span>),
+            ],
+
+            <span class="cm">/*
+             * CRITICAL: whenLoaded() - The N+1 Shield!
+             * Agar controller ne eager load nahi kiya (e.g. ->with('items')),
+             * toh ye key response se gayab ho jayegi. Ye kabhie bhi background
+             * mein database query fire nahi karega!
+             */</span>
+            <span class="str">'customer'</span> => <span class="kw">new</span> <span class="cl">UserResource</span>($this-><span class="fn">whenLoaded</span>(<span class="str">'user'</span>)),
+            <span class="str">'items'</span>    => <span class="cl">OrderItemResource</span>::<span class="fn">collection</span>($this-><span class="fn">whenLoaded</span>(<span class="str">'items'</span>)),
+
+            <span class="cm">// Conditional Attribute: Sirf Admin users ko internal profit margin dikhao</span>
+            <span class="str">'admin_metrics'</span> => $this-><span class="fn">when</span>($request-><span class="fn">user</span>()?-><span class="fn">isAdmin</span>(), [
+                <span class="str">'profit_margin'</span>  => (<span class="kw">float</span>) $this->profit_margin,
+                <span class="str">'gateway_fee'</span>    => (<span class="kw">float</span>) $this->gateway_fee,
+                <span class="str">'warehouse_code'</span> => $this->warehouse_code,
+            ]),
+
+            <span class="cm">// Strict ISO 8601 Datetime standard</span>
+            <span class="str">'placed_at'</span>  => $this->created_at?-><span class="fn">toIso8601String</span>(),
+            <span class="str">'updated_at'</span> => $this->updated_at?-><span class="fn">toIso8601String</span>(),
+        ];
+    }
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F6A8; whenLoaded() vs $this-&gt;relation Trap</div>
+    <div class="two-col">
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:18px">
+        <h4 style="color:#fca5a5;margin-bottom:8px">&#x274C; Galti: Direct Relation Call</h4>
+        <div class="code-block" style="margin:6px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">Dangerous N+1 Leak</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="str">'items'</span> => <span class="cl">OrderItemResource</span>::<span class="fn">collection</span>($this->items),</pre>
+        </div>
+        <p style="font-size:0.8rem;color:#fca5a5">Agar 50 orders list ho rahe hain, toh ye har order ke liye database mein alag se query karega (50 extra queries N+1 disaster!).</p>
+      </div>
+
+      <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-sm);padding:18px">
+        <h4 style="color:#6ee7b7;margin-bottom:8px">&#x2705; Sahi Tarika: whenLoaded() Shield</h4>
+        <div class="code-block" style="margin:6px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">Protected whenLoaded</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="str">'items'</span> => <span class="cl">OrderItemResource</span>::<span class="fn">collection</span>($this-><span class="fn">whenLoaded</span>(<span class="str">'items'</span>)),</pre>
+        </div>
+        <p style="font-size:0.8rem;color:#6ee7b7">Sirf tabhi include hoga jab controller ne <code>with('items')</code> se eager load kiya ho. Zero hidden queries!</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 3: COLLECTIONS & PAGINATION -->
+<div id="sec-collection" class="section-panel">
+  <div class="section-title">&#x1F4CA; Resource Collections &amp; Pagination Metadata</div>
+  <p class="section-subtitle">Multiple records ko clean array mein transform karna, automated pagination metadata (links, pages, totals), aur top-level API envelopes.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F5C4;&#xFE0F; Collection Banane Ke Do Tarike</div>
+    <div class="two-col">
+      <div class="card-sm" style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#93c5fd;margin-bottom:8px">1. Static collection() Helper (Fast &amp; Simple)</h4>
+        <div class="code-block" style="margin:8px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">OrderController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Controller</span>
+$orders = <span class="cl">Order</span>::<span class="fn">with</span>(<span class="str">'user'</span>)-><span class="fn">paginate</span>(<span class="num">20</span>);
+
+<span class="kw">return</span> <span class="cl">OrderResource</span>::<span class="fn">collection</span>($orders);</pre>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">Jab collection ke upar koi extra custom metadata ya structure change nahi karna ho, toh directly <code>OrderResource::collection()</code> use karein.</p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm)">
+        <h4 style="color:#6ee7b7;margin-bottom:8px">2. Dedicated ResourceCollection Class (Advanced)</h4>
+        <div class="code-block" style="margin:8px 0">
+          <div class="code-header"><span class="code-lang">php</span><span class="code-filename">OrderCollection Setup</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+          <pre><span class="cm">// Terminal</span>
+php artisan make:resource OrderCollection
+
+<span class="cm">// Controller</span>
+<span class="kw">return new</span> <span class="cl">OrderCollection</span>($orders);</pre>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-secondary)">Jab collection level par custom aggregation statistics, filters metadata, ya envelope keys customize karni hon.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4DC; Production OrderCollection with Top-Level Envelopes</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Dekhiye kaise <code>OrderCollection</code> pagination ke sath top-level summary metrics provide karta hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Resources/OrderCollection.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> AppHttpResources;
+
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpResourcesJsonResourceCollection</span>;
+
+<span class="kw">class</span> <span class="cl">OrderCollection</span> <span class="kw">extends</span> <span class="cl">ResourceCollection</span>
+{
+    <span class="cm">/**
+     * Specify the underlying resource class for each item.
+     */</span>
+    <span class="kw">public</span> $collects = <span class="cl">OrderResource</span>::<span class="kw">class</span>;
+
+    <span class="kw">public function</span> <span class="fn">toArray</span>(<span class="cl">Request</span> $request): <span class="kw">array</span>
+    {
+        <span class="kw">return</span> [
+            <span class="str">'data'</span> => $this->collection,
+        ];
+    }
+
+    <span class="cm">/**
+     * Add top-level metadata outside the paginated 'data' array.
+     */</span>
+    <span class="kw">public function</span> <span class="fn">with</span>(<span class="cl">Request</span> $request): <span class="kw">array</span>
+    {
+        <span class="kw">return</span> [
+            <span class="str">'api_version'</span> => <span class="str">'v1.4'</span>,
+            <span class="str">'server_time'</span> => <span class="fn">now</span>()-><span class="fn">toIso8601String</span>(),
+            <span class="str">'status'</span>      => <span class="str">'success'</span>,
+        ];
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 4: API VERSIONING STRATEGIES -->
+<div id="sec-versioning" class="section-panel">
+  <div class="section-title">&#x1F517; API Versioning: URI vs Header Versioning</div>
+  <p class="section-subtitle">Mobile apps ko bina crash kiye API contracts ko evolve karne ke architectural strategies &mdash; V1 aur V2 ko side-by-side run karna.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; Versioning Kyun Mandatory Hai? (The App Store Problem)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Web applications mein aap code deploy karte hain toh sabhi users ko naya JavaScript bundle mil jata hai. Lekin <strong>Mobile Apps (iOS/Android)</strong> mein hazaron users app ko mahinon tak update nahi karte. Agar aapne API response ka structure change kiya bina versioning ke, toh puraane users ki app crash ho jayegi!</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F680; Strategy 1: URI Versioning (Production Industry Standard)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Stripe, Shopify, aur GitHub sabse zyada URI versioning use karte hain kyunki ye transparent, debuggable, aur predictable hoti hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">routes/api.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">IlluminateSupportFacadesRoute</span>;
+
+<span class="cm">/*
+|--------------------------------------------------------------------------
+| API Version 1 Routes (/api/v1/...)
+|--------------------------------------------------------------------------
+| Mobile App Version 1.0 &mdash; 1.5 ke liye stable legacy contract.
+*/</span>
+<span class="cl">Route</span>::<span class="fn">prefix</span>(<span class="str">'v1'</span>)
+    -><span class="fn">name</span>(<span class="str">'api.v1.'</span>)
+    -><span class="fn">namespace</span>(<span class="str">'AppHttpControllersApiV1'</span>)
+    -><span class="fn">group</span>(<span class="kw">function</span> () {
+        <span class="cl">Route</span>::<span class="fn">apiResource</span>(<span class="str">'products'</span>, <span class="str">'ProductController'</span>);
+        <span class="cl">Route</span>::<span class="fn">apiResource</span>(<span class="str">'orders'</span>, <span class="str">'OrderController'</span>);
+    });
+
+<span class="cm">/*
+|--------------------------------------------------------------------------
+| API Version 2 Routes (/api/v2/...)
+|--------------------------------------------------------------------------
+| New Features: Multi-currency, GraphQL-style partials, new checkout schema.
+*/</span>
+<span class="cl">Route</span>::<span class="fn">prefix</span>(<span class="str">'v2'</span>)
+    -><span class="fn">name</span>(<span class="str">'api.v2.'</span>)
+    -><span class="fn">namespace</span>(<span class="str">'AppHttpControllersApiV2'</span>)
+    -><span class="fn">group</span>(<span class="kw">function</span> () {
+        <span class="cl">Route</span>::<span class="fn">apiResource</span>(<span class="str">'products'</span>, <span class="str">'ProductController'</span>);
+        <span class="cl">Route</span>::<span class="fn">apiResource</span>(<span class="str">'orders'</span>, <span class="str">'OrderController'</span>);
+    });</pre>
+    </div>
+
+    <div class="code-block" style="margin-top:14px">
+      <div class="code-header"><span class="code-lang">text</span><span class="code-filename">Controller &amp; Resource Folder Structure</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre>app/
+├── Http/
+│   ├── Controllers/
+│   │   └── Api/
+│   │       ├── V1/
+│   │       │   ├── OrderController.php    <span class="cm"># Returns V1OrderResource</span>
+│   │       │   └── ProductController.php
+│   │       └── V2/
+│   │           ├── OrderController.php    <span class="cm"># Returns V2OrderResource (overridden)</span>
+│   │           └── ProductController.php  <span class="cm"># Inherits or extends V1</span>
+│   └── Resources/
+│       ├── V1/
+│       │   └── OrderResource.php
+│       └── V2/
+│           └── OrderResource.php</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 5: DYNAMIC RATE LIMITING -->
+<div id="sec-ratelimit" class="section-panel">
+  <div class="section-title">&#x23F1;&#xFE0F; Dynamic Tiered Rate Limiting</div>
+  <p class="section-subtitle">Bots, scrapers aur brute-force attacks se APIs ko shield karna &mdash; Guest, Customer aur Enterprise API Keys ke liye tiered rate limits.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; Tiered Rate Limiter Configuration</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">In modern Laravel, configure dynamic rate limits inside <code>AppServiceProvider</code> (ya <code>RouteServiceProvider</code>) based on user authentication status and role:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Providers/AppServiceProvider.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">IlluminateCacheRateLimitingLimit</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesRateLimiter</span>;
+
+<span class="kw">public function</span> <span class="fn">boot</span>(): <span class="kw">void</span>
+{
+    <span class="cl">RateLimiter</span>::<span class="fn">for</span>(<span class="str">'api'</span>, <span class="kw">function</span> (<span class="cl">Request</span> $request) {
+        $user = $request-><span class="fn">user</span>();
+
+        <span class="cm">// 1. Enterprise / Merchant API Key: 1,200 requests/min</span>
+        <span class="kw">if</span> ($user?->tokenCan(<span class="str">'enterprise-tier'</span>)) {
+            <span class="kw">return</span> <span class="cl">Limit</span>::<span class="fn">perMinute</span>(<span class="num">1200</span>)-><span class="fn">by</span>($user->id);
+        }
+
+        <span class="cm">// 2. Logged-in Customer: 300 requests/min</span>
+        <span class="kw">if</span> ($user) {
+            <span class="kw">return</span> <span class="cl">Limit</span>::<span class="fn">perMinute</span>(<span class="num">300</span>)-><span class="fn">by</span>($user->id);
+        }
+
+        <span class="cm">// 3. Anonymous Guest: 60 requests/min by Client IP</span>
+        <span class="kw">return</span> <span class="cl">Limit</span>::<span class="fn">perMinute</span>(<span class="num">60</span>)
+            -><span class="fn">by</span>($request-><span class="fn">ip</span>())
+            -><span class="fn">response</span>(<span class="kw">function</span> (<span class="cl">Request</span> $request, <span class="kw">array</span> $headers) {
+                <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([
+                    <span class="str">'error'</span>       => <span class="str">'Too Many Requests'</span>,
+                    <span class="str">'message'</span>     => <span class="str">'Aapne rate limit exceed kar di hai. Kripya thodi der baad koshish karein.'</span>,
+                    <span class="str">'retry_after'</span> => $headers[<span class="str">'Retry-After'</span>] ?? <span class="num">60</span>,
+                ], <span class="num">429</span>, $headers);
+            });
+    });
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F50D; Rate Limit HTTP Response Headers</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel automatically sets standard IETF rate-limiting headers on every API response taaki client frontend app ko pata chale ki kitni quota bachi hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span><span class="code-filename">Response Headers</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre>HTTP/1.1 200 OK
+Content-Type: application/json
+<span class="cl">X-RateLimit-Limit:</span> 300       <span class="cm"># 1 minute mein allowed total requests</span>
+<span class="cl">X-RateLimit-Remaining:</span> 284   <span class="cm"># Abhi kitni requests bachi hain</span>
+<span class="cl">Retry-After:</span> 42              <span class="cm"># 429 status aane par kitne seconds wait karna hai</span></pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 6: SANCTUM TOKEN MANAGEMENT -->
+<div id="sec-auth" class="section-panel">
+  <div class="section-title">&#x1F510; Sanctum Tokens &amp; Granular Abilities</div>
+  <p class="section-subtitle">Mobile apps aur third-party integrations ke liye secure Personal Access Tokens, granular permission scopes (abilities), aur revocation management.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F511; Generating Scoped Personal Access Tokens</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Kabhie bhi mobile app ya third-party webhook ko full-access token mat dijiye. Hamesha <strong>Least Privilege principle</strong> follow karte hue specific abilities assign karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">app/Http/Controllers/Api/AuthController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+<span class="kw">use</span> <span class="cl">IlluminateHttpRequest</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesHash</span>;
+
+<span class="kw">public function</span> <span class="fn">login</span>(<span class="cl">Request</span> $request)
+{
+    $request-><span class="fn">validate</span>([
+        <span class="str">'email'</span>       => <span class="str">'required|email'</span>,
+        <span class="str">'password'</span>    => <span class="str">'required'</span>,
+        <span class="str">'device_name'</span> => <span class="str">'required|string'</span>,
+    ]);
+
+    $user = <span class="cl">User</span>::<span class="fn">where</span>(<span class="str">'email'</span>, $request->email)-><span class="fn">first</span>();
+
+    <span class="kw">if</span> (! $user || ! <span class="cl">Hash</span>::<span class="fn">check</span>($request->password, $user->password)) {
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([
+            <span class="str">'error'</span> => <span class="str">'Invalid credentials provided.'</span>,
+        ], <span class="num">401</span>);
+    }
+
+    <span class="cm">// Assign specific abilities based on user role</span>
+    $abilities = [<span class="str">'orders:read'</span>, <span class="str">'profile:update'</span>];
+    <span class="kw">if</span> ($user-><span class="fn">isVendor</span>()) {
+        $abilities[] = <span class="str">'products:manage'</span>;
+    }
+
+    <span class="cm">// Generate token (only displayed once!)</span>
+    $token = $user-><span class="fn">createToken</span>($request->device_name, $abilities)->plainTextToken;
+
+    <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([
+        <span class="str">'token'</span>     => $token,
+        <span class="str">'token_type'</span> => <span class="str">'Bearer'</span>,
+        <span class="str">'abilities'</span>  => $abilities,
+    ]);
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; Protecting Endpoints with Abilities Middleware</div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">routes/api.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">IlluminateSupportFacadesRoute</span>;
+
+<span class="cl">Route</span>::<span class="fn">middleware</span>([<span class="str">'auth:sanctum'</span>])-><span class="fn">group</span>(<span class="kw">function</span> () {
+    <span class="cm">// Har user apni orders dekh sakta hai</span>
+    <span class="cl">Route</span>::<span class="fn">get</span>(<span class="str">'/orders'</span>, [<span class="cl">OrderController</span>::<span class="kw">class</span>, <span class="str">'index'</span>])
+        -><span class="fn">middleware</span>(<span class="str">'ability:orders:read'</span>);
+
+    <span class="cm">// Sirf 'products:manage' ability wale tokens product create kar sakte hain</span>
+    <span class="cl">Route</span>::<span class="fn">post</span>(<span class="str">'/products'</span>, [<span class="cl">ProductController</span>::<span class="kw">class</span>, <span class="str">'store'</span>])
+        -><span class="fn">middleware</span>(<span class="str">'ability:products:manage'</span>);
+
+    <span class="cm">// Logout current device only</span>
+    <span class="cl">Route</span>::<span class="fn">post</span>(<span class="str">'/logout'</span>, <span class="kw">function</span> (<span class="cl">Request</span> $request) {
+        $request-><span class="fn">user</span>()-><span class="fn">currentAccessToken</span>()-><span class="fn">delete</span>();
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([<span class="str">'message'</span> => <span class="str">'Current device token revoked.'</span>]);
+    });
+
+    <span class="cm">// Force logout all devices (password reset security event)</span>
+    <span class="cl">Route</span>::<span class="fn">post</span>(<span class="str">'/logout-all-devices'</span>, <span class="kw">function</span> (<span class="cl">Request</span> $request) {
+        $request-><span class="fn">user</span>()-><span class="fn">tokens</span>()-><span class="fn">delete</span>();
+        <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([<span class="str">'message'</span> => <span class="str">'All active device sessions terminated.'</span>]);
+    });
+});</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 7: STANDARDIZED ERROR CONTRACTS -->
+<div id="sec-advanced" class="section-panel">
+  <div class="section-title">&#x1F6E1;&#xFE0F; Standardized Error Contracts &amp; Exception Handling</div>
+  <p class="section-subtitle">Consistent, predictable error JSON responses create happy frontend teams and prevent sensitive SQL database leaks.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; The Problem of Inconsistent Error Formats</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Agar aapki API kabhi HTML exception page return kare, kabhi <code>{"message": "..."}</code>, aur kabhi <code>{"errors": [...]}</code>, toh React/Flutter frontend developers ko har request ke liye alag error handling likhni padti hai. Hamesha ek <strong>Standard Enterprise Error Contract</strong> maintain karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">json</span><span class="code-filename">ShopSphere Pro Enterprise Error Contract</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre>{
+  <span class="str">"success"</span>: <span class="kw">false</span>,
+  <span class="str">"error"</span>: {
+    <span class="str">"code"</span>: <span class="str">"RESOURCE_NOT_FOUND"</span>,
+    <span class="str">"message"</span>: <span class="str">"The requested order could not be located."</span>,
+    <span class="str">"details"</span>: []
+  },
+  <span class="str">"timestamp"</span>: <span class="str">"2026-09-09T11:26:00Z"</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F527; Centralized Exception Rendering (Laravel 11 bootstrap/app.php)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Laravel 11 mein centralized exceptions ko <code>bootstrap/app.php</code> ke <code>withExceptions()</code> callback mein handle kiya jata hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">bootstrap/app.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">IlluminateDatabaseEloquentModelNotFoundException</span>;
+<span class="kw">use</span> <span class="cl">IlluminateValidationValidationException</span>;
+<span class="kw">use</span> <span class="cl">SymfonyComponentHttpKernelExceptionNotFoundHttpException</span>;
+
+-><span class="fn">withExceptions</span>(<span class="kw">function</span> (<span class="cl">Exceptions</span> $exceptions) {
+    <span class="cm">// Catch 404 Model Not Found (Never leak raw database table names!)</span>
+    $exceptions-><span class="fn">render</span>(<span class="kw">function</span> (<span class="cl">NotFoundHttpException</span> $e, $request) {
+        <span class="kw">if</span> ($request-><span class="fn">is</span>(<span class="str">'api/*'</span>)) {
+            <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([
+                <span class="str">'success'</span>   => <span class="kw">false</span>,
+                <span class="str">'error'</span>     => [
+                    <span class="str">'code'</span>    => <span class="str">'RESOURCE_NOT_FOUND'</span>,
+                    <span class="str">'message'</span> => <span class="str">'Manga gaya resource maujood nahi hai.'</span>,
+                ],
+                <span class="str">'timestamp'</span> => <span class="fn">now</span>()-><span class="fn">toIso8601String</span>(),
+            ], <span class="num">404</span>);
+        }
+    });
+
+    <span class="cm">// Catch 422 Validation Errors with clean key-value map</span>
+    $exceptions-><span class="fn">render</span>(<span class="kw">function</span> (<span class="cl">ValidationException</span> $e, $request) {
+        <span class="kw">if</span> ($request-><span class="fn">is</span>(<span class="str">'api/*'</span>)) {
+            <span class="kw">return</span> <span class="fn">response</span>()-><span class="fn">json</span>([
+                <span class="str">'success'</span>   => <span class="kw">false</span>,
+                <span class="str">'error'</span>     => [
+                    <span class="str">'code'</span>    => <span class="str">'VALIDATION_FAILED'</span>,
+                    <span class="str">'message'</span> => <span class="str">'Input validation fail ho gaya.'</span>,
+                    <span class="str">'fields'</span>  => $e-><span class="fn">errors</span>(),
+                ],
+                <span class="str">'timestamp'</span> => <span class="fn">now</span>()-><span class="fn">toIso8601String</span>(),
+            ], <span class="num">422</span>);
+        }
+    });
+})</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 8: CHEATSHEET & AUDIT -->
+<div id="sec-cheatsheet" class="section-panel">
+  <div class="section-title">&#x1F4CB; API Cheatsheet &amp; Production Readiness Audit</div>
+  <p class="section-subtitle">Aapke daily workflow ke liye essential JsonResource methods reference, CLI commands, aur API production checklist.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A1; JsonResource Methods Quick Reference</div>
+    <div class="cheatsheet-grid">
+      <div class="cheat-card">
+        <div class="cheat-title">Relationship Protection</div>
+        <div class="cheat-item">$this->whenLoaded('rel') <span>N+1 safe relation inclusion</span></div>
+        <div class="cheat-item">Resource::collection($this->whenLoaded('rel')) <span>Nested collection protection</span></div>
+        <div class="cheat-item">$this->whenCounted('rel') <span>Include count only if eager-loaded</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Conditional Attributes</div>
+        <div class="cheat-item">$this->when($bool, $val) <span>Include value only when condition is true</span></div>
+        <div class="cheat-item">$this->mergeWhen($bool, $arr) <span>Merge multiple keys conditionally</span></div>
+        <div class="cheat-item">$this->whenNotNull($val) <span>Exclude key if value is null</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Sanctum &amp; Routing</div>
+        <div class="cheat-item">php artisan route:list --path=api <span>Inspect registered API routes</span></div>
+        <div class="cheat-item">auth:sanctum <span>Authenticate incoming Bearer token</span></div>
+        <div class="cheat-item">ability:scope,name <span>Enforce granular token ability</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; 3-Year Dev API Production Audit Checklist</div>
+    <div class="practice-box">
+      <div class="practice-title">Pre-Deploy API Quality Guardrails</div>
+      <ul class="practice-tasks">
+        <li><strong>Zero Naked Eloquent Models:</strong> Har single controller response API Resource ke through ja raha hai (kabhi bhi direct <code>return User::all()</code> nahi karna).</li>
+        <li><strong>N+1 Shield Active:</strong> Sabhi nested relationships mein <code>$this-&gt;whenLoaded()</code> use kiya gaya hai.</li>
+        <li><strong>URI Versioning Enforced:</strong> Saare routes <code>/api/v1/</code> namespace ke under structured hain taaki mobile apps kabhie na tootein.</li>
+        <li><strong>Dynamic Rate Limiting:</strong> Guests ke liye 60 req/min aur authenticated users ke liye 300 req/min rate limiter configured hai.</li>
+        <li><strong>Standardized Error Format:</strong> 404, 422, aur 500 exceptions uniform JSON schema return karte hain (kabhi bhi raw SQL query leak nahi hoti).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert alert-success" style="padding:22px">
+    <span class="alert-icon" style="font-size:1.6rem">&#x1F389;</span>
+    <div class="alert-body">
+      <strong style="font-size:1.05rem;color:#6ee7b7">Module 12 (API Resources &amp; Versioning) Hinglish Version Complete!</strong>
+      Aapne database schema ko public contract se decouple karna, whenLoaded() N+1 protection, URI versioning, aur Sanctum token management seekh liya hai.<br/><br/>
+      <strong>Next Step:</strong> Module 13 &mdash; Laravel Security &amp; OWASP Top 10 (Hinglish Version).
+    </div>
+  </div>
+</div>
+
+</div><!-- end layout -->
+
+<footer class="footer">
+  <p>ShopSphere Pro &mdash; <span>Module 12: API Resources &amp; Versioning (Hinglish)</span> | Full-Stack Laravel Developer Series</p>
+  <p style="margin-top:6px;font-size:0.78rem">Critical Gap #2 (Hinglish Edition) COMPLETE &bull; Next: Module 13 &mdash; Security &amp; OWASP Top 10</p>
+</footer>
+
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+  var panel = document.getElementById(id);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(function() {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+var sectionOrder = ['sec-overview', 'sec-resource', 'sec-collection', 'sec-versioning', 'sec-ratelimit', 'sec-auth', 'sec-advanced', 'sec-cheatsheet'];
+
+function updateProgress() {
+  var active = document.querySelector('.section-panel.active');
+  if (!active) return;
+  var idx = sectionOrder.indexOf(active.id);
+  var pct = Math.round(((idx + 1) / sectionOrder.length) * 100);
+  var fill = document.getElementById('prog-fill');
+  var label = document.getElementById('prog-pct');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = pct + '%';
+}
+
+updateProgress();
+</script>
+</body>
+</html>

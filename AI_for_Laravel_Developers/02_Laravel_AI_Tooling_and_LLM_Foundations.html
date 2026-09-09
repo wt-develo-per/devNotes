@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 02: Laravel AI Tooling & LLM Foundations | AI for Laravel Developers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #161f38;
+      --bg-code: #0b1120;
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.25);
+      --accent-secondary: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #3b82f6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Reading Progress Bar */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #8b5cf6, #38bdf8, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #8b5cf6, #38bdf8);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(10, 14, 26, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #c4b5fd;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 950px;
+      line-height: 1.6;
+    }
+
+    /* Tab Navigation */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(56, 189, 248, 0.15));
+      color: #7dd3fc;
+      border-color: var(--accent-secondary);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Section Panels */
+    .section-panel {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(139, 92, 246, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+    }
+
+    .callout.tip {
+      border-left-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    .callout-header {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .callout.tip .callout-header { color: var(--accent-emerald); }
+    .callout.warning .callout-header { color: var(--accent-amber); }
+    .callout.danger .callout-header { color: var(--accent-rose); }
+    .callout .callout-header { color: #c4b5fd; }
+
+    /* Code Blocks */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .code-filename {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    /* Grids & Tables */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .info-box h4 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0f172a;
+      color: #7dd3fc;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-purple { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .badge-blue { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AI Track</span>
+      <span>AI for Laravel Developers</span>
+    </a>
+    <div class="nav-links">
+      <a href="01_AI_Roadmap_and_Setup.html" class="nav-btn">⬅️ Module 01</a>
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-streaming-backend" class="nav-btn primary">⚡ SSE Streaming</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">⚡ Module 02 • Core LLM Foundations</div>
+      <h1 class="hero-title">Laravel AI Tooling, Prism Deep Dive & Real-time SSE Streaming</h1>
+      <p class="hero-desc">
+        Modern users static 15-second loaders tolerate nahi karte. Is module mein hum master karenge <strong>Prism-PHP</strong> ki text generation & streaming APIs, build karenge high-performance <strong>Server-Sent Events (SSE) StreamedResponse</strong> with NGINX buffering bypass, aur frontend par <strong>Livewire v3 & Vue 3</strong> ke saath ChatGPT jaisa buttery-smooth word-by-word typewriter effect implement karenge!
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-sse-theory', this)">📡 1. Streaming Theory & SSE</button>
+      <button class="tab-btn" onclick="switchTab('sec-prism-api', this)">⚡ 2. Prism Generation & Streaming</button>
+      <button class="tab-btn" onclick="switchTab('sec-streaming-backend', this)">🛠️ 3. Laravel StreamedResponse</button>
+      <button class="tab-btn" onclick="switchTab('sec-frontend-livewire-vue', this)">💻 4. Livewire v3 & Vue 3 Frontend</button>
+      <button class="tab-btn" onclick="switchTab('sec-conversation-memory', this)">🧠 5. Multi-Turn Conversation Memory</button>
+      <button class="tab-btn" onclick="switchTab('sec-testing-pest', this)">🧪 6. Testing AI with Pest Fake</button>
+      <button class="tab-btn" onclick="switchTab('sec-nginx-cheatsheet', this)">🚀 7. NGINX Tuning & Cheatsheet</button>
+    </div>
+
+
+    <!-- SECTION 1: STREAMING THEORY & SSE PROTOCOL -->
+    <section id="sec-sse-theory" class="section-panel active">
+      <div class="card">
+        <div class="card-title">📡 LLM Token Generation & The Streaming UX Bottleneck</div>
+        <div class="card-subtitle">Autoregressive token generation kaise kaam karta hai aur kyun Server-Sent Events (SSE) WebSockets se behtar choice hai.</div>
+
+        <p>
+          Large Language Models (LLMs) traditional MySQL queries ki tarah ek single pre-computed block mein output return nahi karte. LLMs **Autoregressive** hote hain — yaani wo probability calculation ke zariye <strong>ek time par ek single token</strong> predict karte hain.
+        </p>
+
+        <div class="grid-2">
+          <div class="info-box" style="border-top: 3px solid var(--accent-rose);">
+            <h4>❌ Synchronous (Non-Streaming) UX Flaw</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              - <strong>Latency:</strong> Agar model 600 tokens generate kar raha hai @ 40 tokens/sec, toh response aane mein <strong>15 SECONDS</strong> lagenge.<br>
+              - <strong>User Experience:</strong> User 15 seconds tak ek blank screen ya spinning loader dekhta hai. Use lagta hai system hang ho gaya hai.<br>
+              - <strong>Server Load:</strong> PHP-FPM worker thread poore 15 seconds tak block rehta hai.
+            </p>
+          </div>
+
+          <div class="info-box" style="border-top: 3px solid var(--accent-emerald);">
+            <h4>✅ Real-time Streaming (SSE) Excellence</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              - <strong>Latency:</strong> Time To First Token (TTFB) sirf <strong>200ms - 350ms</strong> hota hai!<br>
+              - <strong>User Experience:</strong> Jaise hi pehla word generate hota hai, screen par typewriter effect shuru ho jata hai. User us word ko read karne lagta hai jabki background mein baki words aate rehte hain.<br>
+              - <strong>Perceived Speed:</strong> User ko lagta hai application instant aur blazing fast hai!
+            </p>
+          </div>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.75rem; font-size: 1.15rem;">⚔️ SSE vs. WebSockets vs. Polling for AI in Laravel</h3>
+        <p>Aksar developers sochte hain ki real-time streaming ke liye WebSockets (jaise Laravel Reverb ya Pusher) zaroori hai. Aisa bilkul nahi hai:</p>
+
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Server-Sent Events (SSE)</th>
+              <th>WebSockets (Reverb/Pusher)</th>
+              <th>Long Polling</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Directionality</strong></td>
+              <td><strong>Unidirectional (Server to Client)</strong> — AI streams ke liye 100% perfect</td>
+              <td>Bidirectional (Full duplex)</td>
+              <td>Client initiates every request</td>
+            </tr>
+            <tr>
+              <td><strong>Protocol</strong></td>
+              <td>Standard HTTP (HTTP/1.1 chunked, HTTP/2 multiplexed)</td>
+              <td>Custom WebSocket protocol (<code>ws://</code>, <code>wss://</code>)</td>
+              <td>Repeated HTTP requests</td>
+            </tr>
+            <tr>
+              <td><strong>Infrastructure Overhead</strong></td>
+              <td><strong>Zero</strong> — Standard PHP-FPM + NGINX handle kar leta hai</td>
+              <td>Requires standalone daemon process (Reverb server + Redis)</td>
+              <td>High server load & DB query overhead</td>
+            </tr>
+            <tr>
+              <td><strong>Firewall & Proxy Traversal</strong></td>
+              <td>100% transparent (Port 80/443 standard HTTPS)</td>
+              <td>Corporate firewalls & proxies often block WebSocket upgrades</td>
+              <td>Standard HTTP</td>
+            </tr>
+            <tr>
+              <td><strong>Best Laravel Use Case</strong></td>
+              <td><strong>ChatGPT-style conversational streams & real-time text completion</strong></td>
+              <td>Multiplayer collaboration, live notifications, trading tickers</td>
+              <td>Legacy fallback only</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Anatomy of the Server-Sent Events (SSE) Wire Protocol</h3>
+        <p>SSE ek plain-text protocol hai jisme data chunks newline-separated format mein stream hote hain:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">http</span>
+            <span class="code-filename">Raw SSE Stream Chunk Format</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+X-Accel-Buffering: no
+
+data: {"text": "Laravel"}
+
+data: {"text": " ke"}
+
+data: {"text": " andar"}
+
+data: {"text": " AI"}
+
+data: {"text": " streaming"}
+
+data: {"text": " superfast"}
+
+data: {"text": " hai!"}
+
+data: [DONE]
+</code></pre>
+        </div>
+
+        <div class="callout tip">
+          <div class="callout-header">💡 Why X-Accel-Buffering: no is Mandatory</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Agar aapke production server par NGINX reverse proxy chal raha hai, toh by default NGINX PHP-FPM se aane wale chote 15-byte chunks ko buffer (store) kar leta hai aur jab buffer 4KB ya 8KB bhar jata hai tab ek saath bhejta hai. Result: User ko live typewriter effect nahi milta, balki ruk ruk kar bade paragraphs aate hain. Header <code>X-Accel-Buffering: no</code> NGINX ko instruct karta hai: <em>"Chunk jaise hi aaye, immediately flush karo!"</em>
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: PRISM GENERATION & STREAMING -->
+    <section id="sec-prism-api" class="section-panel">
+      <div class="card">
+        <div class="card-title">⚡ Prism Text & Streaming APIs Deep Dive</div>
+        <div class="card-subtitle">Kaise Prism-PHP multi-provider streaming complexity ko ek elegant PHP Generator syntax mein simplify karta hai.</div>
+
+        <p>
+          OpenAI, Anthropic Claude aur Groq har kisi ka streaming format thoda alag hota hai (e.g. OpenAI <code>choices[0].delta.content</code> bhejta hai jabki Anthropic <code>content_block_delta</code> bhejta hai). <strong>Prism-PHP</strong> in sabhi differences ko normalize karke ek clean PHP <code>Generator</code> provide karta hai.
+        </p>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Standard Non-Streaming Text API: Prism::text()</h3>
+        <p>Jab aapko background worker mein report summarize karni ho ya synchronous JSON output chahiye ho:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Text Generation Example</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+
+$response = Prism::text()
+    -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+    -&gt;withSystemPrompt('Aap ek Senior Laravel Architect hain. Code snippets ke saath explain karein.')
+    -&gt;withPrompt('Explain Eloquent eager loading in 2 bullet points.')
+    -&gt;withClientOptions([
+        'temperature' =&gt; 0.2, // Low temperature for deterministic factual answer
+        'max_tokens'  =&gt; 300, // Cost safety guardrail
+    ])
+    -&gt;generate();
+
+// Response Object Inspection
+$text         = $response-&gt;text;
+$finishReason = $response-&gt;finishReason; // 'stop' ya 'length'
+$inputTokens  = $response-&gt;usage-&gt;promptTokens;
+$outputTokens = $response-&gt;usage-&gt;completionTokens;</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Real-time Streaming API: Prism::stream()</h3>
+        <p>Jab aapko frontend par real-time typewriter effect deliver karna ho. <code>Prism::stream()</code> ek PHP <code>Generator</code> return karta hai jise aap <code>foreach</code> loop ke zariye chunk-by-chunk consume kar sakte hain:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Streaming Generator Example</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Streaming\Events\TextDeltaChunk;
+use Prism\Prism\Streaming\Events\FinishChunk;
+
+// Create Stream Generator
+$stream = Prism::stream()
+    -&gt;using(Provider::Anthropic, 'claude-3-5-sonnet-20241022')
+    -&gt;withSystemPrompt('You are a helpful coding assistant.')
+    -&gt;withPrompt('Write a clean PHP 8.3 enum for OrderStatus with payment states.')
+    -&gt;generate();
+
+// Iterate through chunks as they arrive from Anthropic/OpenAI
+foreach ($stream as $chunk) {
+    if ($chunk instanceof TextDeltaChunk) {
+        // Individual word ya token piece (e.g. "enum ", "OrderStatus: ", "string")
+        echo $chunk-&gt;text;
+    }
+
+    if ($chunk instanceof FinishChunk) {
+        // Final token metrics and completion reason
+        $finalReason = $chunk-&gt;finishReason;
+        $totalTokens = $chunk-&gt;usage-&gt;totalTokens();
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="margin: 1.5rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">🎯 Comparison: generate() vs. stream()</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Return Type</th>
+              <th>TTFB (First Byte)</th>
+              <th>Best Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Prism::text()-&gt;generate()</code></td>
+              <td><code>Prism\Prism\Text\Response</code></td>
+              <td>Slow (Wait for full text)</td>
+              <td>Background Jobs, Scheduled commands, JSON extraction, Cron tasks</td>
+            </tr>
+            <tr>
+              <td><code>Prism::stream()-&gt;generate()</code></td>
+              <td><code>Generator&lt;StreamChunk&gt;</code></td>
+              <td><strong>Instant (~200ms)</strong></td>
+              <td>Livewire Chat, Vue 3 Typewriter UI, Real-time code assistants</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: LARAVEL STREAMEDRESPONSE CONTROLLER -->
+    <section id="sec-streaming-backend" class="section-panel">
+      <div class="card">
+        <div class="card-title">🛠️ Building the Production Laravel StreamedResponse</div>
+        <div class="card-subtitle">Zero-buffering controller architecture jo client disconnects aur token wastage ko handle karta hai.</div>
+
+        <p>
+          Ek production-ready streaming controller likhte waqt 3 critical cheezon ka dhyan rakhna padta hai:
+          <br>1. <strong>Output Buffering:</strong> PHP ke default buffers ko disable karna taaki har token instantly socket par write ho.
+          <br>2. <strong>Client Abort Guard:</strong> Agar user tab close kar de ya cancel button dabaye, toh LLM loop immediately break ho jaye taaki aapke API dollars waste na hon!
+          <br>3. <strong>JSON Encoded SSE Payloads:</strong> Chunks ke andar raw newlines ya double quotes hone par plain string SSE format break ho jata hai; isliye JSON encode karna mandatory hai.
+        </p>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">AiChatStreamController Implementation</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Http/Controllers/AiChatStreamController.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Streaming\Events\TextDeltaChunk;
+use Prism\Prism\Streaming\Events\FinishChunk;
+
+class AiChatStreamController extends Controller
+{
+    /**
+     * Stream LLM response chunks as Server-Sent Events (SSE)
+     */
+    public function __invoke(Request $request): StreamedResponse
+    {
+        $validated = $request-&gt;validate([
+            'prompt'   =&gt; ['required', 'string', 'max:2000'],
+            'model'    =&gt; ['nullable', 'string'],
+        ]);
+
+        $prompt = $validated['prompt'];
+        $model  = $validated['model'] ?? 'gpt-4o-mini';
+
+        return response()-&gt;stream(function () use ($prompt, $model) {
+            // 1. PHP output buffering ko completely clear aur disable karein
+            while (ob_get_level() &gt; 0) {
+                ob_end_flush();
+            }
+
+            // 2. Prism stream initialize karein
+            $stream = Prism::stream()
+                -&gt;using(Provider::OpenAI, $model)
+                -&gt;withSystemPrompt('You are an expert Laravel pair programmer. Provide clear, concise answers.')
+                -&gt;withPrompt($prompt)
+                -&gt;withClientOptions([
+                    'temperature' =&gt; 0.7,
+                    'max_tokens'  =&gt; 1200,
+                ])
+                -&gt;generate();
+
+            // 3. Loop over chunks as they arrive from the AI provider
+            foreach ($stream as $chunk) {
+                // Client tab close guard: Agar user ne browser close kar diya toh turant exit karein!
+                if (connection_aborted()) {
+                    break;
+                }
+
+                if ($chunk instanceof TextDeltaChunk) {
+                    // Send JSON payload in standard SSE 'data: ...' format
+                    echo "data: " . json_encode(['text' =&gt; $chunk-&gt;text]) . "\n\n";
+                    flush();
+                }
+
+                if ($chunk instanceof FinishChunk) {
+                    // Send completion event with token metrics
+                    echo "data: " . json_encode([
+                        'finished'     =&gt; true,
+                        'finish_reason'=&gt; $chunk-&gt;finishReason,
+                        'total_tokens' =&gt; $chunk-&gt;usage-&gt;totalTokens(),
+                    ]) . "\n\n";
+                    flush();
+                }
+            }
+
+            // 4. Stream completion sentinel
+            echo "data: [DONE]\n\n";
+            flush();
+
+        }, 200, [
+            'Content-Type'      =&gt; 'text/event-stream',
+            'Cache-Control'     =&gt; 'no-cache, no-transform',
+            'Connection'        =&gt; 'keep-alive',
+            'X-Accel-Buffering' =&gt; 'no', // NGINX buffering disable karein
+        ]);
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Route Registration in routes/api.php ya routes/web.php</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">routes/web.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use App\Http\Controllers\AiChatStreamController;
+
+Route::middleware(['auth:sanctum'])-&gt;group(function () {
+    Route::post('/api/ai/stream', AiChatStreamController::class)-&gt;name('ai.stream');
+});</code></pre>
+        </div>
+
+        <div class="callout danger">
+          <div class="callout-header">🚨 Crucial Gotcha: Session Locking in Laravel Streaming</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Default Laravel web routes par standard Session middleware active hota hai jo request ke start par session file/row ko <strong>exclusive lock</strong> kar deta hai. Agar ek user ka streaming request 20 seconds chal raha hai, toh woh user doosre tab mein koi naya page open nahi kar payega kyunki session lock release nahi hua!
+            <br><strong>Solution:</strong> Stream start karne se pehle <code>Session::save();</code> call karein taaki session lock release ho jaye, ya fir is endpoint ko stateless <code>routes/api.php</code> mein rakhein.
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: LIVEWIRE V3 & VUE 3 FRONTEND IMPLEMENTATION -->
+    <section id="sec-frontend-livewire-vue" class="section-panel">
+      <div class="card">
+        <div class="card-title">💻 Frontend Real-Time Streaming: Livewire v3 & Vue 3</div>
+        <div class="card-subtitle">Fetch API ReadableStream ke saath ChatGPT jaisa buttery-smooth typewriter effect aur Cancel button implement karein.</div>
+
+        <p>
+          Purana browser <code>EventSource</code> API sirf <code>GET</code> requests support karta hai aur custom Authorization headers send nahi kar pata. Modern web development mein hum <strong>Fetch API ReadableStream</strong> use karte hain jo <code>POST</code> payload aur CSRF/Bearer tokens dono seamlessly handle karta hai.
+        </p>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Option A: Livewire v3 & Alpine.js Implementation</h3>
+        <p>Agar aap TALL stack (Tailwind, Alpine, Laravel, Livewire) use karte hain, toh yeh clean Alpine.js streaming pattern best hai:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">html</span>
+            <span class="code-filename">resources/views/livewire/ai-chat-stream.blade.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;div x-data="aiChat()" class="max-w-2xl mx-auto p-4 bg-gray-900 rounded-xl border border-gray-800"&gt;
+    &lt;!-- Chat Messages Container --&gt;
+    &lt;div class="space-y-4 mb-4 h-96 overflow-y-auto p-2" x-ref="chatBox"&gt;
+        &lt;template x-for="(msg, index) in messages" :key="index"&gt;
+            &lt;div :class="msg.role === 'user' ? 'text-right' : 'text-left'"&gt;
+                &lt;div :class="msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-200'"
+                     class="inline-block p-3 rounded-xl max-w-[85%] whitespace-pre-wrap leading-relaxed shadow"&gt;
+                    &lt;span x-text="msg.content"&gt;&lt;/span&gt;
+                    &lt;!-- Blinking Cursor during live streaming --&gt;
+                    &lt;span x-show="isStreaming &amp;&amp; index === messages.length - 1 &amp;&amp; msg.role === 'assistant'" 
+                          class="inline-block w-2 h-4 bg-sky-400 animate-pulse ml-1"&gt;&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/template&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Input Form &amp; Controls --&gt;
+    &lt;form @submit.prevent="sendMessage" class="flex gap-2"&gt;
+        &lt;input type="text" x-model="userInput" :disabled="isStreaming"
+               placeholder="Ask Laravel AI anything..."
+               class="flex-1 bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-sky-500"&gt;
+
+        &lt;button type="submit" x-show="!isStreaming"
+                class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-2 rounded-lg transition"&gt;
+            Send
+        &lt;/button&gt;
+
+        &lt;button type="button" @click="stopGeneration" x-show="isStreaming"
+                class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4 py-2 rounded-lg transition"&gt;
+            Stop
+        &lt;/button&gt;
+    &lt;/form&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+function aiChat() {
+    return {
+        userInput: '',
+        isStreaming: false,
+        abortController: null,
+        messages: [
+            { role: 'assistant', content: 'Hello! Main aapka Laravel AI assistant hoon. Kaise madad karun?' }
+        ],
+
+        async sendMessage() {
+            if (!this.userInput.trim() || this.isStreaming) return;
+
+            const promptText = this.userInput;
+            this.messages.push({ role: 'user', content: promptText });
+            this.userInput = '';
+
+            // Assistant placeholder message add karein
+            this.messages.push({ role: 'assistant', content: '' });
+            this.isStreaming = true;
+            this.abortController = new AbortController();
+
+            try {
+                const response = await fetch('/api/ai/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                    },
+                    body: JSON.stringify({ prompt: promptText }),
+                    signal: this.abortController.signal,
+                });
+
+                if (!response.ok) throw new Error('Stream request failed');
+
+                // Read incoming stream chunks
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let assistantMsgIndex = this.messages.length - 1;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const dataStr = line.replace('data: ', '').trim();
+                            if (dataStr === '[DONE]') break;
+
+                            try {
+                                const parsed = JSON.parse(dataStr);
+                                if (parsed.text) {
+                                    this.messages[assistantMsgIndex].content += parsed.text;
+                                    this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight;
+                                }
+                            } catch (e) {
+                                // Skip non-JSON frames
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    console.log('Stream generation manually aborted by user');
+                } else {
+                    console.error('Streaming error:', err);
+                }
+            } finally {
+                this.isStreaming = false;
+                this.abortController = null;
+            }
+        },
+
+        stopGeneration() {
+            if (this.abortController) {
+                this.abortController.abort(); // Browser socket close karega -&gt; PHP connection_aborted() trigger hoga!
+            }
+        }
+    };
+}
+&lt;/script&gt;</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">Option B: Vue 3 (Composition API) & Inertia.js Composable</h3>
+        <p>Agar aapka stack Vue 3 + Inertia hai, toh aap is logic ko ek reusable composable <code>useAiStream()</code> mein encapsulate kar sakte hain:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">javascript</span>
+            <span class="code-filename">resources/js/composables/useAiStream.js</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>import { ref } from 'vue';
+
+export function useAiStream(endpoint = '/api/ai/stream') {
+    const isStreaming = ref(false);
+    let abortController = null;
+
+    const streamPrompt = async (prompt, onChunk, onFinish) => {
+        isStreaming.value = true;
+        abortController = new AbortController();
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+                signal: abortController.signal
+            });
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const textChunk = decoder.decode(value, { stream: true });
+                const lines = textChunk.split('\n\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const raw = line.slice(6).trim();
+                        if (raw === '[DONE]') return onFinish && onFinish();
+
+                        try {
+                            const json = JSON.parse(raw);
+                            if (json.text) onChunk(json.text);
+                        } catch (e) {}
+                    }
+                }
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') throw err;
+        } finally {
+            isStreaming.value = false;
+            abortController = null;
+        }
+    };
+
+    const stop = () => abortController && abortController.abort();
+
+    return { isStreaming, streamPrompt, stop };
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: MULTI-TURN CONVERSATION MEMORY -->
+    <section id="sec-conversation-memory" class="section-panel">
+      <div class="card">
+        <div class="card-title">🧠 Multi-Turn Conversation Memory & Context Management</div>
+        <div class="card-subtitle">Eloquent schema, sliding window context buffers aur token inflation defense.</div>
+
+        <p>
+          LLMs completely **Stateless** hote hain. Model ko yeh yaad nahi hota ki pichli request mein aapne kya pucha tha. Multi-turn conversation (jaise ChatGPT) achieve karne ke liye client ya database se <strong>pichli chat history ko har request ke saath re-send karna padta hai</strong>.
+        </p>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Database Architecture: Conversations & Messages</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">database/migrations/create_ai_chat_tables.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>Schema::create('ai_conversations', function (Blueprint $table) {
+    $table-&gt;id();
+    $table-&gt;foreignId('user_id')-&gt;constrained()-&gt;cascadeOnDelete();
+    $table-&gt;string('title')-&gt;default('New Chat');
+    $table-&gt;string('model')-&gt;default('gpt-4o-mini');
+    $table-&gt;text('system_prompt')-&gt;nullable();
+    $table-&gt;timestamps();
+});
+
+Schema::create('ai_messages', function (Blueprint $table) {
+    $table-&gt;id();
+    $table-&gt;foreignId('conversation_id')-&gt;constrained('ai_conversations')-&gt;cascadeOnDelete();
+    $table-&gt;enum('role', ['user', 'assistant', 'system']);
+    $table-&gt;text('content');
+    $table-&gt;unsignedInteger('tokens')-&gt;nullable();
+    $table-&gt;timestamps();
+
+    $table-&gt;index(['conversation_id', 'created_at']);
+});</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">2. Eloquent Model Relationships & Message Mapping</h3>
+        <p>Eloquent records ko Prism ke Value Objects (<code>UserMessage</code>, <code>AssistantMessage</code>) mein convert karein:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Models/AiConversation.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\ValueObjects\Messages\AssistantMessage;
+
+class AiConversation extends Model
+{
+    protected $guarded = [];
+
+    public function messages(): HasMany
+    {
+        return $this-&gt;hasMany(AiMessage::class, 'conversation_id');
+    }
+
+    /**
+     * Get recent messages formatted for Prism with sliding buffer
+     */
+    public function getRecentPrismMessages(int $limit = 10): array
+    {
+        return $this-&gt;messages()
+            -&gt;latest('id')
+            -&gt;take($limit)
+            -&gt;get()
+            -&gt;reverse()
+            -&gt;map(fn (AiMessage $m) =&gt; match ($m-&gt;role) {
+                'user'      =&gt; new UserMessage($m-&gt;content),
+                'assistant' =&gt; new AssistantMessage($m-&gt;content),
+            })
+            -&gt;values()
+            -&gt;toArray();
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">3. The Token Inflation Problem & Sliding Window Truncation</h3>
+        <p>
+          Agar aap ek chat mein user ke 50 previous messages bhejte rahenge, toh har request mein <strong>input tokens exponentially grow karenge</strong>. Chat lambi hote hi ek single prompt $0.15 cost karega aur context window limit (e.g. 128k tokens) hit ho jayegi!
+        </p>
+
+        <div class="grid-2">
+          <div class="info-box">
+            <h4>🛡️ Strategy 1: Sliding Window (Last N Messages)</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Sirf last <strong>6 se 10 messages</strong> retrieve karke pass karein. Casual customer support chats ke liye 95% cases mein pichle 5 interactions kaafi hote hain. Low cost aur high speed.
+            </p>
+          </div>
+
+          <div class="info-box">
+            <h4>🧠 Strategy 2: AI Summarization Buffer</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Jab message count 20 exceed kare, ek background job trigger karein jo pehle 15 messages ko <strong>ek short 2-line summary</strong> mein compress kar de, aur use system prompt context mein inject kar de!
+            </p>
+          </div>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Streaming with Conversation History in Controller</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Controller Multi-turn Integration</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>// User message ko DB mein persist karein
+$conversation-&gt;messages()-&gt;create([
+    'role'    =&gt; 'user',
+    'content' =&gt; $prompt,
+]);
+
+// Sliding buffer (last 8 messages) fetch karein
+$history = $conversation-&gt;getRecentPrismMessages(limit: 8);
+
+$stream = Prism::stream()
+    -&gt;using(Provider::OpenAI, $conversation-&gt;model)
+    -&gt;withSystemPrompt($conversation-&gt;system_prompt ?? 'You are a helpful assistant.')
+    -&gt;withMessages($history) // Full multi-turn context passed here!
+    -&gt;generate();
+
+// Stream chunks &amp; aggregate full text in background to save assistant response
+$fullAssistantResponse = '';
+foreach ($stream as $chunk) {
+    if ($chunk instanceof TextDeltaChunk) {
+        $fullAssistantResponse .= $chunk-&gt;text;
+        echo "data: " . json_encode(['text' =&gt; $chunk-&gt;text]) . "\n\n";
+        flush();
+    }
+}
+
+// Save complete assistant answer in database
+$conversation-&gt;messages()-&gt;create([
+    'role'    =&gt; 'assistant',
+    'content' =&gt; $fullAssistantResponse,
+]);</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: TESTING AI WITH PEST PHP FAKE -->
+    <section id="sec-testing-pest" class="section-panel">
+      <div class="card">
+        <div class="card-title">🧪 Testing AI Workflows with Pest PHP & Prism::fake()</div>
+        <div class="card-subtitle">Zero API cost aur lightning fast CI/CD builds ke liye AI calls ko mock karna.</div>
+
+        <p>
+          Automated unit tests ya CI/CD pipeline mein kabhi bhi live OpenAI ya Anthropic APIs call mat karein. Real calls test suite ko <strong>flaky, slow (25+ seconds) aur expensive</strong> bana deti hain.
+        </p>
+        <p>
+          Laravel ecosystem ka standard testing tool <strong>Pest PHP</strong> aur Prism ka <code>Prism::fake()</code> out-of-the-box zero-cost deterministic testing allow karta hai:
+        </p>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Testing Standard AI Generation with Pest</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">tests/Feature/AiAssistantTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+use App\Models\User;
+use App\Models\AiConversation;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Testing\TextResponseFake;
+use Prism\Prism\ValueObjects\Usage;
+
+it('generates an AI answer and stores messages in database', function () {
+    // 1. Mock the Prism AI response (Zero dollars spent!)
+    Prism::fake([
+        (new TextResponseFake())
+            -&gt;withText('Laravel Queues allow you to offload time-consuming AI requests asynchronously.')
+            -&gt;withUsage(new Usage(promptTokens: 15, completionTokens: 12))
+    ]);
+
+    $user = User::factory()-&gt;create();
+    $conversation = AiConversation::factory()-&gt;create(['user_id' =&gt; $user-&gt;id]);
+
+    // 2. Trigger your API endpoint
+    $response = $this-&gt;actingAs($user)-&gt;postJson("/api/conversations/{$conversation-&gt;id}/ask", [
+        'prompt' =&gt; 'Explain Laravel Queues for AI',
+    ]);
+
+    // 3. Assert HTTP response
+    $response-&gt;assertOk()
+        -&gt;assertJsonPath('data.text', 'Laravel Queues allow you to offload time-consuming AI requests asynchronously.');
+
+    // 4. Assert Database persistence
+    $this-&gt;assertDatabaseHas('ai_messages', [
+        'conversation_id' =&gt; $conversation-&gt;id,
+        'role'            =&gt; 'user',
+        'content'         =&gt; 'Explain Laravel Queues for AI',
+    ]);
+
+    $this-&gt;assertDatabaseHas('ai_messages', [
+        'conversation_id' =&gt; $conversation-&gt;id,
+        'role'            =&gt; 'assistant',
+    ]);
+
+    // 5. Assert Prism AI Assertions
+    Prism::assertPromptContains('Explain Laravel Queues for AI');
+});</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Testing SSE Streaming Headers in Pest</h3>
+        <p>Ensure karein ki streaming controller correct SSE headers aur zero-buffering directives return kar raha hai:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">tests/Feature/AiStreamHeadersTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+use App\Models\User;
+use Prism\Prism\Facades\Prism;
+
+it('returns valid server-sent events headers for streaming', function () {
+    Prism::fakeStream([
+        'Laravel', ' is', ' awesome!'
+    ]);
+
+    $user = User::factory()-&gt;create();
+
+    $response = $this-&gt;actingAs($user)-&gt;post('/api/ai/stream', [
+        'prompt' =&gt; 'Why Laravel?',
+    ]);
+
+    // Critical SSE Headers validation
+    $response-&gt;assertOk();
+    $response-&gt;assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
+    $response-&gt;assertHeader('Cache-Control', 'no-cache, no-transform');
+    $response-&gt;assertHeader('X-Accel-Buffering', 'no');
+});</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">3. Testing Rate Limit Fallback Chains</h3>
+        <p>Test karein ki agar primary provider (OpenAI) 429 error throw kare, toh aapka code safely fallback model par switch hota hai:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">tests/Feature/AiFallbackTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Exceptions\PrismRateLimitedException;
+use Prism\Prism\Testing\TextResponseFake;
+
+it('switches to fallback provider when primary provider is rate limited', function () {
+    // First call (OpenAI) throws rate limit exception, second call (Anthropic) succeeds
+    Prism::fake([
+        new PrismRateLimitedException('OpenAI RPM exceeded'),
+        (new TextResponseFake())-&gt;withText('Fallback response from Claude'),
+    ]);
+
+    $service = app(\App\Services\AiService::class);
+    $result = $service-&gt;generateWithFallback('Write a test prompt');
+
+    expect($result)-&gt;toBe('Fallback response from Claude');
+});</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: NGINX TUNING, GOTCHAS & CHEATSHEET -->
+    <section id="sec-nginx-cheatsheet" class="section-panel">
+      <div class="card">
+        <div class="card-title">🚀 Production NGINX Configuration & Architecture Cheatsheet</div>
+        <div class="card-subtitle">Server-level tuning taaki live streaming production high concurrency par fail na ho.</div>
+
+        <p>
+          Localhost (<code>php artisan serve</code>) par streaming perfect chalti hai, lekin production Linux server par NGINX aur PHP-FPM default settings streaming ko block kar deti hain. Yahan essential server configuration di gayi hai:
+        </p>
+
+        <h3 style="color: #7dd3fc; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. NGINX Site Configuration for Server-Sent Events</h3>
+        <p>Apne <code>/etc/nginx/sites-available/your-domain.conf</code> ke andar <code>location /api/ai/stream</code> ya main PHP block mein yeh directives add karein:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">nginx</span>
+            <span class="code-filename">/etc/nginx/sites-available/app.conf</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>location ~ \.php$ {
+    include fastcgi_params;
+    fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+
+    # --- Crucial SSE Streaming Directives ---
+    fastcgi_buffering off;             # Disables FastCGI response buffering
+    fastcgi_read_timeout 300s;         # Prevents 504 Gateway Timeout during reasoning
+    fastcgi_keep_conn on;              # Keeps connection persistent
+    proxy_buffering off;               # If using Nginx as reverse proxy
+    proxy_read_timeout 300s;
+    chunked_transfer_encoding on;      # Ensures HTTP 1.1 chunked transfer works
+}</code></pre>
+        </div>
+
+        <h3 style="color: #7dd3fc; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. PHP-FPM Concurrency Trap (Worker Exhaustion)</h3>
+        <div class="callout warning">
+          <div class="callout-header">⚠️ Warning: FPM Process Pool Starvation</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Standard PHP CRUD request sirf 30ms mein worker release kar deta hai. Lekin streaming request <strong>15 se 30 seconds tak ek dedicated PHP-FPM worker hold karke rakhta hai!</strong>
+            <br>Agar aapke server par <code>pm.max_children = 20</code> set hai aur 20 users ek saath streaming chat shuru kar dete hain, toh <strong>server par 21st user ka standard web page bhi 502/504 choke ho jayega!</strong>
+            <br><strong>Production Fix:</strong> AI streaming ke liye alag PHP-FPM pool banayein (e.g. <code>[ai_pool]</code> on dedicated socket) ya worker capacity badhayein, aur continuous background tasks ke liye <strong>Laravel Queues + Horizon</strong> use karein.
+          </p>
+        </div>
+
+        <h3 style="margin: 1.75rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">📋 Module 02 Quick Reference Cheatsheet</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Syntax / Command</th>
+              <th>Key Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Non-streaming Call</strong></td>
+              <td><code>Prism::text()-&gt;using(...)-&gt;generate()</code></td>
+              <td>Returns <code>Text\Response</code>; ideal for background jobs</td>
+            </tr>
+            <tr>
+              <td><strong>Real-time Stream</strong></td>
+              <td><code>Prism::stream()-&gt;using(...)-&gt;generate()</code></td>
+              <td>Returns PHP <code>Generator</code>; yields <code>TextDeltaChunk</code></td>
+            </tr>
+            <tr>
+              <td><strong>Laravel Stream</strong></td>
+              <td><code>response()-&gt;stream(fn () =&gt; ..., 200, $headers)</code></td>
+              <td>Headers must contain <code>X-Accel-Buffering: no</code></td>
+            </tr>
+            <tr>
+              <td><strong>Stop on Tab Close</strong></td>
+              <td><code>if (connection_aborted()) break;</code></td>
+              <td>Saves API cost when user navigates away or cancels</td>
+            </tr>
+            <tr>
+              <td><strong>Pest Mocking</strong></td>
+              <td><code>Prism::fake([(new TextResponseFake())-&gt;...])</code></td>
+              <td>Fast, deterministic, zero-cost CI/CD unit testing</td>
+            </tr>
+            <tr>
+              <td><strong>Session Lock Trap</strong></td>
+              <td><code>Session::save();</code> before stream</td>
+              <td>Releases PHP session file lock so other tabs don't freeze</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(56, 189, 248, 0.1)); border-color: rgba(16, 185, 129, 0.4); margin-top: 2rem;">
+          <h3 style="color: #6ee7b7; margin-bottom: 0.5rem;">⏭️ Upcoming Next: Module 03</h3>
+          <p style="color: #cbd5e1; margin-bottom: 1rem;">
+            <strong>Module 03: RAG (Retrieval-Augmented Generation) & PostgreSQL pgvector</strong> mein hum sikhenge:
+          </p>
+          <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.7;">
+            <li>Private enterprise data par AI ko train kiye bina accurate Q&A kaise banayein (Zero hallucination)</li>
+            <li>PostgreSQL mein <code>pgvector</code> extension enable karna aur Eloquent vector queries likhna</li>
+            <li>OpenAI <code>text-embedding-3-small</code> vectors generate karna aur Cosine similarity search</li>
+            <li>50-page PDF policy documents ko intelligent chunks mein split karna</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p>AI for Laravel Developers Masterclass Suite • Production Grade & Enterprise Tested</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Learning Portal Home</a> • 
+      <a href="01_AI_Roadmap_and_Setup.html">Module 01: Setup</a> • 
+      <a href="#sec-sse-theory">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(sectionId);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy to Clipboard
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('pre code') || codeBlock.querySelector('pre');
+      if (!code) return;
+
+      navigator.clipboard.writeText(code.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 06: Database Integrations & Advanced Patterns | TypeScript for Node.js</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #3178c6; /* TypeScript Blue */
+      --accent-glow: rgba(49, 120, 198, 0.25);
+      --accent-ts: #3178c6;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-prisma: #5a67d8;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #3178c6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3178c6, #5a67d8);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #3178c6, #0284c7);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(49, 120, 198, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-prisma);
+      filter: blur(100px);
+      opacity: 0.2;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(90, 103, 216, 0.1);
+      color: var(--accent-prisma);
+      border: 1px solid rgba(90, 103, 216, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(90, 103, 216, 0.1);
+      color: var(--accent-prisma);
+      border-color: rgba(90, 103, 216, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(90, 103, 216, 0.15);
+      color: var(--accent-prisma);
+      border: 1px solid rgba(90, 103, 216, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-prisma); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(90, 103, 216, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-prisma);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-class { color: #4ec9b0; font-weight: bold; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">TS</span>
+      TypeScript for Node.js
+    </a>
+    <div class="nav-links">
+      <a href="05_Expressjs_with_TypeScript.html" class="nav-btn">⬅️ Previous: Express.js</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 06</span>
+      <h1 class="hero-title">Database Integrations &amp; Advanced Patterns</h1>
+      <p class="hero-desc">
+        Final module! Yahan hum Node.js ke sabse advanced concepts cover karenge: Database ORMs ko strongly type kaise karein, Custom Error classes kaise banayein, aur Runtime par validation (Zod) ka TypeScript ke sath ultimate combo kaise banayein.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-orms', this)"><span class="sidebar-icon">🗄️</span> 1. TypeScript ORMs</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-errors', this)"><span class="sidebar-icon">🚨</span> 2. Custom Error Classes</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-runtime', this)"><span class="sidebar-icon">⚠️</span> 3. Compile vs Runtime Check</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-zod', this)"><span class="sidebar-icon">💎</span> 4. Zod + TypeScript Combo</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: ORMs -->
+        <section id="sec-orms" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🗄️ Persistence • Part 1 • The Database Bridge</div>
+              <h2 class="panel-title">TypeScript ORMs (TypeORM vs Prisma)</h2>
+              <p class="panel-subtitle">
+                Backend app bina database ke adhoori hai. TypeScript mein Sequelize purana ho chuka hai, aaj kal TypeORM aur Prisma rule kar rahe hain.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card info-card">
+                <h4 style="color:var(--accent-ts); margin-bottom:10px;">🛡️ TypeORM (The OOP Way)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  TypeORM completely <strong>Classes aur Decorators</strong> par based hai. Ye NestJS ka default choice hai.<br>
+                  <em>Syntax:</em> <code>@Entity() class User { @PrimaryGeneratedColumn() id: number; }</code>
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">💎 Prisma (The Modern Way)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Prisma decorators use nahi karta. Aap ek <code>schema.prisma</code> file mein database design karte hain, aur Prisma automatically aapke liye <strong>TypeScript Types generate karta hai</strong>.<br>
+                  <em>Currently the most loved ORM by Node.js developers.</em>
+                </p>
+              </div>
+            </div>
+
+            <div class="callout-card" style="background: rgba(90, 103, 216, 0.1); border: 1px solid rgba(90, 103, 216, 0.3); margin-top: 20px;">
+              <h4 style="color: #5a67d8; margin-bottom: 8px;">💡 How Prisma saves you time</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Prisma automatically har model ke liye ek TypeScript Interface bana deta hai. <br>
+                For example, aap directly <code>import { User } from '@prisma/client'</code> kar sakte hain, aur us Type ko apne Express controllers aur functions mein use kar sakte hain bina manully Interface likhe!
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Custom Error Classes -->
+        <section id="sec-errors" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚨 Architecture • Part 2 • Standardizing Fails</div>
+              <h2 class="panel-title">Custom Error Classes</h2>
+              <p class="panel-subtitle">
+                Jab aap Node.js mein error throw karte hain (<code>throw new Error("Not found")</code>), toh usme HTTP Status code nahi hota. TypeScript OOPs ka use karke hum <code>AppError</code> class bana sakte hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Extending the Error Class</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-comment">// 1. Hum native Error class ko 'extend' (inherit) kar rahe hain</span>
+<span class="ts-keyword">export</span> <span class="ts-keyword">class</span> <span class="ts-class">AppError</span> <span class="ts-keyword">extends</span> <span class="ts-class">Error</span> {
+    <span class="ts-keyword">public</span> readonly statusCode: <span class="ts-type">number</span>;
+    <span class="ts-keyword">public</span> readonly isOperational: <span class="ts-type">boolean</span>;
+
+    <span class="ts-keyword">constructor</span>(message: <span class="ts-type">string</span>, statusCode: <span class="ts-type">number</span>) {
+        <span class="ts-keyword">super</span>(message); <span class="ts-comment">// Call parent Error constructor</span>
+        
+        <span class="ts-keyword">this</span>.statusCode = statusCode;
+        <span class="ts-keyword">this</span>.isOperational = <span class="ts-keyword">true</span>; <span class="ts-comment">// True matlab expected error (e.g. invalid password)</span>
+
+        <span class="ts-comment">// Capturing stack trace prevents constructor from polluting the trace</span>
+        Error.captureStackTrace(<span class="ts-keyword">this</span>, <span class="ts-keyword">this</span>.constructor);
+    }
+}
+
+<span class="ts-comment">// 2. Usage in Controller</span>
+<span class="ts-keyword">const</span> findUser = <span class="ts-keyword">async</span> (id: <span class="ts-type">number</span>) =&gt; {
+    <span class="ts-keyword">const</span> user = <span class="ts-keyword">null</span>; <span class="ts-comment">// DB Mock</span>
+    <span class="ts-keyword">if</span> (!user) {
+        <span class="ts-comment">// Ab hum specific status code ke sath throw kar sakte hain!</span>
+        <span class="ts-keyword">throw</span> <span class="ts-keyword">new</span> AppError(<span class="ts-string">"User not found in Database"</span>, <span class="ts-type">404</span>);
+    }
+};
+</code></pre>
+            </div>
+            
+            <p style="color: #94a3b8; font-size: 0.95rem;">
+              Module 05 mein banaye gaye <strong>Global Error Handler</strong> mein aap <code>if (err instanceof AppError)</code> check karke user ko proper HTTP status send kar sakte hain, jabki baaki errors ko 500 (Internal Server Error) treat kar sakte hain.
+            </p>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Compile vs Runtime -->
+        <section id="sec-runtime" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">⚠️ Security • Part 3 • The Illusion of Safety</div>
+              <h2 class="panel-title">Compile-Time vs Runtime Validation</h2>
+              <p class="panel-subtitle">
+                TypeScript siraf code likhte waqt kaam aati hai (Compile-Time). Jab aapka Node.js server chal raha hota hai (Runtime), tab TypeScript gayab ho chuki hoti hai! Ye ek bahut bada security risk ban sakta hai.
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">❌ The "as" Trap</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Maan lijiye aapne express mein likha: <code>const body = req.body as CreateUserPayload;</code> <br>
+                TypeScript khush ho jayega aur errors nahi dega. Lekin jab Postman se koi hacker password ke bina request bhejega, toh server runtime pe fail ho jayega kyunki "as" keyword ne actually data validate nahi kiya, sirf type enforce kiya!
+              </p>
+            </div>
+
+            <p style="color: #94a3b8; font-size: 0.95rem; margin-top: 15px;">
+              Isliye, humein Runtime par object shape validate karne ke liye Joi, Yup, ya sabse best: <strong>Zod</strong> ki zaroorat padti hai.
+            </p>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Zod + TypeScript -->
+        <section id="sec-zod" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">💎 The Ultimate Combo • Part 4 • Zod</div>
+              <h2 class="panel-title">Zod + TypeScript (Type Inference)</h2>
+              <p class="panel-subtitle">
+                Zod ek schema declaration aur validation library hai. Iski sabse badi khasiyat ye hai ki aap schema banate hain, aur TypeScript automatically us schema se <strong>Type infer (generate) kar leta hai</strong>. Aapko Interface alag se likhne ki zaroorat nahi!
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Zod Schema & Type Inference</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">import</span> { z } <span class="ts-keyword">from</span> <span class="ts-string">'zod'</span>;
+
+<span class="ts-comment">// 1. Define the Runtime Validation Schema (ZOD)</span>
+<span class="ts-keyword">const</span> userSchema = z.object({
+    username: z.string().min(<span class="ts-type">3</span>, <span class="ts-string">"Username too short"</span>),
+    email: z.string().email(),
+    age: z.number().optional()
+});
+
+<span class="ts-comment">// 2. THE MAGIC: Extract the TypeScript Type from the Schema!</span>
+<span class="ts-comment">// Ab aapko 'interface UserPayload { ... }' alag se likhne ki zarurat nahi!</span>
+<span class="ts-keyword">type</span> <span class="ts-type">UserPayload</span> = z.<span class="ts-type">infer</span><span class="ts-generic">&lt;typeof userSchema&gt;</span>;
+
+<span class="ts-comment">/* TS implicitly knows that UserPayload is:
+   {
+      username: string;
+      email: string;
+      age?: number | undefined;
+   }
+*/</span>
+
+<span class="ts-comment">// 3. Express Controller Example</span>
+<span class="ts-keyword">export</span> <span class="ts-keyword">const</span> register = (req: <span class="ts-type">Request</span>, res: <span class="ts-type">Response</span>) =&gt; {
+    <span class="ts-keyword">try</span> {
+        <span class="ts-comment">// .parse() runtime pe check karega ki data sahi hai ya nahi</span>
+        <span class="ts-comment">// Agar sahi hai, toh 'validatedData' automatically 'UserPayload' type ka ban jayega!</span>
+        <span class="ts-keyword">const</span> validatedData = userSchema.parse(req.body);
+        
+        console.log(validatedData.email); <span class="ts-comment">// 100% Type Safe and Verified!</span>
+        res.json({ success: <span class="ts-keyword">true</span> });
+
+    } <span class="ts-keyword">catch</span> (err) {
+        <span class="ts-comment">// Zod errors are caught here (e.g. invalid email)</span>
+        res.status(<span class="ts-type">400</span>).json(err);
+    }
+};
+</code></pre>
+            </div>
+
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 20px;">
+              <h4 style="color: #10b981; margin-bottom: 8px;">🎉 Congratulations!</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Aapne "TypeScript for Node.js" ke saare core and advanced modules complete kar liye hain. In patterns (Zod + Prisma + AppError + Generics) ko master karne ke baad, ab aap <strong>NestJS</strong> jese advanced frameworks mein directly enter kar sakte hain, ya apne Express backend ko Bulletproof bana sakte hain.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

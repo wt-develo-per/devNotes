@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Module 11 — Testing with Pest PHP (Hinglish) | ShopSphere Pro</title>
+<meta name="description" content="Master Laravel automated testing with Pest PHP in Hinglish — Unit tests, Feature tests, Database assertions, Sanctum API testing, and Mocking."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1422;
+  --bg-card: #141929;
+  --bg-code: #0d1117;
+  --border: #1e2d4a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+  --accent-pink: #ec4899;
+  --accent-indigo: #6366f1;
+  --gradient-card: linear-gradient(145deg, #141929, #0f1422);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+.hero {
+  background: linear-gradient(135deg, #0a0e1a 0%, #150a24 50%, #0a0e1a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 40px 50px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  background: linear-gradient(135deg, #e2e8f0 0%, #8b5cf6 45%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 780px;
+  margin-bottom: 30px;
+}
+.hero-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.hero-stats {
+  display: flex;
+  gap: 30px;
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.hero-stat-val { font-size: 1.6rem; font-weight: 800; color: var(--accent-purple); }
+.hero-stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.progress-bar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 14px 40px; }
+.progress-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+.progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+  transition: width 0.6s ease;
+}
+.layout { max-width: 1200px; margin: 0 auto; padding: 40px; }
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 32px;
+}
+.snav-btn {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+.snav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+.snav-btn.active {
+  background: rgba(139, 92, 246, 0.16);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #c4b5fd;
+  font-weight: 600;
+}
+.snav-btn .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.section-panel { display: none; }
+.section-panel.active { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s;
+}
+.card:hover { border-color: rgba(139, 92, 246, 0.25); }
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.card-sm { padding: 20px; }
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid #1e2d4a;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 18px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1e2d4a;
+}
+.code-lang {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+.code-filename {
+  font-size: 0.78rem;
+  color: #c4b5fd;
+  font-family: 'JetBrains Mono', monospace;
+}
+.copy-btn {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 5px;
+  padding: 4px 10px;
+  color: #c4b5fd;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.copy-btn:hover { background: rgba(139, 92, 246, 0.2); }
+.copy-btn.copied { color: var(--accent-green); border-color: rgba(16, 185, 129, 0.5); }
+pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: #c9d1d9;
+}
+.kw { color: #ff7b72; font-weight: 600; }
+.fn { color: #d2a8ff; }
+.str { color: #a5d6ff; }
+.cm { color: #8b949e; font-style: italic; }
+.num { color: #79c0ff; }
+.cl { color: #ffa657; }
+.ph { color: #56d364; }
+.anno { color: #58a6ff; }
+.alert {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  margin: 18px 0;
+  border-left: 4px solid;
+}
+.alert-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 2px; }
+.alert-body { font-size: 0.88rem; line-height: 1.65; }
+.alert-body strong { font-weight: 600; display: block; margin-bottom: 4px; }
+.alert-info { background: rgba(59, 130, 246, 0.08); border-color: var(--accent-blue); color: #93c5fd; }
+.alert-success { background: rgba(16, 185, 129, 0.08); border-color: var(--accent-green); color: #6ee7b7; }
+.alert-warn { background: rgba(245, 158, 11, 0.08); border-color: var(--accent-amber); color: #fcd34d; }
+.alert-danger { background: rgba(239, 68, 68, 0.08); border-color: var(--accent-red); color: #fca5a5; }
+.compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+.compare-table th {
+  background: rgba(139, 92, 246, 0.1);
+  color: #c4b5fd;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+}
+.compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.compare-table tr:hover td { background: rgba(255, 255, 255, 0.02); color: var(--text-primary); }
+.compare-table .good { color: var(--accent-green); font-weight: 600; }
+.compare-table .warn { color: var(--accent-amber); font-weight: 600; }
+.compare-table .bad { color: var(--accent-red); font-weight: 600; }
+.cheatsheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cheat-card { background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; }
+.cheat-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.cheat-item { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #a5d6ff; margin-bottom: 8px; }
+.cheat-item span { color: var(--text-muted); font-size: 0.74rem; display: block; font-family: 'Inter', sans-serif; }
+.section-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-subtitle { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 28px; }
+.practice-box {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.06), rgba(236, 72, 153, 0.06));
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+}
+.practice-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.practice-tasks { list-style: none; }
+.practice-tasks li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.practice-tasks li::before { content: '→'; color: #c4b5fd; flex-shrink: 0; font-weight: 700; }
+.practice-tasks li:last-child { border-bottom: none; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.flow-step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.flow-step:last-child { border-bottom: none; }
+.flow-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.15);
+  border: 2px solid var(--accent-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-purple);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.flow-body h4 { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.flow-body p { font-size: 0.84rem; color: var(--text-secondary); }
+.hl-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 18px 0; }
+.hl-item { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.hl-label { font-size: 0.73rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.hl-value { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+.footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 40px;
+}
+.footer span { color: #c4b5fd; font-weight: 600; }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 4px; }
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px; }
+  .layout { padding: 24px 20px; }
+  .two-col { grid-template-columns: 1fr; }
+  .hero-stats { gap: 16px; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Critical Gap #1 &bull; Hinglish Masterclass</div>
+    <h1>Testing with Pest PHP (Hinglish Guide)</h1>
+    <p>Junior se Senior Laravel Developer banne ka sabse bada secret: Automated Testing! Is guide mein hum Pest PHP ke zariye Unit Testing, Feature Testing, Database Transactions, Sanctum Auth APIs aur Third-Party Mocking ko detail mein step-by-step master karenge.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">&#x26A1; Pest PHP v2/v3</span>
+      <span class="hero-tag">&#x1F9EA; TDD Workflow</span>
+      <span class="hero-tag">&#x1F5C4;&#xFE0F; RefreshDatabase</span>
+      <span class="hero-tag">&#x1F510; Sanctum Auth Testing</span>
+      <span class="hero-tag">&#x1F3AD; Mocking &amp; Event Fakes</span>
+      <span class="hero-tag">&#x1F4CA; 80%+ Code Coverage</span>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hero-stat-val">3x</div><div class="hero-stat-label">Tez Execution (Parallel)</div></div>
+      <div><div class="hero-stat-val">70%</div><div class="hero-stat-label">Kam Boilerplate Code</div></div>
+      <div><div class="hero-stat-val">100%</div><div class="hero-stat-label">Confidence On Deploy</div></div>
+      <div><div class="hero-stat-val">0</div><div class="hero-stat-label">Production Bugs</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-bar-inner">
+    <span style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap">Progress:</span>
+    <div class="progress-track"><div id="prog-fill" class="progress-fill" style="width:12.5%"></div></div>
+    <span id="prog-pct" style="font-size:0.8rem;font-weight:700;color:var(--accent-purple);min-width:38px">12.5%</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="section-nav">
+  <button class="snav-btn active" onclick="showSection('sec-overview',this)"><span class="dot" style="background:#8b5cf6"></span>Overview</button>
+  <button class="snav-btn" onclick="showSection('sec-setup',this)"><span class="dot" style="background:#3b82f6"></span>Pest Setup</button>
+  <button class="snav-btn" onclick="showSection('sec-phpunit',this)"><span class="dot" style="background:#f59e0b"></span>PHPUnit vs Pest</button>
+  <button class="snav-btn" onclick="showSection('sec-pest',this)"><span class="dot" style="background:#ec4899"></span>Pest Syntax</button>
+  <button class="snav-btn" onclick="showSection('sec-database',this)"><span class="dot" style="background:#10b981"></span>Database Testing</button>
+  <button class="snav-btn" onclick="showSection('sec-api',this)"><span class="dot" style="background:#06b6d4"></span>API Testing</button>
+  <button class="snav-btn" onclick="showSection('sec-mocking',this)"><span class="dot" style="background:#ef4444"></span>Mocking &amp; Fakes</button>
+  <button class="snav-btn" onclick="showSection('sec-cheatsheet',this)"><span class="dot" style="background:#6366f1"></span>Cheatsheet</button>
+</div>
+
+
+<!-- SECTION 1: OVERVIEW & WHY TESTING MATTERS -->
+<div id="sec-overview" class="section-panel active">
+  <div class="section-title">&#x1F52C; Automated Testing Kyun Zaroori Hai? (Senior Mindset)</div>
+  <p class="section-subtitle">Junior developer aur Senior engineer ke beech ka sabse bada farq: Automated Testing! Janein production codebases mein tests likhna compulsory kyun hota hai.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F9E0; Junior vs Senior Developer ka Nazariya</div>
+    <div class="two-col">
+      <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:20px">
+        <h4 style="color:#fca5a5;margin-bottom:10px">&#x274C; Junior Developer: Manual Testing</h4>
+        <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6">
+          <em>"Maine Postman mein ek request bhej kar check kar liya, 200 OK aa raha hai, feature ready hai!"</em><br/><br/>
+          <strong>Problem:</strong> Jab agle mahine koi doosra developer Coupon code ka logic update karega, toh Checkout ka payment gateway silently toot jayega. Kisi ko pata nahi chalega jab tak production par customer complaints aana shuru na ho jayein!
+        </p>
+      </div>
+
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-sm);padding:20px">
+        <h4 style="color:#6ee7b7;margin-bottom:10px">&#x2705; Senior Developer: Automated Pest Testing</h4>
+        <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6">
+          <em>"Maine Checkout ke liye 15 automated test cases likhe hain (valid cart, zero balance, expired coupon, concurrent orders). Har git push par GitHub Actions inko 5 seconds mein run karega!"</em><br/><br/>
+          <strong>Result:</strong> Zero regression bugs, 100% fearless refactoring, aur Friday evening ko bhi bina darr ke production deployment!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F53A; The Testing Pyramid (Kaunsa Test Kitna Likhna Hai?)</div>
+    <div class="card-grid">
+      <div class="card-sm" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm)">
+        <div style="font-size:1.6rem;margin-bottom:8px">&#x26A1;</div>
+        <h4 style="color:#6ee7b7;margin-bottom:6px">1. Unit Tests (70% &bull; Sabse Zyada)</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary);line-height:1.6">
+          Database ya HTTP cycle ko touch kiye bina, PHP classes aur pure functions ko isolate karke test karte hain. Jaise: Tax calculation, Discount formula, Order total rounding. Ye microseconds mein execute hote hain.
+        </p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-sm)">
+        <div style="font-size:1.6rem;margin-bottom:8px">&#x1F517;</div>
+        <h4 style="color:#93c5fd;margin-bottom:6px">2. Feature Tests (25% &bull; Laravel Ki Jaan)</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary);line-height:1.6">
+          Poore HTTP request ko test karte hain: Route &rarr; Middleware (Sanctum/Admin) &rarr; Controller &rarr; Form Request Validation &rarr; Database Mutation &rarr; Event Dispatch &rarr; JSON Response. Laravel mein sabse zyada value yahi dete hain.
+        </p>
+      </div>
+
+      <div class="card-sm" style="background:rgba(236,72,153,0.05);border:1px solid rgba(236,72,153,0.2);border-radius:var(--radius-sm)">
+        <div style="font-size:1.6rem;margin-bottom:8px">&#x1F310;</div>
+        <h4 style="color:#f472b6;margin-bottom:6px">3. E2E / Browser Tests (5% &bull; Critical Flows)</h4>
+        <p style="font-size:0.83rem;color:var(--text-secondary);line-height:1.6">
+          Real Chrome/Firefox browser launch karke user ki tarah buttons click karte hain (Laravel Dusk). Inko sirf sabse critical core flows par chalate hain jaise Stripe 3D-Secure card checkout.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CF; The 3A Pattern (Arrange, Act, Assert)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Har acche test case ka structure hamesha 3 simple steps mein hota hai:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">The 3A Pattern Example</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="fn">test</span>(<span class="str">'discount calculates correctly for VIP customers'</span>, <span class="kw">function</span> () {
+    <span class="cm">// 1. ARRANGE (Data aur environment setup karo)</span>
+    $cart = <span class="cl">Cart</span>::<span class="fn">factory</span>()-><span class="fn">create</span>([<span class="str">'subtotal'</span> => <span class="num">10000</span>]);
+    $user = <span class="cl">User</span>::<span class="fn">factory</span>()-><span class="fn">vip</span>()-><span class="fn">create</span>(); <span class="cm">// 20% discount eligibility</span>
+
+    <span class="cm">// 2. ACT (Feature ya function ko trigger karo)</span>
+    $discountService = <span class="kw">new</span> <span class="cl">DiscountService</span>();
+    $finalTotal = $discountService-><span class="fn">calculate</span>($cart, $user);
+
+    <span class="cm">// 3. ASSERT (Verify karo ki result expected hai ya nahi)</span>
+    <span class="fn">expect</span>($finalTotal)-><span class="fn">toBe</span>(<span class="num">8000.00</span>);
+});</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 2: PEST SETUP & CONFIGURATION -->
+<div id="sec-setup" class="section-panel">
+  <div class="section-title">&#x2699;&#xFE0F; Pest Installation &amp; Environment Setup</div>
+  <p class="section-subtitle">Laravel project mein Pest PHP v2/v3 ko properly install karne aur tests ke liye dedicated isolated database configure karne ka complete process.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F4E6; Step 1: Pest PHP &amp; Laravel Plugin Install Karo</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Terminal mein ye commands run karke Pest PHP aur uska official Laravel integration plugin install karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><span class="code-filename">Terminal Commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm"># 1. Pest PHP core aur Laravel plugin install karo</span>
+composer require pestphp/pest --dev --with-all-dependencies
+composer require pestphp/pest-plugin-laravel --dev
+
+<span class="cm"># 2. Pest ko initialize karo (ye tests/Pest.php file create karega)</span>
+php artisan pest:install
+
+<span class="cm"># 3. Test runner check karo</span>
+./vendor/bin/pest</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F527; Step 2: tests/Pest.php Configuration Samajhiye</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px"><code>tests/Pest.php</code> file Pest ka control center hai. Yahan hum define karte hain ki kaunse test folders par kaunsi traits apply hongi aur custom helper functions define karte hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Pest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">/*
+|--------------------------------------------------------------------------
+| Test Case Bindings (Feature &amp; Unit)
+|--------------------------------------------------------------------------
+| Yahan hum batate hain ki 'Feature' folder ke sabhi tests mein Laravel ka
+| TestCase aur RefreshDatabase trait automatically inject hona chahiye.
+*/</span>
+
+<span class="fn">uses</span>(
+    <span class="cl">TestsTestCase</span>::<span class="kw">class</span>,
+    <span class="cl">IlluminateFoundationTestingRefreshDatabase</span>::<span class="kw">class</span>,
+)-><span class="fn">in</span>(<span class="str">'Feature'</span>);
+
+<span class="cm">/*
+|--------------------------------------------------------------------------
+| Custom Global Helpers (Senior Productivity Hack)
+|--------------------------------------------------------------------------
+| Bar-bar har test mein User login karne ki jagah ek global helper bana lo!
+*/</span>
+
+<span class="kw">function</span> <span class="fn">asAdmin</span>(?<span class="cl">AppModelsUser</span> $user = <span class="kw">null</span>): <span class="cl">TestsTestCase</span>
+{
+    $user = $user ?? <span class="cl">AppModelsUser</span>::<span class="fn">factory</span>()-><span class="fn">admin</span>()-><span class="fn">create</span>();
+    <span class="kw">return</span> <span class="fn">test</span>()-><span class="fn">actingAs</span>($user);
+}
+
+<span class="kw">function</span> <span class="fn">asCustomer</span>(?<span class="cl">AppModelsUser</span> $user = <span class="kw">null</span>): <span class="cl">TestsTestCase</span>
+{
+    $user = $user ?? <span class="cl">AppModelsUser</span>::<span class="fn">factory</span>()-><span class="fn">create</span>();
+    <span class="kw">return</span> <span class="fn">test</span>()-><span class="fn">actingAs</span>($user);
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F5C4;&#xFE0F; Step 3: Test Environment Database (phpunit.xml)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Kabhie bhi testing real development database par nahi chalani chahiye, warna tests aapke dev data ko wipe kar denge! <code>phpunit.xml</code> mein dedicated in-memory SQLite ya separate test database set karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">xml</span><span class="code-filename">phpunit.xml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre>&lt;<span class="kw">php</span>&gt;
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"APP_ENV"</span> <span class="cl">value</span>=<span class="str">"testing"</span>/&gt;
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"BCRYPT_ROUNDS"</span> <span class="cl">value</span>=<span class="str">"4"</span>/&gt; <span class="cm">&lt;!-- Password hashing super fast banane ke liye --&gt;</span>
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"CACHE_STORE"</span> <span class="cl">value</span>=<span class="str">"array"</span>/&gt;
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"MAIL_MAILER"</span> <span class="cl">value</span>=<span class="str">"array"</span>/&gt;
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"QUEUE_CONNECTION"</span> <span class="cl">value</span>=<span class="str">"sync"</span>/&gt;
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"SESSION_DRIVER"</span> <span class="cl">value</span>=<span class="str">"array"</span>/&gt;
+
+    <span class="cm">&lt;!-- Ultra Fast In-Memory SQLite (Har test ke baad automatically reset) --&gt;</span>
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"DB_CONNECTION"</span> <span class="cl">value</span>=<span class="str">"sqlite"</span>/&gt;
+    &lt;<span class="kw">env</span> <span class="cl">name</span>=<span class="str">"DB_DATABASE"</span> <span class="cl">value</span>=<span class="str">":memory:"</span>/&gt;
+&lt;/<span class="kw">php</span>&gt;</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 3: PHPUNIT VS PEST PHP -->
+<div id="sec-phpunit" class="section-panel">
+  <div class="section-title">&#x2696;&#xFE0F; PHPUnit vs Pest PHP: Kise Aur Kyun Chunein?</div>
+  <p class="section-subtitle">Side-by-side comparison: Dekhiye kaise Pest PHP ne puraani cumbersome class-based syntax ko modern readable functional tests mein transform kar diya hai.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F504; Side-by-Side Code Comparison: User Registration Test</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Dono test exactly same kaam kar rahe hain, lekin Pest ka code 70% zyada readable aur concise hai:</p>
+
+    <div class="two-col">
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">php</span><span class="code-filename">&#x274C; Puraana PHPUnit Style (Verbose Boilerplate)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="ph">&lt;?php</span>
+
+<span class="kw">namespace</span> TestsFeature;
+
+<span class="kw">use</span> <span class="cl">TestsTestCase</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+<span class="kw">use</span> <span class="cl">IlluminateFoundationTestingRefreshDatabase</span>;
+
+<span class="kw">class</span> <span class="cl">UserRegistrationTest</span> <span class="kw">extends</span> <span class="cl">TestCase</span>
+{
+    <span class="kw">use</span> <span class="cl">RefreshDatabase</span>;
+
+    <span class="cm">/** @test */</span>
+    <span class="kw">public function</span> <span class="fn">a_user_can_register_with_valid_credentials</span>()
+    {
+        $payload = [
+            <span class="str">'name'</span>     => <span class="str">'Ahmad Khan'</span>,
+            <span class="str">'email'</span>    => <span class="str">'ahmad@test.com'</span>,
+            <span class="str">'password'</span> => <span class="str">'Secret123!'</span>,
+        ];
+
+        $response = $this-><span class="fn">postJson</span>(<span class="str">'/api/register'</span>, $payload);
+
+        $response-><span class="fn">assertStatus</span>(<span class="num">201</span>);
+        $this-><span class="fn">assertDatabaseHas</span>(<span class="str">'users'</span>, [
+            <span class="str">'email'</span> => <span class="str">'ahmad@test.com'</span>,
+        ]);
+    }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">php</span><span class="code-filename">&#x2705; Modern Pest PHP Style (Clean &amp; Functional)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="ph">&lt;?php</span>
+
+<span class="cm">// No namespace, no class, no trait boilerplate required!</span>
+
+<span class="fn">it</span>(<span class="str">'allows a user to register with valid credentials'</span>, <span class="kw">function</span> () {
+    $payload = [
+        <span class="str">'name'</span>     => <span class="str">'Ahmad Khan'</span>,
+        <span class="str">'email'</span>    => <span class="str">'ahmad@test.com'</span>,
+        <span class="str">'password'</span> => <span class="str">'Secret123!'</span>,
+    ];
+
+    <span class="fn">postJson</span>(<span class="str">'/api/register'</span>, $payload)
+        -><span class="fn">assertCreated</span>();
+
+    <span class="fn">assertDatabaseHas</span>(<span class="str">'users'</span>, [
+        <span class="str">'email'</span> => <span class="str">'ahmad@test.com'</span>,
+    ]);
+});</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CA; Feature Comparison Table</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>PHPUnit</th>
+          <th>Pest PHP</th>
+          <th>Kyun Pest Jeet'ta Hai?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Syntax &amp; Style</strong></td>
+          <td><span class="warn">Class-based &amp; verbose</span></td>
+          <td><span class="good">&#x2705; Functional (it, test)</span></td>
+          <td>JavaScript ke Jest/Mocha ki tarah clean aur natural lagta hai.</td>
+        </tr>
+        <tr>
+          <td><strong>Expectation API</strong></td>
+          <td><code>$this-&gt;assertEquals($a, $b)</code></td>
+          <td><code>expect($a)-&gt;toBe($b)</code></td>
+          <td>Human-readable English ki tarah chain kar sakte hain.</td>
+        </tr>
+        <tr>
+          <td><strong>Parallel Execution</strong></td>
+          <td>Setup complex hai</td>
+          <td><span class="good">&#x26A1; Out-of-the-box (<code>--parallel</code>)</span></td>
+          <td>8 CPU cores use karke tests 4x tez run karta hai.</td>
+        </tr>
+        <tr>
+          <td><strong>Architecture Testing</strong></td>
+          <td>Third-party tools chahiye</td>
+          <td><span class="good">&#x2705; Built-in (<code>arch()</code>)</span></td>
+          <td>Controllers mein direct DB query likhna block kar sakte hain!</td>
+        </tr>
+        <tr>
+          <td><strong>Backwards Compatibility</strong></td>
+          <td>N/A</td>
+          <td><span class="good">&#x2705; 100% PHPUnit compatible</span></td>
+          <td>Aapke project ke purane PHPUnit tests Pest mein bina change kiye chalte hain.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- SECTION 4: PEST SYNTAX, EXPECTATIONS & DATASETS -->
+<div id="sec-pest" class="section-panel">
+  <div class="section-title">&#x26A1; Pest Syntax, Expectations &amp; Datasets</div>
+  <p class="section-subtitle">Pest ke powerful fluent expectation methods aur parameterized datasets ke sath edge cases ko bina duplicate code ke test karein.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F50E; The Fluent Expectation API</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Pest mein assertion likhna natural English sentence bolne jaisa hai. Aap multiple checks ko chain kar sakte hain:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Unit/ExpectationExamplesTest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="fn">test</span>(<span class="str">'demonstrating pest expectation methods'</span>, <span class="kw">function</span> () {
+    $price = <span class="num">1500</span>;
+    $tags = [<span class="str">'electronics'</span>, <span class="str">'gadgets'</span>, <span class="str">'deals'</span>];
+    $orderNumber = <span class="str">'ORD-98421-PK'</span>;
+
+    <span class="cm">// Strict equality (===)</span>
+    <span class="fn">expect</span>($price)-><span class="fn">toBe</span>(<span class="num">1500</span>)
+                  -><span class="fn">toBeInt</span>()
+                  -><span class="fn">toBeGreaterThan</span>(<span class="num">1000</span>);
+
+    <span class="cm">// Array assertions with chained helpers</span>
+    <span class="fn">expect</span>($tags)-><span class="fn">toBeArray</span>()
+                 -><span class="fn">toHaveCount</span>(<span class="num">3</span>)
+                 -><span class="fn">toContain</span>(<span class="str">'electronics'</span>);
+
+    <span class="cm">// String pattern matching</span>
+    <span class="fn">expect</span>($orderNumber)-><span class="fn">toBeString</span>()
+                        -><span class="fn">toStartWith</span>(<span class="str">'ORD-'</span>)
+                        -><span class="fn">toEndWith</span>(<span class="str">'-PK'</span>);
+
+    <span class="cm">// Negation (not)</span>
+    <span class="fn">expect</span>($tags)-><span class="kw">not</span>-><span class="fn">toBeEmpty</span>()
+                 -><span class="kw">not</span>-><span class="fn">toContain</span>(<span class="str">'clothing'</span>);
+});</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F504; Datasets (Parameterized Tests: 1 Test, 10 Scenarios)</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Ek hi test ko alag-alag inputs (jaise invalid emails ya boundary discount coupons) ke liye 10 baar copy-paste karne ki zaroorat nahi hai. Pest ka <code>with()</code> dataset use karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Feature/ValidationDatasetsTest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="cm">// Test will run 4 times automatically for every item in the dataset!</span>
+<span class="fn">it</span>(<span class="str">'rejects invalid email formats on registration'</span>, <span class="kw">function</span> (<span class="kw">string</span> $invalidEmail) {
+    <span class="fn">postJson</span>(<span class="str">'/api/register'</span>, [
+        <span class="str">'name'</span>     => <span class="str">'Zaid'</span>,
+        <span class="str">'email'</span>    => $invalidEmail,
+        <span class="str">'password'</span> => <span class="str">'Password123!'</span>,
+    ])
+    -><span class="fn">assertStatus</span>(<span class="num">422</span>)
+    -><span class="fn">assertJsonValidationErrors</span>([<span class="str">'email'</span>]);
+})-><span class="fn">with</span>([
+    <span class="str">'plainaddress'</span>,
+    <span class="str">'#@%^%#$@#$@#.com'</span>,
+    <span class="str">'@domain.com'</span>,
+    <span class="str">'email.domain.com'</span>,
+]);
+
+<span class="cm">// Multi-parameter dataset: User tier aur expected discount percentage</span>
+<span class="fn">it</span>(<span class="str">'applies the correct discount tier rate'</span>, <span class="kw">function</span> (<span class="kw">string</span> $tier, <span class="kw">int</span> $expectedDiscount) {
+    $service = <span class="kw">new</span> <span class="cl">DiscountService</span>();
+    $rate = $service-><span class="fn">getRateForTier</span>($tier);
+
+    <span class="fn">expect</span>($rate)-><span class="fn">toBe</span>($expectedDiscount);
+})-><span class="fn">with</span>([
+    [<span class="str">'regular'</span>, <span class="num">0</span>],
+    [<span class="str">'silver'</span>,  <span class="num">5</span>],
+    [<span class="str">'gold'</span>,    <span class="num">10</span>],
+    [<span class="str">'vip'</span>,     <span class="num">20</span>],
+]);</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 5: DATABASE TESTING & REFRESHDATABASE -->
+<div id="sec-database" class="section-panel">
+  <div class="section-title">&#x1F5C4;&#xFE0F; Database Testing &amp; RefreshDatabase Internals</div>
+  <p class="section-subtitle">Kaise <code>RefreshDatabase</code> transactions ke zariye database ko bina wipe kiye ultra-fast test environment maintain karta hai, aur Model Factories ke real-world patterns.</p>
+
+  <div class="card">
+    <div class="card-title">&#x2699;&#xFE0F; RefreshDatabase Internally Kaise Kaam Karta Hai?</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Bahut se developers sochte hain ki <code>RefreshDatabase</code> har test ke baad poore database ko drop karke wapas migrate karta hai (jo ki bohot slow hota). Asal mein ye <strong>Transaction Rollback</strong> use karta hai:</p>
+
+    <div class="two-col">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-body"><h4>Initial Migration Run</h4><p>Pest pehle test run par saari migrations ko test database par ek baar apply karta hai.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-body"><h4>BEGIN TRANSACTION</h4><p>Har test execute hone se theek pehle database transaction start karta hai.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-body"><h4>Test Mutations Execute</h4><p>Aapka test models create karta hai, update karta hai, delete karta hai.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-body"><h4>ROLLBACK TRANSACTION</h4><p>Test pass/fail hote hi saare changes rollback ho jate hain. Agle test ke liye DB wapas fresh!</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F3D7;&#xFE0F; Model Factories &amp; Complex E-Commerce Relationships</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Test mein manually 20 columns ka array likhna time waste hai. Laravel Model Factories aur State methods se realistic data 1 line mein generate karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Feature/OrderDatabaseTest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">AppModelsOrderItem</span>;
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+
+<span class="fn">it</span>(<span class="str">'creates an order with items and soft deletes successfully'</span>, <span class="kw">function</span> () {
+    <span class="cm">// 1. User create karo</span>
+    $customer = <span class="cl">User</span>::<span class="fn">factory</span>()-><span class="fn">create</span>([<span class="str">'name'</span> => <span class="str">'Bilal Tariq'</span>]);
+
+    <span class="cm">// 2. Product create karo (10 units stock ke sath)</span>
+    $product = <span class="cl">Product</span>::<span class="fn">factory</span>()-><span class="fn">create</span>([
+        <span class="str">'name'</span>  => <span class="str">'Mechanical Keyboard'</span>,
+        <span class="str">'price'</span> => <span class="num">12000.00</span>,
+        <span class="str">'stock'</span> => <span class="num">10</span>,
+    ]);
+
+    <span class="cm">// 3. Order create karo using relationships</span>
+    $order = <span class="cl">Order</span>::<span class="fn">factory</span>()
+        -><span class="fn">for</span>($customer)
+        -><span class="fn">has</span>(
+            <span class="cl">OrderItem</span>::<span class="fn">factory</span>()-><span class="fn">state</span>([
+                <span class="str">'product_id'</span> => $product->id,
+                <span class="str">'quantity'</span>   => <span class="num">2</span>,
+                <span class="str">'price'</span>      => <span class="num">12000.00</span>,
+            ]),
+            <span class="str">'items'</span>
+        )
+        -><span class="fn">create</span>([<span class="str">'total'</span> => <span class="num">24000.00</span>]);
+
+    <span class="cm">// 4. Database Assertions</span>
+    <span class="fn">assertDatabaseHas</span>(<span class="str">'orders'</span>, [
+        <span class="str">'id'</span>      => $order->id,
+        <span class="str">'user_id'</span> => $customer->id,
+        <span class="str">'total'</span>   => <span class="num">24000.00</span>,
+    ]);
+
+    <span class="fn">assertDatabaseCount</span>(<span class="str">'order_items'</span>, <span class="num">1</span>);
+
+    <span class="cm">// 5. Soft Delete Test</span>
+    $order-><span class="fn">delete</span>();
+    <span class="fn">assertSoftDeleted</span>($order);
+    <span class="fn">assertDatabaseHas</span>(<span class="str">'orders'</span>, [<span class="str">'id'</span> => $order->id]); <span class="cm">// Row abhi bhi DB mein hai</span>
+});</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 6: API TESTING & SANCTUM AUTH -->
+<div id="sec-api" class="section-panel">
+  <div class="section-title">&#x1F510; REST API Testing &amp; Sanctum Authentication</div>
+  <p class="section-subtitle">Postman ko bhool jaiye! Jaaniye kaise Pest PHP ke zariye Sanctum Bearer tokens, IDOR permissions, aur JSON Response structures ko automated test karte hain.</p>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; Authentication &amp; IDOR Security Tests</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Har API endpoint par 3 basic security tests hamesha likhein: Guest 401 Unauthorized, doosre user ka resource access karne par 403 Forbidden, aur valid owner par 200 OK:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Feature/Api/OrderApiTest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">AppModelsOrder</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+
+<span class="cm">// Scenario 1: Bina token ke request bhejoge toh 401 milna chahiye</span>
+<span class="fn">it</span>(<span class="str">'prevents unauthenticated guests from viewing orders'</span>, <span class="kw">function</span> () {
+    <span class="fn">getJson</span>(<span class="str">'/api/v1/orders'</span>)
+        -><span class="fn">assertUnauthorized</span>(); <span class="cm">// 401 HTTP Status</span>
+});
+
+<span class="cm">// Scenario 2: IDOR Protection (User B cannot read User A's order)</span>
+<span class="fn">it</span>(<span class="str">'prevents a user from viewing another users order'</span>, <span class="kw">function</span> () {
+    $userA = <span class="cl">User</span>::<span class="fn">factory</span>()-><span class="fn">create</span>();
+    $userB = <span class="cl">User</span>::<span class="fn">factory</span>()-><span class="fn">create</span>();
+
+    $orderA = <span class="cl">Order</span>::<span class="fn">factory</span>()-><span class="fn">for</span>($userA)-><span class="fn">create</span>();
+
+    <span class="cm">// User B login bankar User A ke order ko fetch karne ki koshish karta hai</span>
+    $this-><span class="fn">actingAs</span>($userB)
+        -><span class="fn">getJson</span>(<span class="str">"/api/v1/orders/{$orderA->id}"</span>)
+        -><span class="fn">assertForbidden</span>(); <span class="cm">// 403 HTTP Status (Laravel Policy enforced!)</span>
+});
+
+<span class="cm">// Scenario 3: Valid Owner ko successfully 200 OK milta hai</span>
+<span class="fn">it</span>(<span class="str">'allows the order owner to view their order details'</span>, <span class="kw">function</span> () {
+    $userA = <span class="cl">User</span>::<span class="fn">factory</span>()-><span class="fn">create</span>();
+    $orderA = <span class="cl">Order</span>::<span class="fn">factory</span>()-><span class="fn">for</span>($userA)-><span class="fn">create</span>([<span class="str">'total'</span> => <span class="num">8500.00</span>]);
+
+    $this-><span class="fn">actingAs</span>($userA)
+        -><span class="fn">getJson</span>(<span class="str">"/api/v1/orders/{$orderA->id}"</span>)
+        -><span class="fn">assertOk</span>()
+        -><span class="fn">assertJsonPath</span>(<span class="str">'data.id'</span>, $orderA->id)
+        -><span class="fn">assertJsonPath</span>(<span class="str">'data.total'</span>, <span class="str">'8,500.00'</span>);
+});</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F4CA; JSON Schema &amp; Validation Assertions</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">API contract breaking changes se bachne ke liye response ka exact JSON structure verify karein:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Feature/Api/ProductCatalogApiTest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="fn">it</span>(<span class="str">'returns product catalog with correct API resource structure'</span>, <span class="kw">function</span> () {
+    <span class="cl">Product</span>::<span class="fn">factory</span>()-><span class="fn">count</span>(<span class="num">5</span>)-><span class="fn">create</span>();
+
+    <span class="fn">getJson</span>(<span class="str">'/api/v1/products'</span>)
+        -><span class="fn">assertOk</span>()
+        -><span class="fn">assertJsonCount</span>(<span class="num">5</span>, <span class="str">'data'</span>)
+        -><span class="fn">assertJsonStructure</span>([
+            <span class="str">'data'</span> => [
+                <span class="str">'*'</span> => [
+                    <span class="str">'id'</span>,
+                    <span class="str">'name'</span>,
+                    <span class="str">'price'</span>,
+                    <span class="str">'in_stock'</span>,
+                    <span class="str">'category'</span> => [<span class="str">'id'</span>, <span class="str">'name'</span>, <span class="str">'slug'</span>],
+                ]
+            ],
+            <span class="str">'meta'</span> => [<span class="str">'current_page'</span>, <span class="str">'total'</span>],
+            <span class="str">'links'</span> => [<span class="str">'first'</span>, <span class="str">'last'</span>],
+        ]);
+});</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 7: MOCKING & FAKES -->
+<div id="sec-mocking" class="section-panel">
+  <div class="section-title">&#x1F3AD; Mocking &amp; Laravel Fakes (Zero Third-Party Calls)</div>
+  <p class="section-subtitle">Real credit cards charge kiye bina aur real customer emails bheje bina third-party services ko memory mein mock karne ki complete guide.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A0;&#xFE0F; Mocking Kyun Zaroori Hai? (The $1,000 Mistake)</div>
+    <div class="alert alert-danger">
+      <span class="alert-icon">&#x1F4B8;</span>
+      <div class="alert-body">
+        <strong>Warning:</strong> Agar aap tests mein <code>Mail::fake()</code> ya <code>Http::fake()</code> use nahi karenge, toh test suite chalane par real customer emails chale jayenge aur real Stripe payment APIs trigger ho jayengi! Testing hamesha 100% isolated honi chahiye.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F680; Complete E-Commerce Checkout Test with Fakes</div>
+    <p style="color:var(--text-secondary);margin-bottom:14px">Ek single checkout flow test mein hum Event, Queue, Mail aur External Stripe HTTP call ko memory mein mock karenge:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">php</span><span class="code-filename">tests/Feature/CheckoutFlowTest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><span class="kw">use</span> <span class="cl">AppEventsOrderPlacedEvent</span>;
+<span class="kw">use</span> <span class="cl">AppJobsProcessInventoryDeductionJob</span>;
+<span class="kw">use</span> <span class="cl">AppMailOrderReceiptMail</span>;
+<span class="kw">use</span> <span class="cl">AppModelsProduct</span>;
+<span class="kw">use</span> <span class="cl">AppModelsUser</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesEvent</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesHttp</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesMail</span>;
+<span class="kw">use</span> <span class="cl">IlluminateSupportFacadesQueue</span>;
+
+<span class="fn">it</span>(<span class="str">'completes order, charges card, queues receipt and fires event'</span>, <span class="kw">function</span> () {
+    <span class="cm">// 1. Saare external side-effects ko FAKE karo!</span>
+    <span class="cl">Mail</span>::<span class="fn">fake</span>();
+    <span class="cl">Queue</span>::<span class="fn">fake</span>();
+    <span class="cl">Event</span>::<span class="fn">fake</span>();
+
+    <span class="cm">// 2. Third-party Stripe API ko memory mein mock karo</span>
+    <span class="cl">Http</span>::<span class="fn">fake</span>([
+        <span class="str">'https://api.stripe.com/v1/charges'</span> => <span class="cl">Http</span>::<span class="fn">response</span>([
+            <span class="str">'id'</span>     => <span class="str">'ch_test_123456789'</span>,
+            <span class="str">'status'</span> => <span class="str">'succeeded'</span>,
+            <span class="str">'paid'</span>   => <span class="kw">true</span>,
+        ], <span class="num">200</span>),
+    ]);
+
+    $user = <span class="cl">User</span>::<span class="fn">factory</span>()-><span class="fn">create</span>();
+    $product = <span class="cl">Product</span>::<span class="fn">factory</span>()-><span class="fn">create</span>([<span class="str">'price'</span> => <span class="num">5000</span>, <span class="str">'stock'</span> => <span class="num">10</span>]);
+
+    <span class="cm">// 3. ACT: Checkout endpoint hit karo</span>
+    $response = $this-><span class="fn">actingAs</span>($user)-><span class="fn">postJson</span>(<span class="str">'/api/v1/checkout'</span>, [
+        <span class="str">'product_id'</span>   => $product->id,
+        <span class="str">'quantity'</span>     => <span class="num">1</span>,
+        <span class="str">'stripe_token'</span> => <span class="str">'tok_visa'</span>,
+    ]);
+
+    $response-><span class="fn">assertCreated</span>();
+
+    <span class="cm">// 4. ASSERT: Event fire hua ya nahi?</span>
+    <span class="cl">Event</span>::<span class="fn">assertDispatched</span>(<span class="cl">OrderPlacedEvent</span>::<span class="kw">class</span>);
+
+    <span class="cm">// 5. ASSERT: Background Inventory job queue mein gaya ya nahi?</span>
+    <span class="cl">Queue</span>::<span class="fn">assertPushed</span>(<span class="cl">ProcessInventoryDeductionJob</span>::<span class="kw">class</span>);
+
+    <span class="cm">// 6. ASSERT: Customer receipt email queue hua ya nahi?</span>
+    <span class="cl">Mail</span>::<span class="fn">assertQueued</span>(<span class="cl">OrderReceiptMail</span>::<span class="kw">class</span>, <span class="kw">function</span> ($mail) <span class="kw">use</span> ($user) {
+        <span class="kw">return</span> $mail-><span class="fn">hasTo</span>($user->email);
+    });
+
+    <span class="cm">// 7. ASSERT: Real HTTP request Stripe par 1 baar hi gayi thi</span>
+    <span class="cl">Http</span>::<span class="fn">assertSentCount</span>(<span class="num">1</span>);
+});</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 8: PEST CHEATSHEET & AUDIT -->
+<div id="sec-cheatsheet" class="section-panel">
+  <div class="section-title">&#x1F4CB; Pest CLI Cheatsheet &amp; Senior Developer Audit</div>
+  <p class="section-subtitle">Aapke daily workflow ke liye essential Pest commands, assertions reference, aur pre-deploy testing checklist.</p>
+
+  <div class="card">
+    <div class="card-title">&#x26A1; Essential Pest CLI Flags</div>
+    <div class="cheatsheet-grid">
+      <div class="cheat-card">
+        <div class="cheat-title">Execution Speed &amp; Parallelism</div>
+        <div class="cheat-item">./vendor/bin/pest --parallel <span>Multi-core parallel test execution</span></div>
+        <div class="cheat-item">./vendor/bin/pest --dirty <span>Sirf uncommitted git files ke tests run karo</span></div>
+        <div class="cheat-item">./vendor/bin/pest --bail <span>Pehle test failure par foran ruk jao</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Filtering &amp; Targeted Tests</div>
+        <div class="cheat-item">./vendor/bin/pest --filter=Checkout <span>Sirf 'Checkout' name wale tests run karo</span></div>
+        <div class="cheat-item">./vendor/bin/pest tests/Feature <span>Sirf Feature tests run karo</span></div>
+        <div class="cheat-item">./vendor/bin/pest --group=payments <span>Specific test group run karo</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Coverage &amp; Quality Gates</div>
+        <div class="cheat-item">./vendor/bin/pest --coverage <span>Code coverage percentage report dekho</span></div>
+        <div class="cheat-item">./vendor/bin/pest --coverage --min=80 <span>Agar 80% se kam coverage hui toh fail karo</span></div>
+        <div class="cheat-item">./vendor/bin/pest --profile <span>Sabse slow chalne wale top 10 tests dikhao</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">&#x1F6E1;&#xFE0F; 3-Year Dev Production Testing Checklist</div>
+    <div class="practice-box">
+      <div class="practice-title">Pre-Deploy Quality Guardrails</div>
+      <ul class="practice-tasks">
+        <li><strong>Happy Path &amp; Sad Path:</strong> Har endpoint par sirf 200 OK test mat karo; invalid inputs (422) aur missing data test karna compulsory hai.</li>
+        <li><strong>Auth &amp; IDOR Security:</strong> Har protected route par test likho ki bina token ke 401 Unauthorized aur doosre user ka record access karne par 403 Forbidden mile.</li>
+        <li><strong>Mock Everything External:</strong> Mail, SMS, Queues, aur Payment APIs par hamesha <code>Mail::fake()</code> aur <code>Http::fake()</code> use karein.</li>
+        <li><strong>Fresh DB State:</strong> Feature tests mein hamesha <code>RefreshDatabase</code> trait active rakhein taaki test leakage na ho.</li>
+        <li><strong>CI/CD Gatekeeper:</strong> GitHub Actions mein <code>pest --parallel --coverage --min=80</code> configure karein taaki broken code production mein deploy na ho sake.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert alert-success" style="padding:22px">
+    <span class="alert-icon" style="font-size:1.6rem">&#x1F389;</span>
+    <div class="alert-body">
+      <strong style="font-size:1.05rem;color:#6ee7b7">Module 11 (Testing with Pest PHP) Hinglish Version Complete!</strong>
+      Ab aapko Pest testing, expectation chaining, datasets, database transactions aur mocking ka deep conceptual &amp; practical knowledge ho chuka hai.<br/><br/>
+      <strong>Next Step:</strong> Module 12 &mdash; Laravel API Resources &amp; Versioning (Hinglish Version).
+    </div>
+  </div>
+</div>
+
+</div><!-- end layout -->
+
+<footer class="footer">
+  <p>ShopSphere Pro &mdash; <span>Module 11: Testing with Pest PHP (Hinglish)</span> | Full-Stack Laravel Developer Series</p>
+  <p style="margin-top:6px;font-size:0.78rem">Critical Gap #1 (Hinglish Edition) COMPLETE &bull; Next: Module 12 &mdash; API Resources &amp; Versioning</p>
+</footer>
+
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+  var panel = document.getElementById(id);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(function() {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+var sectionOrder = ['sec-overview', 'sec-setup', 'sec-phpunit', 'sec-pest', 'sec-database', 'sec-api', 'sec-mocking', 'sec-cheatsheet'];
+
+function updateProgress() {
+  var active = document.querySelector('.section-panel.active');
+  if (!active) return;
+  var idx = sectionOrder.indexOf(active.id);
+  var pct = Math.round(((idx + 1) / sectionOrder.length) * 100);
+  var fill = document.getElementById('prog-fill');
+  var label = document.getElementById('prog-pct');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = pct + '%';
+}
+
+updateProgress();
+</script>
+</body>
+</html>

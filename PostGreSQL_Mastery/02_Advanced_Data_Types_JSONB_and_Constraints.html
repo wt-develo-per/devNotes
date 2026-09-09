@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 02: Advanced Data Types, JSONB & Constraints Architecture | PostgreSQL Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-pg: #336791;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #336791, #38bdf8, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #336791, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #336791);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(51, 103, 145, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 980px;
+      line-height: 1.65;
+    }
+
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(51, 103, 145, 0.35), rgba(56, 189, 248, 0.2));
+      color: #7dd3fc;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
+    .section-panel, .panel-section {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active, .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card, .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel-header { margin-bottom: 1.5rem; }
+    .panel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+    .panel-title, .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    .panel-subtitle, .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .concept-card, .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .concept-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .concept-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .concept-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .alert-box, .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .alert-box.alert-warning { border-left-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08); }
+    .alert-box.alert-danger { border-left-color: var(--accent-rose); background: rgba(244, 63, 94, 0.08); }
+    .alert-box.alert-info { border-left-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
+    .alert-icon { font-size: 1.5rem; line-height: 1; }
+    .alert-content { flex: 1; }
+    .alert-title { font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem; }
+
+    .callout-card {
+      background: linear-gradient(135deg, rgba(51, 103, 145, 0.15), rgba(56, 189, 248, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .diagram-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #7dd3fc;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+    .diagram-card {
+      border-radius: 10px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      background: rgba(10, 14, 26, 0.6);
+    }
+    .diagram-card.danger-card { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+    .diagram-card.success-card { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+
+    .code-container, .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0d1527;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code, td code {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin: 1.25rem 0;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0c1527;
+      color: #7dd3fc;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">PostgreSQL Mastery</span>
+      <span>Enterprise Architecture (4+ YOE)</span>
+    </a>
+    <div class="nav-links">
+      <a href="01_PostgreSQL_Architecture_and_Storage_Engine.html" class="nav-btn">⬅️ Module 01</a>
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-pitfalls-cheatsheet" class="nav-btn primary" onclick="switchTab('sec-pitfalls-cheatsheet', document.querySelectorAll('.tab-btn')[6])">⚡ Senior Cheatsheet</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">🐘 Module 02 • Data Types &amp; Integrity Architecture</div>
+      <h1 class="hero-title">Advanced Data Types, JSONB Mastery &amp; Schema Constraints</h1>
+      <p class="hero-desc">
+        Aasan shabdon mein samjhein: <strong>UUIDv7 vs BIGINT Primary Keys</strong>, <strong>TEXT vs VARCHAR(255) ka myth</strong>, <strong>TIMESTAMPTZ timezone traps</strong>, <strong>JSON vs JSONB binary indexing</strong>, aur double-booking rokne wale <strong>EXCLUDE USING gist</strong> constraints.
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-primitives-pk', this)">🔢 1. Primitives, VARCHAR &amp; UUIDv7</button>
+      <button class="tab-btn" onclick="switchTab('sec-datetime-timezone', this)">⏰ 2. Date, Time &amp; TIMESTAMPTZ Traps</button>
+      <button class="tab-btn" onclick="switchTab('sec-arrays-enums', this)">📦 3. Native Arrays &amp; ENUM Types</button>
+      <button class="tab-btn" onclick="switchTab('sec-json-vs-jsonb', this)">⚡ 4. JSON vs JSONB Binary Mastery</button>
+      <button class="tab-btn" onclick="switchTab('sec-range-types', this)">📅 5. Range Types &amp; Anti-Double-Booking</button>
+      <button class="tab-btn" onclick="switchTab('sec-constraints-integrity', this)">🛡️ 6. CHECK, Partial &amp; FK Guardrails</button>
+      <button class="tab-btn" onclick="switchTab('sec-pitfalls-cheatsheet', this)">🏆 7. Production Pitfalls &amp; Cheatsheet</button>
+    </div>
+
+
+    <!-- SECTION 1: PRIMITIVES, VARCHAR & UUIDV7 -->
+    <section id="sec-primitives-pk" class="panel-section active">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🔢 Data Fundamentals • Part 1 • Primitives &amp; Modern Primary Keys</div>
+          <h2 class="panel-title">Numbers, Strings &amp; Primary Keys: The Myths vs Reality</h2>
+          <p class="panel-subtitle">
+            Beginner se Senior level tak: Kyu PostgreSQL mein <code>VARCHAR(255)</code> likhna ek purani aadat hai, floating-point numbers paiso ke hisab mein kyu fail hote hain, aur <strong>UUIDv7</strong> ne database primary keys ko kaise revolutionize kiya.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Primary Keys &amp; VARCHAR Habits</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>AUTO_INCREMENT vs IDENTITY:</strong> MySQL mein hum <code>id INT AUTO_INCREMENT PRIMARY KEY</code> likhte the. PostgreSQL mein <code>SERIAL</code> legacy tha, aur modern PG 10+ standard <strong>BIGINT GENERATED ALWAYS AS IDENTITY</strong> hai.<br>
+            • <strong>VARCHAR(255) Habit:</strong> MySQL mein internal memory buffer allocations ke liye developers har column par <code>VARCHAR(255)</code> lagate the. PostgreSQL mein <code>TEXT</code> aur <code>VARCHAR(n)</code> exact same <code>varlena</code> C-structure use karte hain—isiliye PostgreSQL mein <code>VARCHAR(255)</code> likhne ka koi performance benefit nahi hota! Bejhijhak <code>TEXT</code> use karein.<br>
+            • <strong>UUIDv7 over AUTO_INCREMENT:</strong> Distributed microservices aur SaaS apps mein sequential IDs leak hone (e.g. <code>api/invoices/101</code>) se bachne ke liye <strong>UUIDv7</strong> modern standard ban chuka hai.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">💡</div>
+            <div class="concept-title">Myth: "VARCHAR(255) is Faster than TEXT"</div>
+            <div class="concept-desc">
+              MySQL habit ki wajah se log <code>VARCHAR(255)</code> likhte hain. Lekin <strong>PostgreSQL mein TEXT aur VARCHAR under-the-hood bilkul identical hain!</strong> Dono C ke <code>varlena</code> structure use karte hain. <code>TEXT</code> use karein bina kisi dar ke!
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">💰</div>
+            <div class="concept-title">Money Math: NUMERIC vs FLOAT</div>
+            <div class="concept-desc">
+              Financial calculation mein kabhi <code>FLOAT</code> ya <code>DOUBLE PRECISION</code> use na karein (floating-point binary rounding errors: <code>0.1 + 0.2 = 0.30000000000000004</code>). Currency ke liye hamesha <strong>NUMERIC(12, 2)</strong> use karein (MySQL ke <code>DECIMAL</code> jaisa).
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🆔</div>
+            <div class="concept-title">PK Evolution: SERIAL to UUIDv7</div>
+            <div class="concept-desc">
+              <code>SERIAL</code> ek purana hack hai. Modern PostgreSQL (PG 10+) mein SQL Standard <strong>GENERATED ALWAYS AS IDENTITY</strong> use hota hai. Distributed apps ke liye <strong>UUIDv7</strong> time-ordered hota hai, jo B-tree index ko superfast rakhta hai.
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📜 The Great Text Comparison: TEXT vs VARCHAR(n) vs CHAR(n)</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Data Type</th>
+                <th>Storage Engine Mechanics</th>
+                <th>Performance Difference</th>
+                <th>When to Use in Real Projects</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>TEXT</code></td>
+                <td>Variable length, compressed automatically via TOAST if &gt; 2KB.</td>
+                <td>⚡ Fast (Zero length check overhead)</td>
+                <td><strong>Default choice</strong> for 95% of text columns (names, descriptions, blogs).</td>
+              </tr>
+              <tr>
+                <td><code>VARCHAR(n)</code></td>
+                <td>Exact same <code>varlena</code> storage as TEXT + length check constraint.</td>
+                <td>⚡ Same speed (nano-second check)</td>
+                <td>Use only when business strictly demands hard limits (e.g. <code>VARCHAR(10)</code> phone).</td>
+              </tr>
+              <tr>
+                <td><code>CHAR(n)</code></td>
+                <td>Fixed length with blank padding (spaces fill up unused length).</td>
+                <td>❌ Slower &amp; wastes space</td>
+                <td>Rarely used. Only for fixed hashes (e.g. SHA-256 hash <code>CHAR(64)</code>).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🔑 Primary Key Showdown: BIGINT vs UUIDv4 vs UUIDv7</h3>
+
+        <div class="diagram-container">
+          <div class="diagram-title">Why UUIDv4 Destroys B-Tree Indexes, but UUIDv7 Fixes It</div>
+          <div class="diagram-grid">
+            <div class="diagram-card danger-card">
+              <h4 style="color:#ef4444; margin-bottom:10px;">❌ UUIDv4 (Pure Random Entropy)</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • Completely random 128-bit hex string.<br>
+                • Har naya insert B-tree index ke random page par land karta hai.<br>
+                • <strong>Problem:</strong> Constant B-tree page splits, random disk writes, and high cache evictions!
+              </p>
+            </div>
+            <div class="diagram-card success-card">
+              <h4 style="color:#10b981; margin-bottom:10px;">✅ UUIDv7 (Time-Ordered + Randomness)</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • First 48 bits = Millisecond Unix Timestamp.<br>
+                • Last 74 bits = Cryptographic Random Entropy.<br>
+                • <strong>Result:</strong> Sequential B-Tree appending (same speed as BIGINT!) + Global uniqueness across microservices!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-container" style="margin-top:28px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Modern Table Definition with Best-Practice Primitives</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Modern BIGINT Identity (Recommended for internal/admin databases)
+CREATE TABLE customers (
+    -- Modern SQL standard instead of legacy SERIAL
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    
+    -- TEXT is optimal; no arbitrary 255 character limit
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    
+    -- Fixed-point exact precision for financial billing
+    wallet_balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    
+    -- Boolean flag
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    
+    -- Timezone-aware timestamp (Never use plain TIMESTAMP!)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Distributed SaaS Table using UUIDv7 Primary Keys
+-- (In PostgreSQL 17+, gen_random_uuidv7() is native. For PG 14-16, use standard function below:)
+CREATE OR REPLACE FUNCTION generate_uuidv7() RETURNS uuid AS $$
+DECLARE
+    unix_time_ms bytea;
+    random_bytes bytea;
+BEGIN
+    unix_time_ms := substring(int8send(floor(extract(epoch from clock_timestamp()) * 1000)::bigint) from 3 for 6);
+    random_bytes := gen_random_bytes(10);
+    
+    -- Set version 7 and RFC 4122 variant bits
+    RETURN encode(
+        unix_time_ms || 
+        set_byte(substring(random_bytes from 1 for 2), 0, (get_byte(substring(random_bytes from 1 for 2), 0) &amp; 15) | 112) || 
+        set_byte(substring(random_bytes from 3 for 8), 0, (get_byte(substring(random_bytes from 3 for 8), 0) &amp; 63) | 128), 
+        'hex'
+    )::uuid;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+-- Create orders table with fast UUIDv7
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT generate_uuidv7(),
+    customer_id BIGINT REFERENCES customers(id),
+    total_amount NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: DATE, TIME & TIMESTAMPTZ -->
+    <section id="sec-datetime-timezone" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">⏰ Time Architecture • Part 2 • Date, Time &amp; TIMESTAMPTZ Traps</div>
+          <h2 class="panel-title">Date, Time &amp; Timezones: Avoiding the #1 Production Date Bug</h2>
+          <p class="panel-subtitle">
+            Web applications ka sabse common bug: <strong>TIMESTAMP vs TIMESTAMPTZ</strong>. Jaaniye PostgreSQL internally time kaise store karta hai, session conversions kaise kaam karte hain, aur <code>INTERVAL</code> arithmetic se clean subscriptions kaise calculate hoti hain.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: DATETIME vs TIMESTAMPTZ (Year 2038 Danger!)</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL DATETIME:</strong> MySQL mein <code>DATETIME</code> sirf ek dumb string jaisa hota hai (e.g. <code>2026-09-09 14:00:00</code>). Ise nahi pata ki yeh UTC hai ya IST. Timezone offset kabhi convert nahi hota.<br>
+            • <strong>MySQL TIMESTAMP (Year 2038 Trap):</strong> MySQL ka <code>TIMESTAMP</code> timezone handle karta hai, lekin wo <strong>32-bit integer</strong> hai jo <strong>19 January 2038</strong> ko crash ho jayega (Unix 2038 bug)!<br>
+            • <strong>PostgreSQL TIMESTAMPTZ:</strong> PostgreSQL ka <code>TIMESTAMPTZ</code> <strong>64-bit microsecond integer</strong> hai jo 294,276 AD tak safe hai. Yeh input ko hamesha disk par UTC mein convert karke store karta hai aur client ke session ke hisab se dynamically format karta hai!
+          </p>
+        </div>
+
+        <div class="alert-box alert-danger">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-content">
+            <div class="alert-title">The #1 Date Mistake: Using TIMESTAMP Instead of TIMESTAMPTZ</div>
+            <p>
+              <code>TIMESTAMP</code> (without timezone) ek deewar par lagi ghadi jaisa hota hai: <code>2026-09-09 14:00:00</code>. Ise nahi pata ki yeh Delhi ka time hai ya New York ka! Agar Delhi ka user 2 PM par order karta hai, toh California ke admin ko bhi 2 PM hi dikhega (jo ki 9.5 ghante aage hai!).<br>
+              <strong>The Golden Rule:</strong> Web applications ke sabhi timestamp columns (<code>created_at</code>, <code>updated_at</code>, <code>paid_at</code>) ke liye <strong>hamesha TIMESTAMPTZ use karein!</strong>
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🧠 How TIMESTAMPTZ Works Internally (The Hidden Secret)</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Bohot se developers sochte hain ki <code>TIMESTAMPTZ</code> timezone ka text (e.g. "Asia/Kolkata") disk par store karta hai. <strong>Nahi!</strong>
+        </p>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🌐</div>
+            <div class="concept-title">1. Input Conversion to UTC</div>
+            <div class="concept-desc">
+              Jab aap koi time insert karte hain (e.g. <code>2026-09-09 14:30:00+05:30</code>), PostgreSQL use turant convert karke <strong>pure UTC (8-byte integer offset)</strong> mein disk par likhta hai.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🔄</div>
+            <div class="concept-title">2. Output Conversion on the Fly</div>
+            <div class="concept-desc">
+              Jab client <code>SELECT</code> karta hai, PostgreSQL client ke active session timezone (<code>SET timezone = '...'</code>) ke hisab se UTC time ko automatically client ke local time mein format karke return karta hai!
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🛡️</div>
+            <div class="concept-title">3. Daylight Saving Proof</div>
+            <div class="concept-desc">
+              US/Europe mein clock 1 ghanta aage/peeche hoti hai (Daylight Saving Time). Kyunki PostgreSQL disk par hamesha UTC store karta hai, daylight saving transition par kabhi data corrupt nahi hota!
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⏳ Date Arithmetic with INTERVAL</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          PostgreSQL mein time add ya subtract karna natural English jaisa hota hai (Compare with MySQL <code>DATE_ADD(NOW(), INTERVAL 14 DAY)</code>):
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Real-Time Timezone Demonstration &amp; INTERVAL Math</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Live Timezone Conversion Demo
+-- Current time in UTC
+SELECT NOW() AT TIME ZONE 'UTC' AS time_in_london;
+
+-- Same instant formatted for India
+SELECT NOW() AT TIME ZONE 'Asia/Kolkata' AS time_in_india;
+
+-- Same instant formatted for New York
+SELECT NOW() AT TIME ZONE 'America/New_York' AS time_in_new_york;
+
+-- 2. Clean INTERVAL Arithmetic for SaaS Subscriptions (Much cleaner than MySQL DATE_ADD)
+SELECT 
+    NOW() AS current_time,
+    NOW() + INTERVAL '14 days' AS trial_expiry_date,
+    NOW() + INTERVAL '1 month' AS next_monthly_billing_date,
+    NOW() - INTERVAL '30 minutes' AS active_session_cutoff;
+
+-- 3. Monthly Chart Aggregation using DATE_TRUNC
+-- Truncates timestamp to the first second of the month (e.g. 2026-09-01 00:00:00)
+SELECT 
+    DATE_TRUNC('month', created_at) AS billing_month,
+    COUNT(*) AS total_invoices,
+    SUM(total_amount) AS monthly_revenue
+FROM orders
+GROUP BY billing_month
+ORDER BY billing_month DESC;
+
+-- 4. Calculate exact account age in human terms
+SELECT 
+    id, 
+    email, 
+    AGE(NOW(), created_at) AS account_lifetime
+FROM customers;
+-- OUTPUT: '1 year 3 mons 12 days 04:15:22'</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: ARRAYS & ENUMS -->
+    <section id="sec-arrays-enums" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">📦 Collections &amp; Enums • Part 3 • Native Arrays &amp; Custom Types</div>
+          <h2 class="panel-title">PostgreSQL Native Arrays &amp; ENUMs: When to Avoid Pivot Tables</h2>
+          <p class="panel-subtitle">
+            Beginner developers har chhoti cheez ke liye 3 tables aur complex <code>JOIN</code> pivot tables banate hain. Sikhiye kab PostgreSQL ke native <strong>Arrays</strong> 10x faster hote hain aur custom <strong>ENUM</strong> types kaise data integrity maintain karte hain.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: No Native Arrays in MySQL vs Postgres TEXT[]</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL (No Arrays):</strong> MySQL mein koi native Array data type nahi hota! Developers ya toh comma-separated string banate hain (aur slow <code>FIND_IN_SET()</code> use karte hain) ya fir 3 alag tables (<code>posts</code>, <code>tags</code>, <code>post_tags</code> pivot) banate hain.<br>
+            • <strong>PostgreSQL Native Arrays:</strong> PostgreSQL mein <code>TEXT[]</code> ya <code>INT[]</code> first-class citizen hain! Inhe <strong>GIN indexes</strong> se sub-millisecond search kiya ja sakta hai.<br>
+            • <strong>ENUM Architecture:</strong> MySQL mein ENUM table column ke definition se locked hota hai (<code>status ENUM('active','inactive')</code>). Change karne ke liye pura table rewrite (<code>ALTER TABLE MODIFY</code>) hota tha. PostgreSQL mein <code>CREATE TYPE</code> ek independent, reusable database object hota hai jise 100 tables mein reuse kiya ja sakta hai!
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🏷️</div>
+            <div class="concept-title">When to Use Arrays (TEXT[])</div>
+            <div class="concept-desc">
+              Agar data lightweight hai (e.g. blog tags, user roles <code>['admin', 'finance']</code>, phone numbers) aur unka apna koi extra metadata nahi hai, toh Array column use karein. Zero JOINs, single read!
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🔗</div>
+            <div class="concept-title">When to Use Traditional Pivot Tables</div>
+            <div class="concept-desc">
+              Agar relation entity ke upar apna alag data hai (e.g. <code>assigned_at</code>, <code>granted_by_user_id</code>) ya tag ka apna slug/SEO description hai, toh standard relational many-to-many pivot table banayein.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🛡️</div>
+            <div class="concept-title">Type-Safe 4-Byte ENUMs</div>
+            <div class="concept-desc">
+              Plain string <code>VARCHAR(20)</code> store karne ke bajaye custom <code>CREATE TYPE ... AS ENUM</code> banayein. Disk par sirf 4 bytes leta hai aur typos (e.g. 'pedning') ko engine level par reject karta hai.
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚡ Core Array Operators: @&gt;, &amp;&amp;, and ANY</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Operator / Function</th>
+                <th>Meaning</th>
+                <th>SQL Example</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>@&gt;</code> (Contains)</td>
+                <td>Does left array contain all elements of right array?</td>
+                <td><code>ARRAY['php', 'postgres', 'vue'] @&gt; ARRAY['postgres']</code></td>
+                <td><code>TRUE</code></td>
+              </tr>
+              <tr>
+                <td><code>&amp;&amp;</code> (Overlaps)</td>
+                <td>Do both arrays share at least one common element?</td>
+                <td><code>ARRAY['apple', 'banana'] &amp;&amp; ARRAY['banana', 'cherry']</code></td>
+                <td><code>TRUE</code></td>
+              </tr>
+              <tr>
+                <td><code>= ANY()</code></td>
+                <td>Does scalar value match any element in array?</td>
+                <td><code>'admin' = ANY(roles)</code></td>
+                <td><code>TRUE / FALSE</code></td>
+              </tr>
+              <tr>
+                <td><code>UNNEST()</code></td>
+                <td>Expands array into individual relational rows.</td>
+                <td><code>SELECT UNNEST(tags) FROM articles;</code></td>
+                <td>1 row per tag</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-container" style="margin-top:28px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Practical Array Operations &amp; Custom ENUMs</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Create a custom type-safe ENUM for Order Statuses
+CREATE TYPE order_status AS ENUM (
+    'draft',
+    'pending_payment',
+    'processing',
+    'shipped',
+    'delivered',
+    'cancelled'
+);
+
+-- 2. Create articles table using both ENUM and native TEXT[] Array
+CREATE TABLE articles (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title TEXT NOT NULL,
+    status order_status NOT NULL DEFAULT 'draft',
+    tags TEXT[] NOT NULL DEFAULT '{}',
+    published_at TIMESTAMPTZ
+);
+
+-- 3. Insert sample data with array literals
+INSERT INTO articles (title, status, tags) VALUES 
+('Mastering PostgreSQL Internals', 'processing', ARRAY['database', 'postgres', 'backend']),
+('Building AI Agents with Laravel', 'shipped', ARRAY['laravel', 'ai', 'php']);
+
+-- 4. Query: Find all articles that have 'postgres' tag (Indexed via GIN!)
+SELECT id, title, tags 
+FROM articles 
+WHERE tags @&gt; ARRAY['postgres'];
+
+-- 5. Query: Find articles that have EITHER 'laravel' OR 'database'
+SELECT id, title, tags 
+FROM articles 
+WHERE tags &amp;&amp; ARRAY['laravel', 'database'];
+
+-- 6. Add element to array dynamically in an UPDATE
+UPDATE articles 
+SET tags = array_append(tags, 'intermediate')
+WHERE id = 1;
+
+-- 7. Reporting: Expand arrays into relational rows with UNNEST
+SELECT 
+    UNNEST(tags) AS tag_name, 
+    COUNT(*) AS article_count
+FROM articles
+GROUP BY tag_name
+ORDER BY article_count DESC;
+
+-- 8. Senior Tip: Safely adding new value to an active ENUM in production
+ALTER TYPE order_status ADD VALUE 'refunded' AFTER 'cancelled';</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: JSON VS JSONB -->
+    <section id="sec-json-vs-jsonb" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">⚡ Semi-Structured Data • Part 4 • JSON vs JSONB Binary Mastery</div>
+          <h2 class="panel-title">JSON vs JSONB: Why PostgreSQL Beats Dedicated Document Stores</h2>
+          <p class="panel-subtitle">
+            PostgreSQL ke paas do JSON types hain: <code>json</code> aur <code>jsonb</code>. Dono ke beech ka antar samjhiye, core operators (<code>-&gt;</code>, <code>-&gt;&gt;</code>, <code>@&gt;</code>) ko master karein, aur partial JSON updates seekhein.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: MySQL JSON vs PostgreSQL JSONB Indexing</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL JSON Limitations:</strong> MySQL 8.0 mein JSON column ke andar kisi key ko index karne ke liye aapko <strong>Generated Virtual Column</strong> banana padta hai (e.g. <code>ALTER TABLE t ADD COLUMN brand VARCHAR(50) AS (data-&gt;&gt;'$.brand'), ADD INDEX(brand)</code>). Har nayi JSON key ke liye alag schema alter karna padta hai!<br>
+            • <strong>PostgreSQL JSONB Superpower:</strong> PostgreSQL mein aap pure JSON document par ek hi <strong>GIN index</strong> (<code>USING GIN (attributes jsonb_path_ops)</code>) laga sakte hain. Iske baad aap chahe 1,000 alag dynamic keys par <code>@&gt;</code> search karein, sabhi queries bina naye columns banaye instant sub-millisecond index scan use karti hain!<br>
+            • <strong>Operators:</strong> MySQL ka <code>JSON_EXTRACT(data, '$.name')</code> ya <code>data-&gt;'$.name'</code> PostgreSQL mein <code>data-&gt;'name'</code> aur <code>data-&gt;&gt;'name'</code> (clean text) ban jata hai.
+          </p>
+        </div>
+
+        <div class="alert-box alert-info">
+          <div class="alert-icon">💡</div>
+          <div class="alert-content">
+            <div class="alert-title">Simple Analogy: Plain JSON vs Binary JSONB</div>
+            <p>
+              • <strong>Plain JSON:</strong> Ek plain text document jaisa hai. Yeh aapke raw text ko exact whitespace ke sath store karta hai. Write fast hota hai, lekin har search par ise text parse karna padta hai.<br>
+              • <strong>JSONB (Binary JSON):</strong> Ek parsed, structured binary tree jaisa hai. Yeh extra spaces hata deta hai, duplicate keys delete kar deta hai, aur keys ko binary format mein index karta hai.<br>
+              <strong>Rule of Thumb:</strong> 99% production projects mein <strong>hamesha JSONB use karein!</strong>
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🔍 Master the Core JSONB Operators</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Operator</th>
+                <th>Return Type</th>
+                <th>Description</th>
+                <th>Example (data = '{"name": "Pankaj", "age": 28}')</th>
+                <th>Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>-&gt;</code></td>
+                <td><code>JSONB</code></td>
+                <td>Extracts element as JSON object (keeps quotes).</td>
+                <td><code>data -&gt; 'name'</code></td>
+                <td><code>"Pankaj"</code> (jsonb string)</td>
+              </tr>
+              <tr>
+                <td><code>-&gt;&gt;</code></td>
+                <td><code>TEXT</code></td>
+                <td>Extracts element as clean SQL TEXT string.</td>
+                <td><code>data -&gt;&gt; 'name'</code></td>
+                <td><code>Pankaj</code> (raw text)</td>
+              </tr>
+              <tr>
+                <td><code>@&gt;</code></td>
+                <td><code>BOOLEAN</code></td>
+                <td>Does left JSONB contain the right JSONB structure?</td>
+                <td><code>data @&gt; '{"age": 28}'</code></td>
+                <td><code>TRUE</code> (GIN Indexable!)</td>
+              </tr>
+              <tr>
+                <td><code>?</code></td>
+                <td><code>BOOLEAN</code></td>
+                <td>Does the top-level string key exist in JSONB?</td>
+                <td><code>data ? 'name'</code></td>
+                <td><code>TRUE</code></td>
+              </tr>
+              <tr>
+                <td><code>-</code></td>
+                <td><code>JSONB</code></td>
+                <td>Deletes a key or index from the JSONB object.</td>
+                <td><code>data - 'age'</code></td>
+                <td><code>{"name": "Pankaj"}</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-container" style="margin-top:28px;">
+          <div class="code-header">
+            <span class="code-lang">SQL • Real-World E-Commerce Products Table with JSONB</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Create table with dynamic product specifications
+CREATE TABLE products (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title TEXT NOT NULL,
+    price NUMERIC(10, 2) NOT NULL,
+    -- Flexible schema for dynamic product attributes (color, ram, storage, warranty)
+    attributes JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+-- 2. Insert diverse semi-structured records
+INSERT INTO products (title, price, attributes) VALUES 
+(
+    'MacBook Pro 16', 
+    2499.00, 
+    '{"category": "laptop", "ram_gb": 32, "storage_gb": 1000, "brand": "Apple", "colors": ["silver", "space_gray"]}'
+),
+(
+    'Wireless Mechanical Keyboard', 
+    149.00, 
+    '{"category": "accessory", "switch": "Cherry MX Red", "wireless": true, "bluetooth": true}'
+);
+
+-- 3. Query 1: Extract text value for WHERE condition
+SELECT title, price, attributes-&gt;&gt;'brand' AS brand
+FROM products
+WHERE attributes-&gt;&gt;'category' = 'laptop';
+
+-- 4. Query 2: Numeric filtering (Cast text to integer)
+SELECT title, price, (attributes-&gt;&gt;'ram_gb')::INT AS ram
+FROM products
+WHERE (attributes-&gt;&gt;'ram_gb')::INT &gt;= 16;
+
+-- 5. Query 3: Containment check using @&gt; (Lightning-fast with GIN index!)
+SELECT title, price 
+FROM products
+WHERE attributes @&gt; '{"wireless": true}';
+
+-- 6. Query 4: Updating a single nested key without overwriting the entire JSON document
+-- jsonb_set(target_column, '{path,to,key}', 'new_value'::jsonb)
+UPDATE products
+SET attributes = jsonb_set(attributes, '{ram_gb}', '64'::jsonb)
+WHERE id = 1;
+
+-- 7. Query 5: Create a GIN index on attributes for instant JSON search
+CREATE INDEX idx_products_attributes ON products USING GIN (attributes jsonb_path_ops);</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: RANGE TYPES & ANTI-DOUBLE-BOOKING -->
+    <section id="sec-range-types" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">📅 Temporal Ranges • Part 5 • Range Types &amp; Anti-Double-Booking</div>
+          <h2 class="panel-title">Range Types &amp; The Impossible Bug: Eliminating Double-Booking Forever</h2>
+          <p class="panel-subtitle">
+            Hotel booking, doctor appointments, aur meeting rooms mein <strong>Double Booking race conditions</strong> application code se rokna impossible hota hai. Jaaniye kaise PostgreSQL ke <strong>Range Types</strong> aur <strong>EXCLUDE</strong> constraints is problem ko hamesha ke liye solve kar dete hain.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: MySQL Table Locks vs PostgreSQL EXCLUDE</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>How MySQL Handles Overlap:</strong> MySQL ke paas koi Range data types ya Exclusion constraints nahi hote! Double-booking rokne ke liye MySQL developers ko ya toh pura table lock (<code>LOCK TABLES bookings WRITE</code>) karna padta hai, ya pessimistic row-level locking (<code>SELECT ... FOR UPDATE</code>) chalani padti hai, jo concurrent high traffic par heavy deadlocks aur slow performance cause karti hai.<br>
+            • <strong>How PostgreSQL Solves It:</strong> PostgreSQL mein <code>TSTZRANGE</code> ek native scalar data type hai, aur <code>EXCLUDE USING gist</code> GiST R-Tree index use karta hai. Database engine kisi bhi do overlapping intervals ko same room par aane hi nahi deta—chahe 10,000 requests concurrent execute ho rahi hon! Zero application code, zero race condition!
+          </p>
+        </div>
+
+        <div class="alert-box alert-danger">
+          <div class="alert-icon">⚡</div>
+          <div class="alert-content">
+            <div class="alert-title">The Real-World Race Condition Nightmare</div>
+            <p>
+              Sochiye do users ek hi second mein Room 101 book karne ki koshish karte hain:<br>
+              • User A: 10:00 AM to 11:00 AM<br>
+              • User B: 10:30 AM to 11:30 AM<br>
+              Agar aap application code mein <code>if (!Booking::exists(...))</code> likhte hain, toh dono requests simultaneous execution ki wajah se <code>if</code> pass kar lengi, aur <strong>dono bookings database mein insert ho jayengi!</strong>
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📐 Understanding Range Types &amp; Bracket Notation</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          PostgreSQL do alag columns (<code>start_date</code> aur <code>end_date</code>) ke bajaye ek single <strong>Range Type</strong> provide karta hai:
+        </p>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">📅</div>
+            <div class="concept-title">daterange &amp; tstzrange</div>
+            <div class="concept-desc">
+              Date ranges (hotels) ya Timestamp ranges (doctor appointments) ko single unit ki tarah store karta hai. Example: <code>'[2026-05-01, 2026-05-05)'::daterange</code>.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🔲</div>
+            <div class="concept-title">Bracket vs Parenthesis Notation</div>
+            <div class="concept-desc">
+              <code>[</code> (Square bracket) means <strong>Inclusive</strong> (is point ko include karo).<br>
+              <code>)</code> (Parenthesis) means <strong>Exclusive</strong> (is point ke pehle stop ho jao - perfect for check-out day!).
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">⚔️</div>
+            <div class="concept-title">The Overlap Operator (&amp;&amp;)</div>
+            <div class="concept-desc">
+              Do ranges aapas mein takra rahi hain ya nahi, yeh check karne ke liye simple <code>range1 &amp;&amp; range2</code> operator use hota hai. Zero complex date math required!
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🛡️ The Magic Constraint: EXCLUDE USING gist</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Yeh PostgreSQL ka sabse powerful constraint hai. Yeh database engine level par enforce karta hai ki: <em>"Kisi bhi same room_id ke liye booking range kabhi aapas mein overlap (<code>&amp;&amp;</code>) nahi ho sakti!"</em>
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Complete Double-Booking Prevention Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- 1. Enable btree_gist extension (Required to combine scalar = with range &amp;&amp;)
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+-- 2. Create conference room reservations table
+CREATE TABLE room_bookings (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    room_id INT NOT NULL,
+    booked_by TEXT NOT NULL,
+    -- tstzrange stores start and end timestamp as a single continuous span
+    booking_time TSTZRANGE NOT NULL,
+    
+    -- THE MAGIC EXCLUSION CONSTRAINT:
+    -- If room_id is EQUAL (=), booking_time MUST NOT OVERLAP (&amp;&amp;)
+    CONSTRAINT no_overlapping_room_bookings 
+        EXCLUDE USING gist (
+            room_id WITH =, 
+            booking_time WITH &amp;&amp;
+        )
+);
+
+-- 3. TEST 1: First booking for Room 101 (10:00 to 11:00) -&gt; SUCCESS!
+INSERT INTO room_bookings (room_id, booked_by, booking_time) VALUES (
+    101, 
+    'Rahul Sharma', 
+    tstzrange('2026-09-15 10:00:00+05:30', '2026-09-15 11:00:00+05:30')
+);
+
+-- 4. TEST 2: Overlapping booking for Room 101 (10:30 to 11:30) -&gt; BLOCKED!
+-- Database immediately throws:
+-- ERROR: conflicting key value violates exclusion constraint "no_overlapping_room_bookings"
+INSERT INTO room_bookings (room_id, booked_by, booking_time) VALUES (
+    101, 
+    'Priya Patel', 
+    tstzrange('2026-09-15 10:30:00+05:30', '2026-09-15 11:30:00+05:30')
+);
+
+-- 5. TEST 3: Booking Room 102 at the exact same time -&gt; SUCCESS!
+-- Because room_id is different, no conflict occurs!
+INSERT INTO room_bookings (room_id, booked_by, booking_time) VALUES (
+    102, 
+    'Priya Patel', 
+    tstzrange('2026-09-15 10:30:00+05:30', '2026-09-15 11:30:00+05:30')
+);</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: ADVANCED TABLE CONSTRAINTS -->
+    <section id="sec-constraints-integrity" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🛡️ Schema Integrity • Part 6 • Advanced Table Constraints</div>
+          <h2 class="panel-title">Enterprise Schema Constraints: Defense-in-Depth Beyond Application Code</h2>
+          <p class="panel-subtitle">
+            Application-level validation (Laravel FormRequests / Zod) zaroori hai, lekin data integrity ki <strong>final guarantee database engine</strong> deta hai. Sikhiye multi-column <code>CHECK</code> constraints, SaaS-saving <strong>Partial Unique Indexes</strong>, aur safe Foreign Key cascades.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+          <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Ignored CHECK Constraints &amp; Partial Indexes</h4>
+          <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            • <strong>MySQL CHECK Constraint History:</strong> MySQL 8.0.16 se pehle, MySQL <code>CHECK</code> syntax ko parse toh karta tha lekin silently IGNORE kar deta tha! Is wajah se kayi MySQL developers ko database-level validation par vishwas nahi rehta tha. PostgreSQL mein <code>CHECK</code> constraints Day 1 se rock-solid, super-strict aur fast hain!<br>
+            • <strong>No Partial Indexes in MySQL:</strong> MySQL mein partial indexes (filtered indexes) exist nahi karte! Agar aapko <code>UNIQUE(user_id) WHERE status = 'active'</code> chahiye, toh MySQL mein gande hacks karne padte hain (jaise generated virtual column with NULL). PostgreSQL mein native <code>WHERE</code> clause index banta hai jo sirf matching rows index karta hai!
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🚦</div>
+            <div class="concept-title">Why App Validation is Not Enough</div>
+            <div class="concept-desc">
+              Direct SQL scripts, background queues, automated seeder scripts, ya background microservices application validation ko bypass kar sakte hain. Database constraints ensure karte hain ki corrupt data kabhi table mein ghus hi na sake.
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">🎯</div>
+            <div class="concept-title">Partial Unique Indexes</div>
+            <div class="concept-desc">
+              Pura table unique karne ke bajaye sirf filtered rows par uniqueness lagayein. Example: User ke 10 purane cancelled subscriptions ho sakte hain, lekin <code>status = 'active'</code> wala sirf <strong>1</strong> hi ho sakta hai!
+            </div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-icon">💣</div>
+            <div class="concept-title">The CASCADE Deletion Danger</div>
+            <div class="concept-desc">
+              <code>ON DELETE CASCADE</code> dangerous hota hai. Agar kisi ne galti se 1 organization delete ki, toh uske 200,000 invoices aur payments bina kisi warning ke vanish ho jaate hain! Financial tables par hamesha <strong>RESTRICT</strong> use karein.
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🛡️ Real-World Multi-Column CHECK Constraints</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          PostgreSQL mein <code>CHECK</code> constraints columns ke beech ke mathematical relations validate kar sakte hain:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Production Invoices Table with Strict Constraints</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>-- Production Invoicing Table with Mathematical &amp; Text Integrity
+CREATE TABLE invoices (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customer_id BIGINT NOT NULL,
+    invoice_number TEXT NOT NULL UNIQUE,
+    
+    subtotal NUMERIC(10, 2) NOT NULL,
+    discount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    tax_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    total_amount NUMERIC(10, 2) NOT NULL,
+    
+    status TEXT NOT NULL DEFAULT 'draft',
+    due_date DATE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- 1. Constraint: Subtotal and amounts must be non-negative
+    CONSTRAINT positive_amounts CHECK (
+        subtotal &gt;= 0 AND 
+        discount &gt;= 0 AND 
+        tax_amount &gt;= 0
+    ),
+
+    -- 2. Constraint: Discount cannot exceed the subtotal!
+    CONSTRAINT discount_within_limit CHECK (
+        discount &lt;= subtotal
+    ),
+
+    -- 3. Constraint: Total must equal (subtotal - discount + tax)
+    CONSTRAINT accurate_total_calculation CHECK (
+        total_amount = (subtotal - discount + tax_amount)
+    ),
+
+    -- 4. Constraint: Clean non-empty string check
+    CONSTRAINT non_empty_invoice_number CHECK (
+        length(trim(invoice_number)) &gt;= 3
+    )
+);</code></pre>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">⚡ The SaaS Partial Unique Index Pattern</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Agar aap standard <code>UNIQUE(user_id)</code> lagayenge, toh user dubara kabhi subscribe nahi kar payega. Partial index se sirf active status filter hota hai:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">SQL • Partial Unique Index for SaaS Subscriptions</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>CREATE TABLE subscriptions (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    plan_code TEXT NOT NULL,
+    status TEXT NOT NULL, -- 'active', 'cancelled', 'past_due', 'expired'
+    current_period_end TIMESTAMPTZ NOT NULL
+);
+
+-- PARTIAL UNIQUE INDEX:
+-- Enforces that a user can have at most ONE 'active' subscription!
+-- Cancelled, expired, or past_due rows can exist multiple times for the same user.
+CREATE UNIQUE INDEX unique_active_user_subscription 
+ON subscriptions (user_id) 
+WHERE status = 'active';
+
+-- TEST:
+-- Insert 1: User 42 has cancelled sub -&gt; SUCCESS
+INSERT INTO subscriptions (user_id, plan_code, status, current_period_end) 
+VALUES (42, 'pro_monthly', 'cancelled', NOW() - INTERVAL '1 month');
+
+-- Insert 2: User 42 has another expired sub -&gt; SUCCESS
+INSERT INTO subscriptions (user_id, plan_code, status, current_period_end) 
+VALUES (42, 'starter', 'expired', NOW() - INTERVAL '15 days');
+
+-- Insert 3: User 42 subscribes to active pro -&gt; SUCCESS
+INSERT INTO subscriptions (user_id, plan_code, status, current_period_end) 
+VALUES (42, 'pro_yearly', 'active', NOW() + INTERVAL '1 year');
+
+-- Insert 4: Attempting a second active sub for User 42 -&gt; BLOCKED!
+-- ERROR: duplicate key value violates unique constraint "unique_active_user_subscription"
+INSERT INTO subscriptions (user_id, plan_code, status, current_period_end) 
+VALUES (42, 'enterprise', 'active', NOW() + INTERVAL '1 year');</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: PITFALLS & CHEATSHEET -->
+    <section id="sec-pitfalls-cheatsheet" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🏆 Senior Architect • Part 7 • Production Pitfalls &amp; Cheatsheet</div>
+          <h2 class="panel-title">4 YOE Schema Design Pitfalls &amp; Master Data Types Cheatsheet</h2>
+          <p class="panel-subtitle">
+            Aise 4 fatal mistakes jo 4 YOE engineers ke production systems ko crash kar dete hain, aur Module 02 ka complete quick-reference cheatsheet.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card" style="border-left:4px solid #ef4444;">
+            <div class="concept-title" style="color:#f87171;">1. The JSONB "Dumping Ground" Trap</div>
+            <div class="concept-desc">
+              Kayi developers schema migration se bachne ke liye table mein ek bada <code>data JSONB</code> column banate hain aur relational model bhool jaate hain. <strong>Disaster:</strong> Zero Foreign Keys, relational JOINs slow ho jaate hain, aur partial index maintenance mushkil ho jati hai. Sirf truly dynamic attributes ke liye JSONB use karein!
+            </div>
+          </div>
+
+          <div class="concept-card" style="border-left:4px solid #f59e0b;">
+            <div class="concept-title" style="color:#fde68a;">2. SERIAL Integer Overflow Outage</div>
+            <div class="concept-desc">
+              High-write tables (jaise <code>audit_logs</code>, <code>stripe_events</code>, <code>user_clicks</code>) mein <code>SERIAL</code> (32-bit INT) lagane par jaise hi rows <strong>2.14 Billion</strong> cross karti hain, application par sabhi INSERTs fail ho jaate hain! High-write tables par hamesha <strong>BIGINT</strong> use karein.
+            </div>
+          </div>
+
+          <div class="concept-card" style="border-left:4px solid #38bdf8;">
+            <div class="concept-title" style="color:#7dd3fc;">3. Unindexed Foreign Keys in PostgreSQL</div>
+            <div class="concept-desc">
+              MySQL InnoDB foreign key par automatically index bana deta hai, lekin <strong>PostgreSQL Foreign Keys par index nahi banata!</strong> Agar aapne <code>child_table.customer_id</code> par manual index nahi banaya, toh parent record delete karte waqt PostgreSQL pura child table sequentially scan karega!
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📋 Master Data Types Quick-Reference Cheatsheet</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Recommended Data Type</th>
+                <th>When to Use in Real Projects</th>
+                <th>Common Mistake to Avoid</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Primary Key</strong></td>
+                <td><code>BIGINT IDENTITY</code> or <code>UUIDv7</code></td>
+                <td>BIGINT for internal single-DB apps; UUIDv7 for microservices/distributed SaaS.</td>
+                <td>Avoid legacy <code>SERIAL</code> or random <code>UUIDv4</code>.</td>
+              </tr>
+              <tr>
+                <td><strong>Text / Strings</strong></td>
+                <td><code>TEXT</code></td>
+                <td>Names, bios, descriptions, emails, slugs.</td>
+                <td>Avoid arbitrary <code>VARCHAR(255)</code> limit without business need.</td>
+              </tr>
+              <tr>
+                <td><strong>Money &amp; Math</strong></td>
+                <td><code>NUMERIC(12, 2)</code></td>
+                <td>Prices, ledger balances, transaction fee amounts.</td>
+                <td>Never use <code>FLOAT</code> or <code>DOUBLE PRECISION</code> for billing!</td>
+              </tr>
+              <tr>
+                <td><strong>Timestamps</strong></td>
+                <td><code>TIMESTAMPTZ</code></td>
+                <td>Event logs, created_at, updated_at, scheduled tasks.</td>
+                <td>Never use plain <code>TIMESTAMP</code> in web applications.</td>
+              </tr>
+              <tr>
+                <td><strong>Collections</strong></td>
+                <td><code>TEXT[]</code> or <code>INT[]</code></td>
+                <td>Lightweight tags, roles, permissions without extra metadata.</td>
+                <td>Don't use if elements require their own foreign keys/metadata.</td>
+              </tr>
+              <tr>
+                <td><strong>Semi-Structured</strong></td>
+                <td><code>JSONB</code> (with GIN index)</td>
+                <td>Dynamic e-commerce specs, third-party webhook payloads.</td>
+                <td>Avoid plain <code>JSON</code>; always index with <code>jsonb_path_ops</code>.</td>
+              </tr>
+              <tr>
+                <td><strong>Scheduling</strong></td>
+                <td><code>TSTZRANGE</code> + <code>EXCLUDE</code></td>
+                <td>Hotel rooms, doctor shifts, meeting room bookings.</td>
+                <td>Don't rely on application code to prevent double-booking overlaps!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:32px 0 16px;">🗺️ The 8-Module PostgreSQL Curriculum Progress</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Topic</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Module 01</strong></td>
+                <td>PostgreSQL Architecture, Process Model &amp; Storage Engine Internals</td>
+                <td><span style="color:#6ee7b7; font-weight:bold;">✅ Completed</span></td>
+              </tr>
+              <tr style="background: rgba(56, 189, 248, 0.08);">
+                <td><strong>Module 02</strong></td>
+                <td><strong>Advanced Data Types, JSONB Mastery &amp; Schema Constraints</strong></td>
+                <td><span style="color:#6ee7b7; font-weight:bold;">✅ Active Completed</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 03</strong></td>
+                <td>Indexing Internals &amp; Strategies (B-Tree, GIN, GiST, BRIN for Billion Rows)</td>
+                <td><span style="color:#94a3b8;">⏳ Upcoming Next</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 04</strong></td>
+                <td>Transactions, Concurrency Control, Row Locks &amp; SKIP LOCKED</td>
+                <td><span style="color:#94a3b8;">⏳ Queued</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 05</strong></td>
+                <td>Execution Plans, EXPLAIN ANALYZE &amp; Cost Model Optimization</td>
+                <td><span style="color:#94a3b8;">⏳ Queued</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 06</strong></td>
+                <td>Advanced SQL Mastery: Recursive CTEs &amp; Window Functions</td>
+                <td><span style="color:#94a3b8;">⏳ Queued</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 07</strong></td>
+                <td>Partitioning, Sharding &amp; Foreign Data Wrappers</td>
+                <td><span style="color:#94a3b8;">⏳ Queued</span></td>
+              </tr>
+              <tr>
+                <td><strong>Module 08</strong></td>
+                <td>Replication, High Availability, PgBouncer &amp; PITR Backups</td>
+                <td><span style="color:#94a3b8;">⏳ Queued</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout-card" style="margin-top:32px; text-align:center; padding:2rem;">
+          <h3 style="color:#f8fafc; font-size:1.4rem; margin-bottom:12px;">🐘 Module 02 Completed!</h3>
+          <p style="color:#94a3b8; max-width:800px; margin:0 auto 20px; font-size:1rem; line-height:1.6;">
+            Aapne modern data types (UUIDv7, TIMESTAMPTZ, Arrays), binary JSONB operators, aur unbreakeable EXCLUDE constraints ko master kar liya hai.
+          </p>
+          <a href="../index.html" class="nav-btn primary" style="padding:0.75rem 1.75rem; font-size:1rem; text-decoration:none; display:inline-flex;">
+            🏠 Return to Learning Portal Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p><strong>PostgreSQL Advanced Architecture Mastery Suite</strong> • 4+ YOE Enterprise Engineering Track</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Portal Hub</a> • 
+      <a href="01_PostgreSQL_Architecture_and_Storage_Engine.html">Module 01</a> • 
+      <a href="#sec-primitives-pk">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching Function
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.panel-section, .section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy Code Function
+    function copyCode(button) {
+      const container = button.closest('.code-container') || button.closest('.code-block');
+      if (!container) return;
+      const codeElement = container.querySelector('pre code') || container.querySelector('pre');
+      if (!codeElement) return;
+
+      navigator.clipboard.writeText(codeElement.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress Bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+
+    // Sync tabs with URL hash
+    function syncHash() {
+      if (window.location.hash) {
+        const targetId = window.location.hash.substring(1);
+        const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(targetId));
+        if (targetBtn) switchTab(targetId, targetBtn);
+      }
+    }
+    window.addEventListener('DOMContentLoaded', syncHash);
+    window.addEventListener('hashchange', syncHash);
+  </script>
+</body>
+</html>

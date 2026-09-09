@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 04: Function Calling & Autonomous AI Agents | AI for Laravel Developers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #161f38;
+      --bg-code: #0b1120;
+      --accent: #f59e0b;
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --accent-secondary: #38bdf8;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #f59e0b;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Reading Progress Bar */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #f59e0b, #ec4899, #8b5cf6);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #f59e0b, #ec4899);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(10, 14, 26, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #fde68a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 950px;
+      line-height: 1.6;
+    }
+
+    /* Tab Navigation */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(236, 72, 153, 0.15));
+      color: #fde68a;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+    }
+
+    /* Section Panels */
+    .section-panel {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(245, 158, 11, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+    }
+
+    .callout.tip {
+      border-left-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--accent);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    .callout-header {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .callout.tip .callout-header { color: #6ee7b7; }
+    .callout.warning .callout-header { color: #fde68a; }
+    .callout.danger .callout-header { color: var(--accent-rose); }
+    .callout .callout-header { color: #fde68a; }
+
+    /* Code Blocks */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .code-filename {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fde68a;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    /* Grids & Tables */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .info-box h4 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0f172a;
+      color: #fde68a;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-amber { background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-blue { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #fde68a;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AI Track</span>
+      <span>AI for Laravel Developers</span>
+    </a>
+    <div class="nav-links">
+      <a href="03_RAG_and_PostgreSQL_pgvector.html" class="nav-btn">⬅️ Module 03</a>
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-agent-loop" class="nav-btn primary">🤖 Autonomous Agent</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">⚡ Module 04 • Agentic AI & Tool Calling</div>
+      <h1 class="hero-title">Function Calling, Strict JSON Schemas & Autonomous AI Agents</h1>
+      <p class="hero-desc">
+        AI ko sirf baatein karne ke bajaye real-world <strong>Laravel actions execute karne ki power</strong> dein. Seekhenge <strong>Prism Tools</strong> banana, <strong>Strict JSON Schema</strong> output validation, multi-turn <strong>ReAct autonomous loops</strong>, DB transaction rollback safety, aur human-in-the-loop authorization gates!
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-tool-theory', this)">⚙️ 1. Function Calling Theory</button>
+      <button class="tab-btn" onclick="switchTab('sec-prism-tools', this)">🛠️ 2. Defining Prism Tools</button>
+      <button class="tab-btn" onclick="switchTab('sec-structured-outputs', this)">📐 3. Strict JSON Schemas</button>
+      <button class="tab-btn" onclick="switchTab('sec-react-loop', this)">🔄 4. Multi-Turn ReAct Loop</button>
+      <button class="tab-btn" onclick="switchTab('sec-safety-transactions', this)">🛡️ 5. DB Safety & Policies</button>
+      <button class="tab-btn" onclick="switchTab('sec-agent-loop', this)">🤖 6. Full Operations Agent</button>
+      <button class="tab-btn" onclick="switchTab('sec-testing-cheatsheet', this)">📋 7. Pest Testing & Cheatsheet</button>
+    </div>
+
+
+    <!-- SECTION 1: FUNCTION CALLING THEORY & SECURITY BOUNDARY -->
+    <section id="sec-tool-theory" class="section-panel active">
+      <div class="card">
+        <div class="card-title">⚙️ Function Calling Architecture & The Security Boundary</div>
+        <div class="card-subtitle">AI ko "Text Generator" se "Autonomous Operations Engine" mein transform karne ka mechanism.</div>
+
+        <p>
+          Abhi tak humne dekha ki LLM sirf text ya Markdown generate karta tha. Lekin real enterprise software mein client chahta hai: 
+          <em>"Mera order #8841 cancel kar do", "Subscription upgrade kar do", "Stripe par credit limit badha do."</em>
+        </p>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.15rem;">Kaise Kaam Karta Hai Function Calling? (The Delegation Protocol)</h3>
+        <p>
+          LLM kabhi bhi directly aapke MySQL database ya PHP code ko run nahi karta (na hi use run karna chahiye). Yeh 4-step delegation cycle par kaam karta hai:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">architecture</span>
+            <span class="code-filename">function-calling-loop.txt</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>[Step 1: Declare Tools]
+Laravel ──► LLM: "Mere paas yeh 2 tools hain:
+                   - getOrderStatus(order_id: int)
+                   - processRefund(order_id: int, amount: float)"
+
+[Step 2: User Prompt]
+User ──► LLM: "Order #4092 ka status check karo aur $20 refund initiate karo."
+
+[Step 3: Intent Detection & Tool Call Request]
+LLM ──► Laravel: "Main text generate nahi kar raha. Kripya processRefund tool run karo:
+                  Arguments: {'order_id': 4092, 'amount': 20.00}"
+
+[Step 4: Secure PHP Execution & Resolution]
+Laravel: Checks $user-&gt;can('refund', $order) ──► Calls Stripe ──► DB Update
+Laravel ──► LLM: Tool Result: "{'status': 'success', 'refund_id': 're_9812'}"
+
+[Step 5: Final Natural Language Summary]
+LLM ──► User: "Order #4092 ke liye $20 ka refund successfully process kar diya gaya hai (Refund ID: re_9812)."</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="info-box" style="border-top: 3px solid var(--accent-rose);">
+            <h4>🚨 The Dangerous Misconception</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              Kuch developers sochte hain ki AI ko direct raw SQL run karne dena chahiye ya direct controller action execute karne dena chahiye. <strong>Yeh severe security vulnerability hai!</strong> Agar user prompt inject karega, toh AI poora database wipe out kar sakta hai.
+            </p>
+          </div>
+
+          <div class="info-box" style="border-top: 3px solid var(--accent-emerald);">
+            <h4>🛡️ The Laravel Security Boundary</h4>
+            <p style="font-size: 0.875rem; color: var(--text-secondary);">
+              <strong>LLM is only an Intent Parser &amp; Parameter Formatter.</strong><br>
+              Aapka Laravel backend <strong>Executive Authority</strong> hai. Tool execute hone se pehle Laravel Gate/Policy check karta hai, DB constraints enforce karta hai aur <code>DB::transaction()</code> ke andar safe execution karta hai.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <div class="callout-header">💡 Why Function Calling is 100x More Reliable Than Prompting</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Agar aap prompt mein likhenge: <em>"Output JSON with order_id and amount"</em>, toh standard chat model kabhi <code>```json</code> likh dega, kabhi extra commentary add kar dega, aur aapka PHP <code>json_decode()</code> fatal crash karega. <strong>Function Calling</strong> hardware-level constrained decoding use karta hai jo guarantee karta hai ki output valid, type-safe arguments honge!
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: DEFINING PRISM TOOLS -->
+    <section id="sec-prism-tools" class="section-panel">
+      <div class="card">
+        <div class="card-title">🛠️ Defining Tools in Prism-PHP with Strict Type Schemas</div>
+        <div class="card-subtitle">Kaise Prism fluent API se self-documenting, type-safe tools define kiye jaate hain.</div>
+
+        <p>
+          Prism-PHP mein tool define karna Laravel validation rules likhne jaisa intuitive hai. Model ko tool ka <strong>Name, Description aur Parameters</strong> provide kiye jaate hain.
+        </p>
+
+        <div class="callout tip">
+          <div class="callout-header">💡 The Power of Tool Descriptions</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            LLM aapke PHP code ko nahi dekhta; woh sirf <code>-&gt;for('...')</code> aur <code>-&gt;withParameter('...', 'Description')</code> ko padhta hai! Agar aapki description descriptive hogi (e.g. <em>"Use this tool whenever the customer mentions order delivery delay, shipping status, or tracking numbers"</em>), toh LLM 99.9% accuracy ke saath right tool pick karega.
+          </p>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Tool 1: Anonymous Inline Tool Definition</h3>
+        <p>Lightweight utility actions ke liye inline tool syntax:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Inline Tool Definition</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Prism\Prism\Facades\Tool;
+use App\Models\Order;
+
+$orderStatusTool = Tool::as('getOrderStatus')
+    -&gt;for('Retrieve live shipping status, tracking link, and estimated delivery date for a specific order.')
+    -&gt;withNumberParameter('order_id', 'The numeric ID of the customer order (e.g. 1042)', required: true)
+    -&gt;using(function (int $order_id): string {
+        $order = Order::find($order_id);
+
+        if (! $order) {
+            return json_encode(['error' =&gt; 'Order not found in database.']);
+        }
+
+        return json_encode([
+            'order_id'           =&gt; $order-&gt;id,
+            'status'             =&gt; $order-&gt;status, // 'shipped', 'delivered', 'pending'
+            'tracking_number'    =&gt; $order-&gt;tracking_code,
+            'estimated_delivery' =&gt; $order-&gt;delivery_date?-&gt;format('Y-m-d'),
+        ]);
+    });</code></pre>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">Tool 2: Standalone Enterprise Tool Class</h3>
+        <p>Complex business actions ke liye reusable tool classes banana best practice hai (dependency injection aur testability ke liye):</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Ai/Tools/ProcessRefundTool.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+namespace App\Ai\Tools;
+
+use Prism\Prism\Tool;
+use App\Models\Order;
+use App\Services\PaymentGatewayService;
+use Illuminate\Support\Facades\DB;
+
+class ProcessRefundTool extends Tool
+{
+    public function __construct(
+        protected PaymentGatewayService $paymentService
+    ) {
+        $this
+            -&gt;as('processOrderRefund')
+            -&gt;for('Process a partial or full refund for a customer order through Stripe.')
+            -&gt;withNumberParameter('order_id', 'The target order ID to refund', required: true)
+            -&gt;withNumberParameter('amount', 'The monetary amount in USD to refund (e.g. 24.50)', required: true)
+            -&gt;withStringParameter('reason', 'Customer reason for refund (e.g. late delivery, damaged item)', required: true)
+            -&gt;using($this-&gt;handle(...));
+    }
+
+    public function handle(int $order_id, float $amount, string $reason): string
+    {
+        return DB::transaction(function () use ($order_id, $amount, $reason) {
+            $order = Order::lockForUpdate()-&gt;find($order_id);
+
+            if (! $order) {
+                return json_encode(['success' =&gt; false, 'error' =&gt; 'Order not found']);
+            }
+
+            if ($order-&gt;refunded_amount + $amount &gt; $order-&gt;total_amount) {
+                return json_encode([
+                    'success' =&gt; false,
+                    'error'   =&gt; 'Refund amount exceeds remaining order balance.'
+                ]);
+            }
+
+            // Call Payment Gateway (e.g. Stripe)
+            $refund = $this-&gt;paymentService-&gt;createRefund(
+                chargeId: $order-&gt;stripe_charge_id,
+                amountInCents: (int) ($amount * 100)
+            );
+
+            // Update Database
+            $order-&gt;increment('refunded_amount', $amount);
+            $order-&gt;update(['status' =&gt; 'partially_refunded']);
+
+            return json_encode([
+                'success'   =&gt; true,
+                'refund_id' =&gt; $refund-&gt;id,
+                'amount'    =&gt; $amount,
+                'message'   =&gt; "Successfully refunded ${$amount} for Order #{$order_id}.",
+            ]);
+        });
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: STRICT JSON SCHEMAS & STRUCTURED OUTPUTS -->
+    <section id="sec-structured-outputs" class="section-panel">
+      <div class="card">
+        <div class="card-title">📐 Strict JSON Outputs & Grammar-Constrained Decoding</div>
+        <div class="card-subtitle">Kyun prompt mein "Return JSON" kehna amateur hai aur Strict JSON Schema 100% reliability deta hai.</div>
+
+        <p>
+          Legacy AI integration mein developers prompt mein likhte the: <em>"Please return your response as valid JSON only"</em>. 
+          Lekin production mein 100 mein se 4 baar model markdown backticks (<code>```json</code>) laga deta tha ya beech mein extra commentary bol deta tha, jisse backend parser crash ho jata tha.
+        </p>
+        <p>
+          Modern LLMs (GPT-4o, Claude 3.5, Gemini 1.5) <strong>Constrained Grammar Decoding</strong> support karte hain. Isme LLM ke logits ko token-by-token constrain kiya jata hai taaki woh aapke defined schema ke alawa koi aur character emit kar hi na sake!
+        </p>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">Prism::structured() Real-World Example: Customer Lead Extraction</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Lead Extraction with Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Schema\ObjectSchema;
+use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\Schema\NumberSchema;
+use Prism\Prism\Schema\ArraySchema;
+
+// 1. Define Strict JSON Schema
+$leadSchema = new ObjectSchema(
+    name: 'lead_intake_schema',
+    description: 'Extract customer lead details from unstructured inbound inquiry',
+    properties: [
+        new StringSchema('customer_name', 'Customer full name or organization name'),
+        new StringSchema('intent', 'Customer primary intent', enum: ['enterprise_quote', 'support_issue', 'partnership']),
+        new NumberSchema('team_size', 'Number of employees mentioned or 1 if unspecified'),
+        new ArraySchema(
+            name: 'requested_features',
+            description: 'List of features customer specifically asked about',
+            items: new StringSchema('feature', 'Feature name')
+        ),
+    ],
+    required: ['customer_name', 'intent', 'team_size', 'requested_features']
+);
+
+// 2. Unstructured Email Text
+$emailText = "Hi team, this is Rahul Verma from TechNova Inc. We have 45 engineers and we want to explore your automated invoice OCR and Slack notification integrations. Can you share enterprise pricing?";
+
+// 3. Execute Structured Generation
+$response = Prism::structured()
+    -&gt;using(Provider::OpenAI, 'gpt-4o-mini')
+    -&gt;withSchema($leadSchema)
+    -&gt;withPrompt($emailText)
+    -&gt;generate();
+
+// 4. Guaranteed Type-Safe Array Output!
+$data = $response-&gt;structured;
+
+/*
+$data array structure guaranteed:
+[
+    'customer_name'      =&gt; 'Rahul Verma (TechNova Inc)',
+    'intent'             =&gt; 'enterprise_quote',
+    'team_size'          =&gt; 45,
+    'requested_features' =&gt; ['invoice OCR', 'Slack notification integrations']
+]
+*/</code></pre>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">Mapping to Type-Safe Laravel DTO (Data Transfer Object)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/DataTransferObjects/LeadData.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\DataTransferObjects;
+
+readonly class LeadData
+{
+    public function __construct(
+        public string $customerName,
+        public string $intent,
+        public int $teamSize,
+        public array $requestedFeatures,
+    ) {}
+
+    public static function fromAi(array $payload): self
+    {
+        return new self(
+            customerName: (string) $payload['customer_name'],
+            intent: (string) $payload['intent'],
+            teamSize: (int) ($payload['team_size'] ?? 1),
+            requestedFeatures: (array) ($payload['requested_features'] ?? []),
+        );
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: MULTI-TURN REACT AGENT LOOP -->
+    <section id="sec-react-loop" class="section-panel">
+      <div class="card">
+        <div class="card-title">🔄 The Multi-Turn ReAct Agent Loop & Recursion Guards</div>
+        <div class="card-subtitle">Kaise AI model multi-step reasoning aur consecutive tool calls execute karke complex tasks solve karta hai.</div>
+
+        <p>
+          Real-world problems aksar ek single tool call se solve nahi hote. User keh sakta hai: 
+          <em>"Mera order #1042 check karo, agar delayed hai toh cancel karke refund issue karo aur mujhe new delivery policy email kar do."</em>
+        </p>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.15rem;">The ReAct Pattern (Reasoning + Action) Cycle</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">architecture</span>
+            <span class="code-filename">react-agent-steps.txt</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>[TURN 1: REASONING]
+Thought: Pehle mujhe order status check karna padega.
+Action: Calls getOrderStatus(order_id: 1042)
+Observation: {'status': 'delayed', 'delay_days': 6}
+
+[TURN 2: REASONING]
+Thought: Order 6 din delayed hai, policy ke anusaar cancel karke full refund karna hai.
+Action: Calls processOrderRefund(order_id: 1042, amount: 89.99, reason: 'delayed')
+Observation: {'success': true, 'refund_id': 're_5541'}
+
+[TURN 3: REASONING]
+Thought: Refund ho gaya. Ab user ko confirmation email bhejni hai.
+Action: Calls sendEmailNotification(to: 'user@example.com', template: 'refund_issued')
+Observation: {'queued': true}
+
+[TURN 4: FINAL ANSWER]
+Thought: Sabhi steps complete ho gaye. Ab customer ko polite response do.
+Answer: "Aapka order #1042 delay hone ke karan cancel kar diya gaya hai. $89.99 ka full refund initiate ho chuka hai (ID: re_5541) aur confirmation email aapke inbox mein bhej di gayi hai."</code></pre>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">Prism's Native Autonomous Loop with withMaxSteps()</h3>
+        <p>Prism-PHP internally poore ReAct loop ko automate kar deta hai jab aap <code>-&gt;withTools([...])</code> aur <code>-&gt;withMaxSteps(...)</code> specify karte hain:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Autonomous Agent Execution</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+
+$response = Prism::text()
+    -&gt;using(Provider::Anthropic, 'claude-3-5-sonnet-20241022')
+    -&gt;withSystemPrompt('You are an autonomous e-commerce concierge with authority to check orders, issue refunds, and send emails.')
+    -&gt;withTools([
+        app(\App\Ai\Tools\GetOrderStatusTool::class),
+        app(\App\Ai\Tools\ProcessRefundTool::class),
+        app(\App\Ai\Tools\SendCustomerEmailTool::class),
+    ])
+    // CRITICAL: Max steps limit recursion guard!
+    -&gt;withMaxSteps(5)
+    -&gt;withPrompt('Order #1042 check karke refund karo agar delay hua hai.')
+    -&gt;generate();
+
+// Final response after all tools finished executing
+$finalMessage = $response-&gt;text;
+
+// Audit all intermediate steps taken by the AI
+foreach ($response-&gt;steps as $stepNumber =&gt; $step) {
+    if (!empty($step-&gt;toolCalls)) {
+        foreach ($step-&gt;toolCalls as $toolCall) {
+            \Log::info("AI Step #{$stepNumber}: Called [{$toolCall-&gt;name}] with args: ", $toolCall-&gt;arguments());
+        }
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout danger">
+          <div class="callout-header">🚨 The Infinite Loop Money Drain Trap</div>
+          <p style="margin: 0; font-size: 0.925rem;">
+            Agar aap <code>-&gt;withMaxSteps(5)</code> nahi lagayenge aur koi tool exception return karta hai (e.g. <em>"Stripe API timeout"</em>), toh LLM use dobara retry karne ki koshish kar sakta hai. Without a step limit, model <strong>loop mein 200 baar tool call karega aur aapka $50 ka credit 3 minute mein drain ho jayega!</strong> Hamesha production mein <code>maxSteps: 3</code> ya <code>5</code> enforce karein.
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: DB SAFETY, POLICIES & HUMAN-IN-THE-LOOP -->
+    <section id="sec-safety-transactions" class="section-panel">
+      <div class="card">
+        <div class="card-title">🛡️ Database Safety, Policy Authorization & Human-in-the-Loop</div>
+        <div class="card-subtitle">AI hallucinations aur unauthorized destructive actions se database ko protect karne ka defense-in-depth framework.</div>
+
+        <p>
+          Jab aap AI ko tools provide karte hain, toh AI ke paas database par write aur delete karne ki power aa jaati hai. Agar security measures sahi na hon, toh user prompt injection ke zariye kisi doosre user ka order cancel karwa sakta hai ya pure database ko corrupt kar sakta hai!
+        </p>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.15rem;">Pillar 1: Never Trust AI Parameters for Ownership (Laravel Policies)</h3>
+        <p>
+          Agar user prompt mein likhta hai: <em>"Order #9994 cancel kar do"</em>, toh LLM parameter mein <code>order_id: 9994</code> bhej dega. Lekin kya user sach mein Order #9994 ka owner hai? Tool handler ke andar <strong>Laravel Gate/Policy check mandatory hai</strong>:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">Policy Authorization Check inside Tool</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>use Illuminate\Support\Facades\Gate;
+
+public function handle(int $order_id, string $reason): string
+{
+    $user = auth()-&gt;user();
+    $order = Order::find($order_id);
+
+    if (! $order) {
+        return json_encode(['error' =&gt; 'Order does not exist.']);
+    }
+
+    // CRITICAL: Verify that the authenticated user actually owns this order!
+    if (Gate::forUser($user)-&gt;denies('cancel', $order)) {
+        return json_encode([
+            'error' =&gt; 'SECURITY VIOLATION: You do not have permission to modify this order.'
+        ]);
+    }
+
+    // Proceed safely...
+}</code></pre>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">Pillar 2: The Human-in-the-Loop (HITL) Confirmation Pattern</h3>
+        <p>
+          High-risk financial actions (e.g. $100+ refund, account deletion, subscription downgrade) par AI ko <strong>instant auto-execute ki permission nahi honi chahiye</strong>. Tool ek temporary approval token generate karta hai aur user se UI par explicit confirmation maangta hai:
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">HITL Safety Token Generation</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>if ($amount &gt; 100.00) {
+    // Generate secure single-use confirmation token
+    $approvalToken = Str::random(40);
+
+    Cache::put("ai_action_approval:{$approvalToken}", [
+        'user_id'  =&gt; $user-&gt;id,
+        'action'   =&gt; 'refund_order',
+        'order_id' =&gt; $order-&gt;id,
+        'amount'   =&gt; $amount,
+        'reason'   =&gt; $reason,
+    ], now()-&gt;addMinutes(15));
+
+    // Return confirmation requirement to the AI
+    return json_encode([
+        'requires_human_confirmation' =&gt; true,
+        'amount'                      =&gt; $amount,
+        'approval_url'                =&gt; route('ai.confirm', ['token' =&gt; $approvalToken]),
+        'message'                     =&gt; "Refunds over $100 require your explicit security confirmation before processing.",
+    ]);
+}</code></pre>
+        </div>
+
+        <h3 style="margin: 1.5rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">⚖️ Tool Permission Matrix</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Action Risk Level</th>
+              <th>Example Tool</th>
+              <th>Execution Strategy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-green">SAFE (Read-Only)</span></td>
+              <td><code>getOrderStatus</code>, <code>searchKnowledgeBase</code></td>
+              <td>Direct Autonomous Execution (No approval needed)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-amber">MEDIUM (Idempotent Write)</span></td>
+              <td><code>updateShippingAddress</code>, <code>resendInvoiceEmail</code></td>
+              <td>Autonomous execution with Policy Authorization &amp; DB Audit Log</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4);">HIGH RISK (Destructive/Financial)</span></td>
+              <td><code>processLargeRefund</code>, <code>deleteUserAccount</code></td>
+              <td><strong>Human-in-the-Loop Confirmation Token Required</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: FULL AUTONOMOUS OPERATIONS AGENT IMPLEMENTATION -->
+    <section id="sec-agent-loop" class="section-panel">
+      <div class="card">
+        <div class="card-title">🤖 Full Autonomous Operations Agent Implementation</div>
+        <div class="card-subtitle">Production service class jo multi-tool execution aur live visual step-status streaming ko handle karti hai.</div>
+
+        <p>
+          Jab AI agent kisi background task ko execute kar raha hota hai (jaise database lookup ya Stripe API call), toh user ko screen par visual feedback milna chahiye: 
+          <em>"Checking order #1042 status..." ➔ "Processing Stripe refund..." ➔ "Finalizing answer..."</em>.
+        </p>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">ECommerceAgent Service Implementation</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Ai/Agents/ECommerceAgent.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+namespace App\Ai\Agents;
+
+use App\Ai\Tools\GetOrderStatusTool;
+use App\Ai\Tools\ProcessRefundTool;
+use App\Ai\Tools\SearchKnowledgeBaseTool;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class ECommerceAgent
+{
+    public function __construct(
+        protected GetOrderStatusTool $orderStatusTool,
+        protected ProcessRefundTool $refundTool,
+        protected SearchKnowledgeBaseTool $knowledgeTool
+    ) {}
+
+    /**
+     * Run the agent with live tool-event streaming
+     */
+    public function handle(string $userPrompt, int $userId): StreamedResponse
+    {
+        return response()-&gt;stream(function () use ($userPrompt, $userId) {
+            while (ob_get_level() &gt; 0) ob_end_flush();
+
+            // System prompt with behavioral boundaries
+            $systemPrompt = &lt;&lt;&lt;PROMPT
+You are a senior customer support concierge for an e-commerce platform.
+You have access to tools to check orders, search company policy, and process refunds.
+Always check order status before processing refunds.
+Be polite, professional, and explain actions clearly.
+PROMPT;
+
+            // Execute Prism Agent Loop with MaxSteps Recursion Guard
+            $response = Prism::text()
+                -&gt;using(Provider::Anthropic, 'claude-3-5-sonnet-20241022')
+                -&gt;withSystemPrompt($systemPrompt)
+                -&gt;withTools([
+                    $this-&gt;orderStatusTool,
+                    $this-&gt;refundTool,
+                    $this-&gt;knowledgeTool,
+                ])
+                -&gt;withMaxSteps(4) // Max 4 autonomous reasoning/action turns
+                -&gt;withPrompt($userPrompt)
+                -&gt;generate();
+
+            // 1. Emit all tool steps taken to frontend for transparency
+            foreach ($response-&gt;steps as $stepIndex =&gt; $step) {
+                if (! empty($step-&gt;toolCalls)) {
+                    foreach ($step-&gt;toolCalls as $call) {
+                        echo "data: " . json_encode([
+                            'event' =&gt; 'agent_action',
+                            'step'  =&gt; $stepIndex + 1,
+                            'tool'  =&gt; $call-&gt;name,
+                            'args'  =&gt; $call-&gt;arguments(),
+                        ]) . "\n\n";
+                        flush();
+                    }
+                }
+            }
+
+            // 2. Stream the final natural language answer
+            echo "data: " . json_encode([
+                'event'   =&gt; 'final_answer',
+                'message' =&gt; $response-&gt;text,
+                'tokens'  =&gt; $response-&gt;usage-&gt;totalTokens(),
+            ]) . "\n\n";
+
+            echo "data: [DONE]\n\n";
+            flush();
+
+        }, 200, [
+            'Content-Type'      =&gt; 'text/event-stream',
+            'Cache-Control'     =&gt; 'no-cache, no-transform',
+            'X-Accel-Buffering' =&gt; 'no',
+        ]);
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">Live Agent Controller Endpoint</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">app/Http/Controllers/AiAgentController.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>namespace App\Http\Controllers;
+
+use App\Ai\Agents\ECommerceAgent;
+use Illuminate\Http\Request;
+
+class AiAgentController extends Controller
+{
+    public function __invoke(Request $request, ECommerceAgent $agent)
+    {
+        $validated = $request-&gt;validate([
+            'prompt' =&gt; ['required', 'string', 'max:1500'],
+        ]);
+
+        return $agent-&gt;handle(
+            userPrompt: $validated['prompt'],
+            userId: $request-&gt;user()-&gt;id
+        );
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: TESTING AGENTS WITH PEST & CHEATSHEET -->
+    <section id="sec-testing-cheatsheet" class="section-panel">
+      <div class="card">
+        <div class="card-title">📋 Testing Agents with Pest PHP, Gotchas & Quick Cheatsheet</div>
+        <div class="card-subtitle">Zero-cost CI/CD tool mocking, edge case defense aur comprehensive reference guide.</div>
+
+        <p>
+          AI agents ko test karte waqt humein verify karna hota hai ki model ne <strong>correct tool right arguments ke saath call kiya</strong> bina live Stripe ya database par real changes kiye:
+        </p>
+
+        <h3 style="color: #fde68a; margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">1. Pest PHP: Asserting Tool Calls with Prism::fake()</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">php</span>
+            <span class="code-filename">tests/Feature/ECommerceAgentTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;?php
+
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Testing\TextResponseFake;
+use App\Models\User;
+use App\Models\Order;
+
+it('triggers refund tool when customer requests order cancellation', function () {
+    $user = User::factory()-&gt;create();
+    $order = Order::factory()-&gt;create(['user_id' =&gt; $user-&gt;id, 'total_amount' =&gt; 50.00]);
+
+    // 1. Mock Multi-step Tool sequence in Prism
+    Prism::fake([
+        // Step 1: Model calls processOrderRefund tool
+        (new TextResponseFake())
+            -&gt;withToolCall('processOrderRefund', [
+                'order_id' =&gt; $order-&gt;id,
+                'amount'   =&gt; 50.00,
+                'reason'   =&gt; 'Item arrived late',
+            ]),
+        // Step 2: Final response after tool execution
+        (new TextResponseFake())
+            -&gt;withText('Order has been refunded successfully.'),
+    ]);
+
+    // 2. Call your agent endpoint
+    $response = $this-&gt;actingAs($user)-&gt;postJson('/api/ai/agent', [
+        'prompt' =&gt; "Order #{$order-&gt;id} cancel karke refund karo.",
+    ]);
+
+    $response-&gt;assertOk();
+
+    // 3. Verify that the correct tool was invoked with exact expected arguments!
+    Prism::assertToolCalled('processOrderRefund', [
+        'order_id' =&gt; $order-&gt;id,
+        'amount'   =&gt; 50.00,
+    ]);
+});</code></pre>
+        </div>
+
+        <h3 style="color: #fde68a; margin: 1.75rem 0 0.5rem; font-size: 1.1rem;">2. Production Gotchas: Hallucinated Tool Names & Type Casting</h3>
+        <div class="grid-2">
+          <div class="info-box" style="border-left: 4px solid var(--accent-rose);">
+            <h4>⚠️ Hallucinated Tool Names</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Agar aapka tool name hai <code>getOrderStatus</code>, toh kabhi kabhi model <code>fetch_order_status</code> call karne ki koshish kar sakta hai.<br>
+              <strong>Defense:</strong> Tool names ko lowercase camelCase rakhein aur System Prompt mein explicit list include karein: <em>"Available tools: getOrderStatus, processOrderRefund. Do not invent other tool names."</em>
+            </p>
+          </div>
+
+          <div class="info-box" style="border-left: 4px solid var(--accent);">
+            <h4>⚠️ Loose Type Coercion</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              JSON specification mein number aur string distinct hote hain, lekin LLMs kabhi <code>order_id: "1042"</code> (string) bhej dete hain.<br>
+              <strong>Defense:</strong> Apne PHP tool handler method mein parameters ko strictly typecast karein: <code>int $order_id = (int) $args['order_id'];</code>.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="margin: 1.75rem 0 0.75rem; color: var(--text-primary); font-size: 1.15rem;">📋 Module 04 Quick Reference Cheatsheet</h3>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Prism / Laravel Syntax</th>
+              <th>Key Responsibility</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Define Tool</strong></td>
+              <td><code>Tool::as('name')-&gt;for('desc')-&gt;using(...)</code></td>
+              <td>Exposes a PHP function to the LLM</td>
+            </tr>
+            <tr>
+              <td><strong>Strict Schema</strong></td>
+              <td><code>Prism::structured()-&gt;withSchema($schema)</code></td>
+              <td>Guarantees 100% compliant JSON matching DTO</td>
+            </tr>
+            <tr>
+              <td><strong>Autonomous Loop</strong></td>
+              <td><code>-&gt;withTools([...])-&gt;withMaxSteps(4)</code></td>
+              <td>Enables multi-step ReAct reasoning with loop limit</td>
+            </tr>
+            <tr>
+              <td><strong>Audit Steps</strong></td>
+              <td><code>foreach ($response-&gt;steps as $step)</code></td>
+              <td>Logs intermediate tool names and arguments</td>
+            </tr>
+            <tr>
+              <td><strong>Human-in-the-Loop</strong></td>
+              <td><code>Cache::put("confirm:$token", $data, 15m)</code></td>
+              <td>Requires user button click for $100+ transactions</td>
+            </tr>
+            <tr>
+              <td><strong>Pest Tool Mock</strong></td>
+              <td><code>Prism::assertToolCalled('toolName', $args)</code></td>
+              <td>Validates agent decision logic in automated CI</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(245, 158, 11, 0.1)); border-color: rgba(236, 72, 153, 0.4); margin-top: 2rem;">
+          <h3 style="color: #fbcfe8; margin-bottom: 0.5rem;">⏭️ Upcoming Next: Module 05</h3>
+          <p style="color: #cbd5e1; margin-bottom: 1rem;">
+            <strong>Module 05: Production Architecture, Horizon Queues & Cost Optimization</strong> mein hum seekhenge:
+          </p>
+          <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.7;">
+            <li>Heavy AI tasks (PDF processing, bulk summaries) ko <strong>Laravel Horizon Queues</strong> par offload karna</li>
+            <li>Multi-model fallback chains (OpenAI 500 error aane par automatic Claude ya DeepSeek switch)</li>
+            <li><strong>Redis Semantic Caching</strong> se 70% API bills bachaana (repeated questions ka 0ms instant response)</li>
+            <li>Multi-tenant token budgeting, rate limiting aur monthly expense quotas</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p>AI for Laravel Developers Masterclass Suite • Production Grade & Enterprise Tested</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Learning Portal Home</a> • 
+      <a href="01_AI_Roadmap_and_Setup.html">Module 01</a> • 
+      <a href="02_Laravel_AI_Tooling_and_LLM_Foundations.html">Module 02</a> • 
+      <a href="03_RAG_and_PostgreSQL_pgvector.html">Module 03</a> • 
+      <a href="#sec-tool-theory">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(sectionId);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy to Clipboard
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const code = codeBlock.querySelector('pre code') || codeBlock.querySelector('pre');
+      if (!code) return;
+
+      navigator.clipboard.writeText(code.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+  </script>
+</body>
+</html>

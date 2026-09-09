@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 05: Performance Tuning & EXPLAIN ANALYZE | PostgreSQL Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-pg: #336791;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #336791, #38bdf8, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #336791, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #336791);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(51, 103, 145, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-amber);
+      filter: blur(100px);
+      opacity: 0.3;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--accent-amber);
+      border-color: rgba(245, 158, 11, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--accent-amber);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-pg); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-amber);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-code);
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: rgba(255, 255, 255, 0.02);
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .styled-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Emphasize explain output text */
+    .explain-node { color: #38bdf8; font-weight: bold; }
+    .explain-cost { color: #f59e0b; }
+    .explain-time { color: #10b981; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">PG</span>
+      PostgreSQL Mastery
+    </a>
+    <div class="nav-links">
+      <a href="04_ACID_Transactions_MVCC_and_Locking.html" class="nav-btn">⬅️ Previous: MVCC & Locking</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 05</span>
+      <h1 class="hero-title">Query Optimization &amp; EXPLAIN ANALYZE</h1>
+      <p class="hero-desc">
+        Stop guessing why your queries are slow! Master PostgreSQL's query planner. Learn how to read the EXPLAIN ANALYZE output, understand different Scan/Join types, and optimize memory buffers.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-intro', this)"><span class="sidebar-icon">🔍</span> 1. EXPLAIN vs EXPLAIN ANALYZE</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-reading', this)"><span class="sidebar-icon">📖</span> 2. Reading the Execution Plan</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-scans', this)"><span class="sidebar-icon">🖨️</span> 3. Scan Types (Seq vs Index)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-joins', this)"><span class="sidebar-icon">🔗</span> 4. Join Strategies Under the Hood</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-memory', this)"><span class="sidebar-icon">🧠</span> 5. Memory Tuning (work_mem)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-pgstat', this)"><span class="sidebar-icon">📡</span> 6. Tracking Slow Queries</a></li>
+        </ul>
+      </aside>
+
+      <div class="main-content">
+
+        <!-- SECTION 1: Intro -->
+        <section id="sec-intro" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🔍 Profiling • Part 1 • The MySQL Bridge</div>
+              <h2 class="panel-title">EXPLAIN vs EXPLAIN ANALYZE</h2>
+              <p class="panel-subtitle">
+                Backend developers ki sabse badi mistake: Query slow hone par andhe-dhundh (blindly) index create karna. You must ask the Database Planner what it is doing first!
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+              <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: The EXPLAIN Output</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                • <strong>MySQL <code>EXPLAIN</code>:</strong> Aapko ek table format deta hai jisme <code>type</code> (ALL, ref, eq_ref) aur <code>possible_keys</code> aate hain. Lekin ye <strong>actual execution time</strong> nahi batata, sirf planner ka estimate batata hai.<br><br>
+                • <strong>PostgreSQL <code>EXPLAIN ANALYZE</code>:</strong> PostgreSQL aapko ek deeply nested text tree deta hai. Ye query ko <strong>Sach mein Execute (Run)</strong> karta hai aur exact miliseconds, exact rows, aur memory buffers fetch ki details deta hai. <br>
+                <em>Warning:</em> Kyuki <code>ANALYZE</code> query ko physically run karta hai, kabhi bhi production me <code>EXPLAIN ANALYZE DELETE ...</code> ya <code>UPDATE</code> mat chalana bina <code>BEGIN; ... ROLLBACK;</code> block ke!
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Basic Profiling Commands</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- Only gives the ESTIMATED plan (Doesn't run the query)
+EXPLAIN SELECT * FROM orders WHERE user_id = 50;
+
+-- Gives ESTIMATED + ACTUAL execution metrics (Runs the query!)
+EXPLAIN ANALYZE SELECT * FROM orders WHERE user_id = 50;
+
+-- THE HOLY GRAIL: Adds Disk I/O & Memory Cache stats! (Highly Recommended)
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM orders WHERE user_id = 50;
+
+-- To test an UPDATE safely
+BEGIN;
+EXPLAIN ANALYZE UPDATE orders SET status = 'paid' WHERE id = 100;
+ROLLBACK;
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Reading the Plan -->
+        <section id="sec-reading" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📖 Interpretation • Part 2 • Decoding the Tree</div>
+              <h2 class="panel-title">Reading the Execution Plan</h2>
+              <p class="panel-subtitle">
+                PostgreSQL ka EXPLAIN output bottom-up (neeche se upar) read kiya jata hai. Sabse zyada indented node sabse pehle execute hota hai.
+              </p>
+            </div>
+
+            <div class="code-container" style="background: #0f172a; padding: 10px; border-left: 4px solid var(--accent-pg);">
+<pre class="code-body" style="font-size: 0.85rem;"><code>EXPLAIN ANALYZE SELECT * FROM users WHERE status = 'active' ORDER BY created_at LIMIT 10;
+
+<span class="explain-node">Limit</span>  (<span class="explain-cost">cost=100.45..100.47</span> rows=10 width=128) (<span class="explain-time">actual time=45.120..45.125</span> rows=10 loops=1)
+  -&gt;  <span class="explain-node">Sort</span>  (<span class="explain-cost">cost=100.45..105.45</span> rows=2000 width=128) (<span class="explain-time">actual time=45.110..45.115</span> rows=10 loops=1)
+        Sort Key: created_at
+        Sort Method: top-N heapsort  Memory: 30kB
+        -&gt;  <span class="explain-node">Seq Scan</span> on users  (<span class="explain-cost">cost=0.00..57.25</span> rows=2000 width=128) (<span class="explain-time">actual time=0.015..32.400</span> rows=2500 loops=1)
+              Filter: ((status)::text = 'active'::text)
+              Rows Removed by Filter: 8500
+<span class="explain-node">Planning Time:</span> 0.150 ms
+<span class="explain-node">Execution Time:</span> 45.200 ms
+</code></pre>
+            </div>
+
+            <div class="table-container">
+              <table class="styled-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>What it means</th>
+                    <th>Red Flags 🚩</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>cost=X..Y</code></td>
+                    <td>Planner ka estimate. X = pehli row aane ka cost, Y = saari rows aane ka cost. (Arbitrary CPU units)</td>
+                    <td>Agar Estimate (cost) aur Actual Time me zameen-aasman ka fark hai (meaning table stats outdated hain, run <code>ANALYZE table_name</code>).</td>
+                  </tr>
+                  <tr>
+                    <td><code>actual time=A..B</code></td>
+                    <td>Real milliseconds jo query run hone me lage.</td>
+                    <td>B &gt;&gt; A in a simple query means heavy disk I/O.</td>
+                  </tr>
+                  <tr>
+                    <td><code>rows=N</code> vs <code>actual rows=M</code></td>
+                    <td>N: Estimated rows. M: Actual returned rows.</td>
+                    <td>Agar N=10 par M=100000 aya, iska matlab planner misguide hua (Bad stats).</td>
+                  </tr>
+                  <tr>
+                    <td><code>Rows Removed by Filter</code></td>
+                    <td>Database ne kitni rows memory me load ki, par baad me reject kardi condition match na hone pe.</td>
+                    <td>High number means aapko wahan Index zaroor banana chahiye!</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Scan Types -->
+        <section id="sec-scans" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🖨️ Operations • Part 3 • How PG Finds Data</div>
+              <h2 class="panel-title">Scan Types (Seq Scan vs Index Scan)</h2>
+              <p class="panel-subtitle">
+                Planner decide karta hai data table se kaise layega. In terms ko samajhna optimization ka pehla kadam hai.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card danger-card">
+                <h4 style="color:#f43f5e; margin-bottom:10px;">📉 Sequential Scan (Seq Scan)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  MySQL ka <code>ALL</code> type. Table block by block completely read hoti hai.<br>
+                  <strong>Good for:</strong> Small tables, ya jab aap table ki &gt;30% rows fetch kar rahe ho.<br>
+                  <strong>Bad for:</strong> <code>WHERE email='x'</code> in a 1 Million row table. Missing index alert!
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:#10b981; margin-bottom:10px;">🌲 Index Scan</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  B-Tree index traverse karta hai, `ctid` nikalta hai, phir Heap (main table) me jake actual row uthata hai.<br>
+                  <strong>Good for:</strong> Fetching 1-5% of specific table rows. Fast and efficient.
+                </p>
+              </div>
+              <div class="diagram-card info-card">
+                <h4 style="color:#38bdf8; margin-bottom:10px;">🚀 Index Only Scan</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  The Holy Grail! Query me mangi gayi saari columns khud index ke andar majood hain (Covering index).<br>
+                  <strong>Advantage:</strong> PostgreSQL Heap table ko touch tak nahi karta (0 Table I/O)!
+                </p>
+              </div>
+              <div class="diagram-card warning-card">
+                <h4 style="color:#f59e0b; margin-bottom:10px;">🧩 Bitmap Heap Scan</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  Jab bahut saari rows index se milti hain, to PG pehle unke `ctid` memory me ekatter karke sort (bitmap) kar leta hai taaki disk head ko baar-baar jump na karna pade.<br>
+                  <em>Two step process: Bitmap Index Scan -&gt; Bitmap Heap Scan</em>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Joins -->
+        <section id="sec-joins" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🔗 Relationships • Part 4 • Under the Hood</div>
+              <h2 class="panel-title">Join Strategies</h2>
+              <p class="panel-subtitle">
+                Jab aap do tables join karte hain, PostgreSQL background me in teen algorithms me se ek chunta hai.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-icon">🔄</div>
+                <div class="concept-title">Nested Loop Join</div>
+                <div class="concept-desc">
+                  Ek "For Loop" ke andar dusra "For Loop". Table A ki har row ke liye Table B search hoti hai.<br>
+                  <em>Fastest ONLY IF Table B ka join column Indexed hai aur dataset chota hai. Varna O(N²) disaster!</em>
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-amber)">#️⃣ Hash Join</div>
+                <div class="concept-desc">
+                  PG choti table ka memory me Hash Table banata hai (O(1) lookups), phir badi table ko ek baar scan karke match karta hai.<br>
+                  <em>Great for large analytics tables, but requires enough <code>work_mem</code> RAM.</em>
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-pg)">📏 Merge Join</div>
+                <div class="concept-desc">
+                  Dono tables ko pehle Sort karta hai, phir zip-fastener (chain) ki tarah match karta hai.<br>
+                  <em>Used when tables are massive and already sorted (e.g. Joining on Primary Keys).</em>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 5: Memory Tuning -->
+        <section id="sec-memory" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧠 Configuration • Part 5 • Parameter Tuning</div>
+              <h2 class="panel-title">Memory Tuning: work_mem &amp; Buffers</h2>
+              <p class="panel-subtitle">
+                Agar aapki query EXPLAIN me `Disk Merge` ya `external sort: disk` dikhaye, iska matlab PostgreSQL ki RAM khatam ho gayi hai aur wo HDD/SSD swap use kar raha hai!
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Tuning work_mem on the fly</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- By default, PostgreSQL allocates only 4MB per operation for sorting/hashing.
+-- If you are joining million-row tables, 4MB will spill to disk (VERY SLOW).
+
+-- Check current work_mem
+SHOW work_mem;
+
+-- 💡 PRO TIP: You can increase RAM for JUST the current transaction/session!
+BEGIN;
+SET LOCAL work_mem = '256MB';
+
+-- Now this massive analytical query will run entirely in RAM (Hash Join / Quicksort)
+SELECT p.name, sum(o.total)
+FROM products p 
+JOIN orders o ON p.id = o.product_id 
+GROUP BY p.name 
+ORDER BY sum(o.total) DESC;
+
+COMMIT; 
+-- Automatically resets back to default 4MB for other users so server doesn't crash!
+</code></pre>
+            </div>
+
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); margin-top: 20px;">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">⚠️ Warning: Don't set work_mem to 1GB globally!</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                MySQL ka <code>sort_buffer_size</code> per connection hota hai. <br>
+                PostgreSQL ka <code>work_mem</code> <strong>per operation</strong> hota hai! Agar ek complex query me 3 Sorts aur 2 Hash Joins hain, aur <code>work_mem</code> 100MB hai, toh wo ek akeli query 500MB RAM legi. 100 concurrent users me aapka server Out of Memory (OOM) crash ho jayega. Default ko 4MB-16MB ke beech rakhein, aur heavy queries ke liye session-level pe <code>SET LOCAL</code> karein.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 6: Tracking Slow Queries -->
+        <section id="sec-pgstat" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📡 Monitoring • Part 6 • Production Observability</div>
+              <h2 class="panel-title">Finding Slow Queries (`pg_stat_statements`)</h2>
+              <p class="panel-subtitle">
+                MySQL me hum `slow_query_log` file parse karte hain. PostgreSQL me humhare paas ek built-in extension hai jo har query ka average time aur hits calculate karta hai.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Enabling and using pg_stat_statements</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- 1. Enable the extension (Requires 'pg_stat_statements' added to shared_preload_libraries in postgresql.conf)
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- 2. Find the TOP 5 most time-consuming queries in your entire database
+SELECT 
+    calls, 
+    round((total_exec_time / 1000 / 60)::numeric, 2) as total_minutes, 
+    round(min_exec_time::numeric, 2) as min_ms,
+    round(max_exec_time::numeric, 2) as max_ms,
+    round(mean_exec_time::numeric, 2) as avg_ms,
+    substring(query, 1, 100) as short_query
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 5;
+
+-- 3. Reset stats after deploying a new Index (so old bad timings don't skew the average)
+SELECT pg_stat_statements_reset();
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

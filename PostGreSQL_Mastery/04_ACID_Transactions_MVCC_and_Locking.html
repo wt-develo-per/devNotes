@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 04: ACID, MVCC & Locking Internals | PostgreSQL Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0f172a;
+      --bg-card: #141e33;
+      --bg-code: #090e1a;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-pg: #336791;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #336791, #38bdf8, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #336791, #0284c7);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #336791);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(51, 103, 145, 0.15) 0%, rgba(8, 12, 20, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-purple);
+      filter: blur(100px);
+      opacity: 0.3;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(168, 85, 247, 0.1);
+      color: var(--accent-purple);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(168, 85, 247, 0.1);
+      color: var(--accent-purple);
+      border-color: rgba(168, 85, 247, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--accent-purple);
+      background: rgba(15, 23, 42, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-pg); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-purple);
+    }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">PG</span>
+      PostgreSQL Mastery
+    </a>
+    <div class="nav-links">
+      <a href="03_Indexing_Internals_and_Strategies.html" class="nav-btn">⬅️ Previous: Indexing</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 04</span>
+      <h1 class="hero-title">ACID Transactions, MVCC &amp; Locking</h1>
+      <p class="hero-desc">
+        Learn how PostgreSQL handles concurrency, prevents dirty reads, and manages multiple transactions simultaneously without locking the database. We'll explore MVCC in depth and compare it directly to MySQL's InnoDB transaction model.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-acid', this)"><span class="sidebar-icon">🛡️</span> 1. The ACID Principles</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-mvcc', this)"><span class="sidebar-icon">🕰️</span> 2. MVCC: The PostgreSQL Way</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-mysql-bridge', this)"><span class="sidebar-icon">🐬</span> 3. MySQL vs PostgreSQL MVCC</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-isolation', this)"><span class="sidebar-icon">🧱</span> 4. Isolation Levels</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-locking', this)"><span class="sidebar-icon">🔒</span> 5. Locking & Deadlocks</a></li>
+        </ul>
+      </aside>
+
+      <div class="main-content">
+
+        <!-- SECTION 1: ACID Principles -->
+        <section id="sec-acid" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🛡️ Core Concepts • Part 1 • Foundations</div>
+              <h2 class="panel-title">Understanding ACID Transactions</h2>
+              <p class="panel-subtitle">
+                Ek production database ko reliable banata hai uska ACID compliance. Ye 4 principles ensure karte hain ki server crash hone par bhi data corrupt na ho.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-icon">🅰️</div>
+                <div class="concept-title">Atomicity (All or Nothing)</div>
+                <div class="concept-desc">
+                  Agar ek transaction me 5 queries hain, toh ya toh paancho pass hongi, ya ek bhi nahi. Agar 4th query fail hui, toh pehli 3 automatic <strong>ROLLBACK</strong> ho jayengi.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">🅲</div>
+                <div class="concept-title">Consistency</div>
+                <div class="concept-desc">
+                  Transaction ke baad database hamesha ek valid state me rahega. Saare constraints (Unique, Foreign Keys, Checks) verify honge.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">🅸</div>
+                <div class="concept-title">Isolation</div>
+                <div class="concept-desc">
+                  Do log ek sath same row modify kar rahe hain, toh dono ki queries ek dusre se "isolated" (alag) rahengi jab tak commit na ho. (Isi ke liye MVCC use hota hai!)
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">🅳</div>
+                <div class="concept-title">Durability</div>
+                <div class="concept-desc">
+                  Ek baar <code>COMMIT</code> ho gaya, to agar agle second server ki light chali jaye ya crash ho jaye, data disk pe safe rahega (via WAL - Write-Ahead Logging).
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Basic Transaction Syntax</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- Start a transaction
+BEGIN; 
+-- (You can also use 'START TRANSACTION;')
+
+-- Decrease balance from Account A
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+
+-- Increase balance in Account B
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+
+-- If everything looks good, save changes permanently
+COMMIT;
+
+-- Or, if something went wrong in your application logic, undo everything
+-- ROLLBACK;
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: MVCC Internals -->
+        <section id="sec-mvcc" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🕰️ Concurrency • Part 2 • Multi-Versioning</div>
+              <h2 class="panel-title">MVCC (Multi-Version Concurrency Control)</h2>
+              <p class="panel-subtitle">
+                "Readers don't block writers, and writers don't block readers." PostgreSQL ye magic kaise karta hai bina database ko lock kiye?
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border);">
+              <h4 style="color: #f8fafc; margin-bottom: 8px;">🤔 The Problem without MVCC</h4>
+              <p style="color: #94a3b8; font-size: 0.95rem;">
+                Imagine User A is running a big report taking 2 minutes. Suddenly User B updates a row that the report is reading. Purane databases me User B ko wait karna padta jab tak report complete na ho (Locking).
+              </p>
+            </div>
+
+            <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">The xmin & xmax System</h3>
+            <p style="color: #94a3b8; margin-bottom: 20px;">
+              PostgreSQL ek row ko in-place overwrite (update) nahi karta. Jab aap UPDATE karte hain, PG ek nayi row banata hai. Har row ke paas hidden tracking IDs hoti hain:
+            </p>
+
+            <div class="table-container">
+              <table class="styled-table">
+                <thead>
+                  <tr>
+                    <th>Hidden Column</th>
+                    <th>What it does</th>
+                    <th>Real-world meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>xmin</code></td>
+                    <td>Transaction ID that inserted/created the row</td>
+                    <td>"Kiske time pe ye row paida hui thi?"</td>
+                  </tr>
+                  <tr>
+                    <td><code>xmax</code></td>
+                    <td>Transaction ID that deleted/updated the row</td>
+                    <td>"Kiske time pe ye row mark as dead/deleted hui?"</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Uncovering the hidden MVCC columns</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>-- Check the hidden transaction IDs for your rows
+SELECT xmin, xmax, id, name FROM users;
+
+/* Output:
+  xmin  | xmax | id | name
+--------+------+----+-------
+ 1045   | 0    | 1  | Alice    &lt;-- Alive! (xmax is 0)
+*/
+
+-- Transaction 1050 runs: UPDATE users SET name = 'Alicia' WHERE id = 1;
+
+/* Under the hood, PG marks the old row as dead (xmax=1050), 
+   and creates a brand new row (xmin=1050, xmax=0) */
+   
+/* Output to disk:
+  xmin  | xmax | id | name
+--------+------+----+-------
+ 1045   | 1050 | 1  | Alice    &lt;-- Dead row (marked for Autovacuum)
+ 1050   | 0    | 1  | Alicia   &lt;-- New live row
+*/
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: MySQL Bridge -->
+        <section id="sec-mysql-bridge" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🐬 Architectural Shift • Part 3 • The Mental Bridge</div>
+              <h2 class="panel-title">MySQL InnoDB vs PostgreSQL MVCC</h2>
+              <p class="panel-subtitle">
+                Dono MVCC use karte hain, par dono ka design absolutely opposite hai! As an experienced MySQL dev, ye difference aapko zaroor pata hona chahiye.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card warning-card">
+                <h4 style="color:#f59e0b; margin-bottom:10px;">🐬 MySQL InnoDB (Undo Logs)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  • <strong>In-place Update:</strong> Jab aap MySQL me UPDATE chalate ho, wo physical row ko directly modify kar deta hai.<br><br>
+                  • <strong>Undo Logs:</strong> Purana data "Undo Logs" (Rollback segments) me chala jata hai.<br><br>
+                  • <strong>Pros:</strong> Tables me bloat/kachra (dead rows) nahi banta. No need for heavy Vacuum.<br><br>
+                  • <strong>Cons:</strong> Undo logs maintain karna expensive hai. Long running transactions MySQL system space ko fill kar dete hain.
+                </p>
+              </div>
+              <div class="diagram-card info-card">
+                <h4 style="color:#38bdf8; margin-bottom:10px;">🐘 PostgreSQL (Tuple-based MVCC)</h4>
+                <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                  • <strong>Append-Only Update:</strong> UPDATE is practically an INSERT + DELETE. Purani row wahi rehti hai bas <code>xmax</code> mark ho jati hai.<br><br>
+                  • <strong>No Undo Logs:</strong> Past versions table ke andar hi exist karte hain.<br><br>
+                  • <strong>Pros:</strong> Rollback is almost instant (just ignore the new row). Super fast writing.<br><br>
+                  • <strong>Cons:</strong> <strong>Table Bloat!</strong> Dead rows table size badhati rehti hain. Yahi reason hai ki PostgreSQL me <strong>Autovacuum</strong> zaroori hai (to clean up <code>xmax</code> rows).
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Isolation Levels -->
+        <section id="sec-isolation" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧱 Isolation • Part 4 • Read Phenomena</div>
+              <h2 class="panel-title">Transaction Isolation Levels</h2>
+              <p class="panel-subtitle">
+                Jab 2 users ek sath update karein to kya database unhe prevent karega? Ye depend karta hai aapke Isolation level par.
+              </p>
+            </div>
+
+            <div class="table-container">
+              <table class="styled-table">
+                <thead>
+                  <tr>
+                    <th>Isolation Level</th>
+                    <th>Dirty Read</th>
+                    <th>Non-repeatable Read</th>
+                    <th>Phantom Read</th>
+                    <th>When to use?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Read Uncommitted</strong></td>
+                    <td>Yes (But PG blocks it)</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>PG treats this same as Read Committed.</td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--accent-purple)">Read Committed</strong> (PG Default)</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>99% of web apps. Fast, minimal locking.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Repeatable Read</strong> (MySQL Default)</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No (in PG)</td>
+                    <td>Financial reports, calculating totals over time.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Serializable</strong></td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>Strict banking, double-booking prevention. Slowest!</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="callout-card" style="background: linear-gradient(135deg, rgba(0, 117, 143, 0.15), rgba(51, 103, 145, 0.15)); border: 1px solid rgba(56, 189, 248, 0.4); margin: 20px 0;">
+              <h4 style="color: #38bdf8; margin-bottom: 8px;">🐬 MySQL Developer Mental Bridge: Default Isolation</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                <strong>Notice kiya?</strong> MySQL ka default isolation <code>REPEATABLE READ</code> hota hai, jabki PostgreSQL aur baaki sabhi (SQL Server, Oracle) ka default <code>READ COMMITTED</code> hota hai!<br><br>
+                Iska matlab agar MySQL me aapne transaction start kiya, toh aapko pure transaction life me data waisa hi dikhega jaisa start me tha (Snapshot). PostgreSQL me default behavior me agar beech me kisi ne row update kardi aur commit kardi, to aapko new value dikhegi (Non-repeatable read).
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 5: Locking -->
+        <section id="sec-locking" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🔒 Locking • Part 5 • Resolving Conflicts</div>
+              <h2 class="panel-title">Locks &amp; Deadlocks</h2>
+              <p class="panel-subtitle">
+                Isolation rules ko enforce karne ke liye database Locks lagata hai. Table-level aur Row-level locks kaise kaam karte hain, lets see.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-icon">🛑</div>
+                <div class="concept-title">Row-Level Locks</div>
+                <div class="concept-desc">
+                  Jab aap <code>UPDATE users</code> karte ho, toh sirf target row lock hoti hai. Dusre users dusri rows ko update kar sakte hain. Use <code>SELECT ... FOR UPDATE</code> to explicitly lock rows for processing (like consuming queue jobs).
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-icon">💥</div>
+                <div class="concept-title">Deadlocks</div>
+                <div class="concept-desc">
+                  TxA locks Row 1 and wants Row 2. TxB locks Row 2 and wants Row 1. They wait forever. PG detects this and auto-kills one transaction with a <code>deadlock detected</code> error. Handle this in your app code via retries!
+                </div>
+              </div>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">SQL • Preventing Race Conditions (Pessimistic Locking)</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>BEGIN;
+
+-- Lock the specific user row so NO ONE ELSE can modify it
+-- or even do a 'SELECT FOR UPDATE' on it until we COMMIT
+SELECT balance FROM wallets WHERE user_id = 123 FOR UPDATE;
+
+-- Application checks if balance &gt; 50
+-- If true:
+UPDATE wallets SET balance = balance - 50 WHERE user_id = 123;
+
+-- Release the lock
+COMMIT;
+</code></pre>
+            </div>
+            
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); margin-top: 20px;">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">⚠️ Avoid DDL in Peak Hours</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Operations like <code>ALTER TABLE</code> or creating an index normally take an <strong>Access Exclusive Lock</strong> on the entire table. Ye kisi bhi SELECT ko bhi block kar deta hai! <br>
+                <strong>Pro Tip:</strong> Hamesha <code>CREATE INDEX CONCURRENTLY</code> use karein production me, ye table ko lock nahi karta!
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

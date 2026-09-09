@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 07: Local LLMs, Privacy Compliance & AI Dev Workflows | AI for Laravel Developers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #161f38;
+      --bg-code: #0b1120;
+      --accent: #14b8a6;
+      --accent-glow: rgba(20, 184, 166, 0.25);
+      --accent-secondary: #38bdf8;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #1e293b;
+      --border-focus: #14b8a6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Reading Progress Bar */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #14b8a6, #38bdf8, #8b5cf6);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #14b8a6, #38bdf8);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #14b8a6, #0d9488);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(180deg, rgba(20, 184, 166, 0.08) 0%, rgba(10, 14, 26, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(20, 184, 166, 0.2) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(20, 184, 166, 0.15);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      color: #99f6e4;
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, #ffffff 30%, #99f6e4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 950px;
+      line-height: 1.6;
+    }
+
+    /* Tab Navigation */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(56, 189, 248, 0.15));
+      color: #99f6e4;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(20, 184, 166, 0.25);
+    }
+
+    /* Section Panels */
+    .section-panel, .panel-section {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .section-panel.active, .panel-section.active {
+      display: block;
+    }
+
+    .panel-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel-header { margin-bottom: 1.5rem; }
+    .panel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(20, 184, 166, 0.15);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      color: #99f6e4;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+    .panel-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); }
+    .panel-subtitle { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+
+    .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin: 1.25rem 0; }
+    .concept-card { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+    .concept-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+    .concept-title { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+    .concept-desc { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+
+    .code-container { background: var(--bg-code); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1.25rem 0; }
+
+    .alert-box { border-left: 4px solid var(--accent); background: rgba(20, 184, 166, 0.08); padding: 1rem 1.25rem; border-radius: 0 10px 10px 0; margin: 1.25rem 0; display: flex; gap: 1rem; align-items: flex-start; }
+    .alert-box.alert-warning { border-left-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08); }
+    .alert-box.alert-danger { border-left-color: var(--accent-rose); background: rgba(244, 63, 94, 0.08); }
+    .alert-box.alert-info { border-left-color: var(--accent-secondary); background: rgba(56, 189, 248, 0.08); }
+    .alert-icon { font-size: 1.5rem; line-height: 1; }
+    .alert-content { flex: 1; }
+    .alert-title { font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem; }
+
+    .diagram-container { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+    .diagram-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #99f6e4; margin-bottom: 1rem; text-align: center; }
+    .diagram-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+    .diagram-card { border-radius: 10px; padding: 1.25rem; border: 1px solid var(--border); background: rgba(10, 14, 26, 0.6); }
+    .diagram-card.danger-card { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+    .diagram-card.success-card { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+    .callout-card { background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(56, 189, 248, 0.05)); border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 10px; padding: 1.25rem; }
+    .table-container { overflow-x: auto; margin: 1.25rem 0; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+      font-size: 0.975rem;
+      line-height: 1.65;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(20, 184, 166, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 10px 10px 0;
+      margin: 1.25rem 0;
+    }
+
+    .callout.tip {
+      border-left-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-rose);
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    .callout-header {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .callout.tip .callout-header { color: #6ee7b7; }
+    .callout.warning .callout-header { color: #fde68a; }
+    .callout.danger .callout-header { color: var(--accent-rose); }
+    .callout .callout-header { color: #99f6e4; }
+
+    /* Code Blocks */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .code-header {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .code-filename {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    p code, li code {
+      background: rgba(20, 184, 166, 0.15);
+      color: #99f6e4;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-size: 0.875em;
+    }
+
+    /* Grids & Tables */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .info-box h4 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .styled-table th, .styled-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .styled-table th {
+      background: #0f172a;
+      color: #99f6e4;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .styled-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-teal { background: rgba(20, 184, 166, 0.2); color: #99f6e4; border: 1px solid rgba(20, 184, 166, 0.4); }
+    .badge-blue { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0 1rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #99f6e4;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AI Track</span>
+      <span>AI for Laravel Developers</span>
+    </a>
+    <div class="nav-links">
+      <a href="06_Multimodal_AI_and_Vision_Workflows.html" class="nav-btn">⬅️ Module 06</a>
+      <a href="../index.html" class="nav-btn">🏠 Portal Hub</a>
+      <a href="#sec-curriculum-capstone" class="nav-btn primary" onclick="switchTab('sec-curriculum-capstone', document.querySelectorAll('.tab-btn')[6])">🎓 Master Capstone</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="hero">
+      <div class="hero-badge">⚡ Module 07 • Grand Finale: Privacy & Dev Superpowers</div>
+      <h1 class="hero-title">Local LLMs (Ollama), Privacy Compliance & AI Dev Workflows</h1>
+      <p class="hero-desc">
+        Zero external data egress: Banking aur Healthcare enterprise clients ke liye <strong>Ollama + Llama 3 / DeepSeek</strong> ko private VPS par host karein with <strong>$0 API bills</strong>. Master karein <strong><code>.cursorrules</code> &amp; <code>AGENT.md</code> Context Engineering</strong> for modern Laravel 11/12/13, <strong>Automated Pest AI test generation</strong>, aur complete 7-Module Master Capstone Certification audit!
+      </p>
+    </header>
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('sec-privacy-imperative', this)">🛡️ 1. Enterprise Privacy & Self-Hosting</button>
+      <button class="tab-btn" onclick="switchTab('sec-ollama-setup', this)">🦙 2. Ollama Architecture & VRAM Sizing</button>
+      <button class="tab-btn" onclick="switchTab('sec-prism-ollama', this)">🔌 3. Laravel + Ollama via Prism</button>
+      <button class="tab-btn" onclick="switchTab('sec-context-engineering', this)">📝 4. .cursorrules & AGENT.md Engineering</button>
+      <button class="tab-btn" onclick="switchTab('sec-pest-synthetic', this)">🧪 5. Pest AI & Synthetic Seeders</button>
+      <button class="tab-btn" onclick="switchTab('sec-docker-gpu', this)">🐳 6. Docker GPU Production Setup</button>
+      <button class="tab-btn" onclick="switchTab('sec-curriculum-capstone', this)">🏆 7. Curriculum Capstone & 15-Pt Audit</button>
+    </div>
+
+
+    <!-- SECTION 1: ENTERPRISE PRIVACY & LOCAL AI IMPERATIVE -->
+    <section id="sec-privacy-imperative" class="panel-section active">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🛡️ Pillar 6 • Part 1 • Enterprise Data Governance</div>
+          <h2 class="panel-title">Enterprise Privacy, HIPAA/GDPR & The Local AI Imperative</h2>
+          <p class="panel-subtitle">
+            Enterprise clients ke liye cloud AI egress sabse bada deal-breaker hota hai. Sikhiye kyu FinTech, HealthTech aur Legal clients private on-premise LLMs demand karte hain aur kaise Laravel zero-data-egress architecture provide karta hai.
+          </p>
+        </div>
+
+        <div class="alert-box alert-warning">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <div class="alert-title">Real-World Enterprise Scenario: The "Cloud AI Egress" Deal-Breaker</div>
+            <p>
+              Imagine aap ek US Healthcare client ya Swiss Banking SaaS ke liye Laravel app bana rahe hain. Jaise hi aap pitch karte hain: <em>"Hum customer medical records ko OpenAI GPT-4o API par bhej kar summary generate karenge"</em> — unki legal aur compliance team turant project reject kar deti hai! Kyu? <strong>HIPAA</strong>, <strong>GDPR Article 28/44</strong>, aur <strong>SOC2 Type II</strong> regulations third-party AI cloud training aur cross-border data transfer par strict penalties lagate hain ($20 Million ya 4% of annual global turnover).
+            </p>
+          </div>
+        </div>
+
+        <div class="diagram-container">
+          <div class="diagram-title">Cloud AI Egress Risk vs Zero-Egress Local Architecture</div>
+          <div class="diagram-grid">
+            <div class="diagram-card danger-card">
+              <h4 style="color:#ef4444; margin-bottom:12px;">❌ Cloud AI (OpenAI / Anthropic Egress)</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                1. User enters private Medical record / Bank statement.<br>
+                2. Laravel sends HTTP POST to <code>api.openai.com</code>.<br>
+                3. Data crosses international borders & sits on 3rd party servers for 30 days.<br>
+                4. <strong>Risk:</strong> Regulatory violations, API vendor outage, per-token billing runaway costs!
+              </p>
+            </div>
+            <div class="diagram-card success-card">
+              <h4 style="color:#10b981; margin-bottom:12px;">✅ Local Ollama (Zero-Egress Private VPS)</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                1. User enters private record into Laravel.<br>
+                2. Laravel sends internal request to <code>http://127.0.0.1:11434</code> (localhost).<br>
+                3. Open-weights model (Llama 3.3 / DeepSeek R1) executes on private GPU.<br>
+                4. <strong>Zero packet leaves your server</strong>, $0 marginal API bill, 100% HIPAA/GDPR compliance!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="concept-grid" style="margin-top:24px;">
+          <div class="concept-card">
+            <div class="concept-icon">⚖️</div>
+            <div class="concept-title">GDPR & HIPAA Compliance</div>
+            <div class="concept-desc">
+              Local LLMs ensure that Protected Health Information (PHI) aur Personally Identifiable Information (PII) kabhi bhi third-party AI vendors ke data retention pipeline me enter nahi hota. Data stays within your self-controlled jurisdiction.
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-icon">💰</div>
+            <div class="concept-title">Predictable Hardware Economics</div>
+            <div class="concept-desc">
+              Agar aapki app 100,000 documents monthly process karti hai, cloud LLM tokens cost $1,500 - $3,000/month tak pahuch sakti hai. Ek dedicated server (Hetzner / RunPod / AWS G5) with RTX 4090 / L40S GPU $180-$350 flat cost par unlimited inferences run karta hai!
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-icon">📴</div>
+            <div class="concept-title">Offline & Air-Gapped Operation</div>
+            <div class="concept-desc">
+              Defense, industrial IoT, maritime, ya high-security intranet applications jahan public internet access block hota hai, wahan local LLMs execute autonomously without needing external internet connectivity.
+            </div>
+          </div>
+        </div>
+
+        <div class="code-container" style="margin-top:28px;">
+          <div class="code-header">
+            <span class="code-lang">PHP • Enterprise PII Scrubbing Service</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>&lt;?php
+
+namespace App\Services\AI;
+
+/**
+ * Enterprise PII Scrubber
+ * Ensures even internal local logs are cleansed of sensitive data.
+ */
+class EnterprisePiiScrubber
+{
+    /**
+     * Regular expressions for detecting sensitive records
+     */
+    protected array $patterns = [
+        'ssn'        =&gt; '/\b\d{3}-\d{2}-\d{4}\b/',
+        'credit_card'=&gt; '/\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b/',
+        'email'      =&gt; '/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/',
+        'phone'      =&gt; '/\+?[1-9]\d{1,14}|\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/'
+    ];
+
+    /**
+     * Anonymize text before ingestion
+     */
+    public function sanitize(string $text): string
+    {
+        $sanitized = $text;
+        
+        foreach ($this-&gt;patterns as $label =&gt; $pattern) {
+            $sanitized = preg_replace_callback($pattern, function ($matches) use ($label) {
+                return "[REDACTED_{$label}]";
+            }, $sanitized);
+        }
+
+        return $sanitized;
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout-card" style="margin-top:24px;">
+          <h4>🎯 Enterprise CTO Pitch Formula:</h4>
+          <p>
+            Jab client kahe <em>"AI use karna dangerous hai security ke liye"</em>, aapka response hona chahiye:<br>
+            <strong>"Hum public AI cloud APIs nahi, balki ek isolated, self-hosted on-premise AI container deploy karte hain jo aapke private VPC ke andar run hota hai. Zero external network egress, strict PII redaction, aur $0 token subscription fees ke sath complete compliance ensure hoti hai."</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 2: OLLAMA ARCHITECTURE & VRAM SIZING -->
+    <section id="sec-ollama-setup" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🦙 Pillar 6 • Part 2 • Local Hardware & Quantization</div>
+          <h2 class="panel-title">Ollama Architecture, VRAM Sizing & Model Quantization</h2>
+          <p class="panel-subtitle">
+            Sikhiye Ollama kaise <code>llama.cpp</code> ke C++ runtime ko manage karta hai, VRAM sizing calculation kaise ki jaati hai, aur 4-bit quantization (GGUF) kaise 70B models ko accessible banata hai.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">⚙️</div>
+            <div class="concept-title">llama.cpp Engine</div>
+            <div class="concept-desc">
+              Ollama is a lightweight Go wrapper around <code>llama.cpp</code>. Yeh raw AVX2/AVX-512 CPU instructions aur CUDA/ROCm GPU tensors ko directly target karta hai without Python runtime overhead.
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-icon">🎛️</div>
+            <div class="concept-title">REST API Daemon (Port 11434)</div>
+            <div class="concept-desc">
+              Ollama ek standard HTTP daemon run karta hai on <code>127.0.0.1:11434</code> with OpenAI-compatible endpoints (<code>/v1/chat/completions</code>) as well as native streaming endpoints (<code>/api/generate</code>).
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-icon">📦</div>
+            <div class="concept-title">GGUF Quantization</div>
+            <div class="concept-desc">
+              Models FP16 (16-bit) weights se 4-bit integers (Q4_K_M) me compress hote hain. Isse 16GB model weights compress hokar ~4.8GB ban jaate hain with almost 0% perceptual accuracy loss!
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📊 Hardware &amp; VRAM Sizing Matrix for Production</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Production server plan karte waqt <strong>Model Size (GB) = (Parameters × Quantization Bits) / 8 + Context KV Cache</strong> formula use karein:
+        </p>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>GPU VRAM Tier</th>
+                <th>Target Models (Q4_K_M)</th>
+                <th>Inference Speed</th>
+                <th>Recommended VPS / Hardware</th>
+                <th>Best Use Case in Laravel</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>8 GB VRAM</strong></td>
+                <td>Llama 3.2 (3B), Mistral 7B, Phi-3.5</td>
+                <td>~45 - 65 tokens/sec</td>
+                <td>Nvidia RTX 3060 / 4060, T4 (AWS)</td>
+                <td>Short classification, PII scrubbing, sentiment tagging.</td>
+              </tr>
+              <tr>
+                <td><strong>16 GB VRAM</strong></td>
+                <td>Llama 3.1 8B, DeepSeek R1 8B, Qwen 2.5 Coder 14B</td>
+                <td>~35 - 50 tokens/sec</td>
+                <td>RTX 4080, Apple M1/M2/M3 (18GB+), A10G</td>
+                <td>Complex JSON extraction, RAG summaries, code generation.</td>
+              </tr>
+              <tr>
+                <td><strong>24 GB VRAM</strong> (Sweet Spot)</td>
+                <td>Llama 3.3 70B (IQ2), DeepSeek R1 14B/32B, Mistral Small 24B</td>
+                <td>~25 - 40 tokens/sec</td>
+                <td>Nvidia RTX 3090, RTX 4090 ($180/mo Hetzner)</td>
+                <td>Enterprise Reasoning, Autonomous Agents, Legal audit.</td>
+              </tr>
+              <tr>
+                <td><strong>48 GB+ VRAM</strong></td>
+                <td>Llama 3.3 70B (Q4_K_M ~43GB), DeepSeek V3/R1 MoE</td>
+                <td>~20 - 35 tokens/sec</td>
+                <td>2x RTX 3090 / 4090, A6000, 4x L4</td>
+                <td>Full enterprise tier, high concurrent queues (10+ jobs/sec).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-container" style="margin-top:28px;">
+          <div class="code-header">
+            <span class="code-lang">Bash • Ollama Installation &amp; Model Setup</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># 1. Install Ollama on Linux / Ubuntu VPS
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Verify installation &amp; check daemon status
+systemctl status ollama
+
+# 3. Pull recommended production models
+ollama pull llama3.1:8b
+ollama pull deepseek-r1:8b
+ollama pull nomic-embed-text # High performance local embedding model
+
+# 4. Test quick local CLI inference
+ollama run llama3.1:8b "Explain Laravel Eloquent relationships in 2 sentences."
+
+# 5. Check active loaded models &amp; VRAM usage
+ollama ps</code></pre>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🛠️ Custom Modelfile for Structured Laravel Output</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Ollama me Dockerfile jaisa <code>Modelfile</code> hota hai jisme hum base model ke parameters, system prompt aur context window freeze kar sakte hain:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">Modelfile • Custom Laravel Assistant</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>FROM llama3.1:8b
+
+# Temperature: Low for deterministic structured output
+PARAMETER temperature 0.1
+PARAMETER top_p 0.9
+PARAMETER num_ctx 8192
+
+# System Prompt
+SYSTEM """
+You are an expert enterprise Laravel 11/12 backend assistant.
+When instructed to output JSON, provide strictly valid JSON without markdown wrapping or preamble.
+Never invent models or methods that do not follow standard modern Laravel conventions.
+"""</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">Bash • Build &amp; Register Custom Model</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># Build custom model from Modelfile
+ollama create laravel-ai -f ./Modelfile
+
+# Verify it is listed in Ollama models
+ollama list
+# OUTPUT: laravel-ai:latest    4.7 GB    running on GPU</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 3: LARAVEL + OLLAMA VIA PRISM -->
+    <section id="sec-prism-ollama" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🔌 Pillar 6 • Part 3 • Zero-Egress Backend Driver</div>
+          <h2 class="panel-title">Laravel + Ollama Integration via Prism &amp; Native REST</h2>
+          <p class="panel-subtitle">
+            Prism ke through Ollama ko seamlessly configure karein, local streaming implement karein, aur PII-aware Hybrid Router pattern deploy karein.
+          </p>
+        </div>
+
+        <div class="alert-box alert-info">
+          <div class="alert-icon">💡</div>
+          <div class="alert-content">
+            <div class="alert-title">Prism’s First-Class Ollama Support</div>
+            <p>
+              EchoLabs Prism Ollama provider ko directly support karta hai. Iska sabse bada advantage yeh hai ki aapka controller code bilkul same rehta hai chahe aap OpenAI use karein, Anthropic use karein, ya local Ollama! Sirf provider name change hota hai.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:24px 0 16px;">1. Environment &amp; Prism Configuration</h3>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">ENV • .env Configuration</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># Local Ollama Daemon Connection
+OLLAMA_URL=http://127.0.0.1:11434
+PRISM_DEFAULT_PROVIDER=ollama
+OLLAMA_DEFAULT_MODEL=llama3.1:8b</code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top:16px;">
+          <div class="code-header">
+            <span class="code-lang">PHP • config/prism.php Provider Definition</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>&lt;?php
+
+return [
+    'default' =&gt; env('PRISM_DEFAULT_PROVIDER', 'ollama'),
+
+    'providers' =&gt; [
+        'ollama' =&gt; [
+            'url' =&gt; env('OLLAMA_URL', 'http://127.0.0.1:11434'),
+            // Optional basic auth if reverse proxied behind Nginx
+            'token' =&gt; env('OLLAMA_AUTH_TOKEN', null),
+            'timeout' =&gt; 120, // Local inference may take longer on cold-start
+        ],
+        'anthropic' =&gt; [
+            'api_key' =&gt; env('ANTHROPIC_API_KEY'),
+        ],
+    ],
+];</code></pre>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">2. Enterprise Hybrid Compliance Router</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Smart Enterprise Pattern: Medical/Financial confidential data local Ollama par process hota hai (Zero egress), jabki generic blogs cloud par jaate hain:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">PHP • App/Services/AI/HybridComplianceRouter.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>&lt;?php
+
+namespace App\Services\AI;
+
+use EchoLabs\Prism\Prism;
+use EchoLabs\Prism\Enums\Provider;
+use EchoLabs\Prism\ValueObjects\Response;
+use Illuminate\Support\Facades\Log;
+
+class HybridComplianceRouter
+{
+    /**
+     * Route prompt to appropriate engine based on compliance sensitivity
+     */
+    public function generate(string $prompt, bool $containsSensitiveData = false): string
+    {
+        if ($containsSensitiveData) {
+            // STRICT COMPLIANCE: Zero External Packet Egress
+            Log::info('Routing to Local Ollama: Zero-Egress Protected Workflow', [
+                'model' =&gt; 'llama3.1:8b',
+                'target' =&gt; 'localhost:11434'
+            ]);
+
+            $response = Prism::text()
+                -&gt;using(Provider::Ollama, 'llama3.1:8b')
+                -&gt;withPrompt($prompt)
+                -&gt;withClientOptions([
+                    'timeout' =&gt; 90,
+                ])
+                -&gt;generate();
+
+            return $response-&gt;text;
+        }
+
+        // PUBLIC / NON-SENSITIVE: High Eloquence Cloud AI
+        Log::info('Routing to Cloud Provider: High Eloquence Workflow');
+
+        $response = Prism::text()
+            -&gt;using(Provider::Anthropic, 'claude-3-5-sonnet-20241022')
+            -&gt;withPrompt($prompt)
+            -&gt;generate();
+
+        return $response-&gt;text;
+    }
+}</code></pre>
+        </div>
+
+        <div class="alert-box alert-warning" style="margin-top:24px;">
+          <div class="alert-icon">⚡</div>
+          <div class="alert-content">
+            <div class="alert-title">Hardware Concurrency Bottleneck Alert: GPU Queue Locking</div>
+            <p>
+              OpenAI cloud API hazaron parallel requests handle kar sakti hai, lekin aapke local server ka <strong>single GPU ek waqt me 1 se 4 parallel requests</strong> efficiently execute karta hai. Agar 20 users ek sath submit karenge to GPU VRAM context thrashing hogi!<br>
+              <strong>Production Fix:</strong> Local LLM tasks ko hamesha background queue (<code>php artisan queue:work --queue=local-ai --concurrency=2</code>) ke through run karein!
+            </p>
+          </div>
+        </div>
+
+        <div class="code-container" style="margin-top:20px;">
+          <div class="code-header">
+            <span class="code-lang">PHP • Queue Job for Local Ollama Ingestion</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>&lt;?php
+
+namespace App\Jobs;
+
+use App\Models\ConfidentialRecord;
+use App\Services\AI\HybridComplianceRouter;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
+class ProcessConfidentialRecordJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    // Dedicated queue with strictly controlled worker concurrency
+    public string $queue = 'local-ai';
+    public int $timeout = 180;
+    public int $tries = 2;
+
+    public function __construct(public ConfidentialRecord $record) {}
+
+    public function handle(HybridComplianceRouter $router): void
+    {
+        $prompt = "Extract clinical diagnostic codes from: " . $this-&gt;record-&gt;raw_notes;
+
+        $summary = $router-&gt;generate($prompt, containsSensitiveData: true);
+
+        $this-&gt;record-&gt;update([
+            'ai_summary' =&gt; $summary,
+            'processed_locally_at' =&gt; now(),
+        ]);
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 4: CONTEXT ENGINEERING & .CURSORRULES -->
+    <section id="sec-context-engineering" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">📝 Pillar 6 • Part 4 • AI Dev Context Engineering</div>
+          <h2 class="panel-title">Context Engineering: <code>.cursorrules</code> &amp; <code>AGENT.md</code></h2>
+          <p class="panel-subtitle">
+            AI code assistants (Cursor, Windsurf, Claude Code) ko train karein modern Laravel 11/12/13 patterns par. Outdated PHP 7/8 code hallucinations ko 100% eliminate karein.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-icon">🚫</div>
+            <div class="concept-title">The Legacy Hallucination Trap</div>
+            <div class="concept-desc">
+              Bina context ke AI hamesha Laravel 8/9 ke outdated patterns generate karta hai: legacy <code>Kernel.php</code>, array-based <code>protected $casts</code>, string-based route controllers, aur verbose PHPUnit classes.
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-icon">📐</div>
+            <div class="concept-title">Context Engineering Science</div>
+            <div class="concept-desc">
+              Context engineering sirf system prompt nahi hai. Yeh repository architecture constraints, design patterns, testing standards aur code conventions ka authoritative guide hota hai jo AI har turn par read karta hai.
+            </div>
+          </div>
+          <div class="concept-card">
+            <div class="concept-icon">🤖</div>
+            <div class="concept-title">Agentic Autonomy (AGENT.md)</div>
+            <div class="concept-desc">
+              Modern AI agents (Antigravity, Cursor Agent, Devin) ke liye <code>AGENT.md</code> project documentation, multi-tenancy rules, database schema invariants aur safe execution boundary define karta hai.
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📄 Production-Ready <code>.cursorrules</code> for Modern Laravel</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Yeh file apne Laravel project root par <code>.cursorrules</code> ya <code>.windsurfrules</code> ke naam se place karein:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">Markdown • .cursorrules Configuration</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># MODERN LARAVEL (11.x / 12.x) CURSORRULES
+
+You are an expert full-stack engineer specialized in modern Laravel, PHP 8.3+, Pest PHP, TailwindCSS, and PostgreSQL.
+
+## CORE PRINCIPLES &amp; STANDARDS
+- Always write modern PHP 8.3+ code: strict typing (declare(strict_types=1);), typed properties, match expressions, and readonly classes where appropriate.
+- Follow PSR-12 and Laravel naming conventions.
+- Never suggest deprecated patterns (e.g. legacy Kernel.php middleware registration; use bootstrap/app.php instead).
+
+## ELOQUENT &amp; DATABASE
+- Use Model casts method over array properties:
+  protected function casts(): array {
+      return ['status' =&gt; InvoiceStatus::class, 'meta' =&gt; 'array'];
+  }
+- Always specify explicit return types on relationships (BelongsTo, HasMany, etc.).
+- Never use raw DB queries when Eloquent or query builder can achieve the goal with indexes.
+- All migrations must use anonymous class syntax: return new class extends Migration { ... };
+
+## CONTROLLERS &amp; ARCHITECTURE
+- Keep Controllers skinny (Max 15-20 lines per method).
+- Always extract validation to dedicated Form Request classes (php artisan make:request).
+- Extract complex multi-step business logic into Invokable Action classes (App\Actions\...).
+- Return JSON resources or Inertia/Blade views; never dump unformatted arrays.
+
+## TESTING (PEST v3 ONLY)
+- Strictly use Pest PHP syntax for all tests. Never write PHPUnit class-based tests.
+- Format: it('creates an invoice with tax calculated', function () { ... });
+- Use test factories for database assertions: Model::factory()-&gt;create();
+
+## SECURITY &amp; COMPLIANCE
+- Never hardcode API keys or secret tokens. Always reference config('services.x').
+- Validate all incoming user inputs. Prevent SQL injection and XSS.</code></pre>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🤖 Enterprise <code>AGENT.md</code> Specification</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Multi-agent workflows ke liye <code>AGENT.md</code> workspace root par rakhiye:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">Markdown • AGENT.md Spec</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># AGENT SPECIFICATION • LARAVEL ENTERPRISE SAAS
+
+## PROJECT DOMAIN
+Multi-tenant Medical Billing Platform built on Laravel 11, PostgreSQL (pgvector), and Redis.
+
+## MULTI-TENANCY INVARIANTS
+- Every tenant query MUST be scoped by tenant_id. Never allow global Eloquent queries without GlobalScope.
+- Models implementing BelongsToTenant must never be mutated without asserting active tenant context.
+
+## RUNTIME CONSTRAINTS FOR AGENT
+- Terminal Commands: Always use './vendor/bin/pest' for testing. Never run 'phpunit'.
+- DB Migrations: Run 'php artisan migrate --pretend' before executing destructive schema changes.
+- Never alter config/database.php credentials directly.
+
+## VERIFICATION BEFORE SIGN-OFF
+1. Run './vendor/bin/pint' to enforce code style.
+2. Run './vendor/bin/phpstan analyse --level=8' to confirm 0 type errors.
+3. Run './vendor/bin/pest' to confirm 100% test pass rate.</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 5: PEST AI & SYNTHETIC SEEDERS -->
+    <section id="sec-pest-synthetic" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🧪 Pillar 6 • Part 5 • AI-Powered Testing &amp; Synthetic Data</div>
+          <h2 class="panel-title">Automated Pest v3 Tests &amp; High-Fidelity Synthetic Seeders</h2>
+          <p class="panel-subtitle">
+            Faker ke meaningless "Lorem Ipsum" strings aapke RAG search aur UI search ko destroy karte hain. Sikhiye kaise local AI se realistic domain seeders aur robust Pest tests generate kiye jaate hain.
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <div class="diagram-title">Faker (Legacy) vs AI Synthetic Seeders (Modern)</div>
+          <div class="diagram-grid">
+            <div class="diagram-card danger-card">
+              <h4 style="color:#ef4444; margin-bottom:12px;">❌ Legacy Faker ($faker-&gt;sentence)</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • "Autem dolor sit amet corrupti..."<br>
+                • <strong>Problem:</strong> Zero semantic coherence. RAG embedding models cluster them as noise.<br>
+                • Search queries like "Show diabetic patients under 45" return zero relevant results!
+              </p>
+            </div>
+            <div class="diagram-card success-card">
+              <h4 style="color:#10b981; margin-bottom:12px;">✅ Local AI Synthetic Seeder (Ollama / DeepSeek)</h4>
+              <p style="font-size:0.875rem; color:#94a3b8; line-height:1.6;">
+                • Real clinical notes, legal statutes, or product reviews with authentic domain vocabulary.<br>
+                • Generates coherent relationships (e.g. prescription matches the diagnosis).<br>
+                • <strong>Result:</strong> Perfect semantic RAG testing and realistic demo environments!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">1. Building an AI-Powered Synthetic Seeder</h3>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">PHP • database/seeders/AiRealisticMedicalSeeder.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>&lt;?php
+
+namespace Database\Seeders;
+
+use App\Models\PatientRecord;
+use App\Services\AI\VectorEmbeddingService;
+use EchoLabs\Prism\Prism;
+use EchoLabs\Prism\Enums\Provider;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
+
+class AiRealisticMedicalSeeder extends Seeder
+{
+    public function run(VectorEmbeddingService $vectorService): void
+    {
+        $prompt = &lt;&lt;&lt;PROMPT
+Generate 5 realistic, diverse clinical patient encounters in JSON array format.
+Schema for each item:
+{
+  "patient_name": "Full Name",
+  "age": 42,
+  "diagnosis": "Condition Name",
+  "clinical_notes": "2-3 sentences of realistic doctor notes with symptoms and treatment",
+  "severity": "low|medium|critical"
+}
+Output strictly valid JSON array without formatting fences.
+PROMPT;
+
+        $response = Prism::text()
+            -&gt;using(Provider::Ollama, 'llama3.1:8b')
+            -&gt;withPrompt($prompt)
+            -&gt;generate();
+
+        $records = json_decode($response-&gt;text, true);
+
+        if (!is_array($records)) {
+            Log::error('AI Seeder failed to generate valid JSON array');
+            return;
+        }
+
+        foreach ($records as $item) {
+            // Generate real embedding for the clinical notes
+            $embedding = $vectorService-&gt;generateEmbedding($item['clinical_notes']);
+
+            PatientRecord::create([
+                'patient_name'   =&gt; $item['patient_name'],
+                'age'            =&gt; $item['age'],
+                'diagnosis'      =&gt; $item['diagnosis'],
+                'clinical_notes' =&gt; $item['clinical_notes'],
+                'severity'       =&gt; $item['severity'],
+                'embedding'      =&gt; json_encode($embedding),
+            ]);
+        }
+    }
+}</code></pre>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">2. Automated Pest v3 Test Suite</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Pest v3 tests for AI features: mock responses, assert tokens, and test edge-case compliance:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">PHP • tests/Feature/AiComplianceTest.php</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>&lt;?php
+
+use App\Services\AI\EnterprisePiiScrubber;
+use App\Services\AI\HybridComplianceRouter;
+use EchoLabs\Prism\Prism;
+use EchoLabs\Prism\Testing\PrismFake;
+
+beforeEach(function () {
+    $this-&gt;scrubber = new EnterprisePiiScrubber();
+    $this-&gt;router = new HybridComplianceRouter();
+});
+
+it('scrubs sensitive Social Security Numbers before AI ingestion', function () {
+    $input = "Patient John Doe with SSN 123-45-6789 reported fever.";
+    
+    $clean = $this-&gt;scrubber-&gt;sanitize($input);
+
+    expect($clean)
+        -&gt;not-&gt;toContain('123-45-6789')
+        -&gt;toContain('[REDACTED_ssn]');
+});
+
+it('routes sensitive records strictly to local Ollama provider', function () {
+    PrismFake::fake([
+        'llama3.1:8b' =&gt; 'Local zero-egress summary generated successfully.'
+    ]);
+
+    $response = $this-&gt;router-&gt;generate('Confidential health query', containsSensitiveData: true);
+
+    expect($response)-&gt;toBe('Local zero-egress summary generated successfully.');
+    
+    // Assert no cloud request was initiated
+    Prism::assertPromptNotSentToCloud();
+});
+
+it('validates synthetic seeders create valid vector dimensions', function () {
+    $record = \App\Models\PatientRecord::factory()-&gt;create([
+        'embedding' =&gt; json_encode(array_fill(0, 1536, 0.045))
+    ]);
+
+    $decoded = json_decode($record-&gt;embedding, true);
+    
+    expect($decoded)-&gt;toBeArray()-&gt;toHaveCount(1536);
+});</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 6: DOCKER GPU SETUP -->
+    <section id="sec-docker-gpu" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🐳 Pillar 6 • Part 6 • Production Docker &amp; Infrastructure</div>
+          <h2 class="panel-title">Production Docker Compose with Nvidia GPU Pass-Through</h2>
+          <p class="panel-subtitle">
+            Enterprise Linux VPS par Laravel, Ollama (Nvidia Container Toolkit), PostgreSQL pgvector aur Redis ko ek unified, isolated docker network me deploy karein.
+          </p>
+        </div>
+
+        <div class="alert-box alert-danger">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-content">
+            <div class="alert-title">Critical Security Warning: Never Expose Port 11434 Publicly!</div>
+            <p>
+              Ollama daemon me built-in authentication nahi hota hai. Agar aapne <code>ports: ["11434:11434"]</code> likh kar server deploy kar diya, to koi bhi hacker aapke GPU resources ko hijack karke free inferences ya cryptomining run kar sakta hai! Hamesha internal docker network use karein ya <code>127.0.0.1:11434:11434</code> bind karein!
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:24px 0 16px;">🐳 Complete Enterprise <code>docker-compose.yml</code></h3>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">YAML • docker-compose.prod.yml</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code>version: '3.8'
+
+services:
+  # 1. Laravel Web Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_enterprise_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=enterprise_ai_db
+      - OLLAMA_URL=http://ollama:11434
+    depends_on:
+      - postgres
+      - redis
+      - ollama
+    networks:
+      - enterprise-net
+
+  # 2. Ollama Local LLM with NVIDIA GPU Passthrough
+  ollama:
+    image: ollama/ollama:latest
+    container_name: enterprise_ollama_engine
+    restart: unless-stopped
+    volumes:
+      - ollama_storage:/root/.ollama
+    # CRITICAL: Do NOT map port 11434 to public 0.0.0.0
+    expose:
+      - "11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - enterprise-net
+
+  # 3. PostgreSQL with pgvector Extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: enterprise_pgvector_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: enterprise_ai_db
+      POSTGRES_USER: enterprise_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - enterprise-net
+
+  # 4. Redis for Queue &amp; High-Speed Semantic Cache
+  redis:
+    image: redis:alpine
+    container_name: enterprise_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - enterprise-net
+
+networks:
+  enterprise-net:
+    driver: bridge
+
+volumes:
+  ollama_storage:
+  pgdata:
+  redis_data:</code></pre>
+        </div>
+
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">🚀 Server Initialization &amp; Model Pulling</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Production VPS par compose start karke container ke andar model download karein:
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">Bash • Deployment Commands</span>
+            <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+          </div>
+          <pre class="code-body"><code># 1. Start all containers in detached mode
+docker compose -f docker-compose.prod.yml up -d
+
+# 2. Pull Llama 3.1 &amp; DeepSeek models into the Ollama container volume
+docker exec -it enterprise_ollama_engine ollama pull llama3.1:8b
+docker exec -it enterprise_ollama_engine ollama pull deepseek-r1:8b
+
+# 3. Verify Nvidia GPU detection &amp; CUDA utilization
+docker exec -it enterprise_ollama_engine nvidia-smi
+
+# 4. Test internal inference from Laravel container
+docker exec -it laravel_enterprise_app curl -s http://ollama:11434/api/generate -d '{
+  "model": "llama3.1:8b",
+  "prompt": "Say: Hello from Docker Local AI",
+  "stream": false
+}'</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- SECTION 7: MASTER CAPSTONE & 15-POINT AUDIT -->
+    <section id="sec-curriculum-capstone" class="panel-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-badge">🏆 Capstone Finale • The 7-Module Master Certification</div>
+          <h2 class="panel-title">Master AI Curriculum Matrix &amp; 15-Point Production Readiness Audit</h2>
+          <p class="panel-subtitle">
+            Congratulations! Aapne modern Full-Stack Laravel AI Engineering ke sabhi 7 pillars complete kar liye hain. Niche diye gaye master curriculum matrix ko review karein aur production deployment se pehle 15-point audit run karein.
+          </p>
+        </div>
+
+        <div class="callout-card" style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(56, 189, 248, 0.1)); border: 1px solid rgba(20, 184, 166, 0.4); margin-bottom:28px;">
+          <h3 style="color:#99f6e4; font-size:1.3rem; margin-bottom:8px;">🌟 Congratulations! You are now an Enterprise Laravel AI Architect</h3>
+          <p style="color:#cbd5e1; font-size:0.975rem; line-height:1.65; margin-bottom:0;">
+            Aap sirf ek normal CRUD web developer nahi rahe—aap un elite top 1% engineers me shamil ho chuke hain jo <strong>multi-model LLM architectures</strong>, <strong>PostgreSQL pgvector RAG</strong>, <strong>autonomous ReAct agents</strong>, <strong>semantic caching cost optimization</strong>, <strong>multimodal invoice OCR</strong>, aur <strong>air-gapped local Ollama HIPAA compliance</strong> ko enterprise production level par design aur ship kar sakte hain!
+          </p>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:28px 0 16px;">📚 The Complete 7-Module Master Curriculum Matrix</h3>
+
+        <div class="table-container">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Core AI Pillar</th>
+                <th>Key Technologies</th>
+                <th>Enterprise Production Impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Module 01</strong></td>
+                <td>AI Roadmap &amp; Setup</td>
+                <td>PHP 8.3+, Docker, Composer, API Keys</td>
+                <td>Architecture blueprint, secure secrets management, dev environment setup.</td>
+              </tr>
+              <tr>
+                <td><strong>Module 02</strong></td>
+                <td>LLM Foundations &amp; Prism</td>
+                <td>EchoLabs Prism, OpenAI, Anthropic, Gemini</td>
+                <td>Zero vendor lock-in, unified API, SSE streaming to Livewire/Vue.</td>
+              </tr>
+              <tr>
+                <td><strong>Module 03</strong></td>
+                <td>RAG &amp; Vector Databases</td>
+                <td>PostgreSQL pgvector, HNSW, MMR, Hybrid Search</td>
+                <td>Domain knowledge search, zero hallucinations, millisecond vector queries.</td>
+              </tr>
+              <tr>
+                <td><strong>Module 04</strong></td>
+                <td>Function Calling &amp; AI Agents</td>
+                <td>ReAct Loops, Tool Calling, Human-in-the-Loop</td>
+                <td>Autonomous database queries, third-party API mutations with safety guardrails.</td>
+              </tr>
+              <tr>
+                <td><strong>Module 05</strong></td>
+                <td>Cost Optimization &amp; Resilience</td>
+                <td>Redis Semantic Cache, Circuit Breakers, Fallbacks</td>
+                <td>70%+ token cost savings, exponential backoff, 99.99% high-availability SLA.</td>
+              </tr>
+              <tr>
+                <td><strong>Module 06</strong></td>
+                <td>Multimodal AI &amp; Vision</td>
+                <td>GPT-4o Vision, Whisper API, S3 Signed URLs</td>
+                <td>Automated paper invoice OCR, audio voice note transcription, math audit checks.</td>
+              </tr>
+              <tr>
+                <td><strong>Module 07</strong></td>
+                <td>Local LLMs &amp; Dev Workflows</td>
+                <td>Ollama, Llama 3.3, .cursorrules, Pest AI, Docker GPU</td>
+                <td>Zero external data egress, HIPAA/GDPR compliance, $0 marginal API bills.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.25rem; font-weight:700; color:#f8fafc; margin:32px 0 16px;">📋 15-Point AI Production Readiness Audit</h3>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:16px;">
+          Production me launch karne se pehle apni application ko in 15 criteria par audit karein:
+        </p>
+
+        <div class="concept-grid">
+          <div class="concept-card" style="border-left:4px solid #14b8a6;">
+            <div class="concept-title" style="color:#99f6e4;">🔒 1. Security &amp; Compliance</div>
+            <div class="concept-desc">
+              ✅ 1. Zero API keys in git history (All stored in <code>.env</code> / AWS Secrets Manager).<br>
+              ✅ 2. Automated PII scrubbing regex runs on all user prompts.<br>
+              ✅ 3. Confidential health/financial queries routed strictly to zero-egress local Ollama.
+            </div>
+          </div>
+
+          <div class="concept-card" style="border-left:4px solid #38bdf8;">
+            <div class="concept-title" style="color:#7dd3fc;">⚡ 2. Resilience &amp; Fault Tolerance</div>
+            <div class="concept-desc">
+              ✅ 4. Circuit breaker trips after 5 consecutive LLM provider failures.<br>
+              ✅ 5. Automatic fallback from primary model (e.g. Claude) to secondary (e.g. OpenAI).<br>
+              ✅ 6. Background Queue Workers handle heavy inference with retry jitter.
+            </div>
+          </div>
+
+          <div class="concept-card" style="border-left:4px solid #f59e0b;">
+            <div class="concept-title" style="color:#fde68a;">💰 3. Performance &amp; Economics</div>
+            <div class="concept-desc">
+              ✅ 7. Redis Semantic Cache intercepts repeated prompts (Cosine similarity &gt; 0.95).<br>
+              ✅ 8. Strict token limits (<code>max_tokens</code>) enforced on every API request.<br>
+              ✅ 9. Image inputs downscaled to max 1600px before Vision API ingestion.
+            </div>
+          </div>
+
+          <div class="concept-card" style="border-left:4px solid #8b5cf6;">
+            <div class="concept-title" style="color:#c4b5fd;">🔍 4. RAG Quality &amp; Accuracy</div>
+            <div class="concept-desc">
+              ✅ 10. HNSW index created on PostgreSQL vector column (<code>m = 16, ef_construction = 64</code>).<br>
+              ✅ 11. Chunk overlap (15-20%) configured to prevent context slicing loss.<br>
+              ✅ 12. Maximum Marginal Relevance (MMR) or Reciprocal Rank Fusion applied to results.
+            </div>
+          </div>
+
+          <div class="concept-card" style="border-left:4px solid #10b981;">
+            <div class="concept-title" style="color:#6ee7b7;">🛠️ 5. Dev Quality &amp; Testing</div>
+            <div class="concept-desc">
+              ✅ 13. Pest v3 test suite uses <code>PrismFake</code> for 100% deterministic CI/CD.<br>
+              ✅ 14. <code>.cursorrules</code> and <code>AGENT.md</code> enforce Laravel 11/12 modern types.<br>
+              ✅ 15. Token consumption and latency metrics recorded to Datadog / OpenTelemetry.
+            </div>
+          </div>
+        </div>
+
+        <div class="callout-card" style="margin-top:32px; text-align:center; padding:2rem;">
+          <h3 style="color:#f8fafc; font-size:1.4rem; margin-bottom:12px;">🚀 Ready to Build the Future with Laravel &amp; AI?</h3>
+          <p style="color:#94a3b8; max-width:800px; margin:0 auto 20px; font-size:1rem; line-height:1.6;">
+            Aapne complete 7-Module Masterclass successfully finish kar liya hai. Ab apne client projects aur SaaS applications me AI features build karna start karein!
+          </p>
+          <a href="../index.html" class="nav-btn primary" style="padding:0.75rem 1.75rem; font-size:1rem; text-decoration:none; display:inline-flex;">
+            🏠 Return to Learning Portal Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- End Container -->
+
+  <footer class="footer">
+    <p><strong>AI for Laravel Developers Masterclass Suite</strong> • Enterprise Tested &amp; Production Grade</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+      <a href="../index.html">Portal Hub</a> • 
+      <a href="01_AI_Roadmap_and_Setup.html">Module 01</a> • 
+      <a href="02_Laravel_AI_Tooling_and_LLM_Foundations.html">Module 02</a> • 
+      <a href="03_RAG_and_PostgreSQL_pgvector.html">Module 03</a> • 
+      <a href="04_Function_Calling_and_AI_Agents.html">Module 04</a> • 
+      <a href="05_Production_Architecture_and_Cost_Optimization.html">Module 05</a> • 
+      <a href="06_Multimodal_AI_and_Vision_Workflows.html">Module 06</a> • 
+      <a href="#sec-privacy-imperative">Top of Page</a>
+    </p>
+  </footer>
+
+  <script>
+    // Tab Switching Function
+    function switchTab(sectionId, btnElement) {
+      document.querySelectorAll('.panel-section, .section-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.classList.add('active');
+      }
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    // Copy Code Function
+    function copyCode(button) {
+      const container = button.closest('.code-container') || button.closest('.code-block');
+      if (!container) return;
+      const codeElement = container.querySelector('pre code') || container.querySelector('pre');
+      if (!codeElement) return;
+
+      navigator.clipboard.writeText(codeElement.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Scroll Progress Bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progressBar = document.getElementById('reading-progress');
+      if (progressBar) {
+        progressBar.style.width = scrolled + '%';
+      }
+    });
+
+    // Sync tabs with URL hash
+    function syncHash() {
+      if (window.location.hash) {
+        const targetId = window.location.hash.substring(1);
+        const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(targetId));
+        if (targetBtn) switchTab(targetId, targetBtn);
+      }
+    }
+    window.addEventListener('DOMContentLoaded', syncHash);
+    window.addEventListener('hashchange', syncHash);
+  </script>
+</body>
+</html>
