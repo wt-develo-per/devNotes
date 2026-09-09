@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 03: EC2, VPC & Load Balancing | AWS Masterclass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-code: #0d1117;
+      --accent: #ff9900; /* AWS Orange */
+      --accent-glow: rgba(255, 153, 0, 0.25);
+      --accent-aws: #ff9900;
+      --accent-purple: #8c52ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #0073bb;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border: #30363d;
+      --border-focus: #ff9900;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff9900, #0073bb);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(15, 17, 21, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.1) 0%, rgba(15, 17, 21, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-blue);
+      filter: blur(100px);
+      opacity: 0.15;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(0, 115, 187, 0.1);
+      color: var(--accent-blue);
+      border: 1px solid rgba(0, 115, 187, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #ffffff, #8b949e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(0, 115, 187, 0.1);
+      color: var(--accent-blue);
+      border-color: rgba(0, 115, 187, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(0, 115, 187, 0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(0, 115, 187, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(22, 27, 34, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(22, 27, 34, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-blue); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(0, 115, 187, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AWS</span>
+      AWS Masterclass for Backend Devs
+    </a>
+    <div class="nav-links">
+      <a href="02_Advanced_S3_and_Nodejs.html" class="nav-btn">⬅️ Previous: S3 & Node.js</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+      <a href="04_Managed_Databases_RDS_DynamoDB.html" class="nav-btn">Next: Databases ➡️</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 03</span>
+      <h1 class="hero-title">EC2, VPC &amp; Load Balancing</h1>
+      <p class="hero-desc">
+        Aapne ek Node.js server banaya. Par kya hoga jab uspar 100,000 users ek sath aayenge? Aur database ko hackers se kaise bachayenge? Yahan kaam aata hai VPC (Virtual Private Cloud) aur Load Balancers ka architecture.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-vpc', this)"><span class="sidebar-icon">🏰</span> 1. What is a VPC?</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-sg', this)"><span class="sidebar-icon">🔥</span> 2. Security Groups</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-alb', this)"><span class="sidebar-icon">⚖️</span> 3. Load Balancing (ALB)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-asg', this)"><span class="sidebar-icon">📈</span> 4. Auto Scaling (ASG)</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: VPC -->
+        <section id="sec-vpc" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🏰 Networking • Part 1</div>
+              <h2 class="panel-title">Virtual Private Cloud (VPC)</h2>
+              <p class="panel-subtitle">
+                VPC aapka AWS ke andar ek apna "Private Data Center" hai. Isme aap decide karte ho kaunsi cheez internet se connect hogi aur kaunsi nahi.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card info-card">
+                <h4 style="color:var(--accent-blue); margin-bottom:10px;">🌐 Public Subnets</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Yeh wo hissa hai jo directly Internet se connected hota hai (via Internet Gateway). <br>
+                  <em>Kisko rakhein yahan?</em> Load Balancers aur frontend/backend servers (agar aap simple setup kar rahe ho) yahan rakhe jaate hain. Yahan resources ke paas ek Public IP address hota hai.
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">🔒 Private Subnets</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Yahan koi Public IP address nahi hota. Bahar se koi hacker seedha yahan nahi pahunch sakta.<br>
+                  <em>Kisko rakhein yahan?</em> <strong>Databases (RDS, PostgreSQL)</strong> hamesha yahan rakhe jate hain! Sirf Public Subnet mein baithe hue Node.js servers hi Database se baat kar sakte hain.
+                </p>
+              </div>
+            </div>
+            
+            <p style="color: #8b949e; margin-top: 15px;">
+              <strong>Note:</strong> Agar Private Subnet ki kisi machine ko software update ke liye internet chahiye, toh hum Public subnet mein ek <strong>NAT Gateway</strong> banate hain, jo uske liye traffic fetch karke laata hai.
+            </p>
+
+          </div>
+        </section>
+
+        <!-- SECTION 2: Security Groups -->
+        <section id="sec-sg" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🔥 Firewalls • Part 2</div>
+              <h2 class="panel-title">Security Groups (The Bouncers of EC2)</h2>
+              <p class="panel-subtitle">
+                Security Groups (SG) virtual firewalls hain jo EC2 instance par lagte hain. Yeh decide karte hain kaunsa traffic andar aa sakta hai (Inbound) aur bahar jaa sakta hai (Outbound).
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">🚨 Common Mistake</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Databases (Port 5432) par <code>0.0.0.0/0</code> (All Traffic) open rakhna ek disaster hai. Hacker internet se DB try karega. <br>
+                <strong>The Right Way:</strong> Database ke Security Group mein sirf <em>"Allow traffic from Node.js Security Group"</em> rule add karein. Yani Internet -> Node.js -> Database.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 3: Load Balancing (ALB) -->
+        <section id="sec-alb" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">⚖️ Traffic Management • Part 3</div>
+              <h2 class="panel-title">Application Load Balancer (ALB)</h2>
+              <p class="panel-subtitle">
+                Maan lijiye aapka Node.js server 1000 requests per second (RPS) handle kar sakta hai. Traffic achanak 3000 RPS ho gaya. Ab kya hoga? Ek server crash ho jayega.
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;"><strong>Solution:</strong> Aap 3 EC2 servers chalayenge. Par user kis IP address par hit karega? Yahan ALB aata hai.</p>
+
+            <ul style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li>User hamesha ALB ke URL par request bhejta hai.</li>
+              <li>ALB dekhta hai: "Server A busy hai, Server B thoda free hai. Chalo request B ko bhej dete hain". Isko <strong>Round Robin</strong> algorithm kehte hain.</li>
+              <li>ALB hamesha <strong>Health Checks</strong> karta rehta hai. Agar Server C crash ho gaya, toh ALB usko traffic bhejna band kar dega aur baki do ko bhejega (High Availability).</li>
+            </ul>
+            
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <h4 style="color: #10b981; margin-bottom: 8px;">✅ ALB is Layer 7</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Application Load Balancer HTTP/HTTPS URLs ko samajhta hai. Aap rules laga sakte ho: Agar URL <code>/api/*</code> hai toh traffic Node.js Servers ko bhejo, agar <code>/blog/*</code> hai toh WordPress server ko bhejo.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 4: Auto Scaling (ASG) -->
+        <section id="sec-asg" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📈 Automation • Part 4</div>
+              <h2 class="panel-title">Auto Scaling Groups (ASG)</h2>
+              <p class="panel-subtitle">
+                Agar traffic raat mein zyada aata hai aur din mein kam, toh har waqt 10 servers chalana paise ki barbadi hai. ASG yeh kaam automate karta hai.
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;"><strong>Kaise kaam karta hai?</strong></p>
+
+            <ol style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li>Aap ek <strong>Launch Template</strong> banate hain jisme batate hain ki jab bhi naya server bane, usme Ubuntu ho, Node.js install ho, aur code Github se clone ho jaye.</li>
+              <li>Aap ASG mein ek rule lagate hain: <em>"Agar sabhi current servers ka CPU utilization 70% se zyada ho jaye, toh 2 naye servers aur launch kar do."</em></li>
+              <li>Jaise hi naye servers ready hote hain, ASG unko Load Balancer (ALB) ke saath connect kar deta hai.</li>
+              <li>Jab traffic wapas kam ho jata hai (e.g., CPU < 30%), toh ASG automatically un extra servers ko terminate kar deta hai, paise bachane ke liye (Scale In).</li>
+            </ol>
+            
+            <p style="color: #f59e0b; font-size: 0.9rem;">
+              <em>Reminder: Modue 02 me humne "Stateless" rule padha tha. Agar Node server stateful hoga (files HDD pe hongi), toh jab ASG scale-in karke server delete karega, toh aapka data bhi chala jayega! Isiliye S3 & RDS zaroori hain.</em>
+            </p>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

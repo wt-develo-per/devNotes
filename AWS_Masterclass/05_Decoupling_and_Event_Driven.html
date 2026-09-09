@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 05: Decoupling & Event-Driven Architecture | AWS Masterclass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-code: #0d1117;
+      --accent: #ff9900; /* AWS Orange */
+      --accent-glow: rgba(255, 153, 0, 0.25);
+      --accent-aws: #ff9900;
+      --accent-purple: #8c52ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #0073bb;
+      --accent-pink: #d946ef; /* SNS Pink */
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border: #30363d;
+      --border-focus: #ff9900;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff9900, #d946ef);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(15, 17, 21, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.1) 0%, rgba(15, 17, 21, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-pink);
+      filter: blur(100px);
+      opacity: 0.15;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(217, 70, 239, 0.1);
+      color: var(--accent-pink);
+      border: 1px solid rgba(217, 70, 239, 0.3);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #ffffff, #8b949e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(217, 70, 239, 0.15);
+      color: var(--accent-pink);
+      border-color: rgba(217, 70, 239, 0.3);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(217, 70, 239, 0.15);
+      color: var(--accent-pink);
+      border: 1px solid rgba(217, 70, 239, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(22, 27, 34, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(22, 27, 34, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-pink); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(217, 70, 239, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-pink);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-class { color: #4ec9b0; font-weight: bold; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AWS</span>
+      AWS Masterclass for Backend Devs
+    </a>
+    <div class="nav-links">
+      <a href="04_Managed_Databases_RDS_DynamoDB.html" class="nav-btn">⬅️ Previous: Databases</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+      <a href="06_Serverless_Backend_Lambda.html" class="nav-btn">Next: Serverless ➡️</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 05</span>
+      <h1 class="hero-title">Decoupling & Event-Driven Architecture</h1>
+      <p class="hero-desc">
+        Node.js single-threaded hota hai. Agar user sign-up kare aur aap wahin par PDF generate karke email bhejne lago, toh apka API response 5 seconds lega aur server hang ho jayega. Backend ko "Decouple" karna seekhein.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-problem', this)"><span class="sidebar-icon">🧱</span> 1. The Monolith Problem</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-sqs', this)"><span class="sidebar-icon">📥</span> 2. Amazon SQS (Queues)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-sns', this)"><span class="sidebar-icon">📢</span> 3. Amazon SNS (Pub/Sub)</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-code', this)"><span class="sidebar-icon">💻</span> 4. Node.js Integration</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: The Monolith Problem -->
+        <section id="sec-problem" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧱 Architecture • Part 1</div>
+              <h2 class="panel-title">Tightly Coupled Monoliths</h2>
+              <p class="panel-subtitle">
+                "Tight Coupling" ka matlab hai jab ek system doosre ka wait karta hai kaam poora hone ke liye.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card danger-card">
+                <h4 style="color:var(--accent-rose); margin-bottom:10px;">❌ Synchronous Flow (Slow)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  User -> <code>POST /signup</code> -> DB Save (50ms) -> PDF Generate (2000ms) -> Send Email (1000ms) -> Return Response. <br>
+                  <em>Result:</em> User ko loading spinner 3 seconds tak dikhta hai. Agar Email server down hai, toh pura API fail ho jayega!
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">✅ Asynchronous Flow (Fast)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  User -> <code>POST /signup</code> -> DB Save (50ms) -> <strong>Send message to Queue</strong> (10ms) -> Return Response! <br>
+                  <em>Result:</em> User ko 60ms me success mil gaya. Background me ek alag "Worker" aaram se PDF banayega aur email bhejega. Isko <strong>Decoupling</strong> bolte hain.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 2: SQS -->
+        <section id="sec-sqs" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📥 Queues • Part 2</div>
+              <h2 class="panel-title">Amazon SQS (Simple Queue Service)</h2>
+              <p class="panel-subtitle">
+                SQS ek post office box ki tarah hai. Aap messages (JSON) yahan daal dete ho, aur workers apni speed se unhe uthate hain.
+              </p>
+            </div>
+
+            <ul style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li><strong>Producer (Web Server):</strong> API request aate hi JSON message banata hai <code>{ "userId": 123, "action": "send_welcome_email" }</code> aur SQS me bhej deta hai.</li>
+              <li><strong>Queue (SQS):</strong> Message ko safe rakhta hai. SQS guarantee deta hai ki message ghum nahi hoga.</li>
+              <li><strong>Consumer (Worker Server/Lambda):</strong> Lagatar SQS ko check karta rehta hai (Polling). Message uthata hai, email bhejta hai, aur phir queue se delete kar deta hai taaki koi aur worker use dubara na bheje.</li>
+            </ul>
+
+            <div class="callout-card" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+              <h4 style="color: #f59e0b; margin-bottom: 8px;">⚠️ Standard vs FIFO</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                <strong>Standard Queue:</strong> Bahut fast hoti hai, par messages ka order guarantee nahi hota. Kabhi kabhi ek message 2 baar bhi deliver ho sakta hai (At-least-once delivery). <br>
+                <strong>FIFO Queue (First-In-First-Out):</strong> Order maintain rakhti hai aur exactly ek hi baar message bhejti hai. Banking transactions ke liye FIFO use karein.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 3: SNS -->
+        <section id="sec-sns" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📢 Pub/Sub • Part 3</div>
+              <h2 class="panel-title">Amazon SNS (Simple Notification Service)</h2>
+              <p class="panel-subtitle">
+                SQS "One-to-One" hota hai (Ek message, ek worker ko milta hai). Par kya hoga agar ek "User Signup" event par aapko 3 alag-alag cheezein karni hon? (Email bhejna, Analytics update karna, Push notification bhejna).
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;"><strong>The Fan-out Architecture (SNS + SQS)</strong></p>
+
+            <ol style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li>Node.js Server ek <strong>Topic</strong> banata hai (e.g., `UserSignupTopic`) aur usme ek notification "Publish" (Pub) karta hai.</li>
+              <li>Us Topic ko 3 alag-alag SQS Queues ne <strong>Subscribe</strong> (Sub) kiya hua hai (Email Queue, Analytics Queue, Push Queue).</li>
+              <li>SNS turant us ek message ki 3 copies banata hai aur teeno queues me daal deta hai (Fan-out).</li>
+              <li>Teeno background workers apna apna kaam parallel me shuru kar dete hain!</li>
+            </ol>
+            
+            <p style="color: #f59e0b; font-size: 0.9rem;">
+              <em>Note: AWS EventBridge bhi similar pattern follow karta hai, par wo SaaS apps (like Zendesk, Datadog) se directly connect karne me zyada powerful hai. Modern serverless me EventBridge kaafi popular ho raha hai.</em>
+            </p>
+
+          </div>
+        </section>
+
+        <!-- SECTION 4: Node.js Code -->
+        <section id="sec-code" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">💻 Code • Part 4</div>
+              <h2 class="panel-title">Sending Messages to SQS via Node.js</h2>
+              <p class="panel-subtitle">
+                SDK v3 use karke Express app se message Queue me kaise push karein.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • Sending to SQS</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">import</span> { SQSClient, SendMessageCommand } <span class="ts-keyword">from</span> <span class="ts-string">"@aws-sdk/client-sqs"</span>;
+
+<span class="ts-keyword">const</span> sqsClient = <span class="ts-keyword">new</span> SQSClient({ region: <span class="ts-string">"ap-south-1"</span> });
+<span class="ts-keyword">const</span> QUEUE_URL = <span class="ts-string">"https://sqs.ap-south-1.amazonaws.com/123456789/WelcomeEmailQueue"</span>;
+
+app.post(<span class="ts-string">'/api/signup'</span>, <span class="ts-keyword">async</span> (req, res) =&gt; {
+    <span class="ts-keyword">const</span> { email, name } = req.body;
+    
+    <span class="ts-comment">// 1. Fast DB Save (e.g., RDS)</span>
+    <span class="ts-keyword">const</span> user = <span class="ts-keyword">await</span> db.users.create({ email, name });
+
+    <span class="ts-comment">// 2. Create the message payload</span>
+    <span class="ts-keyword">const</span> jobData = {
+        userId: user.id,
+        email: user.email,
+        type: <span class="ts-string">"WELCOME_EMAIL"</span>
+    };
+
+    <span class="ts-comment">// 3. Push to SQS</span>
+    <span class="ts-keyword">await</span> sqsClient.send(<span class="ts-keyword">new</span> SendMessageCommand({
+        QueueUrl: QUEUE_URL,
+        MessageBody: JSON.stringify(jobData),
+        DelaySeconds: <span class="ts-type">0</span> <span class="ts-comment">// Optional: Delay processing by X seconds</span>
+    }));
+
+    <span class="ts-comment">// 4. Return immediately (Fast API!)</span>
+    <span class="ts-keyword">return</span> res.json({ 
+        success: <span class="ts-keyword">true</span>, 
+        message: <span class="ts-string">"User created. Check your email shortly."</span> 
+    });
+});
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

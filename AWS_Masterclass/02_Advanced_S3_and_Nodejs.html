@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 02: Advanced S3 & Node.js | AWS Masterclass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-code: #0d1117;
+      --accent: #ff9900; /* AWS Orange */
+      --accent-glow: rgba(255, 153, 0, 0.25);
+      --accent-aws: #ff9900;
+      --accent-purple: #8c52ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #0073bb;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border: #30363d;
+      --border-focus: #ff9900;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff9900, #10b981);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(15, 17, 21, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.1) 0%, rgba(15, 17, 21, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-emerald);
+      filter: blur(100px);
+      opacity: 0.15;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #ffffff, #8b949e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-emerald);
+      border-color: rgba(16, 185, 129, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(22, 27, 34, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(22, 27, 34, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-blue); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(16, 185, 129, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-emerald);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-class { color: #4ec9b0; font-weight: bold; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AWS</span>
+      AWS Masterclass for Backend Devs
+    </a>
+    <div class="nav-links">
+      <a href="01_IAM_and_Security_Foundations.html" class="nav-btn">⬅️ Previous: IAM</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+      <a href="03_EC2_VPC_and_Load_Balancing.html" class="nav-btn">Next: EC2 & VPC ➡️</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 02</span>
+      <h1 class="hero-title">Advanced S3 &amp; Node.js Integration</h1>
+      <p class="hero-desc">
+        Amazon S3 (Simple Storage Service) bas ek file storage nahi hai. Production me hum Node.js server ki memory bachane ke liye "Bypass" patterns use karte hain. Chaliye Pre-signed URLs aur Stateless Architecture samajhte hain.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-stateless', this)"><span class="sidebar-icon">🧱</span> 1. The Stateless Rule</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-presigned-download', this)"><span class="sidebar-icon">🔐</span> 2. Secure Downloads</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-presigned-upload', this)"><span class="sidebar-icon">📤</span> 3. Bypassing Backend</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-code', this)"><span class="sidebar-icon">💻</span> 4. Node.js Code</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: Stateless Rule -->
+        <section id="sec-stateless" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🧱 Architecture • Part 1</div>
+              <h2 class="panel-title">The "Stateless Server" Rule</h2>
+              <p class="panel-subtitle">
+                Sabse badi galti naye developers kya karte hain? Wo Node.js mein Multer use karke files ko EC2 instance ke `/uploads` folder mein save kar dete hain.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card danger-card">
+                <h4 style="color:var(--accent-rose); margin-bottom:10px;">❌ Stateful Server (Bad)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Agar aapki website popular ho gayi aur Load Balancer ne 3 EC2 servers on kar diye, toh jab user photo upload karega wo Server 1 par jayegi. Par jab agle din wo user login karega, toh Load Balancer usko Server 2 par bhej sakta hai... wahan photo nahi hogi! User ko broken image dikhegi.
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">✅ Stateless Server (Good)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  EC2 instances kabhi bhi terminate aur recreate ho sakte hain (Auto Scaling). Isliye servers par <strong>sirf code</strong> hona chahiye, data nahi. Saari files directly S3 me jani chahiye, aur S3 ka URL database me save hona chahiye.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Presigned Downloads -->
+        <section id="sec-presigned-download" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🔐 Security • Part 2</div>
+              <h2 class="panel-title">Pre-signed URLs (Downloads)</h2>
+              <p class="panel-subtitle">
+                Agar aap paid video courses ya private PDFs bech rahe hain, toh S3 bucket ko Public nahi kar sakte (warna koi bhi download kar lega). Toh paid users ko file kaise dein?
+              </p>
+            </div>
+
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <h4 style="color: #10b981; margin-bottom: 8px;">💡 Solution: Time-limited Magic Links</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Node.js backend AWS SDK se ek "Pre-signed URL" maangta hai. Yeh ek URL hota hai jiske end me ek lamba cryptographic signature aur Expiry Time hota hai (e.g., 3600 seconds). 
+                <br><br>
+                Aap ye URL frontend ko bhejte ho. User video play kar leta hai. Agar wo URL copy karke doston ko WhatsApp pe bhejta hai, toh 1 ghante baad link hamesha ke liye expire ho jayegi aur doston ko "Access Denied" milega.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Bypassing Backend -->
+        <section id="sec-presigned-upload" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📤 Performance • Part 3</div>
+              <h2 class="panel-title">Pre-signed URLs (Uploads) & Bypassing Backend</h2>
+              <p class="panel-subtitle">
+                Maan lijiye user 2GB ki 4K video upload kar raha hai. Agar aap ye frontend -> Node.js -> S3 bhejenge, toh aapka Node.js server RAM crash kar dega aur baki API requests block ho jayengi!
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;"><strong>The Pro Pattern: Client-Side Direct Upload</strong></p>
+
+            <ol style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li><strong>Frontend:</strong> React.js bolega "Hey Node, mujhe <code>video.mp4</code> S3 me daalni hai."</li>
+              <li><strong>Node.js:</strong> AWS SDK use karke ek <em>Pre-signed UPLOAD URL</em> banayega aur React ko wapas de dega. (Server par koi file touch nahi hui).</li>
+              <li><strong>Frontend:</strong> React directly us URL par <code>PUT</code> request marega aur 2GB ki file seedha AWS S3 me jayegi. Node.js free betha hai doosre users ko serve karne ke liye!</li>
+              <li><strong>Node.js:</strong> Upload hone ke baad, Frontend Node ko bas itna batayega "File chali gayi", aur Node database me entry save kar dega.</li>
+            </ol>
+            
+            <p style="color: #f59e0b; font-size: 0.9rem;"><em>Note: S3 bucket me CORS (Cross-Origin Resource Sharing) allow karna padta hai taaki browser directly S3 se communicate kar sake.</em></p>
+
+          </div>
+        </section>
+
+        <!-- SECTION 4: Node.js Code -->
+        <section id="sec-code" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">💻 Code • Part 4</div>
+              <h2 class="panel-title">Generating Pre-signed URLs in Node.js</h2>
+              <p class="panel-subtitle">
+                AWS SDK v3 ka syntax thoda different aur modular hai. Chaliye Express.js me Upload URL generate karne ka code dekhte hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript • SDK v3 S3 Upload URL</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">import</span> { S3Client, PutObjectCommand } <span class="ts-keyword">from</span> <span class="ts-string">"@aws-sdk/client-s3"</span>;
+<span class="ts-keyword">import</span> { getSignedUrl } <span class="ts-keyword">from</span> <span class="ts-string">"@aws-sdk/s3-request-presigner"</span>;
+
+<span class="ts-comment">// Remember Module 1? Credentials automatically resolve ho jayenge!</span>
+<span class="ts-keyword">const</span> s3Client = <span class="ts-keyword">new</span> S3Client({ region: <span class="ts-string">"ap-south-1"</span> });
+
+<span class="ts-keyword">export</span> <span class="ts-keyword">const</span> generateUploadURL = <span class="ts-keyword">async</span> (fileName: <span class="ts-type">string</span>, contentType: <span class="ts-type">string</span>) =&gt; {
+    <span class="ts-keyword">const</span> bucketName = <span class="ts-string">"my-production-bucket"</span>;
+    <span class="ts-comment">// Always generate unique names in S3 to prevent overwriting</span>
+    <span class="ts-keyword">const</span> uniqueKey = <span class="ts-string">`uploads/${Date.now()}-${fileName}`</span>;
+
+    <span class="ts-keyword">const</span> command = <span class="ts-keyword">new</span> PutObjectCommand({
+        Bucket: bucketName,
+        Key: uniqueKey,
+        ContentType: contentType <span class="ts-comment">// e.g., 'image/png' or 'video/mp4'</span>
+    });
+
+    <span class="ts-comment">// Create a URL that expires in 60 seconds</span>
+    <span class="ts-keyword">const</span> uploadUrl = <span class="ts-keyword">await</span> getSignedUrl(s3Client, command, { expiresIn: <span class="ts-type">60</span> });
+
+    <span class="ts-keyword">return</span> { uploadUrl, key: uniqueKey };
+};
+
+<span class="ts-comment">// Express Route</span>
+app.post(<span class="ts-string">'/api/get-upload-link'</span>, <span class="ts-keyword">async</span> (req, res) =&gt; {
+    <span class="ts-keyword">const</span> { fileName, fileType } = req.body;
+    <span class="ts-keyword">const</span> data = <span class="ts-keyword">await</span> generateUploadURL(fileName, fileType);
+    res.json({ success: <span class="ts-keyword">true</span>, data });
+});
+</code></pre>
+            </div>
+            
+            <p style="color: #8b949e; font-size: 0.95rem; margin-top: 20px;">
+              Frontend par ab hum directly `axios.put(data.uploadUrl, file, { headers: { 'Content-Type': fileType } })` call karenge, aur Node.js ki memory puri tarah safe rahegi!
+            </p>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 01: IAM & Security Foundations | AWS Masterclass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-code: #0d1117;
+      --accent: #ff9900; /* AWS Orange */
+      --accent-glow: rgba(255, 153, 0, 0.25);
+      --accent-aws: #ff9900;
+      --accent-purple: #8c52ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #0073bb;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border: #30363d;
+      --border-focus: #ff9900;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff9900, #f43f5e);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(15, 17, 21, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.1) 0%, rgba(15, 17, 21, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-aws);
+      filter: blur(100px);
+      opacity: 0.15;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(255, 153, 0, 0.1);
+      color: var(--accent-aws);
+      border: 1px solid rgba(255, 153, 0, 0.2);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #ffffff, #8b949e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(255, 153, 0, 0.1);
+      color: var(--accent-aws);
+      border-color: rgba(255, 153, 0, 0.2);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(255, 153, 0, 0.15);
+      color: var(--accent-aws);
+      border: 1px solid rgba(255, 153, 0, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(22, 27, 34, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(22, 27, 34, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-aws); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(255, 153, 0, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-aws);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-class { color: #4ec9b0; font-weight: bold; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AWS</span>
+      AWS Masterclass for Backend Devs
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-btn primary">🏠 Back to Hub</a>
+      <a href="02_Advanced_S3_and_Nodejs.html" class="nav-btn">Next: S3 & Node.js ➡️</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 01</span>
+      <h1 class="hero-title">IAM &amp; Security Foundations (The Front Door)</h1>
+      <p class="hero-desc">
+        AWS cloud ka "Door Bouncer" IAM (Identity and Access Management) hai. Sabse zyada backend hacks isiliye hote hain kyunki developers apne AWS Credentials galat jagah hardcode kar dete hain. Aaj hum production-grade IAM patterns seekhenge.
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-iam-intro', this)"><span class="sidebar-icon">🛡️</span> 1. What is IAM?</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-users-roles', this)"><span class="sidebar-icon">🎭</span> 2. Users vs Roles</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-policies', this)"><span class="sidebar-icon">📜</span> 3. JSON Policies</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-node-sdk', this)"><span class="sidebar-icon">🚀</span> 4. Node.js with IAM</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: What is IAM -->
+        <section id="sec-iam-intro" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🛡️ Fundamentals • Part 1</div>
+              <h2 class="panel-title">What is IAM? (The Bouncer of AWS)</h2>
+              <p class="panel-subtitle">
+                Identity and Access Management (IAM) decide karta hai ki "Kaun" (Who) AWS ke andar aa sakta hai aur "Kya" (What) kar sakta hai.
+              </p>
+            </div>
+
+            <div class="concept-grid">
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-aws)">Identity (Who)</div>
+                <div class="concept-desc">
+                  Authentication. AWS ko kaise pata chalega ki aap wahi ho jo aap claim kar rahe ho? Iske liye hum <strong>Users</strong> ya <strong>Roles</strong> use karte hain.
+                </div>
+              </div>
+              <div class="concept-card">
+                <div class="concept-title" style="color:var(--accent-emerald)">Access (What)</div>
+                <div class="concept-desc">
+                  Authorization. Agar login ho gaye, toh kya S3 se file delete karne ki permission hai? Ye <strong>Policies</strong> decide karti hain.
+                </div>
+              </div>
+            </div>
+
+            <div class="callout-card" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);">
+              <h4 style="color: #f43f5e; margin-bottom: 8px;">🚨 The Root Account Rule</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Jab aap AWS pe sign up karte ho, jo email address use hota hai usko "Root Account" bolte hain. <strong>Golden Rule:</strong> Root account se kabhi daily backend tasks mat karo! Usme MFA lagao aur usko bhool jao. Apne dev kaam ke liye ek naya IAM User banao jise sirf utni hi power ho jitni zaroorat hai.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 2: Users vs Roles -->
+        <section id="sec-users-roles" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🎭 Advanced • Part 2</div>
+              <h2 class="panel-title">IAM Users vs IAM Roles (The Big Mistake)</h2>
+              <p class="panel-subtitle">
+                Naye backend devs humesha apne <code>.env</code> file mein <code>AWS_ACCESS_KEY_ID</code> aur <code>AWS_SECRET_ACCESS_KEY</code> save kar dete hain. Yeh practice locally theek hai, par production (EC2) par bahut khatarnak hai!
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card danger-card">
+                <h4 style="color:var(--accent-rose); margin-bottom:10px;">❌ The Junior Developer Way (Users)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Ek IAM User banate hain. Uska long-term Access Key nikalte hain, aur production EC2 server ki <code>.env</code> file mein daal dete hain. <br><br>
+                  <em>Risk:</em> Agar kisi ne server hack kar liya ya Github par <code>.env</code> commit kar diya, toh hacker ko permanent access mil jayega! Hacker aapke account pe $10,000 ke Bitcoin mining servers chala dega.
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">✅ The Senior Backend Way (Roles)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Production servers (EC2/ECS) ke andar hum Access Keys nahi daalte! Hum ek <strong>IAM Role</strong> banate hain aur us role ko EC2 instance ko pehna dete hain ("Attach to EC2").<br><br>
+                  <em>Benefit:</em> AWS automatically har kuch ghanto me temporary access tokens rotate karta hai. Hacker ko token mila bhi toh thodi der me useless ho jayega. No keys to leak!
+                </p>
+              </div>
+            </div>
+            
+            <p style="color: #8b949e; margin-top: 15px;">
+              <strong>Simple rule:</strong> <br>
+              - <strong>IAM Users</strong>: Humans (aap aur main) ke liye hote hain. Jinke paas password ya long-term keys hoti hain.<br>
+              - <strong>IAM Roles</strong>: Machines (EC2, Lambda, Node.js App) ke liye hote hain. Jo temporary credentials assume karti hain.
+            </p>
+
+          </div>
+        </section>
+
+        <!-- SECTION 3: Policies -->
+        <section id="sec-policies" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">📜 Permissions • Part 3</div>
+              <h2 class="panel-title">IAM Policies (JSON Documents)</h2>
+              <p class="panel-subtitle">
+                Aapne User ya Role toh bana liya, par usko permit kaise karein? AWS me har permission ek JSON document se define hoti hai jisko "Policy" bolte hain.
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;">Har Policy statement ke 4 main hisse hote hain (A.R.E.C): <strong>Action, Resource, Effect, Condition</strong>.</p>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">JSON • IAM Policy Example</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code>{
+  <span class="ts-string">"Version"</span>: <span class="ts-string">"2012-10-17"</span>,
+  <span class="ts-string">"Statement"</span>: [
+    {
+      <span class="ts-comment">// Effect: Kya hum Allow kar rahe hain ya Deny?</span>
+      <span class="ts-string">"Effect"</span>: <span class="ts-string">"Allow"</span>,
+      
+      <span class="ts-comment">// Action: AWS ki kaunsi API call allow karni hai?</span>
+      <span class="ts-string">"Action"</span>: [
+        <span class="ts-string">"s3:PutObject"</span>,    <span class="ts-comment">// Upload file</span>
+        <span class="ts-string">"s3:GetObject"</span>     <span class="ts-comment">// Download file</span>
+      ],
+      
+      <span class="ts-comment">// Resource: Kis specific cheez par? (ARN: Amazon Resource Name)</span>
+      <span class="ts-string">"Resource"</span>: <span class="ts-string">"arn:aws:s3:::my-nodejs-app-bucket/*"</span>
+    }
+  ]
+}
+</code></pre>
+            </div>
+            
+            <div class="callout-card" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+              <h4 style="color: #f59e0b; margin-bottom: 8px;">💡 Principle of Least Privilege</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Naye developers tang aakar <code>"Action": "*"</code> (Full Access) de dete hain S3 par. Ye galat hai. Agar aapki app sirf photo upload karti hai, toh policy mein sirf <code>s3:PutObject</code> hona chahiye, <code>s3:DeleteBucket</code> nahi! Isko "Least Privilege" kehte hain.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 4: Node.js SDK -->
+        <section id="sec-node-sdk" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚀 Implementation • Part 4</div>
+              <h2 class="panel-title">Node.js Integration with IAM</h2>
+              <p class="panel-subtitle">
+                Jab aap AWS SDK v3 use karte hain Node.js mein, toh aap credentials kaise pass karte hain? 
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">TypeScript / Node.js • The Magic of Default Provider</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">import</span> { S3Client, ListBucketsCommand } <span class="ts-keyword">from</span> <span class="ts-string">"@aws-sdk/client-s3"</span>;
+
+<span class="ts-comment">// Humne yahan KOI credentials pass nahi kiye!</span>
+<span class="ts-keyword">const</span> s3Client = <span class="ts-keyword">new</span> S3Client({ region: <span class="ts-string">"ap-south-1"</span> });
+
+<span class="ts-keyword">export</span> <span class="ts-keyword">const</span> testConnection = <span class="ts-keyword">async</span> () =&gt; {
+    <span class="ts-keyword">try</span> {
+        <span class="ts-keyword">const</span> data = <span class="ts-keyword">await</span> s3Client.send(<span class="ts-keyword">new</span> ListBucketsCommand({}));
+        console.log(<span class="ts-string">"Success! Connected to AWS."</span>);
+    } <span class="ts-keyword">catch</span> (err) {
+        console.error(<span class="ts-string">"Failed!"</span>, err);
+    }
+};
+</code></pre>
+            </div>
+
+            <h4 style="color: white; margin-top: 20px; margin-bottom: 10px;">🤔 Wait, bina keys ke SDK kaam kaise karega?</h4>
+            <p style="color: #8b949e; line-height: 1.6;">
+              Yehi AWS SDK ka sabse bada magic hai, jisko <strong>"Credential Provider Chain"</strong> bolte hain:
+            </p>
+            <ol style="color: #8b949e; line-height: 1.6; margin-left: 20px; margin-bottom: 20px;">
+              <li>Sabse pehle SDK Node.js ke <code>process.env.AWS_ACCESS_KEY_ID</code> mein dhoondhta hai. (Hum dev environment me `dotenv` ya `.bashrc` use karke variables set karte hain).</li>
+              <li>Agar nahi mila, toh wo aapke laptop ke <code>~/.aws/credentials</code> file me dhoondhta hai.</li>
+              <li>Agar app production EC2 par chal rahi hai, toh wahan env vars nahi hote. Toh SDK directly us EC2 instance ki <strong>Metadata Service (IAM Role)</strong> ko ping karke securely temporary tokens le aata hai!</li>
+            </ol>
+            
+            <p style="color: #10b981; font-weight: bold;">
+              Isiliye best practice ye hai ki code me <code>new S3Client({ credentials: { ... } })</code> kabhi hardcode mat karo. SDK ko automatically resolve karne do!
+            </p>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
