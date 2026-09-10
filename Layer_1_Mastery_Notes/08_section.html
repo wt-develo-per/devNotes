@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PILLAR 2: Data Patterns | Engineering Mastery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #3b82f6; /* Blue accent */
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.2rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.7rem; color: var(--accent); border-color: rgba(59, 130, 246, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code, #content-area li code { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            display: none;
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 340px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .toc-list a:hover { color: var(--accent); }
+        .toc-list a.active { color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">ENG</span>
+            Engineering Mastery
+        </div>
+        <div class="nav-links">
+            <a href="07_section.html" class="nav-btn">⬅️ Previous</a>
+            <a href="09_section.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Curriculum</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_section.html">00. Introduction</a></li>
+            <li><a href="01_section.html">01. How Computers Work at the...</a></li>
+            <li><a href="02_section.html">02. How Networks and Data Tra...</a></li>
+            <li><a href="03_section.html">03. How Operating Systems Man...</a></li>
+            <li><a href="04_section.html">04. How Data Is Stored and Re...</a></li>
+            <li><a href="05_section.html">05. How Programs Fail and Why...</a></li>
+            <li><a href="06_section.html">06. Algorithmic Thinking...</a></li>
+            <li><a href="07_section.html">07. Application Architecture ...</a></li>
+            <li><a href="08_section.html" class="active">08. Data Patterns...</a></li>
+            <li><a href="09_section.html">09. Integration Patterns...</a></li>
+            <li><a href="10_section.html">10. Resilience Patterns...</a></li>
+            <li><a href="11_section.html">11. Scalability Patterns...</a></li>
+            <li><a href="12_section.html">12. Security Patterns...</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 2: Data Patterns
+
+### Pattern 5: Outbox Pattern — The Bridge Between Databases and Events
+
+```
+The problem it solves (critical for production correctness):
+
+  // This has a bug that costs money in production:
+  async function createOrder(data) {
+    await db.orders.create(data);                    // Step 1: Saves to DB
+    await eventBus.publish('order.created', data);   // Step 2: Publishes event
+    
+    // What if Step 1 succeeds but Step 2 fails?
+    // Order exists in database.
+    // Event never published.
+    // Email never sent.
+    // Fulfillment never triggered.
+    // Customer paid but order never processed.
+    
+    // What if Step 2 succeeds but the process crashes before Step 1?
+    // Event published.
+    // But order never saved.
+    // Fulfillment triggered for non-existent order.
+  }
+
+The Outbox Pattern solution:
+  Write to database AND outbox table in one atomic transaction.
+  Separate process reads outbox, publishes events, marks as published.
+  Guaranteed: If order is saved, event will eventually be published.
+  Guaranteed: If order is not saved, no event will be published.
+```
+
+```typescript
+// Outbox Pattern implementation
+
+// 1. Database schema:
+/*
+CREATE TABLE outbox_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type VARCHAR(100) NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  published_at TIMESTAMP,         -- NULL = not yet published
+  publish_attempts INTEGER DEFAULT 0,
+  last_error TEXT
+);
+*/
+
+// 2. Write order + outbox event in single transaction
+class OrderService {
+  async createOrder(input: CreateOrderInput): Promise<Order> {
+    const client = await this.db.connect();
+    
+    try {
+      await client.query('BEGIN');
+
+      // Create the order
+      const orderResult = await client.query(
+        `INSERT INTO orders (user_id, total_amount, status, created_at)
+         VALUES ($1, $2, 'pending', NOW())
+         RETURNING id, user_id, total_amount, status, created_at`,
+        [input.userId, input.totalAmount]
+      );
+      const order = orderResult.rows[0];
+
+      // Write event to outbox IN SAME TRANSACTION
+      // If anything fails: BOTH are rolled back. Consistent state guaranteed.
+      await client.query(
+        `INSERT INTO outbox_events (event_type, payload)
+         VALUES ($1, $2)`,
+        [
+          'order.created',
+          JSON.stringify({
+            orderId: order.id,
+            userId: order.user_id,
+            totalAmount: order.total_amount,
+            createdAt: order.created_at
+          })
+        ]
+      );
+
+      await client.query('COMMIT');
+      return order;
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+}
+
+// 3. Outbox publisher (separate process, runs continuously)
+class OutboxPublisher {
+  private isRunning = false;
+
+  async start(): Promise<void> {
+    this.isRunning = true;
+    while (this.isRunning) {
+      await this.processOutbox();
+      await this.sleep(1000); // Poll every second
+    }
+  }
+
+  private async processOutbox(): Promise<void> {
+    // Use FOR UPDATE SKIP LOCKED for concurrent-safe processing
+    // Multiple publisher instances can run without duplicate processing
+    const result = await this.db.query(
+      `SELECT id, event_type, payload
+       FROM outbox_events
+       WHERE published_at IS NULL
+         AND publish_attempts < 5
+       ORDER BY created_at ASC
+       LIMIT 10
+       FOR UPDATE SKIP LOCKED`
+    );
+
+    for (const event of result.rows) {
+      try {
+        await this.eventBus.publish(event.event_type, event.payload);
+        
+        await this.db.query(
+          `UPDATE outbox_events 
+           SET published_at = NOW(), publish_attempts = publish_attempts + 1
+           WHERE id = $1`,
+          [event.id]
+        );
+
+      } catch (error) {
+        // Track failure but don't crash — will retry next poll
+        await this.db.query(
+          `UPDATE outbox_events 
+           SET publish_attempts = publish_attempts + 1,
+               last_error = $2
+           WHERE id = $1`,
+          [event.id, error.message]
+        );
+        
+        logger.error('outbox_publish_failed', {
+          eventId: event.id,
+          eventType: event.event_type,
+          error: error.message
+        });
+      }
+    }
+  }
+}
+
+/*
+Result:
+  Order saved + event published: Normal happy path
+  Order saved + event publish fails: Retried automatically by publisher
+  Order save fails: Outbox entry also rolled back. No orphan events.
+  Publisher crashes mid-publish: Unpublished events retried on restart.
+  
+  This pattern is used in production systems handling millions of dollars.
+  Most tutorials never mention it. This is a senior engineer pattern.
+*/
+```
+
+---
+
+### Pattern 6: Saga Pattern — Distributed Transactions Without Two-Phase Commit
+
+```
+The problem:
+  Order service, Payment service, Inventory service are separate.
+  User places an order. Three things must happen:
+    1. Reserve inventory (Inventory Service)
+    2. Charge payment (Payment Service)
+    3. Create order record (Order Service)
+  
+  Any one can fail. You cannot use a single database transaction
+  across three separate services/databases.
+  
+  Without Saga: Partial state. Payment charged. Inventory not reserved.
+                Order not created. Customer's money taken, gets nothing.
+
+Saga coordinates through events or direct calls with compensating transactions.
+If any step fails: Compensation transactions undo previous steps.
+
+Two types:
+  Choreography Saga: Services react to events, coordinate themselves.
+  Orchestration Saga:  Central coordinator tells each service what to do.
+```
+
+```typescript
+// Orchestration Saga (clearer, better for complex flows)
+
+// The Saga orchestrator coordinates the entire flow
+class CreateOrderSaga {
+  private state: SagaState = { step: 'STARTED', compensations: [] };
+
+  async execute(command: CreateOrderCommand): Promise<Order> {
+    let inventoryReservationId: string | null = null;
+    let paymentTransactionId: string | null = null;
+    let orderId: string | null = null;
+
+    try {
+      // Step 1: Reserve inventory
+      this.state.step = 'RESERVING_INVENTORY';
+      const reservation = await this.inventoryService.reserve({
+        productId: command.productId,
+        quantity: command.quantity
+      });
+      inventoryReservationId = reservation.id;
+      
+      // Register compensation (will be called if later steps fail)
+      this.state.compensations.push(async () => {
+        await this.inventoryService.cancelReservation(inventoryReservationId);
+        logger.info('compensation_executed', { action: 'cancel_inventory_reservation', id: inventoryReservationId });
+      });
+
+      // Step 2: Process payment
+      this.state.step = 'PROCESSING_PAYMENT';
+      const payment = await this.paymentService.charge({
+        userId: command.userId,
+        amount: command.totalAmount,
+        idempotencyKey: `order_${command.requestId}`
+      });
+      paymentTransactionId = payment.transactionId;
+      
+      // Register compensation
+      this.state.compensations.push(async () => {
+        await this.paymentService.refund(paymentTransactionId);
+        logger.info('compensation_executed', { action: 'refund_payment', id: paymentTransactionId });
+      });
+
+      // Step 3: Create order record
+      this.state.step = 'CREATING_ORDER';
+      const order = await this.orderRepository.create({
+        userId: command.userId,
+        productId: command.productId,
+        quantity: command.quantity,
+        totalAmount: command.totalAmount,
+        inventoryReservationId,
+        paymentTransactionId,
+        status: 'confirmed'
+      });
+      orderId = order.id;
+
+      // Step 4: Confirm inventory reservation
+      await this.inventoryService.confirmReservation(inventoryReservationId);
+
+      this.state.step = 'COMPLETED';
+      
+      logger.info('order_saga_completed', {
+        orderId,
+        paymentTransactionId,
+        inventoryReservationId
+      });
+      
+      return order;
+
+    } catch (error) {
+      // Execute compensating transactions IN REVERSE ORDER
+      logger.error('order_saga_failed', {
+        step: this.state.step,
+        error: error.message,
+        compensationsToRun: this.state.compensations.length
+      });
+
+      await this.runCompensations();
+      throw new OrderCreationError(
+        `Order creation failed at step ${this.state.step}: ${error.message}`
+      );
+    }
+  }
+
+  private async runCompensations(): Promise<void> {
+    // Run compensations in reverse order
+    const compensations = [...this.state.compensations].reverse();
+    
+    for (const compensate of compensations) {
+      try {
+        await compensate();
+      } catch (compensationError) {
+        // Compensation itself failed — needs human intervention
+        // This is the rare but real problem with Sagas
+        logger.error('compensation_failed', {
+          error: compensationError.message
+        });
+        
+        await this.alertingService.sendCritical({
+          message: 'Saga compensation failed — manual intervention required',
+          sagaState: this.state
+        });
+        
+        // Still continue running remaining compensations
+      }
+    }
+  }
+}
+```
+
+---
+
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

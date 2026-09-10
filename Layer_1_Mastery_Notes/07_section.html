@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PILLAR 1: Application Architecture Patterns | Engineering Mastery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #3b82f6; /* Blue accent */
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.2rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.7rem; color: var(--accent); border-color: rgba(59, 130, 246, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code, #content-area li code { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            display: none;
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 340px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .toc-list a:hover { color: var(--accent); }
+        .toc-list a.active { color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">ENG</span>
+            Engineering Mastery
+        </div>
+        <div class="nav-links">
+            <a href="06_section.html" class="nav-btn">⬅️ Previous</a>
+            <a href="08_section.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Curriculum</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_section.html">00. Introduction</a></li>
+            <li><a href="01_section.html">01. How Computers Work at the...</a></li>
+            <li><a href="02_section.html">02. How Networks and Data Tra...</a></li>
+            <li><a href="03_section.html">03. How Operating Systems Man...</a></li>
+            <li><a href="04_section.html">04. How Data Is Stored and Re...</a></li>
+            <li><a href="05_section.html">05. How Programs Fail and Why...</a></li>
+            <li><a href="06_section.html">06. Algorithmic Thinking...</a></li>
+            <li><a href="07_section.html" class="active">07. Application Architecture ...</a></li>
+            <li><a href="08_section.html">08. Data Patterns...</a></li>
+            <li><a href="09_section.html">09. Integration Patterns...</a></li>
+            <li><a href="10_section.html">10. Resilience Patterns...</a></li>
+            <li><a href="11_section.html">11. Scalability Patterns...</a></li>
+            <li><a href="12_section.html">12. Security Patterns...</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 1: Application Architecture Patterns
+
+### Pattern 1: Layered Architecture (The Foundation of Everything)
+
+```
+This is the pattern you already use in Laravel without knowing its name.
+Understanding it explicitly lets you apply it intentionally.
+
+The concept:
+  Code is separated into horizontal layers.
+  Each layer has one responsibility.
+  Each layer only talks to the layer directly below it.
+  Dependencies flow downward. Never upward.
+
+Standard layers in a backend service:
+
+┌─────────────────────────────────────────────────────┐
+│                  HTTP Layer                          │  ← Layer 4
+│    (Routes, Controllers, Request/Response)           │
+│    Responsibility: Parse HTTP, validate format       │
+├─────────────────────────────────────────────────────┤
+│                 Service Layer                        │  ← Layer 3
+│              (Application Logic)                     │
+│    Responsibility: Orchestrate business rules        │
+├─────────────────────────────────────────────────────┤
+│                 Domain Layer                         │  ← Layer 2
+│            (Core Business Rules)                     │
+│    Responsibility: Pure business logic, no I/O       │
+├─────────────────────────────────────────────────────┤
+│               Repository Layer                       │  ← Layer 1
+│             (Data Access Logic)                      │
+│    Responsibility: Talk to database, cache, storage  │
+└─────────────────────────────────────────────────────┘
+
+The rule that makes this work:
+  HTTP Layer   knows about:  Service Layer
+  Service Layer knows about: Domain Layer + Repository Layer
+  Domain Layer knows about:  Nothing external (pure logic)
+  Repository Layer knows about: Database, Redis, external storage
+
+The rule that is most commonly broken:
+  Putting SQL queries inside controllers (HTTP layer accessing data directly)
+  Putting business logic inside repositories (data layer making decisions)
+  Calling HTTP APIs directly from domain models (domain depending on external)
+```
+
+```typescript
+// WRONG: Logic scattered across wrong layers
+
+// Controller doing business logic (HTTP layer making decisions):
+app.post('/orders', async (req, res) => {
+  const { userId, productId, quantity } = req.body;
+  
+  // Business logic in controller — WRONG
+  const product = await db.query('SELECT * FROM products WHERE id = $1', [productId]);
+  if (product.stock < quantity) {
+    return res.status(400).json({ error: 'Insufficient stock' });
+  }
+  
+  const total = product.price * quantity;
+  if (total > 100000) {
+    // Apply enterprise discount — business rule in HTTP layer — WRONG
+    total = total * 0.9;
+  }
+  
+  await db.query('INSERT INTO orders...', [...]);
+  await db.query('UPDATE products SET stock = stock - $1...', [quantity]);
+  
+  res.json({ success: true });
+});
+
+// CORRECT: Each layer doing its one job
+
+// HTTP Layer — only HTTP concerns:
+// routes/order.routes.ts
+app.post('/orders', 
+  authenticate,
+  validate(CreateOrderSchema),
+  async (req, res) => {
+    const order = await orderService.createOrder({
+      userId: req.user.id,
+      productId: req.body.productId,
+      quantity: req.body.quantity
+    });
+    res.status(201).json({ data: order });
+  }
+);
+
+// Service Layer — orchestrates, doesn't decide:
+// services/order.service.ts
+class OrderService {
+  constructor(
+    private orderRepository: OrderRepository,
+    private productRepository: ProductRepository,
+    private inventoryService: InventoryService,
+    private pricingService: PricingService,
+    private eventEmitter: EventEmitter
+  ) {}
+
+  async createOrder(input: CreateOrderInput): Promise<Order> {
+    // Orchestrates the process — doesn't contain business rules itself
+    const product = await this.productRepository.findById(input.productId);
+    if (!product) throw new NotFoundError('Product not found');
+
+    // Domain logic lives in domain objects/services:
+    const pricing = await this.pricingService.calculatePrice(
+      product,
+      input.quantity,
+      input.userId
+    );
+    
+    await this.inventoryService.reserveStock(product.id, input.quantity);
+    
+    const order = await this.orderRepository.create({
+      userId: input.userId,
+      productId: input.productId,
+      quantity: input.quantity,
+      totalAmount: pricing.finalPrice,
+      discountApplied: pricing.discountPercent
+    });
+
+    await this.eventEmitter.emit('order.created', {
+      orderId: order.id,
+      userId: input.userId,
+      amount: pricing.finalPrice
+    });
+
+    return order;
+  }
+}
+
+// Domain Layer — pure business rules, no I/O:
+// domain/pricing.service.ts
+class PricingService {
+  calculatePrice(product: Product, quantity: number, userId: string): PricingResult {
+    // Pure logic — no database calls, no HTTP calls, no side effects
+    // This makes it trivially testable
+    const basePrice = product.price * quantity;
+    
+    const discountPercent = this.determineDiscount(basePrice, userId);
+    const finalPrice = basePrice * (1 - discountPercent / 100);
+    
+    return { basePrice, discountPercent, finalPrice };
+  }
+
+  private determineDiscount(amount: number, userId: string): number {
+    // All discount rules in one place
+    if (amount >= 100000) return 10;
+    if (amount >= 50000) return 5;
+    return 0;
+  }
+}
+
+// Repository Layer — only data access:
+// repositories/order.repository.ts
+class OrderRepository {
+  constructor(private db: Pool) {}
+
+  async create(data: CreateOrderData): Promise<Order> {
+    const result = await this.db.query(
+      `INSERT INTO orders (user_id, product_id, quantity, total_amount, discount_applied, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       RETURNING id, user_id, product_id, quantity, total_amount, status, created_at`,
+      [data.userId, data.productId, data.quantity, data.totalAmount, data.discountApplied]
+    );
+    return this.mapToOrder(result.rows[0]);
+  }
+
+  // Only data access here — no business logic whatsoever
+  private mapToOrder(row: DatabaseRow): Order {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      productId: row.product_id,
+      quantity: row.quantity,
+      totalAmount: parseFloat(row.total_amount),
+      status: row.status,
+      createdAt: row.created_at
+    };
+  }
+}
+```
+
+---
+
+### Pattern 2: Repository Pattern (The Most Useful Pattern for Backend)
+
+```
+The problem it solves:
+  Without it: SQL queries scattered across controllers, services, routes.
+              To change from PostgreSQL to MongoDB: touch 200 files.
+              To test business logic: need a real database running.
+  
+  With it:    All data access in one place per entity.
+              To change database: rewrite 1 file per entity.
+              To test business logic: mock the repository interface.
+
+The shape:
+
+  Interface (contract):
+    What the repository CAN do (findById, findAll, create, update, delete)
+    
+  Implementation (actual):
+    HOW it does it (PostgreSQL, MongoDB, in-memory for tests)
+    
+  Consumer (service):
+    Depends on interface, not implementation
+    Never knows which database it's talking to
+```
+
+```typescript
+// The interface — stable contract
+interface UserRepository {
+  findById(id: string): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
+  findAll(options: PaginationOptions): Promise<PaginatedResult<User>>;
+  create(data: CreateUserData): Promise<User>;
+  update(id: string, data: UpdateUserData): Promise<User>;
+  softDelete(id: string): Promise<void>;
+  existsByEmail(email: string): Promise<boolean>;
+}
+
+// PostgreSQL implementation:
+class PostgresUserRepository implements UserRepository {
+  constructor(private db: Pool) {}
+
+  async findById(id: string): Promise<User | null> {
+    const result = await this.db.query(
+      `SELECT id, email, name, role, created_at 
+       FROM users 
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [id]
+    );
+    return result.rows[0] ? this.mapToUser(result.rows[0]) : null;
+  }
+
+  async findAll(options: PaginationOptions): Promise<PaginatedResult<User>> {
+    const { limit, cursor, sortBy = 'created_at', sortOrder = 'DESC' } = options;
+
+    // Cursor-based pagination (not offset — works at scale)
+    const whereClause = cursor 
+      ? `AND created_at < (SELECT created_at FROM users WHERE id = $2)` 
+      : '';
+    
+    const params = cursor ? [limit + 1, cursor] : [limit + 1];
+    
+    const result = await this.db.query(
+      `SELECT id, email, name, role, created_at
+       FROM users
+       WHERE deleted_at IS NULL ${whereClause}
+       ORDER BY ${sortBy} ${sortOrder}
+       LIMIT $1`,
+      params
+    );
+
+    const hasMore = result.rows.length > limit;
+    const items = hasMore ? result.rows.slice(0, -1) : result.rows;
+
+    return {
+      items: items.map(this.mapToUser),
+      hasMore,
+      nextCursor: hasMore ? items[items.length - 1].id : null
+    };
+  }
+
+  async existsByEmail(email: string): Promise<boolean> {
+    const result = await this.db.query(
+      'SELECT 1 FROM users WHERE email = $1 AND deleted_at IS NULL LIMIT 1',
+      [email]
+    );
+    return result.rows.length > 0;
+  }
+
+  private mapToUser(row: DatabaseRow): User {
+    return {
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      role: row.role,
+      createdAt: new Date(row.created_at)
+    };
+    // Mapping in ONE place. Database column name changes = fix here only.
+  }
+}
+
+// In-memory implementation for tests (NO DATABASE NEEDED):
+class InMemoryUserRepository implements UserRepository {
+  private users: Map<string, User> = new Map();
+
+  async findById(id: string): Promise<User | null> {
+    return this.users.get(id) ?? null;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return Array.from(this.users.values()).find(u => u.email === email) ?? null;
+  }
+
+  async existsByEmail(email: string): Promise<boolean> {
+    return Array.from(this.users.values()).some(u => u.email === email);
+  }
+
+  async create(data: CreateUserData): Promise<User> {
+    const user: User = {
+      id: crypto.randomUUID(),
+      ...data,
+      createdAt: new Date()
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  // Tests use this — no Docker, no PostgreSQL, instant execution
+}
+
+// Service depends on interface — doesn't care which implementation:
+class UserService {
+  constructor(private userRepository: UserRepository) {}
+  // Works with PostgresUserRepository in production
+  // Works with InMemoryUserRepository in tests
+  // Zero code change in this class either way
+}
+
+// Test setup (fast, isolated, no real database):
+describe('UserService', () => {
+  let service: UserService;
+  let repository: InMemoryUserRepository;
+
+  beforeEach(() => {
+    repository = new InMemoryUserRepository();
+    service = new UserService(repository);
+  });
+
+  it('should throw if email already exists', async () => {
+    await repository.create({ email: 'test@test.com', name: 'Test' });
+    
+    await expect(
+      service.createUser({ email: 'test@test.com', name: 'Another' })
+    ).rejects.toThrow(ConflictError);
+  });
+  // This test runs in milliseconds. No database required. No teardown.
+});
+```
+
+---
+
+### Pattern 3: CQRS — Command Query Responsibility Segregation
+
+```
+One of the most powerful patterns for scaling read-heavy applications.
+Japan's enterprise systems often have complex read requirements
+with simpler write requirements — perfect CQRS territory.
+
+The problem it solves:
+  Your write model is normalized (good for data integrity).
+  Your read model needs denormalized data for performance.
+  A single model trying to serve both reads and writes
+  becomes complex, slow, and hard to optimize.
+
+The shape:
+
+  Commands: Change state (Create, Update, Delete)
+            Optimized for data integrity.
+            Go through all business rules and validations.
+            Return minimal data (just ID or success).
+  
+  Queries:  Read state (Get, List, Search)
+            Optimized for read performance.
+            No business rule enforcement.
+            Return rich, denormalized, view-specific data.
+            Can use different data store entirely (read replica, Elasticsearch).
+
+Real-world before/after:
+```
+
+```typescript
+// WITHOUT CQRS: Single model serves everything
+// Problems: Normalized schema → slow reads. Rich domain model → complex writes.
+
+class UserController {
+  async getOrderHistory(req, res) {
+    // Joining 5 tables every time someone views order history
+    // Slow, complex, hard to paginate efficiently
+    const orders = await db.query(`
+      SELECT o.*, u.name, u.email, p.name as product_name, 
+             p.image_url, c.name as category,
+             SUM(oi.price * oi.quantity) as total...
+      FROM orders o
+      JOIN users u ON o.user_id = u.id
+      JOIN order_items oi ON oi.order_id = o.id
+      JOIN products p ON oi.product_id = p.id
+      JOIN categories c ON p.category_id = c.id
+      WHERE o.user_id = $1
+      GROUP BY o.id, u.name...
+      ORDER BY o.created_at DESC
+    `);
+    res.json(orders);
+  }
+}
+
+// WITH CQRS: Separated concerns
+
+// COMMAND SIDE: Handle state changes through domain model
+// commands/create-order.command.ts
+interface CreateOrderCommand {
+  userId: string;
+  items: Array<{ productId: string; quantity: number }>;
+  shippingAddress: Address;
+}
+
+class CreateOrderCommandHandler {
+  constructor(
+    private orderRepository: OrderRepository,
+    private inventoryService: InventoryService,
+    private eventBus: EventBus
+  ) {}
+
+  async handle(command: CreateOrderCommand): Promise<{ orderId: string }> {
+    // Full domain validation and business rules
+    await this.inventoryService.validateAndReserve(command.items);
+    
+    const order = Order.create({
+      userId: command.userId,
+      items: command.items,
+      shippingAddress: command.shippingAddress
+    });
+
+    await this.orderRepository.save(order);
+    
+    // Publish event so READ SIDE can update its projections
+    await this.eventBus.publish('order.created', {
+      orderId: order.id,
+      userId: order.userId,
+      items: order.items,
+      total: order.totalAmount,
+      createdAt: order.createdAt
+    });
+
+    return { orderId: order.id };
+  }
+}
+
+// QUERY SIDE: Optimized read models (pre-computed, denormalized)
+// queries/order-history.query.ts
+interface OrderHistoryQuery {
+  userId: string;
+  limit: number;
+  cursor?: string;
+}
+
+interface OrderHistoryView {
+  orderId: string;
+  status: string;
+  totalAmount: number;
+  itemCount: number;
+  firstItemName: string;
+  firstItemImageUrl: string;
+  createdAt: string;
+}
+
+class OrderHistoryQueryHandler {
+  constructor(private readDb: Pool) {}
+
+  async handle(query: OrderHistoryQuery): Promise<OrderHistoryView[]> {
+    // Query a DENORMALIZED read model (separate table, optimized for this view)
+    // No joins. Pre-computed. Returns in milliseconds.
+    const result = await this.readDb.query(
+      `SELECT order_id, status, total_amount, item_count,
+              first_item_name, first_item_image_url, created_at
+       FROM order_history_view
+       WHERE user_id = $1 AND created_at < $2
+       ORDER BY created_at DESC
+       LIMIT $3`,
+      [query.userId, query.cursor ?? 'NOW()', query.limit]
+    );
+    return result.rows;
+  }
+}
+
+// Read model is updated via event handler (when order.created event fires):
+class OrderHistoryProjection {
+  async on(event: OrderCreatedEvent): Promise<void> {
+    await this.readDb.query(
+      `INSERT INTO order_history_view 
+       (order_id, user_id, status, total_amount, item_count, 
+        first_item_name, first_item_image_url, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        event.orderId,
+        event.userId,
+        'pending',
+        event.total,
+        event.items.length,
+        event.items[0].name,
+        event.items[0].imageUrl,
+        event.createdAt
+      ]
+    );
+  }
+}
+
+// Controller becomes trivially simple:
+app.get('/orders/history', authenticate, async (req, res) => {
+  const orders = await orderHistoryQueryHandler.handle({
+    userId: req.user.id,
+    limit: 20,
+    cursor: req.query.cursor as string
+  });
+  res.json({ data: orders });
+});
+
+/*
+Read performance: No joins. Pre-computed. Sub-10ms at scale.
+Write performance: Full validation. Domain rules enforced.
+Scaling: Read replica for query side. Write primary for command side.
+Flexibility: Can have 10 different read models for 10 different views.
+             Each optimized for its specific UI screen.
+*/
+```
+
+---
+
+### Pattern 4: Event-Driven Architecture
+
+```
+The pattern that enables systems to grow without becoming tangled.
+
+The problem:
+  User registers →
+    Send welcome email
+    Create free trial
+    Notify sales team
+    Add to analytics
+    Create user profile
+    Send onboarding sequence
+  
+  Without events: 
+    UserService calls EmailService, TrialService, SalesService,
+    AnalyticsService, ProfileService, OnboardingService directly.
+    UserService now depends on 6 other services.
+    If EmailService is down → registration fails.
+    Adding a 7th step → modify UserService code.
+  
+  With events:
+    UserService publishes: "user.registered"
+    Each other service subscribes and handles independently.
+    UserService depends on zero other services.
+    If EmailService is down → registration succeeds, email retries later.
+    Adding a 7th step → create new subscriber. Zero changes to UserService.
+```
+
+```typescript
+// Event-driven registration flow
+
+// 1. Define events as strict contracts (these are your API between services)
+interface UserRegisteredEvent {
+  eventId: string;          // UUID — for idempotency
+  eventType: 'user.registered';
+  timestamp: string;
+  version: '1.0';           // Version events — never break consumers
+  payload: {
+    userId: string;
+    email: string;
+    name: string;
+    plan: 'free' | 'pro';
+    source: 'organic' | 'referral' | 'campaign';
+    referralCode?: string;
+  };
+}
+
+// 2. Publisher (UserService) — only knows about the event, not subscribers
+class UserService {
+  constructor(
+    private userRepository: UserRepository,
+    private eventBus: EventBus
+  ) {}
+
+  async registerUser(input: RegisterUserInput): Promise<User> {
+    // Validate
+    const emailExists = await this.userRepository.existsByEmail(input.email);
+    if (emailExists) throw new ConflictError('Email already registered');
+
+    // Create user
+    const hashedPassword = await bcrypt.hash(input.password, 12);
+    const user = await this.userRepository.create({
+      email: input.email,
+      name: input.name,
+      passwordHash: hashedPassword
+    });
+
+    // Publish event — this is ALL UserService does
+    // It does NOT call email, trial, analytics directly
+    await this.eventBus.publish<UserRegisteredEvent>({
+      eventId: crypto.randomUUID(),
+      eventType: 'user.registered',
+      timestamp: new Date().toISOString(),
+      version: '1.0',
+      payload: {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        plan: input.plan,
+        source: input.source
+      }
+    });
+
+    return user;
+  }
+}
+
+// 3. Each subscriber handles independently and idempotently
+class WelcomeEmailHandler {
+  async handle(event: UserRegisteredEvent): Promise<void> {
+    // Idempotency check — what if this event fires twice?
+    const alreadySent = await this.db.exists(
+      'processed_events', 
+      { eventId: event.eventId, handler: 'welcome_email' }
+    );
+    if (alreadySent) return; // Safe to ignore duplicate
+
+    await this.emailService.sendWelcome({
+      to: event.payload.email,
+      name: event.payload.name
+    });
+
+    await this.db.insert('processed_events', {
+      eventId: event.eventId,
+      handler: 'welcome_email',
+      processedAt: new Date()
+    });
+  }
+}
+
+class FreeTrialHandler {
+  async handle(event: UserRegisteredEvent): Promise<void> {
+    if (event.payload.plan !== 'free') return;
+    
+    await this.trialService.createTrial({
+      userId: event.payload.userId,
+      durationDays: 14
+    });
+  }
+}
+
+class ReferralHandler {
+  async handle(event: UserRegisteredEvent): Promise<void> {
+    if (!event.payload.referralCode) return;
+    
+    await this.referralService.creditReferrer(
+      event.payload.referralCode,
+      event.payload.userId
+    );
+  }
+}
+
+// Adding a new step in the future:
+// Create new handler → subscribe to 'user.registered'
+// Zero changes to UserService. Zero risk to existing flows.
+```
+
+---
+
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

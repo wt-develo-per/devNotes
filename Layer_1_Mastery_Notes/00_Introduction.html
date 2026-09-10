@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction | Layer 1 Mastery</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Highlight.js for code blocks -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #10b981;
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        /* Markdown Styles */
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.5rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.8rem; color: var(--accent); border-color: rgba(16, 185, 129, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code { background: rgba(16, 185, 129, 0.15); color: var(--accent); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        /* Floating table of contents */
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 250px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: none; /* hidden on small screens */
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 320px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; }
+        .toc-list a:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">L1</span>
+            Layer 1 Mastery
+        </div>
+        <div class="nav-links">
+            
+            <a href="01_Pillar_1.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Navigation</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_Introduction.html">00. Introduction</a></li>
+            <li><a href="01_Pillar_1.html">01. Computers & Memory</a></li>
+            <li><a href="02_Pillar_2.html">02. Networks & Data</a></li>
+            <li><a href="03_Pillar_3.html">03. Operating Systems</a></li>
+            <li><a href="04_Pillar_4.html">04. Data Storage</a></li>
+            <li><a href="05_Pillar_5.html">05. Program Failures</a></li>
+            <li><a href="06_Pillar_6.html">06. Algorithmic Thinking</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+# Layer 1: Fundamentals — The Complete Breakdown
+
+## The Core Idea First
+
+```
+Every framework you learn will die.
+Every library you depend on will be abandoned.
+Every tool you use today will be replaced.
+
+But the engineer who understands WHY data moves across a network,
+WHY databases slow down, WHY concurrent code breaks,
+WHY memory fills up — that engineer adapts to anything.
+
+Layer 1 is not what you learn.
+Layer 1 is how you SEE problems.
+```
+
+---
+
+## What Layer 1 Actually Contains
+
+```
+Layer 1 has 6 pillars:
+
+┌─────────────────────────────────────────────────────────────┐
+│  1. How computers work at the level that matters             │
+│  2. How networks and data transmission work                  │
+│  3. How operating systems manage your program                │
+│  4. How data is stored, retrieved, and why it gets slow      │
+│  5. How programs fail and why                                │
+│  6. How to think about problems (algorithmic thinking)       │
+└─────────────────────────────────────────────────────────────┘
+
+Each one below in full depth.
+```
+
+---
+
+
+    </script>
+
+    <script>
+        // Parse markdown and inject
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            // Configure marked.js to not sanitize so code blocks render properly
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            
+            // Apply syntax highlighting
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

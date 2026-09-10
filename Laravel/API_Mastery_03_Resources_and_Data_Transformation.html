@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 03: API Resources & Data Transformation | Laravel API Mastery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-card: #27272a;
+            --accent-primary: #ef4444;
+            --accent-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border: #3f3f46;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --font-sans: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; overflow-x: hidden; }
+
+        #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #ef4444, #f97316); width: 0%; z-index: 1000; transition: width 0.1s; }
+
+        .navbar { background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.2rem; font-weight: 700; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-brand span { background: var(--accent-primary); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); transition: 0.2s; font-size: 0.9rem; }
+        .nav-links a:hover { color: white; border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
+        .nav-links a.primary { background: var(--accent-primary); color: white; border: none; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+
+        .hero { background: radial-gradient(circle at top right, rgba(239, 68, 68, 0.1), transparent 40%), var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 3rem 2rem; margin-bottom: 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero-label { display: inline-block; color: var(--accent-primary); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 1px;}
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+        .layout-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; align-items: start; }
+        @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        .sidebar { position: sticky; top: 5.5rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        .sidebar h3 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { display: block; padding: 0.6rem 0.8rem; color: var(--text-muted); text-decoration: none; border-radius: 6px; font-size: 0.95rem; transition: 0.2s; border: 1px solid transparent; }
+        .sidebar a:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar a.active { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border-color: rgba(239, 68, 68, 0.2); font-weight: 500; }
+
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-bottom: 2rem; }
+        .card-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; margin-bottom: 1rem; }
+        .tag-beginner { background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .tag-mastery { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border: 1px solid rgba(239, 68, 68, 0.2); }
+        
+        .card h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .card p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+
+        .alert { padding: 1.2rem; border-radius: 12px; margin: 1.5rem 0; border-left: 4px solid; background: rgba(255,255,255,0.03); }
+        .alert-warning { border-left-color: var(--warning); }
+        .alert-warning h4 { color: var(--warning); margin-bottom: 0.5rem; }
+
+        .code-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { background: rgba(0,0,0,0.2); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .code-lang { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: var(--bg-surface); color: white; }
+        .code-body { padding: 1.5rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; }
+        .code-body .keyword { color: #f472b6; }
+        .code-body .function { color: #60a5fa; }
+        .code-body .string { color: #a7f3d0; }
+        .code-body .comment { color: #6b7280; font-style: italic; }
+
+        code:not(pre code) { background: rgba(239, 68, 68, 0.1); color: #fca5a5; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+
+    <nav class="navbar">
+        <a href="API_Mastery_02_Validation_and_Exception_Handling.html" class="nav-brand"><span>API Mastery</span> Laravel Module 03</a>
+        <div class="nav-links">
+            <a href="API_Mastery_02_Validation_and_Exception_Handling.html">⬅️ Prev Module</a>
+            <a href="#" class="primary">Next Module ➡️</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <span class="hero-label">MODULE 03</span>
+            <h1>Resources & Data Transformation</h1>
+            <p>Database models ko directly API response mein bhejna security risk aur tight coupling create karta hai. API Resources use karke apne data structure ko frontend ke liye customize karna seekhein.</p>
+        </header>
+
+        <div class="layout-grid">
+            <aside class="sidebar">
+                <h3>Curriculum</h3>
+                <ul>
+                    <li><a href="#problem" class="nav-item active" onclick="switchTab(event, 'problem')">1. Model Exposure Problem</a></li>
+                    <li><a href="#api-resources" class="nav-item" onclick="switchTab(event, 'api-resources')">2. Creating API Resources</a></li>
+                    <li><a href="#conditional-relations" class="nav-item" onclick="switchTab(event, 'conditional-relations')">3. Conditional Relationships</a></li>
+                    <li><a href="#collections" class="nav-item" onclick="switchTab(event, 'collections')">4. Resource Collections</a></li>
+                </ul>
+            </aside>
+
+            <div class="content">
+                
+                <section id="problem" class="section active">
+                    <div class="card">
+                        <span class="card-tag tag-beginner">Intermediate</span>
+                        <h2>1. The Problem with returning Models</h2>
+                        <p>Junior developers aksar seedha Eloquent model return kar dete hain: <code>return User::find($id);</code>. Ye ek bohot badi galti hai kyunki:</p>
+                        <ul style="margin-left: 20px; color: var(--text-muted); margin-bottom: 1.5rem;">
+                            <li>Aap accidentally sensitive data (like <code>password</code>, <code>remember_token</code>, ya internal IDs) leak kar sakte hain (agar <code>$hidden</code> properly configured na ho).</li>
+                            <li>Agar database column ka naam change hota hai, toh API contract break ho jata hai jisse frontend apps (React/Vue/Mobile) crash ho sakti hain.</li>
+                            <li>Dates aur booleans inconsistent format mein render ho sakte hain.</li>
+                        </ul>
+                        
+                        <div class="alert alert-warning">
+                            <h4>🛡️ The Solution</h4>
+                            <p>Data ko client tak bhejne se pehle ek "Transformation Layer" se pass karein. Laravel mein ise <strong>API Resources (Eloquent Resources)</strong> kaha jata hai.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="api-resources" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery</span>
+                        <h2>2. Creating API Resources</h2>
+                        <p>Terminal command: <code>php artisan make:resource UserResource</code></p>
+                        <p>Is file ke andar hum define karenge ki ek "User" API mein kaisa dikhna chahiye, irrespective of uski database reality kya hai.</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Http/Resources/UserResource.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Http\Resources;
+
+<span class="keyword">use</span> Illuminate\Http\Request;
+<span class="keyword">use</span> Illuminate\Http\Resources\Json\JsonResource;
+
+<span class="keyword">class</span> UserResource <span class="keyword">extends</span> JsonResource
+{
+    <span class="keyword">public function</span> <span class="function">toArray</span>(Request $request): <span class="keyword">array</span>
+    {
+        <span class="comment">// Contract defined: Even if DB column 'first_name' changes to 'f_name' later,</span>
+        <span class="comment">// the API will ALWAYS output 'first_name' keeping frontend happy.</span>
+        <span class="keyword">return</span> [
+            <span class="string">'id'</span>         =&gt; $this-&gt;id,
+            <span class="string">'full_name'</span>  =&gt; $this-&gt;first_name . <span class="string">' '</span> . $this-&gt;last_name,
+            <span class="string">'email'</span>      =&gt; $this-&gt;email,
+            <span class="string">'is_active'</span>  =&gt; (bool) $this-&gt;status, <span class="comment">// Type casting explicitly</span>
+            <span class="string">'joined_at'</span>  =&gt; $this-&gt;created_at-&gt;<span class="function">format</span>(<span class="string">'Y-m-d H:i:s'</span>),
+            
+            <span class="comment">// Conditionally include fields only if admin is requesting</span>
+            <span class="string">'admin_notes'</span> =&gt; $this-&gt;<span class="function">when</span>($request-&gt;<span class="function">user</span>()-&gt;<span class="function">isAdmin</span>(), $this-&gt;notes),
+        ];
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="conditional-relations" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery</span>
+                        <h2>3. Conditional Relationships (The N+1 Killer)</h2>
+                        <p>Senior level par aapko dhyan rakhna hota hai performance ka. Agar aap relation ko resource mein load kar dein <code>'posts' => PostResource::collection($this->posts)</code> aur controller se usay eager load (<code>with('posts')</code>) karna bhool jayein, toh N+1 query problem aa jayegi.</p>
+                        <p>Is-se bachne ke liye Laravel ka <code>whenLoaded</code> use karein. Ye relation tabhi include karega jab wo specifically load ki gayi ho.</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">UserResource.php (Extended)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">public function</span> <span class="function">toArray</span>(Request $request): <span class="keyword">array</span>
+{
+    <span class="keyword">return</span> [
+        <span class="string">'id'</span>        =&gt; $this-&gt;id,
+        <span class="string">'full_name'</span> =&gt; $this-&gt;first_name,
+        
+        <span class="comment">// 'posts' key will only appear in JSON if User::with('posts') was called</span>
+        <span class="comment">// Prevents accidental N+1 database queries!</span>
+        <span class="string">'posts'</span>     =&gt; PostResource::<span class="function">collection</span>($this-&gt;<span class="function">whenLoaded</span>(<span class="string">'posts'</span>)),
+        
+        <span class="comment">// Same for single relations</span>
+        <span class="string">'profile'</span>   =&gt; <span class="keyword">new</span> <span class="function">ProfileResource</span>($this-&gt;<span class="function">whenLoaded</span>(<span class="string">'profile'</span>)),
+    ];
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="collections" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery Implementation</span>
+                        <h2>4. Resource Collections & Pagination</h2>
+                        <p>Jab aap ek se zyada models return kar rahe hon (like an index page with pagination), toh aap <code>UserResource::collection($users)</code> use karte hain. Lekin agar aapko overall pagination metadata customize karni hai, toh aapko <code>ResourceCollection</code> banani padegi.</p>
+                        
+                        <p>Command: <code>php artisan make:resource UserCollection</code></p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Http/Resources/UserCollection.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Http\Resources;
+
+<span class="keyword">use</span> Illuminate\Http\Request;
+<span class="keyword">use</span> Illuminate\Http\Resources\Json\ResourceCollection;
+
+<span class="keyword">class</span> UserCollection <span class="keyword">extends</span> ResourceCollection
+{
+    <span class="comment">// Explicitly state which resource class to map to</span>
+    <span class="keyword">public</span> $collects = UserResource::class;
+
+    <span class="keyword">public function</span> <span class="function">toArray</span>(Request $request): <span class="keyword">array</span>
+    {
+        <span class="keyword">return</span> [
+            <span class="string">'data'</span> =&gt; $this-&gt;collection,
+            
+            <span class="comment">// Adding custom metadata specifically for lists</span>
+            <span class="string">'meta'</span> =&gt; [
+                <span class="string">'total_active_users'</span> =&gt; $this-&gt;collection-&gt;<span class="function">where</span>(<span class="string">'status'</span>, <span class="keyword">true</span>)-&gt;<span class="function">count</span>(),
+                <span class="string">'api_version'</span> =&gt; <span class="string">'v1'</span>
+            ],
+        ];
+    }
+}</code></pre>
+                        </div>
+
+                        <p>In Controller:</p>
+<pre style="background:var(--bg-card); padding:1rem; border-radius:8px; color:var(--text-muted); font-family:var(--font-mono); font-size:0.9rem;"><code>public function index()
+{
+    // Eager load posts to satisfy 'whenLoaded' in UserResource
+    $users = User::with('posts')->paginate(15);
+    
+    // Use the custom collection which uses UserResource internally
+    return new UserCollection($users);
+}</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+
+        function switchTab(e, sectionId) {
+            e.preventDefault();
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            e.currentTarget.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function copyCode(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code);
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
+</body>
+</html>

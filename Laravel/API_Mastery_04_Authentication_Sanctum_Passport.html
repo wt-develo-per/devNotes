@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 04: Authentication (Sanctum/Passport) | Laravel API Mastery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-card: #27272a;
+            --accent-primary: #ef4444;
+            --accent-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border: #3f3f46;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --font-sans: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; overflow-x: hidden; }
+
+        #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #ef4444, #f97316); width: 0%; z-index: 1000; transition: width 0.1s; }
+
+        .navbar { background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.2rem; font-weight: 700; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-brand span { background: var(--accent-primary); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); transition: 0.2s; font-size: 0.9rem; }
+        .nav-links a:hover { color: white; border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
+        .nav-links a.primary { background: var(--accent-primary); color: white; border: none; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+
+        .hero { background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.1), transparent 40%), var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 3rem 2rem; margin-bottom: 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero-label { display: inline-block; color: var(--accent-primary); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 1px;}
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+        .layout-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; align-items: start; }
+        @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        .sidebar { position: sticky; top: 5.5rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        .sidebar h3 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { display: block; padding: 0.6rem 0.8rem; color: var(--text-muted); text-decoration: none; border-radius: 6px; font-size: 0.95rem; transition: 0.2s; border: 1px solid transparent; }
+        .sidebar a:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar a.active { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border-color: rgba(239, 68, 68, 0.2); font-weight: 500; }
+
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-bottom: 2rem; }
+        .card-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; margin-bottom: 1rem; }
+        .tag-beginner { background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .tag-mastery { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border: 1px solid rgba(239, 68, 68, 0.2); }
+        
+        .card h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .card p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+
+        .alert { padding: 1.2rem; border-radius: 12px; margin: 1.5rem 0; border-left: 4px solid; background: rgba(255,255,255,0.03); }
+        .alert-warning { border-left-color: var(--warning); }
+        .alert-warning h4 { color: var(--warning); margin-bottom: 0.5rem; }
+        .alert-info { border-left-color: var(--info); }
+        .alert-info h4 { color: var(--info); margin-bottom: 0.5rem; }
+
+        .code-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { background: rgba(0,0,0,0.2); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .code-lang { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: var(--bg-surface); color: white; }
+        .code-body { padding: 1.5rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; }
+        .code-body .keyword { color: #f472b6; }
+        .code-body .function { color: #60a5fa; }
+        .code-body .string { color: #a7f3d0; }
+        .code-body .comment { color: #6b7280; font-style: italic; }
+
+        code:not(pre code) { background: rgba(239, 68, 68, 0.1); color: #fca5a5; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+
+        .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+        .vs-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+        .vs-card.passport { border-top: 3px solid var(--info); }
+        .vs-card.sanctum { border-top: 3px solid var(--success); }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+
+    <nav class="navbar">
+        <a href="API_Mastery_03_Resources_and_Data_Transformation.html" class="nav-brand"><span>API Mastery</span> Laravel Module 04</a>
+        <div class="nav-links">
+            <a href="API_Mastery_03_Resources_and_Data_Transformation.html">⬅️ Prev Module</a>
+            <a href="#" class="primary">Next Module ➡️</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <span class="hero-label">MODULE 04</span>
+            <h1>Authentication (Sanctum vs Passport)</h1>
+            <p>APIs default stateless hoti hain. Iska matlab unhein yaad nahi rehta ki pichli request kisne bheji thi. Har request ke sath identity (Token) bhejna zaruri hai. Let's master the auth architectures.</p>
+        </header>
+
+        <div class="layout-grid">
+            <aside class="sidebar">
+                <h3>Curriculum</h3>
+                <ul>
+                    <li><a href="#sanctum-vs-passport" class="nav-item active" onclick="switchTab(event, 'sanctum-vs-passport')">1. Sanctum vs Passport</a></li>
+                    <li><a href="#sanctum-setup" class="nav-item" onclick="switchTab(event, 'sanctum-setup')">2. Sanctum API Tokens</a></li>
+                    <li><a href="#token-abilities" class="nav-item" onclick="switchTab(event, 'token-abilities')">3. Token Abilities (Scopes)</a></li>
+                    <li><a href="#spa-auth" class="nav-item" onclick="switchTab(event, 'spa-auth')">4. SPA Cookie Auth</a></li>
+                </ul>
+            </aside>
+
+            <div class="content">
+                
+                <section id="sanctum-vs-passport" class="section active">
+                    <div class="card">
+                        <span class="card-tag tag-beginner">Architecture Decision</span>
+                        <h2>1. Sanctum vs Passport (Kya chunein?)</h2>
+                        <p>Laravel mein APIs secure karne ke 2 official packages hain. 4 YOE ke baad aapko pata hona chahiye kab kaunsa use karna hai.</p>
+                        
+                        <div class="vs-grid">
+                            <div class="vs-card sanctum">
+                                <h4 style="color:var(--success)">Laravel Sanctum</h4>
+                                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">
+                                    <strong>Use case:</strong> Single Page Apps (Vue/React), Mobile Apps (Flutter/React Native), aur simple 3rd party API tokens. <br><br>
+                                    <strong>Complexity:</strong> Very Low. <br>
+                                    <strong>Under the hood:</strong> Database mein token generate karke hash store karta hai.
+                                </p>
+                            </div>
+                            <div class="vs-card passport">
+                                <h4 style="color:var(--info)">Laravel Passport</h4>
+                                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">
+                                    <strong>Use case:</strong> Full OAuth2 server (jaise "Login with Google" jahan aap apna "Login with MyApp" banana chahte hain), Machine-to-Machine auth. <br><br>
+                                    <strong>Complexity:</strong> High. <br>
+                                    <strong>Under the hood:</strong> JWT (JSON Web Tokens), Refresh tokens, Auth codes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h4>90% Rule</h4>
+                            <p>As a senior dev, always default to <strong>Sanctum</strong>. Jab tak client explicitly OAuth2 architecture maang nahi raha ho, Passport set up karke application ko over-engineer na karein.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sanctum-setup" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-beginner">Intermediate</span>
+                        <h2>2. Issuing API Tokens (Sanctum)</h2>
+                        <p>Mobile apps ke liye humein Bearer tokens issue karne hote hain.</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">AuthController.php (Login Method)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">public function</span> <span class="function">login</span>(LoginRequest $request)
+{
+    $user = User::<span class="function">where</span>(<span class="string">'email'</span>, $request-&gt;email)-&gt;<span class="function">first</span>();
+
+    <span class="keyword">if</span> (! $user || ! Hash::<span class="function">check</span>($request-&gt;password, $user-&gt;password)) {
+        <span class="keyword">throw</span> ValidationException::<span class="function">withMessages</span>([
+            <span class="string">'email'</span> =&gt; [<span class="string">'Credentials mismatched.'</span>],
+        ]);
+    }
+
+    <span class="comment">// Delete old tokens if you want only 1 active session per user</span>
+    <span class="comment">// $user-&gt;tokens()-&gt;delete(); </span>
+
+    <span class="comment">// Generate new token (The plainTextToken is what you send back)</span>
+    $token = $user-&gt;<span class="function">createToken</span>(<span class="string">'mobile-app'</span>)-&gt;plainTextToken;
+
+    <span class="keyword">return</span> $this-&gt;<span class="function">successResponse</span>([
+        <span class="string">'user'</span> =&gt; <span class="keyword">new</span> <span class="function">UserResource</span>($user),
+        <span class="string">'token'</span> =&gt; $token
+    ], <span class="string">'Login successful'</span>);
+}</code></pre>
+                        </div>
+                        <p>Frontend ab har request ke header mein bhejega: <br><code>Authorization: Bearer 1|laravel_sanctum_token_abc123...</code></p>
+                    </div>
+                </section>
+
+                <section id="token-abilities" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery Implementation</span>
+                        <h2>3. Token Abilities (The "Scope" pattern)</h2>
+                        <p>Man lijiye aapke pass ek "Read Only" token aur ek "Admin" token generate karne ka feature hai. Sanctum mein ise <strong>Abilities</strong> kehte hain.</p>
+
+                        <p>Token generate karte waqt array of abilities pass karein:</p>
+<pre style="background:var(--bg-card); padding:1rem; border-radius:8px; color:var(--text-muted); font-family:var(--font-mono); font-size:0.9rem; margin-bottom: 1rem;"><code>$token = $user->createToken('read-only', ['server:read'])->plainTextToken;
+$adminToken = $user->createToken('admin', ['server:read', 'server:delete'])->plainTextToken;</code></pre>
+
+                        <p>Routes ko protect karne ke liye middleware use karein:</p>
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">routes/api.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="comment">// Request must have a valid token AND that token must have 'server:delete' ability</span>
+<span class="function">Route::delete</span>(<span class="string">'/server/{id}'</span>, [ServerController::class, <span class="string">'destroy'</span>])
+    -&gt;<span class="function">middleware</span>([<span class="string">'auth:sanctum'</span>, <span class="string">'ability:server:delete'</span>]);</code></pre>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h4>ℹ️ Abilities vs Roles/Permissions</h4>
+                            <p>Abilities token level par hoti hain. Roles/Permissions user level par hote hain. (e.g. Ek SuperAdmin 'read-only' token generate kar sakta hai jo delete nahi kar payega, bhale hi user technically SuperAdmin ho).</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="spa-auth" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery Architecture</span>
+                        <h2>4. SPA Cookie Auth (No Tokens Needed!)</h2>
+                        <p>Agar aapka frontend (React/Vue) usi domain/subdomain par hosted hai jahan API hai (e.g. <code>api.app.com</code> aur <code>app.com</code>), toh Bearer tokens use karna <strong>galat</strong> hai. XSS attacks mein JS-stored tokens chori ho sakte hain.</p>
+                        
+                        <p>Sanctum ka <strong>SPA Authentication</strong> automatically stateful cookies (HttpOnly) use karta hai backend aur frontend ke beech. (Like traditional web, but for JSON API).</p>
+                        
+                        <ul style="margin-left: 20px; color: var(--text-muted); margin-bottom: 1.5rem;">
+                            <li>Frontend pehle <code>GET /sanctum/csrf-cookie</code> call karta hai.</li>
+                            <li>Laravel ek CSRF token set karta hai as a cookie.</li>
+                            <li>Frontend phir <code>POST /login</code> call karta hai (bina Bearer token ke).</li>
+                            <li>Axios/Fetch automatically cookies bhejta rehta hai aage ki saari requests mein (kyunki cookies browser level par manage hoti hain).</li>
+                        </ul>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">config/sanctum.php</span></div>
+                            <pre class="code-body"><code><span class="string">'stateful'</span> =&gt; <span class="function">explode</span>(<span class="string">','</span>, <span class="function">env</span>(<span class="string">'SANCTUM_STATEFUL_DOMAINS'</span>, <span class="function">sprintf</span>(
+    <span class="string">'%s%s'</span>,
+    <span class="string">'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1'</span>,
+    <span class="function">env</span>(<span class="string">'APP_URL'</span>) ? <span class="string">','</span>.<span class="function">parse_url</span>(<span class="function">env</span>(<span class="string">'APP_URL'</span>), PHP_URL_HOST) : <span class="string">''</span>
+))),</code></pre>
+                        </div>
+                        <p><code>SANCTUM_STATEFUL_DOMAINS</code> env var mein apne frontend ka URL set karna hota hai. Uske baad tokens manually handle karne ki zaroorat hi nahi hoti!</p>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+
+        function switchTab(e, sectionId) {
+            e.preventDefault();
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            e.currentTarget.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function copyCode(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code);
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
+</body>
+</html>

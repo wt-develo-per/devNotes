@@ -1,0 +1,3730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PILLAR 6: Security Patterns | Engineering Mastery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #3b82f6; /* Blue accent */
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.2rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.7rem; color: var(--accent); border-color: rgba(59, 130, 246, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code, #content-area li code { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            display: none;
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 340px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .toc-list a:hover { color: var(--accent); }
+        .toc-list a.active { color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">ENG</span>
+            Engineering Mastery
+        </div>
+        <div class="nav-links">
+            <a href="11_section.html" class="nav-btn">⬅️ Previous</a>
+            
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Curriculum</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_section.html">00. Introduction</a></li>
+            <li><a href="01_section.html">01. How Computers Work at the...</a></li>
+            <li><a href="02_section.html">02. How Networks and Data Tra...</a></li>
+            <li><a href="03_section.html">03. How Operating Systems Man...</a></li>
+            <li><a href="04_section.html">04. How Data Is Stored and Re...</a></li>
+            <li><a href="05_section.html">05. How Programs Fail and Why...</a></li>
+            <li><a href="06_section.html">06. Algorithmic Thinking...</a></li>
+            <li><a href="07_section.html">07. Application Architecture ...</a></li>
+            <li><a href="08_section.html">08. Data Patterns...</a></li>
+            <li><a href="09_section.html">09. Integration Patterns...</a></li>
+            <li><a href="10_section.html">10. Resilience Patterns...</a></li>
+            <li><a href="11_section.html">11. Scalability Patterns...</a></li>
+            <li><a href="12_section.html" class="active">12. Security Patterns...</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 6: Security Patterns
+
+### Pattern 10: Defense in Depth
+
+```
+One of the most important security concepts that shapes
+how you architect entire systems — not just individual features.
+
+The core idea:
+  Never rely on a single security control.
+  If one layer is breached, other layers protect you.
+  An attacker must break through multiple defenses.
+
+For a backend API, the layers look like this:
+
+Layer 1: Edge (CDN / WAF)
+  ├── Block known malicious IPs
+  ├── DDoS mitigation
+  ├── Block requests matching attack signatures (SQLi, XSS)
+  └── Rate limit by IP at network level
+
+Layer 2: API Gateway / Load Balancer
+  ├── SSL termination (only HTTPS allowed)
+  ├── Request size limits (prevent giant payload attacks)
+  ├── IP allowlisting for admin endpoints
+  └── Geographic blocking if applicable
+
+Layer 3: Application Layer
+  ├── Authentication (JWT verification)
+  ├── Authorization (RBAC — what can this user do?)
+  ├── Input validation (reject anything that doesn't match schema)
+  ├── Rate limiting per authenticated user
+  └── Request logging with full context
+
+Layer 4: Service Layer
+  ├── Business rule enforcement
+  ├── Ownership validation (user can only modify their own data)
+  └── Sensitive operation audit logging
+
+Layer 5: Data Layer
+  ├── Parameterized queries (SQL injection prevention)
+  ├── Database user with minimal permissions
+  ├── Column-level encryption for sensitive data
+  └── Connection limited to application server IPs only
+
+Layer 6: Infrastructure
+  ├── Secrets in environment variables or secrets manager (never in code)
+  ├── Database not publicly accessible (VPC only)
+  ├── Encryption at rest
+  └── Backup encryption
+```
+
+```typescript
+// Security patterns implemented in code
+
+// Pattern: Principle of Least Privilege in API design
+// Users should only access their own resources BY DEFAULT
+
+class OrderController {
+  async getOrder(req: AuthenticatedRequest, reply: FastifyReply) {
+    const order = await this.orderService.findById(req.params.orderId);
+    
+    if (!order) throw new NotFoundError('Order not found');
+    
+    // ALWAYS check ownership — never assume a valid JWT = access to any resource
+    if (order.userId !== req.user.id && !req.user.hasRole('admin')) {
+      // Return 404, not 403
+      // Why 404? Because 403 confirms the resource EXISTS.
+      // An attacker probing for order IDs would learn which orders exist.
+      // 404 reveals nothing.
+      throw new NotFoundError('Order not found');
+    }
+    
+    return reply.send({ data: order });
+  }
+}
+
+// Pattern: Input validation as security, not just UX
+import { z } from 'zod';
+
+const CreateUserSchema = z.object({
+  email: z.string()
+    .email('Invalid email format')
+    .max(254, 'Email too long')       // RFC 5321 limit
+    .toLowerCase()
+    .trim(),
+  
+  password: z.string()
+    .min(12, 'Password must be at least 12 characters')
+    .max(128, 'Password too long')    // Prevent bcrypt DoS (bcrypt truncates at 72 bytes anyway)
+    .regex(/[A-Z]/, 'Must contain uppercase')
+    .regex(/[0-9]/, 'Must contain number')
+    .regex(/[^A-Za-z0-9]/, 'Must contain special character'),
+  
+  name: z.string()
+    .min(1)
+    .max(100)
+    .trim()
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name contains invalid characters'),
+    // Reject names with SQL fragments, HTML, script tags
+  
+  profileImageUrl: z.string()
+    .url()
+    .startsWith('https://')           // No HTTP
+    .regex(/\.(jpg|jpeg|png|webp)$/i, 'Must be an image URL')
+    // Prevent SSRF via image URL injection
+    .optional()
+});
+
+// Pattern: Sensitive data handling
+class UserRepository {
+  async findByIdForProfile(id: string): Promise<UserProfile> {
+    const result = await this.db.query(
+      // NEVER select * — explicitly list safe columns
+      // password_hash, payment_methods, ssn NEVER returned by default
+      `SELECT id, email, name, avatar_url, created_at, subscription_plan
+       FROM users
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [id]
+    );
+    return result.rows[0] ?? null;
+    // password_hash is not in this query — cannot accidentally be returned
+  }
+
+  async findByEmailWithPassword(email: string): Promise<UserWithPassword | null> {
+    // Separate method that returns password — only called during authentication
+    // Named explicitly to signal danger — "WithPassword" in the name
+    const result = await this.db.query(
+      `SELECT id, email, password_hash, failed_login_attempts, locked_until
+       FROM users WHERE email = $1`,
+      [email]
+    );
+    return result.rows[0] ?? null;
+  }
+}
+
+// Pattern: Audit logging for sensitive operations
+class AuditLogger {
+  async log(event: AuditEvent): Promise<void> {
+    // Write audit logs to SEPARATE database/table
+    // Never to application logs (can be deleted, tampered with)
+    // Audit logs are immutable append-only
+    await this.auditDb.query(
+      `INSERT INTO audit_logs 
+       (event_type, actor_id, target_id, target_type, ip_address, 
+        user_agent, metadata, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+      [
+        event.type,           // 'user.password_changed'
+        event.actorId,        // Who performed the action
+        event.targetId,       // What was affected
+        event.targetType,     // 'user', 'order', 'payment'
+        event.ipAddress,
+        event.userAgent,
+        JSON.stringify(event.metadata)
+      ]
+    );
+  }
+}
+
+// Use audit logging for:
+await auditLogger.log({
+  type: 'user.password_changed',
+  actorId: req.user.id,
+  targetId: req.user.id,
+  targetType: 'user',
+  ipAddress: req.ip,
+  userAgent: req.headers['user-agent'],
+  metadata: { method: 'self_service' }
+});
+```
+
+---
+
+## The Layer 3 Integration Truth
+
+```
+These 10 patterns cover 90% of the architectural decisions
+you will face in your career:
+
+  Pattern 1:  Layered Architecture    → How to structure every service
+  Pattern 2:  Repository Pattern      → How to isolate data access
+  Pattern 3:  CQRS                    → How to optimize reads vs writes
+  Pattern 4:  Event-Driven            → How services decouple
+  Pattern 5:  Outbox Pattern          → How to guarantee event delivery
+  Pattern 6:  Saga Pattern            → How to handle distributed transactions
+  Pattern 7:  API Gateway             → How to manage multiple services
+  Pattern 8:  Bulkhead Pattern        → How to isolate failures
+  Pattern 9:  Strangler Fig           → How to modernize legacy systems
+  Pattern 10: Defense in Depth        → How to secure everything
+
+How they work together:
+
+  Every service uses:        Layered Architecture + Repository
+  Every event you publish:   Outbox Pattern
+  Every multi-service write: Saga Pattern
+  Every service entry point: API Gateway + Bulkhead
+  Every modernization:       Strangler Fig
+  Every security decision:   Defense in Depth
+
+For Japan specifically:
+  Pattern 9 (Strangler Fig) makes you extremely valuable.
+  Japanese enterprise has massive legacy modernization demand.
+  An engineer who can migrate 30-year-old systems incrementally,
+  without disruption, speaking Japanese to clients,
+  explaining the Strangler Fig approach in clear terms —
+  that engineer commands premium salary in Tokyo.
+
+The patterns expire in 5-7 years in specific implementation.
+  REST might shift to gRPC for internal services.
+  SQL Repository might shift to different query patterns.
+  But the underlying problem each solves:
+    Separation of concerns, data consistency, fault isolation,
+    gradual migration, security by design —
+  These problems do not expire.
+  
+  Engineers who understand the problems deeply
+  will adapt to whatever new patterns emerge.
+  Engineers who only know the current implementation
+  will need to relearn every cycle.
+
+This is the difference between Layer 3 mastery
+and Layer 4/5 dependency.
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Layer 4: Tools/Frameworks (Expire in 2–4 Years)
+
+## The Core Idea First
+
+```
+Layer 1: How machines work.         (Never expires)
+Layer 2: How systems think.         (Expires slowly — 10+ years)
+Layer 3: How solutions are shaped.  (Expires in 5-7 years)
+Layer 4: What you build with.       (Expires in 2-4 years)
+
+This is the layer most developers live in entirely.
+This is the layer that causes burnout.
+This is the layer that makes you feel like
+you are always behind, always catching up,
+always learning something new just to stay relevant.
+
+The brutal truth about Layer 4:
+
+  2015: Everyone was learning Grunt and Bower
+  2017: Everyone was learning Webpack and npm
+  2019: Everyone was learning Docker and Kubernetes
+  2021: Everyone was learning Next.js and tRPC
+  2023: Everyone was learning LangChain and vector databases
+  2025: Everyone is learning AI-native frameworks
+  
+  The developers who burned out chased every wave.
+  The developers who thrived picked tools strategically,
+  learned them deeply enough to be productive,
+  and spent most of their mental energy on Layers 1-3.
+
+Layer 4 is not the enemy.
+You must know it to build real things.
+But your relationship with it must change.
+
+New mental model for Layer 4:
+  Don't learn tools. Learn what problems tools solve.
+  When a new tool appears, ask: "Which Layer 2-3 concept does this implement?"
+  If you know the concept, the tool takes days — not months — to learn.
+  
+  Example:
+    BullMQ is just a queue implementation.
+    If you understand message queues (Layer 2),
+    retry with backoff (Layer 3),
+    and Redis data structures (Layer 1),
+    BullMQ takes 2 days to learn, not 2 months.
+    
+    When BullMQ is replaced by something else in 3 years,
+    you will learn the replacement in 2 days again.
+    The developer who only knows BullMQ syntax panics.
+    You adapt.
+```
+
+---
+
+## What Layer 4 Contains
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Runtime & Language Toolchain                                  │
+│     (Node.js versions, TypeScript compiler, package management)   │
+│                                                                   │
+│  2. Web Frameworks                                                │
+│     (Fastify, Express, NestJS, Hono)                             │
+│                                                                   │
+│  3. Database Tooling                                              │
+│     (Prisma, Drizzle, node-postgres, query builders)              │
+│                                                                   │
+│  4. Infrastructure as Code                                        │
+│     (Docker, Docker Compose, basic Terraform)                     │
+│                                                                   │
+│  5. Cloud Services Tooling                                        │
+│     (AWS SDK, S3, SQS, RDS, ECS)                                 │
+│                                                                   │
+│  6. Testing Tools                                                 │
+│     (Vitest, Jest, Supertest, Testcontainers)                     │
+│                                                                   │
+│  7. Observability Tooling                                         │
+│     (Pino, Prometheus client, OpenTelemetry SDK)                  │
+│                                                                   │
+│  8. Queue and Async Processing Tools                              │
+│     (BullMQ, Redis clients, SQS consumers)                        │
+└─────────────────────────────────────────────────────────────────┘
+
+How to use this section:
+  Do not try to learn all of this at once.
+  This is a reference map, not a study list.
+  
+  For each tool: understand WHAT problem it solves (30 minutes)
+  then learn ENOUGH to use it (1-3 days)
+  then go DEEP only if your project demands it.
+  
+  The depth you need in Layer 4 is "productive and safe."
+  Not "expert." Save expert energy for Layers 1-3.
+```
+
+---
+
+## SECTION 1: Runtime and Language Toolchain
+
+### Node.js Version Management
+
+```
+The problem this solves:
+  Different projects need different Node.js versions.
+  Project A needs Node 18. Project B needs Node 20.
+  Without version management: install one, break the other.
+
+Tool: nvm (Node Version Manager)
+Expires: Low risk — nvm has been stable for 10 years
+Alternative: fnm (faster, written in Rust, growing fast)
+
+Essential commands (these don't change):
+```
+
+```bash
+# Install nvm (run once):
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Install specific Node.js versions:
+nvm install 20        # Install Node.js 20 (current LTS)
+nvm install 18        # Install Node.js 18 (previous LTS)
+
+# Switch between versions:
+nvm use 20            # Use Node 20 in current terminal
+nvm alias default 20  # Set Node 20 as default globally
+
+# Project-level version pinning (most important):
+echo "20" > .nvmrc    # Create .nvmrc in project root
+nvm use               # Reads .nvmrc, switches automatically
+
+# Check what's installed:
+nvm ls
+nvm current
+
+# Why .nvmrc matters:
+# Every developer on the team uses the same Node version.
+# CI/CD pipeline uses the same Node version.
+# "It works on my machine" caused by Node version difference: eliminated.
+```
+
+```
+Node.js LTS schedule (understand this, not just nvm commands):
+
+  Node.js release cycle:
+  ├── Even versions (18, 20, 22): LTS (Long Term Support)
+  │     Active LTS: 18 months of new features + bug fixes
+  │     Maintenance LTS: 18 months of security fixes only
+  │     Total lifespan: ~3 years
+  │
+  └── Odd versions (19, 21): Current
+        6 months only. For experimentation. Never use in production.
+
+  Current production recommendation (2025):
+    Node.js 20 LTS: Production safe, use this.
+    Node.js 22 LTS: Newer, also safe, slightly less battle-tested.
+    Node.js 18 LTS: Still supported, but migrate away soon.
+    
+  Why this matters:
+    Japanese companies ask about Node.js version in interviews.
+    Using an EOL (end of life) version = security risk.
+    It signals you don't track operational fundamentals.
+```
+
+---
+
+### Package Management — npm vs pnpm vs yarn
+
+```
+The problem they solve:
+  Managing third-party code your project depends on.
+  Ensuring everyone installs the same versions.
+  Preventing "it works on my machine" from dependency differences.
+
+The three tools:
+  npm:   Default. Ships with Node.js. Slow. Disk-heavy. Use for simplicity.
+  pnpm:  Faster. Uses hard links to save disk space. Growing fast.
+         Japanese companies like Mercari and LINE use pnpm.
+  yarn:  Popular but losing ground to pnpm. Berry version is complex.
+
+Recommendation: Learn npm fully. Use pnpm for new projects.
+```
+
+```bash
+# The files that matter (understand these, not just the commands):
+
+package.json        # Project manifest — what you depend on
+package-lock.json   # Exact versions installed (npm) — COMMIT THIS
+node_modules/       # Installed code — NEVER COMMIT THIS (.gitignore)
+
+# package.json anatomy:
+{
+  "name": "order-service",
+  "version": "1.0.0",
+  "description": "Handles order processing",
+  "main": "dist/index.js",           // Entry point after compilation
+  "scripts": {
+    "build": "tsc",                  // Compile TypeScript
+    "start": "node dist/index.js",   // Run compiled code
+    "dev": "tsx watch src/index.ts", // Run with hot reload in development
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"      // Type check without compiling
+  },
+  "dependencies": {           // Required in production
+    "fastify": "^4.26.0",
+    "pg": "^8.11.3",
+    "@fastify/jwt": "^8.0.0"
+  },
+  "devDependencies": {        // Only needed during development
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"        // Minimum Node version — enforced
+  }
+}
+
+# Versioning symbols (most developers don't understand these):
+"fastify": "4.26.0"    # Exact version only. No updates.
+"fastify": "^4.26.0"   # Allow 4.x.x updates. No major version updates.
+"fastify": "~4.26.0"   # Allow 4.26.x updates only. Patch updates only.
+"fastify": "*"          # Any version. NEVER USE THIS in production.
+
+# Installing:
+npm install                    # Install all from package.json
+npm install fastify            # Add production dependency
+npm install --save-dev vitest  # Add dev dependency
+npm install --save-exact fastify@4.26.0  # Pin exact version
+
+# Auditing for security issues:
+npm audit                # Show vulnerabilities
+npm audit fix            # Auto-fix safe updates
+npm audit fix --force    # Force fix (may break things — review changes)
+
+# pnpm equivalents (same concepts, different command):
+pnpm install
+pnpm add fastify
+pnpm add -D vitest
+pnpm audit
+```
+
+---
+
+### TypeScript Compiler Configuration
+
+```
+The most important file in a TypeScript project that developers
+copy-paste without understanding. Understanding it makes you
+stand out immediately in code reviews.
+```
+
+```json
+// tsconfig.json — fully annotated
+
+{
+  "compilerOptions": {
+    // TARGET: What JavaScript version to output
+    "target": "ES2022",
+    // ES2022 gives you: top-level await, class fields, Array.at(), Object.hasOwn()
+    // Use ES2022 for Node.js 18+. It's supported natively.
+
+    // MODULE: How imports/exports are compiled
+    "module": "NodeNext",
+    // NodeNext: Supports both ESM and CommonJS properly
+    // Required if you want import/export syntax in Node.js
+    
+    "moduleResolution": "NodeNext",
+    // Must match "module" setting. Determines how TypeScript finds imported files.
+
+    // OUTPUT: Where compiled JavaScript goes
+    "outDir": "./dist",
+    "rootDir": "./src",
+    // src/ → TypeScript source
+    // dist/ → Compiled JavaScript output
+    // Add dist/ to .gitignore
+
+    // STRICTNESS: The settings that make TypeScript worth using
+    "strict": true,
+    // Enables ALL strict checks at once. Always use this. No exceptions.
+    // Includes: strictNullChecks, strictFunctionTypes, strictPropertyInitialization,
+    //           noImplicitAny, noImplicitThis, alwaysStrict
+
+    "noUncheckedIndexedAccess": true,
+    // arr[0] returns T | undefined (not just T)
+    // Forces you to handle the case where array is empty
+    // Example: const first = arr[0]; // Type is string | undefined
+    //          if (first) { first.toUpperCase(); } // Must check
+
+    "exactOptionalPropertyTypes": true,
+    // interface A { name?: string }
+    // Without: You can set name: undefined explicitly
+    // With: Optional means absent, not undefined. Stricter.
+
+    "noImplicitReturns": true,
+    // Function with return type must return in ALL code paths
+    // Catches: if/else where one branch forgets to return
+
+    "noFallthroughCasesInSwitch": true,
+    // switch/case must have break or return in each case
+    // Prevents accidental fallthrough bugs
+
+    "noUnusedLocals": true,
+    // Variables declared but never used = compile error
+    // Keeps code clean. Forces removing dead code.
+
+    "noUnusedParameters": true,
+    // Function parameters never used = compile error
+    // Exception: prefix with _ to mark as intentionally unused: _unusedParam
+
+    // PATHS: Import aliases (no more ../../../../utils)
+    "paths": {
+      "@/*": ["./src/*"]
+      // Now you can write: import { logger } from '@/shared/logger'
+      // Instead of:        import { logger } from '../../../shared/logger'
+    },
+
+    // SOURCE MAPS: For debugging — maps compiled JS back to TypeScript
+    "sourceMap": true,
+    // When an error occurs in production, stack trace shows TypeScript line numbers
+    // Not compiled JavaScript line numbers
+
+    // DECORATORS: Needed for NestJS and class-based patterns
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    // Only enable if you use decorators (NestJS requires these)
+    // Skip if using Fastify without decorators
+
+    // SKIP LIB CHECK: Don't type-check node_modules
+    "skipLibCheck": true,
+    // Some packages have imperfect type definitions
+    // This prevents their bugs from blocking your compilation
+    // Safe to enable — you trust published packages (mostly)
+
+    // RESOLVE JSON: Import JSON files as typed objects
+    "resolveJsonModule": true
+    // import config from './config.json' — fully typed
+  },
+
+  "include": ["src/**/*"],
+  // Only compile files in src/
+
+  "exclude": [
+    "node_modules",     // Never compile dependencies
+    "dist",            // Don't compile compiled output
+    "**/*.test.ts",    // Tests compiled separately by test runner
+    "**/*.spec.ts"
+  ]
+}
+```
+
+---
+
+## SECTION 2: Web Frameworks
+
+### The Framework Landscape in 2025
+
+```
+Framework   Stars    Philosophy              Best For
+──────────────────────────────────────────────────────────────────────
+Express     60k+     Minimal, flexible       Legacy projects, learning
+Fastify     31k+     Performance, schema     Production APIs, Japan cos
+NestJS      65k+     Opinionated, OOP        Enterprise, large teams
+Hono        17k+     Ultra-light, edge       Edge computing, small APIs
+Elysia      9k+      Bun runtime, fast       Bleeding edge (skip for now)
+
+Recommendation for Japan targeting:
+  Primary:   Fastify (performance + TypeScript + growing in Japan)
+  Secondary: NestJS (enterprise Japan companies use this heavily)
+  Understand: Express (you will maintain it in legacy code)
+  Skip now:  Hono, Elysia (too niche for stable employment)
+```
+
+### Fastify — Deep Practical Understanding
+
+```
+Why Fastify over Express:
+  Performance: 3-4x faster than Express in benchmarks
+  Schema validation: Built-in JSON Schema validation (Express has none)
+  TypeScript: First-class support (Express is typed via community @types)
+  Lifecycle hooks: Granular request lifecycle (onRequest, preHandler, onSend, onError)
+  Plugin system: Encapsulated, dependency-aware (Express middleware is global chaos)
+  
+Why it matters for Japan:
+  Mercari, SmartNews, and several Japanese startups explicitly list Fastify.
+  Bridge SEs who understand Fastify's plugin system can explain performance
+  trade-offs to Japanese client teams.
+```
+
+```typescript
+// Fastify: The complete production setup
+
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { Type } from '@sinclair/typebox';
+
+// 1. APP FACTORY PATTERN
+// (Don't use global app instance — use factory for testability)
+
+async function buildApp(): Promise<FastifyInstance> {
+  const app = Fastify({
+    logger: {
+      level: process.env.LOG_LEVEL ?? 'info',
+      // Production: JSON output for log aggregation
+      // Development: pretty print for readability
+      transport: process.env.NODE_ENV === 'development'
+        ? { target: 'pino-pretty', options: { colorize: true } }
+        : undefined,
+      // Redact sensitive fields from logs automatically:
+      redact: {
+        paths: ['req.headers.authorization', 'req.body.password', 'req.body.creditCard'],
+        censor: '[REDACTED]'
+      }
+    },
+    // Request ID for distributed tracing:
+    genReqId: (req) => req.headers['x-request-id'] as string ?? crypto.randomUUID(),
+    // Trust proxy headers (when behind load balancer):
+    trustProxy: true
+  }).withTypeProvider<TypeBoxTypeProvider>();
+
+  // 2. REGISTER PLUGINS (in correct order — order matters in Fastify)
+  
+  // Security headers:
+  await app.register(import('@fastify/helmet'), {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"]
+      }
+    }
+  });
+  
+  // CORS:
+  await app.register(import('@fastify/cors'), {
+    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+  });
+
+  // Rate limiting (Redis-backed for multi-instance):
+  await app.register(import('@fastify/rate-limit'), {
+    max: 100,
+    timeWindow: '1 minute',
+    redis: redisClient,
+    keyGenerator: (request) => request.user?.id ?? request.ip,
+    errorResponseBuilder: (request, context) => ({
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: `Too many requests. Try again in ${context.after}.`,
+        requestId: request.id
+      }
+    })
+  });
+
+  // JWT authentication:
+  await app.register(import('@fastify/jwt'), {
+    secret: process.env.JWT_SECRET!,
+    sign: { expiresIn: '15m' },
+    verify: { algorithms: ['HS256'] }
+  });
+
+  // Multipart (file uploads):
+  await app.register(import('@fastify/multipart'), {
+    limits: {
+      fileSize: 10 * 1024 * 1024,  // 10MB max
+      files: 5                       // Max 5 files per request
+    }
+  });
+
+  // 3. DECORATORS (extend request/reply objects — Fastify's power feature)
+  
+  // Add user to request after authentication:
+  app.decorateRequest('user', null);
+
+  // Add standardized response helpers:
+  app.decorateReply('sendSuccess', function(data: unknown, statusCode = 200) {
+    return this.status(statusCode).send({ data });
+  });
+  
+  app.decorateReply('sendPaginated', function(
+    items: unknown[], 
+    hasMore: boolean, 
+    nextCursor: string | null
+  ) {
+    return this.send({
+      data: items,
+      meta: { hasMore, nextCursor }
+    });
+  });
+
+  // 4. HOOKS (middleware in Fastify's world — runs at specific lifecycle points)
+  
+  // Authentication hook (preHandler = runs before every route handler):
+  app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Skip authentication for public routes:
+    if (isPublicRoute(request.routerPath)) return;
+
+    try {
+      const payload = await request.jwtVerify<{ userId: string; role: string }>();
+      request.user = { id: payload.userId, role: payload.role };
+    } catch (error) {
+      return reply.status(401).send({
+        error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token', requestId: request.id }
+      });
+    }
+  });
+
+  // Request logging hook:
+  app.addHook('onRequest', async (request) => {
+    request.log.info({ method: request.method, url: request.url }, 'request_received');
+  });
+
+  // Response logging hook:
+  app.addHook('onResponse', async (request, reply) => {
+    request.log.info(
+      { statusCode: reply.statusCode, responseTime: reply.getResponseTime() },
+      'request_completed'
+    );
+    
+    // Track metrics:
+    httpRequestDuration.observe(
+      { method: request.method, route: request.routerPath, status: reply.statusCode },
+      reply.getResponseTime() / 1000
+    );
+  });
+
+  // 5. GLOBAL ERROR HANDLER
+  app.setErrorHandler((error, request, reply) => {
+    // Fastify validation errors:
+    if (error.validation) {
+      return reply.status(422).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Request validation failed',
+          details: error.validation.map(v => ({
+            field: v.instancePath.replace('/', ''),
+            message: v.message
+          })),
+          requestId: request.id
+        }
+      });
+    }
+
+    // Application errors:
+    if (error instanceof AppError && error.isOperational) {
+      return reply.status(error.statusCode).send({
+        error: { code: error.code, message: error.message, requestId: request.id }
+      });
+    }
+
+    // Unexpected errors:
+    request.log.error({ error: error.message, stack: error.stack }, 'unexpected_error');
+    
+    return reply.status(500).send({
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred',
+        requestId: request.id
+      }
+    });
+  });
+
+  // 6. REGISTER ROUTES (as plugins — Fastify's encapsulation model)
+  await app.register(userRoutes, { prefix: '/api/v1/users' });
+  await app.register(orderRoutes, { prefix: '/api/v1/orders' });
+  await app.register(healthRoutes, { prefix: '/health' });
+
+  return app;
+}
+
+// 7. SCHEMA-VALIDATED ROUTE (Fastify's killer feature vs Express)
+// Schemas serve triple purpose: validation + serialization + documentation
+
+const CreateUserSchema = {
+  body: Type.Object({
+    email: Type.String({ format: 'email', maxLength: 254 }),
+    password: Type.String({ minLength: 12, maxLength: 128 }),
+    name: Type.String({ minLength: 1, maxLength: 100 })
+  }),
+  response: {
+    201: Type.Object({
+      data: Type.Object({
+        id: Type.String({ format: 'uuid' }),
+        email: Type.String(),
+        name: Type.String(),
+        createdAt: Type.String({ format: 'date-time' })
+      })
+    }),
+    409: Type.Object({
+      error: Type.Object({
+        code: Type.String(),
+        message: Type.String(),
+        requestId: Type.String()
+      })
+    })
+  }
+};
+
+async function userRoutes(app: FastifyInstance) {
+  app.post(
+    '/',
+    {
+      schema: CreateUserSchema,
+      config: { isPublic: true }  // Skip auth for registration
+    },
+    async (request, reply) => {
+      // TypeScript knows request.body shape from schema — no manual typing
+      const user = await userService.createUser(request.body);
+      return reply.status(201).send({ data: user });
+      
+      // Response serialization is also faster:
+      // Fastify uses the response schema to serialize — 
+      // fields not in schema are automatically stripped (security bonus)
+    }
+  );
+}
+
+// 8. STARTUP
+async function start() {
+  const app = await buildApp();
+  
+  try {
+    await app.listen({ 
+      port: parseInt(process.env.PORT ?? '3000'),
+      host: '0.0.0.0'   // NOT '127.0.0.1' — must bind to all interfaces in Docker
+    });
+  } catch (error) {
+    app.log.error(error);
+    process.exit(1);
+  }
+}
+
+start();
+```
+
+---
+
+## SECTION 3: Database Tooling
+
+### Prisma vs Drizzle — The Current Choice
+
+```
+Two dominant ORMs in 2025 Node.js ecosystem:
+
+Prisma:
+  ├── Mature (since 2019), battle-tested
+  ├── Auto-generated TypeScript types from schema
+  ├── Great developer experience (schema.prisma is readable)
+  ├── Prisma Studio — visual database browser
+  ├── Slower than raw SQL (abstraction cost)
+  ├── Learning: 3-5 days to be productive
+  └── Use when: Team includes non-senior developers, rapid development
+
+Drizzle:
+  ├── Newer (2022), rapidly growing
+  ├── SQL-like API (feels like writing SQL in TypeScript)
+  ├── Significantly faster than Prisma (closer to raw queries)
+  ├── Smaller bundle size
+  ├── Less "magic" — more control
+  ├── Learning: 2-3 days if you know SQL well
+  └── Use when: Performance critical, SQL-comfortable team
+
+Recommendation:
+  Learn Prisma first (easier, more jobs ask for it).
+  Learn Drizzle second (growing fast, Japan startup scene uses it).
+  Always know raw pg/node-postgres for when ORM abstractions break.
+```
+
+```typescript
+// PRISMA: Complete real-world setup
+
+// schema.prisma (the single source of truth):
+/*
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  name              String
+  passwordHash      String    @map("password_hash")
+  role              Role      @default(USER)
+  failedLoginCount  Int       @default(0) @map("failed_login_count")
+  lockedUntil       DateTime? @map("locked_until")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  orders  Order[]
+  profile UserProfile?
+
+  @@map("users")      // Table name in database is "users" not "User"
+  @@index([email])
+  @@index([createdAt])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPPORT
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  userId      String      @map("user_id")
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@map("orders")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+*/
+
+// Prisma usage patterns that matter:
+
+import { PrismaClient, Prisma } from '@prisma/client';
+
+// Global singleton (important for connection management):
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient({
+  log: [
+    { emit: 'event', level: 'query' },   // Log all queries
+    { emit: 'event', level: 'error' },
+    { emit: 'event', level: 'warn' }
+  ],
+  errorFormat: 'minimal'
+});
+
+// Log slow queries:
+prisma.$on('query', (event) => {
+  if (event.duration > 100) {  // Log queries taking more than 100ms
+    logger.warn('slow_query', {
+      query: event.query,
+      duration: event.duration,
+      params: event.params
+    });
+  }
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+  // In development: reuse connection across hot reloads
+  // In production: each instance gets fresh connection pool
+}
+
+// Repository using Prisma:
+class UserRepository {
+  
+  // Typed options for reuse:
+  private readonly safeUserSelect = {
+    id: true,
+    email: true,
+    name: true,
+    role: true,
+    createdAt: true
+    // passwordHash: false — never selected by default
+  } satisfies Prisma.UserSelect;
+
+  async findById(id: string): Promise<SafeUser | null> {
+    return prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null  // Soft delete filter
+      },
+      select: this.safeUserSelect
+    });
+  }
+
+  async findAllPaginated(
+    cursor?: string,
+    limit = 20
+  ): Promise<{ items: SafeUser[]; nextCursor: string | null }> {
+    const items = await prisma.user.findMany({
+      where: { deletedAt: null },
+      take: limit + 1,  // Fetch one extra to check if more exist
+      ...(cursor && {
+        cursor: { id: cursor },
+        skip: 1  // Skip the cursor itself
+      }),
+      orderBy: { createdAt: 'desc' },
+      select: this.safeUserSelect
+    });
+
+    const hasMore = items.length > limit;
+    const resultItems = hasMore ? items.slice(0, -1) : items;
+
+    return {
+      items: resultItems,
+      nextCursor: hasMore ? resultItems[resultItems.length - 1].id : null
+    };
+  }
+
+  // Transaction example:
+  async createUserWithProfile(
+    userData: CreateUserData,
+    profileData: CreateProfileData
+  ): Promise<SafeUser> {
+    return prisma.$transaction(async (tx) => {
+      // All operations in same transaction:
+      const user = await tx.user.create({
+        data: {
+          email: userData.email,
+          name: userData.name,
+          passwordHash: userData.passwordHash
+        },
+        select: this.safeUserSelect
+      });
+
+      await tx.userProfile.create({
+        data: {
+          userId: user.id,
+          bio: profileData.bio,
+          avatarUrl: profileData.avatarUrl
+        }
+      });
+
+      // If any operation throws: entire transaction rolls back automatically
+      return user;
+    });
+  }
+
+  // Raw SQL for complex queries Prisma can't express:
+  async findTopCustomersByRevenue(
+    limit: number,
+    dateFrom: Date
+  ): Promise<TopCustomer[]> {
+    // Prisma.$queryRaw for type-safe raw queries:
+    return prisma.$queryRaw<TopCustomer[]>`
+      SELECT 
+        u.id,
+        u.name,
+        u.email,
+        COUNT(o.id) as order_count,
+        SUM(o.total_amount)::float as total_revenue,
+        RANK() OVER (ORDER BY SUM(o.total_amount) DESC) as revenue_rank
+      FROM users u
+      INNER JOIN orders o ON o.user_id = u.id
+      WHERE o.created_at >= ${dateFrom}
+        AND o.status = 'COMPLETED'
+        AND u.deleted_at IS NULL
+      GROUP BY u.id, u.name, u.email
+      ORDER BY total_revenue DESC
+      LIMIT ${limit}
+    `;
+    // Prisma.sql template literal: prevents SQL injection
+    // Variables are parameterized automatically
+  }
+}
+
+// Prisma migrations workflow:
+// npx prisma migrate dev --name add_user_locked_until
+// → Creates migration file in prisma/migrations/
+// → Applies to development database
+// → Generates updated Prisma Client
+
+// npx prisma migrate deploy
+// → Applies pending migrations to production
+// → Run this in CI/CD before starting app
+```
+
+---
+
+## SECTION 4: Infrastructure as Code
+
+### Docker — Complete Production Understanding
+
+```
+Why Docker is a Layer 4 tool you must know deeply:
+  Every serious Node.js job (especially Japan) requires Docker.
+  Japan companies use Docker + Kubernetes almost universally.
+  Bridge SEs must explain Docker concepts to offshore teams.
+  Without Docker knowledge, you cannot progress past mid-level.
+
+What Docker actually does (Layer 1 connection):
+  Creates isolated environments using Linux kernel features:
+  - Namespaces: Process, network, filesystem isolation
+  - cgroups: CPU and memory limits
+  - Union filesystems: Layered images (this is why layers are important)
+```
+
+```dockerfile
+# Production-grade Node.js Dockerfile
+# Every line explained — know WHY, not just WHAT
+
+# Stage 1: Dependencies (cached layer — changes rarely)
+FROM node:20-alpine AS dependencies
+# node:20-alpine: Node.js 20 on Alpine Linux
+# Alpine: Minimal Linux (~5MB vs Ubuntu's ~70MB)
+# Result: Much smaller final image = faster deployments, less attack surface
+# AS dependencies: Names this stage for multi-stage build
+
+WORKDIR /app
+# Set working directory for all subsequent commands
+# Good practice: don't run as root in /
+
+# Copy only dependency manifests first:
+COPY package*.json ./
+# package.json + package-lock.json
+# CRITICAL: Copy these BEFORE source code
+# If source changes but package.json doesn't: Docker uses cached layer
+# Result: npm install doesn't re-run unless dependencies change
+# This saves 2-5 minutes per build
+
+RUN npm ci --only=production
+# npm ci: Deterministic install from package-lock.json (faster than npm install)
+# --only=production: Skip devDependencies (vitest, typescript, etc.)
+# Production image doesn't need test runner or TypeScript compiler
+
+# Stage 2: Build (TypeScript compilation — discarded after)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy everything this time (need devDependencies for compilation):
+COPY package*.json ./
+RUN npm ci
+# installs ALL dependencies including devDependencies
+
+COPY tsconfig.json ./
+COPY src/ ./src/
+
+RUN npm run build
+# npx tsc: Compiles TypeScript → JavaScript in dist/
+# This stage is only for compilation — not shipped to production
+
+# Stage 3: Production (final image — small and secure)
+FROM node:20-alpine AS production
+
+# Security: Create non-root user
+# Running as root in containers is a security risk
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 appuser
+
+WORKDIR /app
+
+# Copy production node_modules from dependencies stage:
+COPY --from=dependencies /app/node_modules ./node_modules
+
+# Copy compiled JavaScript from builder stage:
+COPY --from=builder /app/dist ./dist
+
+# Copy package.json (needed for npm start, version info):
+COPY package.json ./
+
+# Change ownership to non-root user:
+RUN chown -R appuser:nodejs /app
+
+# Switch to non-root user:
+USER appuser
+
+# Document which port the app uses:
+EXPOSE 3000
+# EXPOSE is documentation only — doesn't actually open the port
+# The actual port mapping happens in docker run or docker-compose
+
+# Health check — Docker uses this to know if container is healthy:
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+# --interval=30s: Check every 30 seconds
+# --timeout=10s: Consider unhealthy if no response in 10s
+# --start-period=60s: Give app 60s to start before first check
+# --retries=3: Mark unhealthy after 3 consecutive failures
+
+# Start the application:
+CMD ["node", "dist/index.js"]
+# NOT npm start — npm adds overhead and doesn't handle signals properly
+# Direct node invocation: signals (SIGTERM, SIGINT) go directly to your app
+# This is critical for graceful shutdown
+
+# Final image analysis:
+# Stage 1 (dependencies): NOT in final image
+# Stage 2 (builder): NOT in final image
+# Stage 3 (production): ~150MB (vs 400MB+ for non-multi-stage)
+# Contains: Node.js runtime + your compiled JS + production node_modules only
+```
+
+```yaml
+# docker-compose.yml — Complete local development setup
+
+version: '3.9'
+
+services:
+  # Your application:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder       # Use builder stage in development (has devDependencies)
+    command: npm run dev    # Override CMD for development (hot reload)
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/appdb
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-secret-change-in-production
+    volumes:
+      - ./src:/app/src           # Mount source code (enables hot reload)
+      - /app/node_modules        # Keep container's node_modules (don't override with host)
+    depends_on:
+      postgres:
+        condition: service_healthy   # Wait for DB to be healthy before starting app
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # PostgreSQL:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: appdb
+    ports:
+      - "5432:5432"           # Expose to host for local DB tools (TablePlus, etc.)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data    # Persist data across restarts
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql  # Run on first start
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    # --appendonly yes: Persist data to disk
+    # --maxmemory 256mb: Memory limit
+    # --maxmemory-policy allkeys-lru: Evict least recently used when full
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer — database web UI (development only):
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    profiles:
+      - tools    # Only start with: docker-compose --profile tools up
+
+  # Redis Commander — Redis web UI (development only):
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:      # Named volume — survives container restarts
+  redis_data:
+
+# Usage:
+# Start everything: docker-compose up -d
+# Start with tools: docker-compose --profile tools up -d
+# View logs:        docker-compose logs -f app
+# Run migrations:   docker-compose exec app npx prisma migrate dev
+# Open psql:        docker-compose exec postgres psql -U postgres appdb
+# Rebuild after changes: docker-compose up -d --build app
+# Stop everything:  docker-compose down
+# Delete all data:  docker-compose down -v
+```
+
+---
+
+## SECTION 5: Cloud Services Tooling (AWS)
+
+```
+Strategy for AWS:
+  Learn the service conceptually (Layer 2) first.
+  Learn the SDK/CLI second (Layer 4).
+  Get AWS SAA certification — it forces conceptual understanding.
+  
+  Services to know for Japan backend roles:
+  Priority 1 (must know): S3, RDS, ElastiCache, SQS, ECS, IAM, CloudWatch
+  Priority 2 (know exists): Lambda, API Gateway, CloudFront, ECR, Secrets Manager
+  Priority 3 (future):      EKS, EventBridge, DynamoDB
+```
+
+```typescript
+// AWS SDK v3 — the patterns that matter
+
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { SQSClient, SendMessageCommand, ReceiveMessageCommand, DeleteMessageCommand } from '@aws-sdk/client-sqs';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+
+// 1. S3 — File Storage (most common AWS service in web backends)
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION ?? 'ap-northeast-1',  // Tokyo region for Japan
+  // Credentials: Automatically read from environment or IAM role
+  // Never hardcode credentials in code — use IAM roles in production
+});
+
+class FileStorageService {
+  private bucketName = process.env.S3_BUCKET_NAME!;
+
+  // Upload file:
+  async uploadFile(
+    key: string,           // Path in S3: 'users/123/avatar.jpg'
+    body: Buffer | Readable,
+    contentType: string
+  ): Promise<string> {
+    await s3.send(new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      // Server-side encryption (always enable in production):
+      ServerSideEncryption: 'AES256',
+      // Metadata for tracking:
+      Metadata: {
+        uploadedAt: new Date().toISOString()
+      }
+    }));
+
+    return `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  }
+
+  // Presigned URL — allow client to upload directly to S3
+  // Pattern: Client requests URL → Server generates presigned URL → Client uploads directly
+  // Benefit: File never passes through your server (saves bandwidth + server load)
+  async generateUploadUrl(
+    key: string,
+    contentType: string,
+    expiresInSeconds = 300  // 5 minutes
+  ): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType
+    });
+
+    return getSignedUrl(s3, command, { expiresIn: expiresInSeconds });
+  }
+
+  // Presigned URL for download (for private files — not public):
+  async generateDownloadUrl(key: string, expiresInSeconds = 3600): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key
+    });
+
+    return getSignedUrl(s3, command, { expiresIn: expiresInSeconds });
+  }
+
+  // Delete file:
+  async deleteFile(key: string): Promise<void> {
+    await s3.send(new DeleteObjectCommand({
+      Bucket: this.bucketName,
+      Key: key
+    }));
+  }
+}
+
+// 2. SQS — Managed Message Queue
+const sqs = new SQSClient({ region: process.env.AWS_REGION });
+
+class SQSQueueService {
+  constructor(private queueUrl: string) {}
+
+  // Publish message:
+  async publish<T>(message: T, delaySeconds = 0): Promise<string> {
+    const result = await sqs.send(new SendMessageCommand({
+      QueueUrl: this.queueUrl,
+      MessageBody: JSON.stringify(message),
+      DelaySeconds: delaySeconds,
+      // For FIFO queues (ordering guaranteed):
+      // MessageGroupId: 'order-processing',
+      // MessageDeduplicationId: crypto.randomUUID()
+      MessageAttributes: {
+        // Metadata for filtering without parsing body:
+        eventType: {
+          DataType: 'String',
+          StringValue: (message as any).type ?? 'unknown'
+        }
+      }
+    }));
+
+    return result.MessageId!;
+  }
+
+  // Consume messages (polling):
+  async startConsumer(
+    handler: (message: any) => Promise<void>,
+    options = { batchSize: 10, pollIntervalMs: 1000 }
+  ): Promise<void> {
+    while (true) {
+      const result = await sqs.send(new ReceiveMessageCommand({
+        QueueUrl: this.queueUrl,
+        MaxNumberOfMessages: options.batchSize,
+        WaitTimeSeconds: 20,  // Long polling — wait up to 20s for messages
+        // Long polling: Reduce empty responses + lower cost vs short polling
+        VisibilityTimeout: 30  // Message hidden from other consumers for 30s during processing
+      }));
+
+      if (!result.Messages?.length) {
+        await sleep(options.pollIntervalMs);
+        continue;
+      }
+
+      // Process in parallel:
+      await Promise.allSettled(
+        result.Messages.map(async (sqsMessage) => {
+          try {
+            const body = JSON.parse(sqsMessage.Body!);
+            await handler(body);
+
+            // Delete after successful processing:
+            await sqs.send(new DeleteMessageCommand({
+              QueueUrl: this.queueUrl,
+              ReceiptHandle: sqsMessage.ReceiptHandle!
+            }));
+
+          } catch (error) {
+            // Don't delete on failure — message returns to queue after VisibilityTimeout
+            // Will be retried up to maxReceiveCount times
+            // Then moves to Dead Letter Queue
+            logger.error('sqs_message_processing_failed', {
+              messageId: sqsMessage.MessageId,
+              error: (error as Error).message
+            });
+          }
+        })
+      );
+    }
+  }
+}
+
+// 3. Secrets Manager — the right way to handle credentials
+const secretsManager = new SecretsManagerClient({ region: process.env.AWS_REGION });
+
+async function getSecret(secretName: string): Promise<Record<string, string>> {
+  const response = await secretsManager.send(
+    new GetSecretValueCommand({ SecretId: secretName })
+  );
+  
+  return JSON.parse(response.SecretString!);
+}
+
+// Usage at startup (not in hot path — secrets cached):
+async function loadSecrets() {
+  const dbSecrets = await getSecret('production/database');
+  process.env.DATABASE_PASSWORD = dbSecrets.password;
+  // Secrets loaded once at startup — not fetched per request
+}
+```
+
+---
+
+## SECTION 6: Testing Tools
+
+```typescript
+// Vitest — Modern replacement for Jest (faster, better TypeScript support)
+
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    globals: true,          // No need to import describe/it/expect
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80
+      },
+      exclude: [
+        'node_modules',
+        'dist',
+        '**/*.test.ts',
+        'src/types/**',
+        'src/migrations/**'
+      ]
+    },
+    // Separate unit and integration test running:
+    include: ['src/**/*.test.ts'],
+    // Run integration tests separately: vitest --config vitest.integration.config.ts
+  }
+});
+
+// Unit test with vi.fn() (Vitest's mock):
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+describe('OrderService.createOrder', () => {
+  const mockOrderRepository = {
+    create: vi.fn(),
+    findById: vi.fn()
+  };
+
+  const mockInventoryService = {
+    reserve: vi.fn(),
+    release: vi.fn()
+  };
+
+  const mockEventBus = {
+    publish: vi.fn()
+  };
+
+  let orderService: OrderService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();   // Reset all mocks before each test
+    orderService = new OrderService(
+      mockOrderRepository as any,
+      mockInventoryService as any,
+      mockEventBus as any
+    );
+  });
+
+  it('should release inventory reservation when payment fails', async () => {
+    // Arrange:
+    mockInventoryService.reserve.mockResolvedValue({ reservationId: 'res_123' });
+    mockOrderRepository.create.mockRejectedValue(new Error('DB connection failed'));
+
+    // Act + Assert:
+    await expect(
+      orderService.createOrder({ userId: 'u1', productId: 'p1', quantity: 2 })
+    ).rejects.toThrow('DB connection failed');
+
+    // Verify compensation happened:
+    expect(mockInventoryService.release).toHaveBeenCalledWith('res_123');
+    expect(mockEventBus.publish).not.toHaveBeenCalled();
+  });
+});
+
+// Integration test with Testcontainers (real PostgreSQL, no mocks):
+import { PostgreSqlContainer } from '@testcontainers/postgresql';
+
+describe('UserRepository integration', () => {
+  let container: StartedPostgreSqlContainer;
+  let pool: Pool;
+  let repository: UserRepository;
+
+  // Start real PostgreSQL Docker container:
+  beforeAll(async () => {
+    container = await new PostgreSqlContainer('postgres:16-alpine')
+      .withDatabase('testdb')
+      .withUsername('testuser')
+      .withPassword('testpass')
+      .start();
+
+    pool = new Pool({ connectionString: container.getConnectionUri() });
+    
+    // Run migrations on test database:
+    await runMigrations(pool);
+    
+    repository = new UserRepository(pool);
+  }, 60000);  // Timeout: 60s for container startup
+
+  afterAll(async () => {
+    await pool.end();
+    await container.stop();
+  });
+
+  beforeEach(async () => {
+    // Clean state between tests:
+    await pool.query('TRUNCATE TABLE users CASCADE');
+  });
+
+  it('should soft delete users and not return them in queries', async () => {
+    // Create real user in real PostgreSQL:
+    const user = await repository.create({
+      email: 'test@test.com',
+      name: 'Test User',
+      passwordHash: 'hashed'
+    });
+
+    // Soft delete:
+    await repository.softDelete(user.id);
+
+    // Verify not returned:
+    const found = await repository.findById(user.id);
+    expect(found).toBeNull();
+
+    // But exists in database with deletedAt set:
+    const raw = await pool.query(
+      'SELECT deleted_at FROM users WHERE id = $1', [user.id]
+    );
+    expect(raw.rows[0].deleted_at).not.toBeNull();
+  });
+});
+
+// API test with Supertest (test full HTTP layer):
+import Supertest from 'supertest';
+
+describe('POST /api/v1/auth/login', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildApp();
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should return 401 with incorrect credentials', async () => {
+    const response = await Supertest(app.server)
+      .post('/api/v1/auth/login')
+      .send({ email: 'nonexistent@test.com', password: 'WrongPassword123!' })
+      .expect(401);
+
+    expect(response.body.error.code).toBe('INVALID_CREDENTIALS');
+    expect(response.body).not.toHaveProperty('data.passwordHash');
+  });
+
+  it('should not reveal whether email exists via timing', async () => {
+    const existingUserTime = await measureResponseTime(() =>
+      Supertest(app.server)
+        .post('/api/v1/auth/login')
+        .send({ email: 'existing@test.com', password: 'Wrong!' })
+    );
+
+    const nonExistentUserTime = await measureResponseTime(() =>
+      Supertest(app.server)
+        .post('/api/v1/auth/login')
+        .send({ email: 'notexist@test.com', password: 'Wrong!' })
+    );
+
+    // Response times should be similar (both do bcrypt comparison)
+    // If non-existent user responds instantly: timing attack reveals email existence
+    expect(Math.abs(existingUserTime - nonExistentUserTime)).toBeLessThan(100);
+  });
+});
+```
+
+---
+
+## SECTION 7: Queue and Async Processing Tools
+
+```typescript
+// BullMQ — Complete production setup with monitoring
+
+import { Queue, Worker, QueueEvents, FlowProducer } from 'bullmq';
+import IORedis from 'ioredis';
+
+// Centralized queue configuration:
+const redisConnection = new IORedis({
+  host: process.env.REDIS_HOST,
+  port: 6379,
+  maxRetriesPerRequest: null,   // Required for BullMQ
+  enableReadyCheck: false,
+  lazyConnect: true
+});
+
+// Type-safe job definitions (define ALL jobs centrally):
+export type JobDefinitions = {
+  'email:welcome': { userId: string; email: string; name: string };
+  'email:order_confirmation': { orderId: string; userEmail: string; total: number };
+  'report:generate': { reportType: 'daily' | 'weekly'; userId: string };
+  'image:resize': { imageKey: string; sizes: number[]; outputPrefix: string };
+  'notification:push': { userId: string; title: string; body: string; data?: Record<string, string> };
+};
+
+// Queue factory (type-safe):
+function createQueue<T extends keyof JobDefinitions>(name: T) {
+  return new Queue(name, {
+    connection: redisConnection,
+    defaultJobOptions: {
+      removeOnComplete: { count: 1000, age: 24 * 3600 },   // Keep 1000 completed or 24h
+      removeOnFail: { count: 5000 },                         // Keep 5000 failed for debugging
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 }
+    }
+  });
+}
+
+export const emailQueue = createQueue('email:welcome');
+export const reportQueue = createQueue('report:generate');
+export const imageQueue = createQueue('image:resize');
+
+// Worker with proper TypeScript types:
+function createWorker<T extends keyof JobDefinitions>(
+  queueName: T,
+  processor: (job: Job<JobDefinitions[T]>) => Promise<void>,
+  options: WorkerOptions = {}
+) {
+  const worker = new Worker<JobDefinitions[T]>(
+    queueName,
+    processor,
+    {
+      connection: redisConnection,
+      concurrency: 5,
+      ...options
+    }
+  );
+
+  // Standard event handlers every worker should have:
+  worker.on('completed', (job) => {
+    logger.info('job_completed', { jobId: job.id, queue: queueName });
+    metrics.increment(`jobs.${queueName}.completed`);
+  });
+
+  worker.on('failed', (job, error) => {
+    logger.error('job_failed', {
+      jobId: job?.id,
+      queue: queueName,
+      attempt: job?.attemptsMade,
+      maxAttempts: job?.opts.attempts,
+      error: error.message
+    });
+    metrics.increment(`jobs.${queueName}.failed`);
+    
+    // Alert on final failure:
+    if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+      alertingService.send({
+        severity: job.name.includes('payment') ? 'critical' : 'warning',
+        message: `Job permanently failed: ${queueName}/${job.id}`,
+        metadata: { jobData: job.data }
+      });
+    }
+  });
+
+  worker.on('stalled', (jobId) => {
+    // Job was taken by worker but not completed (worker crashed mid-job)
+    // BullMQ automatically re-queues stalled jobs
+    logger.warn('job_stalled', { jobId, queue: queueName });
+    metrics.increment(`jobs.${queueName}.stalled`);
+  });
+
+  return worker;
+}
+
+// Worker implementations:
+export const emailWorker = createWorker(
+  'email:welcome',
+  async (job) => {
+    const { userId, email, name } = job.data;
+    
+    // Update progress (visible in Bull Board UI):
+    await job.updateProgress(10);
+    
+    await emailService.sendWelcome({ to: email, name });
+    await job.updateProgress(100);
+  },
+  { concurrency: 10, limiter: { max: 50, duration: 60000 } }
+);
+
+// BullMQ Flow — job chains with dependencies:
+const flowProducer = new FlowProducer({ connection: redisConnection });
+
+// Example: Order flow where each step waits for previous:
+async function createOrderProcessingFlow(orderId: string) {
+  await flowProducer.add({
+    name: 'notify:completion',
+    queueName: 'notification:push',
+    data: { orderId, type: 'order_complete' },
+    children: [
+      {
+        name: 'process:payment',
+        queueName: 'payment:process',
+        data: { orderId },
+        children: [
+          {
+            name: 'validate:inventory',
+            queueName: 'inventory:validate',
+            data: { orderId }
+            // This runs first — payment only starts after inventory validated
+            // Notification only sends after payment processed
+          }
+        ]
+      }
+    ]
+  });
+}
+```
+
+---
+
+## The Layer 4 Master Truth
+
+```
+The complete technology stack for Japan-targeting Node.js engineers in 2025:
+
+Runtime:      Node.js 20 LTS
+Language:     TypeScript 5.x (strict mode always)
+Framework:    Fastify 4.x (primary) / NestJS (enterprise)
+ORM:          Prisma (stability) / Drizzle (performance)
+Testing:      Vitest + Supertest + Testcontainers
+Queue:        BullMQ + Redis
+Database:     PostgreSQL 16
+Cache:        Redis 7
+Container:    Docker + Docker Compose
+Cloud:        AWS (SAA certification level knowledge)
+Process Mgr:  PM2 (single server) / ECS (cloud)
+Monitoring:   Pino + Prometheus + Grafana (or CloudWatch)
+CI/CD:        GitHub Actions
+
+This stack is stable for 2025-2027.
+After that: some tools will shift.
+The concepts they implement (Layer 2-3) will not.
+
+Your competitive advantage:
+
+Most Indian Node.js developers know:
+  Express + MongoDB + some AWS
+  No TypeScript, no testing, no observability
+
+You will know:
+  Fastify + TypeScript + PostgreSQL + full observability + testing
+  Docker + AWS production deployment
+  Japanese language for Japan-facing roles
+
+The gap between "most developers" and "you after this roadmap"
+is not a small gap.
+
+It is a 10x earnings gap.
+It is a career that cannot be commoditized.
+It is the difference between being 
+a replaceable PHP developer at 3 LPA
+and an irreplaceable Node.js engineer in Tokyo at 25-40 LPA.
+
+The tools are free.
+The roadmap is clear.
+The market is waiting.
+
+Layer 4 is where you work every day.
+Layers 1-3 are why you get paid well to do it.
+Know both.
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Layer 5: Libraries/Syntax (Expire in Months–Years)
+
+## The Core Idea First
+
+```
+Layer 1: How machines work.         (Never expires)
+Layer 2: How systems think.         (Expires in 10+ years)
+Layer 3: How solutions are shaped.  (Expires in 5-7 years)
+Layer 4: What you build with.       (Expires in 2-4 years)
+Layer 5: The words you use to do it.(Expires in months-years)
+
+This is the most dangerous layer.
+
+Not because it is hard to learn.
+Because it is easy to learn
+and feels like progress
+while actually being the least valuable
+investment of your time.
+
+Layer 5 is where most developers spend 80% of their learning time.
+Layer 5 is where you get the least return on that investment.
+
+The trap looks like this:
+  "I need to learn Zod because everyone is using it."
+  "I need to learn tRPC because it's the new standard."
+  "I need to learn Hono because it's faster than Fastify."
+  "I need to learn Bun because it replaces Node.js."
+  "I need to learn..."
+
+This is the treadmill that burned you out in PHP.
+This is the same treadmill in JavaScript clothing.
+
+The engineers who escape this trap understand:
+  Zod is just "input validation" wearing a library costume.
+  tRPC is just "type-safe API contracts" in a specific implementation.
+  Hono is just "HTTP routing" running faster.
+  Bun is just "JavaScript runtime" with different performance characteristics.
+  
+  If you understand the concept (Layer 2-3),
+  you learn the library in hours, not weeks.
+  When it is replaced, you learn the replacement in hours again.
+  
+  That is freedom from the treadmill.
+
+The right relationship with Layer 5:
+  Learn enough to be productive.    (Not expert — productive)
+  Understand the concept it solves. (Not the API — the purpose)
+  Know when NOT to add a library.   (The most underrated skill)
+  Stop when you can build real things. (Not when you know everything)
+```
+
+---
+
+## What Layer 5 Actually Contains
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. JavaScript/TypeScript Language Features                      │
+│     (The syntax itself — evolves with each ECMAScript release)   │
+│                                                                   │
+│  2. Validation Libraries                                          │
+│     (Zod, Joi, Yup, Valibot — same concept, different API)       │
+│                                                                   │
+│  3. HTTP Client Libraries                                         │
+│     (Axios, Got, node-fetch, undici — all do HTTP requests)      │
+│                                                                   │
+│  4. Authentication Libraries                                      │
+│     (Passport, jose, jsonwebtoken — implement JWT/OAuth)          │
+│                                                                   │
+│  5. Utility Libraries                                             │
+│     (Lodash, Ramda, date-fns — convenience wrappers)             │
+│                                                                   │
+│  6. Logging Libraries                                             │
+│     (Pino, Winston, Bunyan — all write structured logs)           │
+│                                                                   │
+│  7. Configuration Libraries                                       │
+│     (dotenv, convict, env-var — all read environment variables)   │
+│                                                                   │
+│  8. Code Quality Libraries                                        │
+│     (ESLint, Prettier, Husky — enforce consistency)               │
+└─────────────────────────────────────────────────────────────────┘
+
+How to use this section:
+  For each library:
+  Step 1: Understand the problem it solves (5 minutes)
+  Step 2: Learn the 20% API you will use 80% of the time (1-2 hours)
+  Step 3: Build something real with it (1 day)
+  Step 4: Stop. Come back when you hit a specific limitation.
+  
+  Total time per library category: 1-2 days maximum.
+  Then move on.
+  
+  The library will teach you the rest
+  when you actually need it in production.
+```
+
+---
+
+## SECTION 1: JavaScript/TypeScript Language Features
+
+### The Language Features That Actually Matter
+
+```
+JavaScript has been adding features since ES6 (2015).
+Most developers know the popular ones but misuse them.
+Understanding WHEN to use each feature
+is more valuable than knowing the syntax.
+
+This is the one part of Layer 5 worth investing
+more than 1-2 days in.
+Language fundamentals are the closest thing
+to Layer 1 in this layer.
+They are the least likely to expire.
+```
+
+#### Destructuring — Beyond the Basics
+
+```javascript
+// Most developers know basic destructuring:
+const { name, email } = user;
+const [first, second] = array;
+
+// What most developers miss:
+
+// 1. Default values (prevents undefined errors):
+const { name = 'Anonymous', role = 'user', avatar = null } = user;
+// If user.role is undefined: role = 'user'
+// If user.role is null: role = null (null !== undefined — default not applied)
+
+// 2. Rename while destructuring (prevents variable name collisions):
+const { id: userId, name: userName } = user;
+// userId = user.id, userName = user.name
+// Variables id and name are not created
+
+// 3. Nested destructuring (use carefully — hurts readability beyond 2 levels):
+const { 
+  address: { 
+    city, 
+    country: { 
+      name: countryName,  // user.address.country.name → countryName
+      code: countryCode   // user.address.country.code → countryCode
+    } 
+  } 
+} = user;
+// Problem: If user.address is null → TypeError
+// Use optional chaining instead for nullable nested objects
+
+// 4. Rest in destructuring:
+const { password, passwordHash, ...safeUser } = user;
+// safeUser = everything except password and passwordHash
+// Clean way to strip sensitive fields before returning
+
+// 5. Function parameter destructuring (most readable pattern for options objects):
+// Bad:
+function createUser(name, email, role, plan, sendWelcomeEmail) {
+  // After 3 params: order matters, easy to mix up boolean flags
+}
+createUser('Ravi', 'ravi@email.com', 'admin', 'pro', true); // What is true?
+
+// Good:
+function createUser({ name, email, role = 'user', plan = 'free', sendWelcomeEmail = true }) {
+  // Self-documenting at call site
+}
+createUser({ name: 'Ravi', email: 'ravi@email.com', role: 'admin' }); // Clear
+
+// 6. Array destructuring for multiple returns:
+// Instead of returning an object for simple two-value returns:
+function divideWithRemainder(dividend, divisor) {
+  return [Math.floor(dividend / divisor), dividend % divisor];
+}
+const [quotient, remainder] = divideWithRemainder(17, 5);
+// quotient = 3, remainder = 2
+
+// Used in React hooks pattern (very common in Japan companies using Next.js):
+const [isLoading, setIsLoading] = useState(false);
+```
+
+#### Optional Chaining and Nullish Coalescing — The Safety Net
+
+```javascript
+// Optional chaining (?.) — navigate possibly-null object chains safely
+
+// Without optional chaining (old, verbose, error-prone):
+const city = user && user.address && user.address.city;
+const firstOrderItem = order && order.items && order.items[0] && order.items[0].name;
+
+// With optional chaining (clean, safe):
+const city = user?.address?.city;
+// Returns undefined if any step is null/undefined — never throws
+
+const firstOrderItem = order?.items?.[0]?.name;
+// Array access with optional chaining
+
+const totalPrice = order?.calculateTotal?.();
+// Optional method call — only calls if method exists
+
+// Combined with nullish coalescing (??) for defaults:
+const displayName = user?.profile?.displayName ?? user?.name ?? 'Anonymous';
+// Try displayName → fallback to name → fallback to 'Anonymous'
+// Only falls through on null or undefined (not on 0, '', false)
+
+// ?? vs || (critical difference many developers get wrong):
+const count = userCount ?? 0;
+// If userCount = 0: count = 0 (0 is valid, not null/undefined)
+// If userCount = null: count = 0
+
+const count = userCount || 0;
+// If userCount = 0: count = 0 (BUT: 0 is falsy, so this "worked")
+// If userCount = false: count = 0 (WRONG if false is a valid value)
+// PROBLEM: 0, '', false are all falsy — || treats them as missing values
+// ?? ONLY treats null and undefined as missing — much safer
+
+// Nullish assignment (??=):
+user.preferences ??= {};
+// Only assigns if user.preferences is null or undefined
+// If user.preferences = {} already: leaves it untouched
+// Equivalent to: if (user.preferences == null) user.preferences = {};
+
+// Logical assignment operators:
+user.role ||= 'user';      // Only assign if user.role is falsy
+user.loginCount &&= user.loginCount + 1;  // Only increment if loginCount exists
+```
+
+#### Promises and Async/Await — The Complete Patterns
+
+```javascript
+// Most developers know: async function and await.
+// What most developers don't know:
+
+// 1. Promise.allSettled vs Promise.all (critical distinction):
+
+// Promise.all: Fails fast — rejects on first failure
+try {
+  const [user, orders, profile] = await Promise.all([
+    fetchUser(userId),
+    fetchOrders(userId),
+    fetchProfile(userId)
+  ]);
+  // If fetchOrders throws: user and profile fetches are abandoned
+  // Error is thrown immediately
+} catch (error) {
+  // Only know ONE fetch failed, not which ones succeeded
+}
+
+// Promise.allSettled: Never rejects — collects all results
+const results = await Promise.allSettled([
+  fetchUser(userId),
+  fetchOrders(userId),
+  fetchProfile(userId)
+]);
+
+results.forEach((result, index) => {
+  if (result.status === 'fulfilled') {
+    console.log(`Fetch ${index} succeeded:`, result.value);
+  } else {
+    console.log(`Fetch ${index} failed:`, result.reason);
+  }
+});
+
+// When to use which:
+// Promise.all:       All must succeed for the result to be useful (payment + inventory)
+// Promise.allSettled: Partial success is acceptable (loading dashboard widgets)
+
+// 2. Promise.race — first to complete wins:
+async function fetchWithTimeout(promise, timeoutMs) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${timeoutMs}ms`)), timeoutMs)
+  );
+  return Promise.race([promise, timeout]);
+  // Returns whichever resolves/rejects first
+  // If timeout wins: your promise is abandoned (but still runs in background)
+}
+
+// 3. Promise.any — first SUCCESS wins (ignores rejections):
+const fastestServer = await Promise.any([
+  fetchFromServer('region-us'),
+  fetchFromServer('region-eu'),
+  fetchFromServer('region-ap')
+]);
+// Returns first successful response
+// Only rejects if ALL promises reject (AggregateError)
+// Use for: redundant requests to multiple servers, fastest CDN selection
+
+// 4. Async error handling patterns:
+
+// Pattern: Result tuple (inspired by Go, avoids try/catch nesting)
+async function safeAsync(promise) {
+  try {
+    const data = await promise;
+    return [null, data];
+  } catch (error) {
+    return [error, null];
+  }
+}
+
+// Usage — no try/catch nesting:
+const [userError, user] = await safeAsync(fetchUser(id));
+if (userError) {
+  return reply.status(404).send({ error: 'User not found' });
+}
+
+const [orderError, orders] = await safeAsync(fetchOrders(user.id));
+if (orderError) {
+  return reply.status(500).send({ error: 'Could not fetch orders' });
+}
+
+// Compare with nested try/catch (harder to read):
+let user, orders;
+try {
+  user = await fetchUser(id);
+  try {
+    orders = await fetchOrders(user.id);
+  } catch (orderError) {
+    return reply.status(500).send({ error: 'Could not fetch orders' });
+  }
+} catch (userError) {
+  return reply.status(404).send({ error: 'User not found' });
+}
+
+// 5. Async iteration (for processing streams and large datasets):
+async function processOrdersInBatches(userId) {
+  // Instead of loading all orders into memory:
+  // const allOrders = await db.query('SELECT * FROM orders WHERE user_id = $1', [userId]);
+  
+  // Stream them:
+  const orderStream = db.queryStream('SELECT * FROM orders WHERE user_id = $1', [userId]);
+  
+  for await (const order of orderStream) {
+    // Process one at a time — constant memory regardless of order count
+    await processOrder(order);
+  }
+}
+
+// 6. Top-level await (ES2022 — works in Node.js 18+ with ESM):
+// In module files, you can await at the top level:
+const config = await loadConfig(); // No wrapper async function needed
+const dbPool = await createPool(config.database);
+
+export { config, dbPool };
+```
+
+#### Modern Array Methods — The Productive Set
+
+```javascript
+// The methods you will use every single day:
+
+const orders = [
+  { id: '1', userId: 'u1', total: 1500, status: 'completed', items: ['a', 'b'] },
+  { id: '2', userId: 'u2', total: 3000, status: 'pending', items: ['c'] },
+  { id: '3', userId: 'u1', total: 750, status: 'completed', items: ['d', 'e', 'f'] },
+  { id: '4', userId: 'u3', total: 5000, status: 'cancelled', items: [] },
+];
+
+// map: Transform each element, returns new array of same length:
+const orderIds = orders.map(order => order.id);
+// ['1', '2', '3', '4']
+
+const orderSummaries = orders.map(({ id, total, status }) => ({ id, total, status }));
+// Extract only needed fields (no spread — explicit)
+
+// filter: Keep elements matching condition:
+const completedOrders = orders.filter(order => order.status === 'completed');
+// [{id:'1',...}, {id:'3',...}]
+
+// reduce: Accumulate to single value (most powerful, most misused):
+const totalRevenue = orders
+  .filter(order => order.status === 'completed')
+  .reduce((sum, order) => sum + order.total, 0);
+// 2250 (1500 + 750)
+
+// Group by userId (common reduce pattern):
+const ordersByUser = orders.reduce((groups, order) => {
+  const key = order.userId;
+  if (!groups[key]) groups[key] = [];
+  groups[key].push(order);
+  return groups;
+}, {} as Record<string, typeof orders>);
+// { u1: [{id:'1',...}, {id:'3',...}], u2: [{id:'2',...}], u3: [{id:'4',...}] }
+
+// find: First matching element (returns element or undefined):
+const pendingOrder = orders.find(order => order.status === 'pending');
+// {id:'2', userId:'u2', total:3000, status:'pending', items:['c']}
+
+// findIndex: Position of first match:
+const pendingIndex = orders.findIndex(order => order.status === 'pending');
+// 1
+
+// some: Does ANY element match? (stops at first match — efficient):
+const hasExpensiveOrder = orders.some(order => order.total > 4000);
+// true (id:'4' has total:5000)
+
+// every: Do ALL elements match? (stops at first non-match):
+const allCompleted = orders.every(order => order.status === 'completed');
+// false
+
+// flat: Flatten nested arrays:
+const allItems = orders.map(order => order.items).flat();
+// ['a', 'b', 'c', 'd', 'e', 'f']
+
+// flatMap: map + flat in one pass (more efficient than chaining):
+const allItemsFlat = orders.flatMap(order => order.items);
+// ['a', 'b', 'c', 'd', 'e', 'f'] — same result, one iteration
+
+// at(): Access with negative indices (ES2022):
+const lastOrder = orders.at(-1);   // Last element
+const secondLast = orders.at(-2);  // Second to last
+// More readable than orders[orders.length - 1]
+
+// Object.entries, Object.fromEntries (transform objects):
+const userTotals = { u1: 2250, u2: 3000, u3: 5000 };
+
+// Transform all values:
+const userTotalsFormatted = Object.fromEntries(
+  Object.entries(userTotals).map(([userId, total]) => [
+    userId,
+    `¥${total.toLocaleString()}`  // Format as Japanese Yen
+  ])
+);
+// { u1: '¥2,250', u2: '¥3,000', u3: '¥5,000' }
+
+// Array.from with length — generate ranges:
+const range = Array.from({ length: 10 }, (_, i) => i + 1);
+// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// Immutable array methods (ES2023 — important for React patterns):
+const sorted = orders.toSorted((a, b) => b.total - a.total);  // Original unchanged
+const reversed = orders.toReversed();                           // Original unchanged
+const spliced = orders.toSpliced(1, 1, newOrder);              // Original unchanged
+// These return new arrays — never mutate originals
+```
+
+#### TypeScript Syntax Patterns That Matter in Production
+
+```typescript
+// 1. Type narrowing — TypeScript getting smarter inside conditions:
+
+function processPayment(amount: string | number): number {
+  if (typeof amount === 'string') {
+    // TypeScript KNOWS amount is string here
+    return parseFloat(amount.replace(',', '.'));
+  }
+  // TypeScript KNOWS amount is number here
+  return amount;
+}
+
+// instanceof narrowing:
+function handleError(error: unknown): string {
+  if (error instanceof ValidationError) {
+    return error.fields.join(', ');  // TypeScript knows error has .fields
+  }
+  if (error instanceof Error) {
+    return error.message;             // TypeScript knows error has .message
+  }
+  return 'An unknown error occurred';
+}
+
+// in operator narrowing:
+type Cat = { meow: () => void; purr: () => void };
+type Dog = { bark: () => void; fetch: () => void };
+
+function makeNoise(animal: Cat | Dog) {
+  if ('meow' in animal) {
+    animal.meow();  // TypeScript knows animal is Cat here
+  } else {
+    animal.bark();  // TypeScript knows animal is Dog here
+  }
+}
+
+// Discriminated union narrowing (the most useful pattern):
+type ApiResult<T> =
+  | { success: true; data: T; requestId: string }
+  | { success: false; error: string; code: string; requestId: string };
+
+function handleResult<T>(result: ApiResult<T>): T {
+  if (result.success) {
+    return result.data;   // TypeScript knows .data exists
+  }
+  throw new AppError(result.error, result.code);  // TypeScript knows .error and .code exist
+}
+
+// 2. Template literal types (advanced but increasingly common):
+type EventName = 'order' | 'user' | 'payment';
+type EventAction = 'created' | 'updated' | 'deleted';
+
+type DomainEvent = `${EventName}.${EventAction}`;
+// Type is: 'order.created' | 'order.updated' | 'order.deleted'
+//         | 'user.created' | 'user.updated' | 'user.deleted'
+//         | 'payment.created' | 'payment.updated' | 'payment.deleted'
+
+// TypeScript validates event names at compile time:
+function publish(event: DomainEvent, data: unknown) { }
+publish('order.created', orderData);   // ✓ Valid
+publish('order.processed', orderData); // ✗ TypeScript Error — not a valid event
+
+// 3. Satisfies operator (ES2023 — solves a common TypeScript frustration):
+// Problem with as: overrides TypeScript's type inference (loses type safety)
+// Problem with : annotation: loses literal types (gets widened)
+
+// With satisfies: Validates against type AND preserves literal types:
+const routes = {
+  users: '/api/v1/users',
+  orders: '/api/v1/orders',
+  health: '/health'
+} satisfies Record<string, string>;
+
+routes.users.toUpperCase();  // ✓ TypeScript knows .users is a string
+routes.missing;              // ✗ TypeScript Error — 'missing' doesn't exist
+
+// 4. Const assertions (freeze literal types):
+const config = {
+  environment: 'production',
+  region: 'ap-northeast-1',
+  features: ['auth', 'payments', 'reports']
+} as const;
+
+// Without as const:
+// config.environment is type string (mutable)
+// config.features is type string[] (mutable)
+
+// With as const:
+// config.environment is type 'production' (literal, readonly)
+// config.features is type readonly ['auth', 'payments', 'reports']
+// config.region is type 'ap-northeast-1'
+// Prevents accidental mutation AND enables type-safe feature checks:
+
+type Feature = typeof config.features[number];
+// Type: 'auth' | 'payments' | 'reports'
+// TypeScript will error if you reference a feature not in this list
+
+// 5. Assertion functions (for validation that TypeScript should trust):
+function assertNonNull<T>(
+  value: T | null | undefined,
+  message: string
+): asserts value is T {
+  if (value == null) {
+    throw new Error(message);
+  }
+}
+
+const user = await userRepository.findById(id);
+assertNonNull(user, `User ${id} not found`);
+// After this line: TypeScript KNOWS user is not null/undefined
+// No need for if (!user) checks afterward
+user.email.toLowerCase();  // ✓ TypeScript is confident this is safe
+
+// 6. Infer keyword (for extracting types from generics):
+// Useful when building utility types or working with complex libraries:
+
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+// Extracts return type of any function:
+type GetUserReturn = ReturnType<typeof getUser>;  // Whatever getUser returns
+
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+// Unwraps Promise type:
+type UserData = UnwrapPromise<Promise<User>>;  // User (not Promise<User>)
+
+// Real use: Getting prisma model types without importing directly:
+type PrismaUser = Awaited<ReturnType<typeof prisma.user.findFirst>>;
+// Exact type of what prisma.user.findFirst returns — stays in sync automatically
+```
+
+---
+
+## SECTION 2: Validation Libraries — Zod
+
+```
+The concept: Input validation
+The library: Zod (2025 standard)
+Will be replaced by: Valibot or something else in 2-4 years
+What survives: The concept of schema-based validation
+
+Why Zod dominates currently:
+  TypeScript-first (types inferred from schema)
+  Runtime validation + TypeScript types from single definition
+  Growing ecosystem (tRPC, React Hook Form, Prisma all integrate with it)
+  Japanese companies increasingly adopt it (follows the TypeScript wave)
+
+Learn this once. It takes 1 day. Then use it everywhere.
+```
+
+```typescript
+import { z } from 'zod';
+
+// 1. BASIC SCHEMAS — the building blocks:
+
+const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email().max(254).toLowerCase(),
+  name: z.string().min(1).max(100).trim(),
+  age: z.number().int().min(0).max(150).optional(),
+  role: z.enum(['admin', 'user', 'support']).default('user'),
+  tags: z.array(z.string().min(1)).max(10).default([]),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  createdAt: z.date().or(z.string().datetime()),
+  // Accept either Date object or ISO string — coerce either way
+});
+
+// Infer TypeScript type from schema (single source of truth):
+type User = z.infer<typeof UserSchema>;
+// You never write the TypeScript interface manually
+// Schema IS the interface. Change schema → type updates automatically.
+
+// 2. TRANSFORMATION — parse and transform in one step:
+
+const CreateUserSchema = z.object({
+  email: z.string()
+    .email()
+    .toLowerCase()             // Transform: always lowercase
+    .trim(),                   // Transform: remove whitespace
+
+  password: z.string()
+    .min(12)
+    .max(128)
+    .regex(/[A-Z]/, 'Requires uppercase letter')
+    .regex(/[0-9]/, 'Requires number')
+    .regex(/[^A-Za-z0-9]/, 'Requires special character'),
+
+  birthDate: z.string()
+    .datetime()
+    .transform(str => new Date(str))  // Transform: string → Date object
+    .refine(
+      date => date < new Date(),
+      'Birth date must be in the past'
+    ),
+
+  websiteUrl: z.string()
+    .url()
+    .optional()
+    .nullable()
+    .transform(url => url ?? null),  // Normalize: undefined → null
+});
+
+type CreateUserInput = z.infer<typeof CreateUserSchema>;
+// birthDate is Date (not string) because of transform — TypeScript knows this
+
+// 3. ADVANCED PATTERNS for real APIs:
+
+// Discriminated union validation:
+const PaymentSchema = z.discriminatedUnion('method', [
+  z.object({
+    method: z.literal('credit_card'),
+    cardNumber: z.string().regex(/^\d{16}$/),
+    expiryMonth: z.number().min(1).max(12),
+    expiryYear: z.number().min(new Date().getFullYear()),
+    cvv: z.string().regex(/^\d{3,4}$/)
+  }),
+  z.object({
+    method: z.literal('bank_transfer'),
+    bankCode: z.string().length(4),
+    accountNumber: z.string().min(7).max(14),
+    accountName: z.string()
+  }),
+  z.object({
+    method: z.literal('crypto'),
+    walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+    currency: z.enum(['ETH', 'USDC', 'BTC'])
+  })
+]);
+
+// TypeScript infers the correct shape based on method field:
+type Payment = z.infer<typeof PaymentSchema>;
+
+function processPayment(payment: Payment) {
+  switch (payment.method) {
+    case 'credit_card':
+      payment.cardNumber;    // TypeScript knows this exists
+      break;
+    case 'bank_transfer':
+      payment.bankCode;      // TypeScript knows this exists
+      break;
+  }
+}
+
+// Pagination query params (common pattern):
+const PaginationSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number()    // coerce: "20" (string from URL) → 20 (number)
+    .int()
+    .min(1)
+    .max(100)
+    .default(20),
+  sortBy: z.enum(['createdAt', 'updatedAt', 'name']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  search: z.string().max(100).optional(),
+});
+
+// .coerce is essential for query params — URL params are always strings
+
+// Partial and required variants:
+const UpdateUserSchema = CreateUserSchema.partial();
+// All fields become optional — perfect for PATCH endpoints
+
+const RequiredCreateSchema = CreateUserSchema.required();
+// All fields become required — override individual optionals
+
+// Pick and omit (same as TypeScript utility types):
+const PublicUserSchema = UserSchema.pick({
+  id: true,
+  name: true,
+  email: true
+  // Excludes: passwordHash, failedLoginCount, etc.
+});
+
+const CreateUserDbSchema = UserSchema.omit({
+  id: true,
+  createdAt: true  // Generated by database
+});
+
+// 4. VALIDATION IN FASTIFY (integration pattern):
+import { type FastifyRequest, type FastifyReply } from 'fastify';
+
+// Middleware factory:
+function validateBody<T extends z.ZodSchema>(schema: T) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const result = schema.safeParse(request.body);
+    
+    if (!result.success) {
+      return reply.status(422).send({
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Request validation failed',
+          details: result.error.errors.map(err => ({
+            field: err.path.join('.'),
+            message: err.message,
+            received: err.code === 'invalid_type' ? (err as any).received : undefined
+          }))
+        }
+      });
+    }
+    
+    // Replace raw body with parsed + transformed data:
+    request.body = result.data;
+  };
+}
+
+// Usage:
+app.post('/users',
+  { preHandler: validateBody(CreateUserSchema) },
+  async (request, reply) => {
+    // request.body is now typed AND validated AND transformed
+    const user = await userService.create(request.body as CreateUserInput);
+    return reply.status(201).send({ data: user });
+  }
+);
+
+// 5. ENVIRONMENT VARIABLE VALIDATION (underused but critical):
+const EnvSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']),
+  PORT: z.coerce.number().default(3000),
+  DATABASE_URL: z.string().url(),
+  REDIS_URL: z.string().url(),
+  JWT_SECRET: z.string().min(32, 'JWT secret must be at least 32 characters'),
+  AWS_REGION: z.string().default('ap-northeast-1'),
+  AWS_S3_BUCKET: z.string().optional(),
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).default('info'),
+  MAX_REQUEST_SIZE: z.coerce.number().default(10 * 1024 * 1024),
+});
+
+// Validate at startup — fail fast if config is wrong:
+const parseEnv = () => {
+  const result = EnvSchema.safeParse(process.env);
+  
+  if (!result.success) {
+    console.error('❌ Invalid environment configuration:');
+    result.error.errors.forEach(err => {
+      console.error(`  ${err.path.join('.')}: ${err.message}`);
+    });
+    process.exit(1);  // Crash immediately — better than mysterious runtime errors
+  }
+  
+  return result.data;
+};
+
+export const env = parseEnv();
+// Now env is fully typed:
+// env.PORT is number (not string)
+// env.NODE_ENV is 'development' | 'test' | 'production'
+// env.DATABASE_URL is string (guaranteed to exist)
+```
+
+---
+
+## SECTION 3: HTTP Client Libraries
+
+```
+The concept: Making HTTP requests from your backend
+Current winner: Undici (native Node.js HTTP client, fastest)
+                Axios (most familiar, easiest API)
+                Got (feature-rich, good TypeScript support)
+
+Reality: For most backends, you need:
+  - Make a request
+  - Handle errors
+  - Set headers
+  - Handle timeouts
+  - Parse JSON
+
+All three libraries do this. Pick one. Learn it in 2 hours. Move on.
+Recommendation: Use native fetch (Node.js 18+) for simple cases.
+                Use Got for production (better defaults, TypeScript).
+```
+
+```typescript
+// Native fetch (Node.js 18+ — zero dependencies):
+async function fetchUserFromExternalAPI(userId: string): Promise<ExternalUser> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+  
+  try {
+    const response = await fetch(
+      `${process.env.EXTERNAL_API_URL}/users/${userId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.EXTERNAL_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-Request-ID': crypto.randomUUID()
+        },
+        signal: controller.signal
+      }
+    );
+
+    if (!response.ok) {
+      // HTTP error (4xx, 5xx) — fetch does NOT throw on these
+      const errorBody = await response.text();
+      throw new ExternalAPIError(
+        `External API returned ${response.status}`,
+        response.status,
+        errorBody
+      );
+    }
+
+    return response.json() as Promise<ExternalUser>;
+    
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new TimeoutError('External API request timed out after 5000ms');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// Got — production HTTP client with better defaults:
+import got, { type Options } from 'got';
+
+// Create a configured instance (reuse across requests):
+const apiClient = got.extend({
+  prefixUrl: process.env.EXTERNAL_API_URL,
+  headers: {
+    'Authorization': `Bearer ${process.env.EXTERNAL_API_KEY}`,
+    'User-Agent': 'my-service/1.0.0'
+  },
+  timeout: {
+    request: 5000,    // Total request timeout
+    response: 3000    // Time to receive response headers
+  },
+  retry: {
+    limit: 2,
+    methods: ['GET', 'PUT', 'DELETE'],  // Retry only idempotent methods
+    statusCodes: [408, 413, 429, 500, 502, 503, 504],
+    backoffLimit: 5000
+  },
+  hooks: {
+    beforeRequest: [
+      (options) => {
+        // Add request ID to all requests:
+        options.headers['x-request-id'] = crypto.randomUUID();
+        logger.debug('outgoing_request', { url: options.url?.toString() });
+      }
+    ],
+    afterResponse: [
+      (response) => {
+        logger.debug('outgoing_response', {
+          url: response.requestUrl.toString(),
+          status: response.statusCode,
+          duration: response.timings.end! - response.timings.start!
+        });
+        return response;
+      }
+    ],
+    beforeError: [
+      (error) => {
+        logger.error('outgoing_request_failed', {
+          url: error.request?.requestUrl?.toString(),
+          code: error.code,
+          message: error.message
+        });
+        return error;
+      }
+    ]
+  }
+});
+
+// Usage — clean and typed:
+interface ExternalUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
+async function getExternalUser(userId: string): Promise<ExternalUser> {
+  return apiClient.get(`users/${userId}`).json<ExternalUser>();
+}
+
+async function createExternalUser(data: CreateUserDTO): Promise<ExternalUser> {
+  return apiClient.post('users', { json: data }).json<ExternalUser>();
+}
+```
+
+---
+
+## SECTION 4: Authentication Libraries
+
+```
+The concept: JWT creation, verification, OAuth flows
+Libraries: jose (best, modern), jsonwebtoken (widespread, older)
+Recommendation: Learn jose — it works in all environments
+                (Node.js, Edge Runtime, Deno, browser)
+```
+
+```typescript
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+
+// JWT payload type:
+interface TokenPayload extends JWTPayload {
+  userId: string;
+  role: 'admin' | 'user' | 'support';
+  sessionId: string;
+}
+
+class JWTService {
+  private accessTokenSecret: Uint8Array;
+  private refreshTokenSecret: Uint8Array;
+
+  constructor() {
+    // Convert string secret to Uint8Array (jose requirement):
+    this.accessTokenSecret = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET);
+    this.refreshTokenSecret = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET);
+  }
+
+  async signAccessToken(payload: Omit<TokenPayload, keyof JWTPayload>): Promise<string> {
+    return new SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('15m')         // Short-lived — 15 minutes
+      .setNotBefore('0s')               // Valid immediately
+      .setIssuer('your-app-name')       // Who issued this token
+      .setAudience('your-app-client')   // Who should accept this token
+      .sign(this.accessTokenSecret);
+  }
+
+  async signRefreshToken(userId: string, sessionId: string): Promise<string> {
+    return new SignJWT({ userId, sessionId })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')          // Long-lived — 7 days
+      .sign(this.refreshTokenSecret);
+  }
+
+  async verifyAccessToken(token: string): Promise<TokenPayload> {
+    try {
+      const { payload } = await jwtVerify<TokenPayload>(
+        token,
+        this.accessTokenSecret,
+        {
+          algorithms: ['HS256'],
+          issuer: 'your-app-name',
+          audience: 'your-app-client'
+        }
+      );
+      return payload;
+    } catch (error) {
+      // jose throws specific errors — handle each:
+      if (error instanceof Error) {
+        if (error.message.includes('expired')) {
+          throw new TokenExpiredError('Access token has expired');
+        }
+        if (error.message.includes('invalid')) {
+          throw new InvalidTokenError('Access token is invalid');
+        }
+      }
+      throw new InvalidTokenError('Token verification failed');
+    }
+  }
+
+  async verifyRefreshToken(token: string): Promise<{ userId: string; sessionId: string }> {
+    const { payload } = await jwtVerify(token, this.refreshTokenSecret);
+    return {
+      userId: payload['userId'] as string,
+      sessionId: payload['sessionId'] as string
+    };
+  }
+}
+
+// Refresh token rotation pattern (complete implementation):
+class AuthService {
+  constructor(
+    private jwtService: JWTService,
+    private sessionRepository: SessionRepository,
+    private redis: Redis
+  ) {}
+
+  async refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. Verify refresh token:
+    const { userId, sessionId } = await this.jwtService.verifyRefreshToken(refreshToken);
+
+    // 2. Check if session still valid (not revoked):
+    const session = await this.sessionRepository.findById(sessionId);
+    if (!session || session.revokedAt) {
+      // Possible token theft — revoke ALL sessions for this user:
+      await this.sessionRepository.revokeAllForUser(userId);
+      throw new InvalidTokenError('Session has been revoked');
+    }
+
+    // 3. Check if this refresh token has been used before (rotation theft detection):
+    const tokenUsed = await this.redis.get(`used_refresh:${refreshToken}`);
+    if (tokenUsed) {
+      // Token reuse detected — possible theft:
+      await this.sessionRepository.revokeAllForUser(userId);
+      throw new InvalidTokenError('Refresh token reuse detected');
+    }
+
+    // 4. Mark old refresh token as used:
+    await this.redis.setex(
+      `used_refresh:${refreshToken}`,
+      7 * 24 * 3600,  // Keep for 7 days (refresh token lifetime)
+      '1'
+    );
+
+    // 5. Issue new tokens:
+    const newSessionId = crypto.randomUUID();
+    await this.sessionRepository.rotate(sessionId, newSessionId);
+
+    const [newAccessToken, newRefreshToken] = await Promise.all([
+      this.jwtService.signAccessToken({ userId, role: session.userRole, sessionId: newSessionId }),
+      this.jwtService.signRefreshToken(userId, newSessionId)
+    ]);
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+}
+```
+
+---
+
+## SECTION 5: Utility Libraries
+
+```
+The most important advice about utility libraries:
+  Check if the native JavaScript already does it
+  before reaching for a library.
+  
+  2015: Lodash was essential (missing JS features)
+  2025: Native JS has most of what Lodash provided
+  
+  Still useful: Deep clone, deep merge, chunk arrays, debounce/throttle
+  No longer needed: pick, omit, map, filter, find, flatten (native now)
+```
+
+```typescript
+// What you DON'T need Lodash for anymore (native equivalents):
+import _ from 'lodash'; // DON'T add this dependency just for these:
+
+// _.map → Array.prototype.map (native)
+// _.filter → Array.prototype.filter (native)
+// _.find → Array.prototype.find (native)
+// _.flatten → Array.prototype.flat (native)
+// _.flatMap → Array.prototype.flatMap (native)
+// _.includes → Array.prototype.includes (native)
+// _.keys → Object.keys (native)
+// _.values → Object.values (native)
+// _.entries → Object.entries (native)
+// _.assign → Object.assign (native)
+// _.pick → destructuring + object shorthand (native)
+// _.omit → destructuring rest (...rest pattern) (native)
+
+// What you DO still need utilities for:
+
+// 1. Deep clone (structuredClone — native in Node.js 17+!):
+const original = { user: { name: 'Ravi', address: { city: 'Mumbai' } } };
+const clone = structuredClone(original);  // Deep clone, no library needed
+clone.user.address.city = 'Tokyo';
+console.log(original.user.address.city);  // 'Mumbai' — not affected
+
+// 2. Debounce (prevent function calling too frequently):
+// This is the one utility you might still want from Lodash or date-fns:
+function debounce<T extends (...args: any[]) => any>(fn: T, ms: number): T {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), ms);
+  }) as T;
+}
+
+// 3. Chunk array (split into batches):
+function chunk<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+// 4. Date handling — date-fns (use instead of moment.js — it's dead):
+import { format, addDays, differenceInDays, isAfter, parseISO } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+
+// Japanese date formatting (critical for Japan-facing applications):
+const orderDate = new Date('2025-01-15');
+
+format(orderDate, 'yyyy年MM月dd日');  // '2025年01月15日' (Japanese format)
+format(orderDate, 'yyyy/MM/dd');      // '2025/01/15' (common in Japanese systems)
+
+// Tokyo timezone handling:
+const tokyoTime = formatInTimeZone(
+  orderDate,
+  'Asia/Tokyo',
+  'yyyy年MM月dd日 HH:mm'
+);
+
+// Date arithmetic:
+const trialEndDate = addDays(new Date(), 14);
+const daysRemaining = differenceInDays(trialEndDate, new Date());
+const isExpired = isAfter(new Date(), trialEndDate);
+```
+
+---
+
+## SECTION 6: Logging Libraries
+
+```
+The concept: Structured, leveled, contextual logging
+Winner: Pino (fastest Node.js logger — used by Fastify natively)
+Alternative: Winston (more features, slower)
+
+You need ONE logger for your entire service.
+Learn Pino. It takes 2 hours. Use it everywhere.
+```
+
+```typescript
+import pino, { type Logger } from 'pino';
+
+// Create once, export, import everywhere:
+export const logger = pino({
+  name: 'order-service',
+  level: process.env.LOG_LEVEL ?? 'info',
+  
+  // Structured base fields on every log line:
+  base: {
+    service: 'order-service',
+    version: process.env.APP_VERSION ?? 'unknown',
+    environment: process.env.NODE_ENV ?? 'development',
+    region: process.env.AWS_REGION ?? 'local',
+  },
+  
+  // Redact sensitive data from ALL logs automatically:
+  redact: {
+    paths: [
+      'password',
+      'passwordHash',
+      '*.password',
+      'req.headers.authorization',
+      'req.body.creditCard',
+      'req.body.cvv',
+    ],
+    censor: '[REDACTED]'
+  },
+
+  // In development: pretty print
+  // In production: JSON (for CloudWatch/Datadog parsing)
+  transport: process.env.NODE_ENV === 'development'
+    ? {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'HH:MM:ss.l',
+          ignore: 'pid,hostname',
+        }
+      }
+    : undefined,
+
+  // Custom serializers (control what gets logged for specific objects):
+  serializers: {
+    req: (req) => ({
+      method: req.method,
+      url: req.url,
+      requestId: req.id,
+      userAgent: req.headers['user-agent'],
+      // DO NOT log: headers.authorization, body (may contain passwords)
+    }),
+    err: pino.stdSerializers.err,  // Standard error serialization (stack trace included)
+    user: (user) => ({
+      id: user.id,
+      role: user.role,
+      // DO NOT log: email, name (PII — consider data privacy laws)
+    })
+  }
+});
+
+// Usage patterns — the ones you use daily:
+
+// Context-enriched child loggers (most important pattern):
+// Instead of passing logger everywhere with manual context:
+class OrderService {
+  async createOrder(input: CreateOrderInput, requestId: string): Promise<Order> {
+    // Create child logger with context bound for this entire operation:
+    const log = logger.child({
+      requestId,
+      userId: input.userId,
+      operation: 'create_order'
+    });
+
+    log.info('order_creation_started', { productId: input.productId });
+
+    try {
+      const order = await this.orderRepository.create(input);
+      
+      log.info('order_created', {
+        orderId: order.id,
+        total: order.totalAmount,
+        duration_ms: Date.now() - start
+      });
+      
+      return order;
+
+    } catch (error) {
+      log.error('order_creation_failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        input: { productId: input.productId, quantity: input.quantity }
+        // Don't log full input — may contain sensitive data
+      });
+      throw error;
+    }
+  }
+}
+
+// Log levels — when to use each:
+logger.trace('database_query', { sql: query, params });    // Very verbose — disable in prod
+logger.debug('cache_miss', { key, ttl });                  // Developer debugging info
+logger.info('user_logged_in', { userId, method: 'email' }); // Normal business events
+logger.warn('rate_limit_approaching', { userId, count });   // Potential issues
+logger.error('payment_failed', { orderId, error });         // Errors that need attention
+logger.fatal('database_connection_lost', { host });         // Service cannot function — crash
+
+// What each log entry should contain (the standard):
+logger.info('event_name', {
+  // WHO:
+  userId: 'u_123',
+  requestId: 'req_abc',
+  
+  // WHAT:
+  orderId: 'ord_456',
+  action: 'payment_processed',
+  
+  // RESULT:
+  success: true,
+  amount: 5000,
+  
+  // PERFORMANCE:
+  duration_ms: 143,
+  
+  // CONTEXT (for debugging):
+  paymentProvider: 'stripe',
+  region: 'ap-northeast-1'
+});
+```
+
+---
+
+## SECTION 7: Configuration Libraries
+
+```
+The concept: Load and validate environment variables
+Options: dotenv (load), Zod (validate — you already know this)
+         Combined: the only configuration approach you need
+
+The rule: Validate all configuration at startup.
+          Crash immediately if required config is missing.
+          Better to crash at startup than fail mysteriously in production.
+```
+
+```typescript
+// config/env.ts — the only configuration file you need
+
+import { z } from 'zod';
+import dotenv from 'dotenv';
+
+// Load .env file (only in non-production — production uses actual env vars):
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: '.env.local' });   // Local overrides
+  dotenv.config({ path: '.env' });         // Defaults (committed to git)
+}
+
+// Validate and type everything:
+const EnvSchema = z.object({
+  // Application:
+  NODE_ENV: z.enum(['development', 'test', 'production']),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  APP_VERSION: z.string().default('unknown'),
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+  
+  // Database:
+  DATABASE_URL: z.string().url(),
+  DATABASE_MAX_CONNECTIONS: z.coerce.number().int().min(1).max(100).default(20),
+  DATABASE_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
+  
+  // Redis:
+  REDIS_URL: z.string().url(),
+  REDIS_KEY_PREFIX: z.string().default('app:'),
+  
+  // JWT:
+  JWT_ACCESS_SECRET: z.string().min(32, 'JWT secret must be at least 32 characters'),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  
+  // AWS:
+  AWS_REGION: z.string().default('ap-northeast-1'),
+  AWS_S3_BUCKET: z.string().optional(),
+  AWS_SQS_QUEUE_URL: z.string().url().optional(),
+  
+  // External APIs:
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
+  SENDGRID_API_KEY: z.string().startsWith('SG.').optional(),
+  
+  // Rate limiting:
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+  
+  // CORS:
+  ALLOWED_ORIGINS: z.string().transform(str => str.split(',').map(s => s.trim())),
+});
+
+const parseResult = EnvSchema.safeParse(process.env);
+
+if (!parseResult.success) {
+  console.error('\n❌ Invalid environment configuration:\n');
+  
+  parseResult.error.errors.forEach(err => {
+    console.error(`  ${err.path.join('.')}:`);
+    console.error(`    Expected: ${err.message}`);
+    console.error(`    Received: ${process.env[err.path[0]] ?? 'undefined'}\n`);
+  });
+  
+  console.error('Fix the above environment variables and restart.\n');
+  process.exit(1);
+}
+
+export const env = parseResult.data;
+
+// Derived configuration (computed from env variables):
+export const config = {
+  ...env,
+  
+  isDevelopment: env.NODE_ENV === 'development',
+  isProduction: env.NODE_ENV === 'production',
+  isTest: env.NODE_ENV === 'test',
+  
+  database: {
+    url: env.DATABASE_URL,
+    maxConnections: env.DATABASE_MAX_CONNECTIONS,
+    idleTimeoutMs: env.DATABASE_IDLE_TIMEOUT_MS,
+  },
+  
+  redis: {
+    url: env.REDIS_URL,
+    keyPrefix: env.REDIS_KEY_PREFIX,
+  },
+  
+  jwt: {
+    accessSecret: env.JWT_ACCESS_SECRET,
+    refreshSecret: env.JWT_REFRESH_SECRET,
+    accessExpiresIn: env.JWT_ACCESS_EXPIRES_IN,
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
+  },
+  
+  aws: {
+    region: env.AWS_REGION,
+    s3Bucket: env.AWS_S3_BUCKET,
+    sqsQueueUrl: env.AWS_SQS_QUEUE_URL,
+  },
+} as const;
+
+// Usage anywhere in codebase:
+// import { config } from '@/config/env';
+// config.database.maxConnections  → 20 (number, not string)
+// config.isProduction             → false (boolean)
+// config.jwt.accessExpiresIn      → '15m' (string)
+```
+
+---
+
+## SECTION 8: Code Quality Libraries
+
+```
+The concept: Consistent code style and catching errors before runtime
+Tools: ESLint (errors and patterns) + Prettier (formatting)
+These are setup-once, run-always tools.
+30 minutes to set up. Saves hours of review comments forever.
+```
+
+```javascript
+// eslint.config.mjs (new flat config format — ESLint 9+):
+import js from '@eslint/js';
+import typescript from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+import prettierConfig from 'eslint-config-prettier';
+
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.ts'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: { '@typescript-eslint': typescript },
+    rules: {
+      // TypeScript rules that catch real bugs:
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',  // Unhandled promise
+      '@typescript-eslint/await-thenable': 'error',        // Await non-promise
+      '@typescript-eslint/no-misused-promises': 'error',
+      
+      // Async/await correctness:
+      'require-await': 'off',  // TypeScript version is better:
+      '@typescript-eslint/require-await': 'error',
+      
+      // Code quality:
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',   // Allow _unusedParam convention
+        varsIgnorePattern: '^_',
+      }],
+      
+      // Security:
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      
+      // Consistency:
+      '@typescript-eslint/consistent-type-imports': ['error', {
+        prefer: 'type-imports'
+      }],
+      // Forces: import type { User } from './types' for type-only imports
+      // Benefits: Faster builds, no circular dependency issues
+    },
+  },
+  prettierConfig,  // Must be last — disables ESLint formatting rules
+];
+
+// .prettierrc:
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "always",
+  "endOfLine": "lf"
+}
+
+// package.json scripts:
+{
+  "scripts": {
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "typecheck": "tsc --noEmit"
+  }
+}
+```
+
+---
+
+## The Complete Layer 5 Truth
+
+```
+Everything in Layer 5 follows the same pattern:
+
+  Problem exists (Layer 2 concept)
+        ↓
+  Pattern emerges to solve it (Layer 3)
+        ↓
+  Tool is built to implement the pattern (Layer 4)
+        ↓
+  Library provides convenient syntax for the tool (Layer 5)
+        ↓
+  Library is replaced by better library (months-years)
+        ↓
+  You learn new library in hours because you
+  understand Layers 1-4
+
+  The developer who only knows Layer 5
+  must relearn from scratch each time.
+  
+  The developer who knows Layers 1-4
+  sees the new library and says:
+  "This is just validation with a different API."
+  "This is just JWT with a cleaner interface."
+  "This is just structured logging with better defaults."
+  And learns it in an afternoon.
+
+The hierarchy completed:
+
+  Layer 1: Physics of computing
+           Time to master: 2-3 years of deliberate study
+           Return: Permanent. Never expires. Compounds forever.
+
+  Layer 2: Mental models of systems
+           Time to master: 1-2 years of building real things
+           Return: 10+ years. Transfers across every technology.
+
+  Layer 3: Solution patterns
+           Time to master: 1 year of applying to real problems
+           Return: 5-7 years. The shape changes, the concept survives.
+
+  Layer 4: Tools and frameworks
+           Time to be productive: 1-4 weeks per tool
+           Return: 2-4 years. Learn deeply enough to use safely.
+
+  Layer 5: Libraries and syntax
+           Time to be productive: 1 hour to 2 days per library
+           Return: Months to years. Learn just enough to build things.
+
+The engineer who invests time in this order
+is the engineer who:
+  Adapts to new technology without panic
+  Debugs production issues others cannot find
+  Designs systems that scale without being redesigned
+  Commands salary at the top of any market
+  Becomes the person the team cannot afford to lose
+
+This is the complete framework.
+Now the only question is execution.
+
+One hour a day on Layers 1-3.
+One day per week on a real project using Layers 4-5.
+One Qiita article per month explaining one concept in Japanese.
+One job application per day targeting Japan.
+
+In 12 months:
+  You will not recognize the engineer you were today.
+  The market will not treat you the way it treats you today.
+  The ceiling you feel right now will not exist.
+
+The layers were always there.
+Most developers never see them.
+You now see them.
+That is already the beginning of the gap.
+```
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

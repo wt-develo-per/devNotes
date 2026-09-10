@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PILLAR 5: How Programs Fail and Why | Engineering Mastery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #3b82f6; /* Blue accent */
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.2rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.7rem; color: var(--accent); border-color: rgba(59, 130, 246, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code, #content-area li code { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            display: none;
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 340px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .toc-list a:hover { color: var(--accent); }
+        .toc-list a.active { color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">ENG</span>
+            Engineering Mastery
+        </div>
+        <div class="nav-links">
+            <a href="04_section.html" class="nav-btn">⬅️ Previous</a>
+            <a href="06_section.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Curriculum</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_section.html">00. Introduction</a></li>
+            <li><a href="01_section.html">01. How Computers Work at the...</a></li>
+            <li><a href="02_section.html">02. How Networks and Data Tra...</a></li>
+            <li><a href="03_section.html">03. How Operating Systems Man...</a></li>
+            <li><a href="04_section.html">04. How Data Is Stored and Re...</a></li>
+            <li><a href="05_section.html" class="active">05. How Programs Fail and Why...</a></li>
+            <li><a href="06_section.html">06. Algorithmic Thinking...</a></li>
+            <li><a href="07_section.html">07. Application Architecture ...</a></li>
+            <li><a href="08_section.html">08. Data Patterns...</a></li>
+            <li><a href="09_section.html">09. Integration Patterns...</a></li>
+            <li><a href="10_section.html">10. Resilience Patterns...</a></li>
+            <li><a href="11_section.html">11. Scalability Patterns...</a></li>
+            <li><a href="12_section.html">12. Security Patterns...</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 5: How Programs Fail and Why
+
+### The Categories of Failure Every Backend Engineer Faces
+
+```
+Failures are not random. They fall into predictable categories.
+Engineers who know the categories debug 10x faster.
+
+CATEGORY 1: Logic Errors
+  Code runs but produces wrong results.
+  No error thrown. No crash. Just wrong data.
+  Hardest to find. Tests catch these.
+  
+  Example:
+  function calculateDiscount(price, discountPercent) {
+    return price - discountPercent; // BUG: should be price * (discountPercent/100)
+  }
+  // calculateDiscount(100, 10) returns 90 instead of 90. Same here.
+  // calculateDiscount(200, 10) returns 190 instead of 180. Wrong.
+
+CATEGORY 2: Null/Undefined Reference Errors
+  Accessing property of something that doesn't exist.
+  Most common error in JavaScript.
+  
+  const user = await getUserById('nonexistent-id'); // Returns null
+  console.log(user.email); // TypeError: Cannot read properties of null
+  
+  Fix: Always check for null before accessing properties.
+  const user = await getUserById(id);
+  if (!user) throw new NotFoundError(`User ${id} not found`);
+
+CATEGORY 3: Race Conditions
+  Two concurrent operations interfere with each other.
+  Code works in testing (sequential). Breaks in production (concurrent).
+  
+  // Both requests run simultaneously:
+  // Request A: reads stock = 1, thinks it can sell
+  // Request B: reads stock = 1, thinks it can sell
+  // Request A: decrements stock to 0, sells item
+  // Request B: decrements stock to -1, sells item again
+  // Result: oversold inventory
+  
+  Fix: Database locks, atomic operations, optimistic locking.
+
+CATEGORY 4: Resource Exhaustion
+  Running out of memory, connections, file descriptors, disk space.
+  Usually happens gradually. System slows before crashing.
+  
+  Signs:
+    Memory: Process grows continuously (memory leak)
+    Connections: "too many connections" error (connection leak)
+    Disk: "no space left on device" (logs not rotated, temp files)
+    FD: "EMFILE: too many open files" (connection/file leak)
+  
+  Fix: Proper resource management, monitoring, alerts.
+
+CATEGORY 5: Network Failures
+  External service unreachable, timeout, DNS failure.
+  Cannot be eliminated. Can be handled gracefully.
+  
+  Types:
+    Transient: Brief network blip. Retry fixes it.
+    Partial: Service slow but not down. Circuit breaker helps.
+    Permanent: Service dead. Fallback/graceful degradation required.
+
+CATEGORY 6: Data Corruption
+  Database in inconsistent state.
+  Worst category. Often irreversible.
+  
+  Causes:
+    Missing transactions (partial write)
+    Race conditions on writes
+    Application bug with wrong data
+    Failed migration
+  
+  Prevention:
+    Database constraints (NOT NULL, FOREIGN KEY, CHECK)
+    Transactions for all multi-step operations
+    Input validation BEFORE writing to database
+    Backups that are tested regularly
+```
+
+### Reading Error Messages — The Skill Nobody Teaches
+
+```
+Most developers see an error and immediately Google it.
+Senior developers read the error and understand it.
+
+Node.js error anatomy:
+
+Error: ECONNREFUSED connect ECONNREFUSED 127.0.0.1:5432
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1141:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+
+Reading this:
+  ECONNREFUSED → "Connection refused"
+                 Target server actively refused connection.
+                 NOT a timeout. NOT unreachable. REFUSED.
+  127.0.0.1    → Localhost
+  5432         → PostgreSQL port
+  
+  Diagnosis: PostgreSQL is not running on localhost.
+             OR: PostgreSQL is running but not listening on 5432.
+             OR: Firewall is blocking the connection.
+  
+  Action: Check if PostgreSQL is running:
+          $ pg_ctl status
+          OR: $ systemctl status postgresql
+
+Common error codes decoded:
+  ECONNREFUSED → Port not open or service not running
+  ECONNRESET   → Connection forcibly closed by the other side
+  ETIMEDOUT    → Connection attempt took too long (firewall? wrong host?)
+  ENOTFOUND    → DNS lookup failed (wrong hostname, DNS issue)
+  EACCES       → Permission denied (wrong file permissions, privileged port)
+  EMFILE       → Too many open files (connection/file descriptor leak)
+  ENOMEM       → Out of memory (memory leak or insufficient RAM)
+```
+
+---
+
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

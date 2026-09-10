@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PILLAR 1: How Computers Work at the Level That Matters | Engineering Mastery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #3b82f6; /* Blue accent */
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.2rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.7rem; color: var(--accent); border-color: rgba(59, 130, 246, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code, #content-area li code { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            display: none;
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 340px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .toc-list a:hover { color: var(--accent); }
+        .toc-list a.active { color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">ENG</span>
+            Engineering Mastery
+        </div>
+        <div class="nav-links">
+            <a href="00_section.html" class="nav-btn">⬅️ Previous</a>
+            <a href="02_section.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Curriculum</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_section.html">00. Introduction</a></li>
+            <li><a href="01_section.html" class="active">01. How Computers Work at the...</a></li>
+            <li><a href="02_section.html">02. How Networks and Data Tra...</a></li>
+            <li><a href="03_section.html">03. How Operating Systems Man...</a></li>
+            <li><a href="04_section.html">04. How Data Is Stored and Re...</a></li>
+            <li><a href="05_section.html">05. How Programs Fail and Why...</a></li>
+            <li><a href="06_section.html">06. Algorithmic Thinking...</a></li>
+            <li><a href="07_section.html">07. Application Architecture ...</a></li>
+            <li><a href="08_section.html">08. Data Patterns...</a></li>
+            <li><a href="09_section.html">09. Integration Patterns...</a></li>
+            <li><a href="10_section.html">10. Resilience Patterns...</a></li>
+            <li><a href="11_section.html">11. Scalability Patterns...</a></li>
+            <li><a href="12_section.html">12. Security Patterns...</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 1: How Computers Work at the Level That Matters
+
+### Memory — The Foundation of Everything
+
+```
+Most developers think of memory as "RAM = where things are stored."
+That mental model causes real bugs.
+
+The actual memory hierarchy:
+
+                    Speed        Size         Cost
+┌──────────────┐
+│   CPU Cache  │   0.3 ns      ~8 MB        Expensive
+│   (L1/L2/L3) │
+├──────────────┤
+│     RAM      │   100 ns      8-64 GB      Moderate
+│   (Memory)   │
+├──────────────┤
+│     SSD      │   100,000 ns  256GB-4TB    Cheap
+│   (Storage)  │
+├──────────────┤
+│   Network    │  10,000,000ns Unlimited    Cheapest
+│   (Remote)   │
+└──────────────┘
+
+Translation into human time:
+  If L1 cache access = 1 second
+  RAM access         = 6 minutes
+  SSD access         = 2-6 days
+  Network access     = 1-10 years
+
+This is why:
+  In-memory cache (Redis) is faster than database queries
+  Database queries are faster than calling external APIs
+  Everything should be cached at the right layer
+
+
+
+What this means for your code:
+
+// This loop is fast (sequential memory access — CPU cache friendly):
+const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let sum = 0;
+for (let i = 0; i < numbers.length; i++) {
+  sum += numbers[i]; // Accessing adjacent memory locations
+}
+
+// This can be slow at scale (random memory access — cache unfriendly):
+const userMap = new Map();
+users.forEach(user => {
+  const randomUser = userMap.get(randomId()); // Random memory location each time
+});
+
+// Database query returns 1 million rows into memory:
+const allUsers = await db.query('SELECT * FROM users'); // Loads into RAM
+// If users table = 10GB, you just loaded 10GB into RAM
+// Node.js process memory spikes, garbage collector panics, server slows down
+
+// Correct approach: Stream large data
+const stream = db.queryStream('SELECT * FROM users');
+stream.on('data', (row) => processRow(row)); // Process one row at a time
+// Memory stays constant regardless of table size
+```
+
+### Stack vs Heap — Why Your Program Crashes
+
+```
+Every running program has two memory areas:
+
+STACK:
+  ├── Fixed size (usually 1-8 MB per thread)
+  ├── Automatically managed (allocated/freed per function call)
+  ├── Stores: local variables, function call information
+  ├── Very fast access
+  └── Overflow = Stack Overflow error (recursive function gone wrong)
+
+HEAP:
+  ├── Dynamic size (limited by available RAM)
+  ├── Manually managed in C/C++, garbage collected in Node.js
+  ├── Stores: objects, arrays, strings, closures
+  ├── Slower than stack
+  └── Leak = memory grows forever until crash
+
+// Stack overflow example:
+function infiniteRecursion(n) {
+  return infiniteRecursion(n + 1); // Never reaches base case
+  // Each call adds a frame to stack
+  // Stack fills up → RangeError: Maximum call stack size exceeded
+}
+
+// Memory leak example (heap leak):
+const cache = new Map();
+
+app.get('/user/:id', async (req, res) => {
+  const user = await fetchUser(req.params.id);
+  cache.set(req.params.id, user); // Adding to Map
+  // NEVER removing from Map
+  // After 1 million requests: Map has 1 million entries
+  // Heap grows until process runs out of memory and crashes
+});
+
+// Fixed:
+const cache = new Map();
+const MAX_CACHE_SIZE = 1000;
+
+app.get('/user/:id', async (req, res) => {
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const firstKey = cache.keys().next().value;
+    cache.delete(firstKey); // Remove oldest entry
+  }
+  cache.set(req.params.id, user);
+});
+// Better: Use Redis with TTL instead of in-process Map
+```
+
+### Garbage Collection — Why Node.js Sometimes Pauses
+
+Node.js uses V8's garbage collector.
+Understanding this prevents mysterious performance issues.
+
+How it works:
+  
+  Your code creates objects constantly:
+  const user = { id: 1, name: 'Ravi' }; // Object created on heap
+  
+  When nothing references the object anymore:
+  user = null; // Original object now unreachable
+  
+  GC periodically finds unreachable objects and frees memory.
+  During this process: YOUR CODE PAUSES.
+  
+  Minor GC: Milliseconds. Frequent. You rarely notice.
+  Major GC: Tens to hundreds of milliseconds. Infrequent.
+            But under high load, this causes latency spikes.
+
+What causes excessive GC pressure:
+
+// BAD: Creating thousands of objects in a tight loop
+function processRequests(requests) {
+  return requests.map(req => {
+    return {              // New object created for EVERY request
+      id: req.id,
+      processed: true,
+      timestamp: new Date(),      // New Date object every iteration
+      metadata: { ...req.meta }   // Spread creates new object
+    };
+  });
+}
+
+// BETTER: Reuse objects where possible, minimize allocations in hot paths
+// Not always possible in business logic, but critical in high-frequency code
+
+// Monitoring GC in Node.js:
+node --expose-gc --trace-gc your-app.js
+// Shows every GC event and duration in console
+
+// In production, monitor:
+// process.memoryUsage().heapUsed  → current heap usage
+// process.memoryUsage().heapTotal → total heap allocated
+// If heapUsed grows continuously = memory leak
+```
+
+### CPU — Single Core vs Multi-Core Reality
+
+```
+Node.js runs on ONE core by default.
+Your server likely has 4, 8, or 16 cores.
+That means by default, you're using 6-12% of your server's CPU.
+
+This is the most misunderstood thing about Node.js.
+
+Why Node.js is still fast despite single core:
+  Most backend work is I/O bound (waiting for DB, network, files)
+  While waiting, Node.js handles other requests
+  Single core is sufficient for I/O-bound workloads
+
+When single core becomes a problem:
+  CPU-bound work: image processing, video transcoding, 
+                  complex calculations, heavy JSON parsing
+  These BLOCK the event loop because they never yield
+
+// This blocks your entire server:
+app.get('/calculate', (req, res) => {
+  let result = 0;
+  for (let i = 0; i < 10_000_000_000; i++) { // 10 billion iterations
+    result += Math.sqrt(i);
+  }
+  // While this runs: ZERO other requests can be processed
+  res.json({ result });
+});
+
+Solutions for CPU-bound work:
+
+// Option 1: Worker Threads (separate thread, same process)
+import { Worker, isMainThread, parentPort } from 'worker_threads';
+
+if (isMainThread) {
+  app.get('/calculate', (req, res) => {
+    const worker = new Worker('./calculation-worker.js', {
+      workerData: { input: req.query.input }
+    });
+    
+    worker.on('message', (result) => res.json({ result }));
+    worker.on('error', (error) => res.status(500).json({ error }));
+    // Main thread is FREE while worker calculates
+  });
+}
+
+// Option 2: Cluster mode (multiple processes, each on different core)
+import cluster from 'cluster';
+import os from 'os';
+
+if (cluster.isPrimary) {
+  const numCPUs = os.cpus().length; // e.g., 8 cores
+  
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork(); // Spawn 8 worker processes
+  }
+  // Now using all 8 cores
+  // Each process handles requests independently
+  
+} else {
+  // Worker process: run your express/fastify app
+  startServer();
+}
+
+// Option 3: Offload to queue (best for very long operations)
+app.get('/generate-report', async (req, res) => {
+  await reportQueue.add({ userId: req.user.id });
+  res.json({ message: 'Report generation started. We will email you when ready.' });
+  // Returns immediately. Worker processes report in background.
+});
+```
+
+---
+
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

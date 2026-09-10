@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 02: Validation & Exception Handling | Laravel API Mastery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-card: #27272a;
+            --accent-primary: #ef4444; /* Laravel Red */
+            --accent-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border: #3f3f46;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --font-sans: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; overflow-x: hidden; }
+
+        #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #ef4444, #f97316); width: 0%; z-index: 1000; transition: width 0.1s; }
+
+        .navbar { background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.2rem; font-weight: 700; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-brand span { background: var(--accent-primary); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); transition: 0.2s; font-size: 0.9rem; }
+        .nav-links a:hover { color: white; border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
+        .nav-links a.primary { background: var(--accent-primary); color: white; border: none; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+
+        .hero { background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.1), transparent 40%), var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 3rem 2rem; margin-bottom: 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero-label { display: inline-block; color: var(--accent-primary); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 1px;}
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+        .layout-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; align-items: start; }
+        @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        .sidebar { position: sticky; top: 5.5rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        .sidebar h3 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { display: block; padding: 0.6rem 0.8rem; color: var(--text-muted); text-decoration: none; border-radius: 6px; font-size: 0.95rem; transition: 0.2s; border: 1px solid transparent; }
+        .sidebar a:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar a.active { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border-color: rgba(239, 68, 68, 0.2); font-weight: 500; }
+
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-bottom: 2rem; }
+        .card-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; margin-bottom: 1rem; }
+        .tag-beginner { background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .tag-mastery { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border: 1px solid rgba(239, 68, 68, 0.2); }
+        
+        .card h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .card p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+
+        .alert { padding: 1.2rem; border-radius: 12px; margin: 1.5rem 0; border-left: 4px solid; background: rgba(255,255,255,0.03); }
+        .alert-warning { border-left-color: var(--warning); }
+        .alert-warning h4 { color: var(--warning); margin-bottom: 0.5rem; }
+
+        .code-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { background: rgba(0,0,0,0.2); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .code-lang { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: var(--bg-surface); color: white; }
+        .code-body { padding: 1.5rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; }
+        .code-body .keyword { color: #f472b6; }
+        .code-body .function { color: #60a5fa; }
+        .code-body .string { color: #a7f3d0; }
+        .code-body .comment { color: #6b7280; font-style: italic; }
+
+        code:not(pre code) { background: rgba(239, 68, 68, 0.1); color: #fca5a5; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+
+    <nav class="navbar">
+        <a href="API_Mastery_01_Fundamentals_and_Routing.html" class="nav-brand"><span>API Mastery</span> Laravel Module 02</a>
+        <div class="nav-links">
+            <a href="API_Mastery_01_Fundamentals_and_Routing.html">⬅️ Prev Module</a>
+            <a href="#" class="primary">Next Module ➡️</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <span class="hero-label">MODULE 02</span>
+            <h1>Validation & Exception Handling</h1>
+            <p>API development ka sabse bada rule: "Never trust the client". Form requests use karein, aur frontend ko humesha predictable error messages (422s & 500s) bhejein, irrespective of what crashes.</p>
+        </header>
+
+        <div class="layout-grid">
+            <aside class="sidebar">
+                <h3>Curriculum</h3>
+                <ul>
+                    <li><a href="#form-requests" class="nav-item active" onclick="switchTab(event, 'form-requests')">1. Form Requests in APIs</a></li>
+                    <li><a href="#custom-val-errors" class="nav-item" onclick="switchTab(event, 'custom-val-errors')">2. Formatting 422 Errors</a></li>
+                    <li><a href="#exception-handler" class="nav-item" onclick="switchTab(event, 'exception-handler')">3. Global Exception Handler</a></li>
+                    <li><a href="#custom-exceptions" class="nav-item" onclick="switchTab(event, 'custom-exceptions')">4. Custom Exceptions</a></li>
+                </ul>
+            </aside>
+
+            <div class="content">
+                
+                <!-- Section 1 -->
+                <section id="form-requests" class="section active">
+                    <div class="card">
+                        <span class="card-tag tag-beginner">Intermediate</span>
+                        <h2>1. Form Requests for APIs</h2>
+                        <p>Controllers ke andar validation logic likhna beginner pattern hai. Production APIs mein validation humesha Form Requests mein move kiya jata hai taki Controller "Skinny" rahe.</p>
+                        
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Http/Requests/StoreUserRequest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">class</span> StoreUserRequest <span class="keyword">extends</span> FormRequest
+{
+    <span class="keyword">public function</span> <span class="function">authorize</span>()
+    {
+        <span class="comment">// Check if the user has permission to create users.</span>
+        <span class="comment">// Return true if you handle auth via middleware.</span>
+        <span class="keyword">return true</span>;
+    }
+
+    <span class="keyword">public function</span> <span class="function">rules</span>()
+    {
+        <span class="keyword">return</span> [
+            <span class="string">'name'</span>  =&gt; [<span class="string">'required'</span>, <span class="string">'string'</span>, <span class="string">'max:255'</span>],
+            <span class="string">'email'</span> =&gt; [<span class="string">'required'</span>, <span class="string">'email'</span>, <span class="string">'unique:users,email'</span>],
+            <span class="string">'role'</span>  =&gt; [<span class="string">'required'</span>, Rule::<span class="function">in</span>([<span class="string">'admin'</span>, <span class="string">'editor'</span>, <span class="string">'viewer'</span>])],
+        ];
+    }
+}</code></pre>
+                        </div>
+                        <p>Ab aapka controller clean ho gaya:</p>
+<pre style="background:var(--bg-card); padding:1rem; border-radius:8px; color:var(--text-muted); font-family:var(--font-mono); font-size:0.9rem;"><code>public function store(StoreUserRequest $request)
+{
+    $user = User::create($request->validated());
+    return $this->successResponse($user, 'User created.', 201);
+}</code></pre>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="custom-val-errors" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery</span>
+                        <h2>2. Formatting 422 Validation Errors</h2>
+                        <p>Default Laravel behavior mein agar validation fail hota hai, toh wo ek <code>ValidationException</code> throw karta hai jo automatically 422 JSON response bhejta hai (agar request me <code>Accept: application/json</code> header ho). Lekin iska format hamare Module 1 ke standard envelope (success, message, errors) se match nahi karta.</p>
+                        
+                        <p>FormRequest ke andar <code>failedValidation</code> method override karke hum format fix kar sakte hain:</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Http/Requests/BaseApiRequest.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Http\Requests;
+
+<span class="keyword">use</span> Illuminate\Foundation\Http\FormRequest;
+<span class="keyword">use</span> Illuminate\Contracts\Validation\Validator;
+<span class="keyword">use</span> Illuminate\Http\Exceptions\HttpResponseException;
+
+<span class="keyword">abstract class</span> BaseApiRequest <span class="keyword">extends</span> FormRequest
+{
+    <span class="keyword">protected function</span> <span class="function">failedValidation</span>(Validator $validator)
+    {
+        <span class="keyword">throw new</span> <span class="function">HttpResponseException</span>(<span class="function">response</span>()-&gt;<span class="function">json</span>([
+            <span class="string">'success'</span> =&gt; <span class="keyword">false</span>,
+            <span class="string">'message'</span> =&gt; <span class="string">'Validation failed. Please check the provided data.'</span>,
+            <span class="string">'errors'</span>  =&gt; $validator-&gt;<span class="function">errors</span>()
+        ], 422));
+    }
+}</code></pre>
+                        </div>
+                        <p>Ab aapke saare API Requests <code>FormRequest</code> ki jagah is <code>BaseApiRequest</code> ko extend karenge.</p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="exception-handler" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery</span>
+                        <h2>3. Global Exception Handler (Laravel 11+)</h2>
+                        <p>Kabhi-kabhi aapke code mein `findOrFail()` fail ho jata hai, ya syntax error aa jata hai. Frontend ko HTML error page (`Symfony\Component\HttpKernel\Exception\NotFoundHttpException`) milta hai jo frontend app ko crash kar deta hai.</p>
+                        <p>Laravel 11 mein <code>bootstrap/app.php</code> ka use karke API errors ko global level par handle karein:</p>
+                        
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">bootstrap/app.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">use</span> Illuminate\Foundation\Application;
+<span class="keyword">use</span> Illuminate\Foundation\Configuration\Exceptions;
+<span class="keyword">use</span> Illuminate\Database\Eloquent\ModelNotFoundException;
+<span class="keyword">use</span> Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+<span class="keyword">use</span> Illuminate\Auth\AuthenticationException;
+
+<span class="keyword">return</span> Application::<span class="function">configure</span>(basePath: <span class="function">dirname</span>(__DIR__))
+    -&gt;<span class="function">withRouting</span>(...)
+    -&gt;<span class="function">withExceptions</span>(<span class="keyword">function</span> (Exceptions $exceptions) {
+        
+        <span class="comment">// Force JSON response for API routes</span>
+        $exceptions-&gt;<span class="function">shouldRenderJsonWhen</span>(<span class="keyword">function</span> ($request, $e) {
+            <span class="keyword">return</span> $request-&gt;<span class="function">is</span>(<span class="string">'api/*'</span>);
+        });
+
+        <span class="comment">// Handle 404 Model Not Found</span>
+        $exceptions-&gt;<span class="function">render</span>(<span class="keyword">function</span> (NotFoundHttpException $e, $request) {
+            <span class="keyword">if</span> ($request-&gt;<span class="function">is</span>(<span class="string">'api/*'</span>)) {
+                <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>([
+                    <span class="string">'success'</span> =&gt; <span class="keyword">false</span>,
+                    <span class="string">'message'</span> =&gt; <span class="string">'Resource not found.'</span>,
+                    <span class="string">'errors'</span>  =&gt; <span class="keyword">null</span>
+                ], 404);
+            }
+        });
+
+        <span class="comment">// Handle Unauthenticated (401)</span>
+        $exceptions-&gt;<span class="function">render</span>(<span class="keyword">function</span> (AuthenticationException $e, $request) {
+            <span class="keyword">if</span> ($request-&gt;<span class="function">is</span>(<span class="string">'api/*'</span>)) {
+                <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>([
+                    <span class="string">'success'</span> =&gt; <span class="keyword">false</span>,
+                    <span class="string">'message'</span> =&gt; <span class="string">'Unauthenticated.'</span>,
+                    <span class="string">'errors'</span>  =&gt; <span class="keyword">null</span>
+                ], 401);
+            }
+        });
+
+    })-&gt;<span class="function">create</span>();</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="custom-exceptions" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Architecture</span>
+                        <h2>4. Custom Domain Exceptions</h2>
+                        <p>Business logic mein jab error aata hai (e.g., User bank balance insufficient hai), toh controllers mein multiple <code>if/else</code> likhna buri practice hai.</p>
+                        <p>Aap custom exception banayein jo automatically apna response render karna janti ho.</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Exceptions/InsufficientBalanceException.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Exceptions;
+
+<span class="keyword">use</span> Exception;
+
+<span class="keyword">class</span> InsufficientBalanceException <span class="keyword">extends</span> Exception
+{
+    <span class="comment">// This render method tells Laravel exactly how to output this exception</span>
+    <span class="keyword">public function</span> <span class="function">render</span>($request)
+    {
+        <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>([
+            <span class="string">'success'</span> =&gt; <span class="keyword">false</span>,
+            <span class="string">'message'</span> =&gt; <span class="string">'Your account balance is too low for this transaction.'</span>,
+            <span class="string">'errors'</span>  =&gt; [
+                <span class="string">'balance'</span> =&gt; <span class="string">'Required amount exceeds current balance.'</span>
+            ]
+        ], 422);
+    }
+}</code></pre>
+                        </div>
+
+                        <p>Ab apne service layer ya action class mein bas exception throw karein. Controller ko kuch handle karne ki zaroorat nahi hai!</p>
+<pre style="background:var(--bg-card); padding:1rem; border-radius:8px; color:var(--text-muted); font-family:var(--font-mono); font-size:0.9rem;"><code>public function processPayment(User $user, int $amount)
+{
+    if ($user->balance < $amount) {
+        throw new InsufficientBalanceException();
+    }
+    
+    // Process payment...
+}</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+
+        function switchTab(e, sectionId) {
+            e.preventDefault();
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            e.currentTarget.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function copyCode(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code);
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
+</body>
+</html>

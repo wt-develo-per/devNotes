@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 01: API Fundamentals & Routing | Laravel API Mastery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-card: #27272a;
+            --accent-primary: #ef4444; /* Laravel Red */
+            --accent-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border: #3f3f46;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --font-sans: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; overflow-x: hidden; }
+
+        /* Progress Bar */
+        #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #ef4444, #f97316); width: 0%; z-index: 1000; transition: width 0.1s; }
+
+        /* Navigation */
+        .navbar { background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.2rem; font-weight: 700; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-brand span { background: var(--accent-primary); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); transition: 0.2s; font-size: 0.9rem; }
+        .nav-links a:hover { color: white; border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
+        .nav-links a.primary { background: var(--accent-primary); color: white; border: none; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+
+        /* Hero Section */
+        .hero { background: radial-gradient(circle at top right, rgba(239, 68, 68, 0.1), transparent 40%), var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 3rem 2rem; margin-bottom: 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero-label { display: inline-block; color: var(--accent-primary); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 1px;}
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+        /* Content Layout */
+        .layout-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; align-items: start; }
+        @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        /* Sidebar */
+        .sidebar { position: sticky; top: 5.5rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        .sidebar h3 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { display: block; padding: 0.6rem 0.8rem; color: var(--text-muted); text-decoration: none; border-radius: 6px; font-size: 0.95rem; transition: 0.2s; border: 1px solid transparent; }
+        .sidebar a:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar a.active { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border-color: rgba(239, 68, 68, 0.2); font-weight: 500; }
+
+        /* Main Content */
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-bottom: 2rem; }
+        .card-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; margin-bottom: 1rem; }
+        .tag-beginner { background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .tag-mastery { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border: 1px solid rgba(239, 68, 68, 0.2); }
+        
+        .card h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .card p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+
+        /* Alert Boxes */
+        .alert { padding: 1.2rem; border-radius: 12px; margin: 1.5rem 0; border-left: 4px solid; background: rgba(255,255,255,0.03); }
+        .alert-warning { border-left-color: var(--warning); }
+        .alert-warning h4 { color: var(--warning); margin-bottom: 0.5rem; }
+        .alert-success { border-left-color: var(--success); }
+        .alert-success h4 { color: var(--success); margin-bottom: 0.5rem; }
+
+        /* Code Blocks */
+        .code-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { background: rgba(0,0,0,0.2); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .code-lang { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: var(--bg-surface); color: white; }
+        .code-body { padding: 1.5rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; }
+        .code-body .keyword { color: #f472b6; }
+        .code-body .function { color: #60a5fa; }
+        .code-body .string { color: #a7f3d0; }
+        .code-body .comment { color: #6b7280; font-style: italic; }
+
+        code:not(pre code) { background: rgba(239, 68, 68, 0.1); color: #fca5a5; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+
+        /* Comparison Grid */
+        .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+        .vs-card { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+        .vs-card.bad { border-top: 3px solid var(--accent-primary); }
+        .vs-card.good { border-top: 3px solid var(--success); }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+
+    <nav class="navbar">
+        <a href="#" class="nav-brand"><span>API Mastery</span> Laravel Module 01</a>
+        <div class="nav-links">
+            <a href="#" class="primary">Next Module ➡️</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <span class="hero-label">MODULE 01</span>
+            <h1>API Fundamentals & Routing</h1>
+            <p>Beginner concepts ko solid karke, ek 4-year experienced developer ki tarah API structure aur standardized responses likhna seekhein. No more messy JSON formats.</p>
+        </header>
+
+        <div class="layout-grid">
+            <aside class="sidebar">
+                <h3>Curriculum</h3>
+                <ul>
+                    <li><a href="#intro" class="nav-item active" onclick="switchTab(event, 'intro')">1. The API Mindset</a></li>
+                    <li><a href="#routing" class="nav-item" onclick="switchTab(event, 'routing')">2. Routing & Grouping</a></li>
+                    <li><a href="#responses" class="nav-item" onclick="switchTab(event, 'responses')">3. Standardizing Responses</a></li>
+                    <li><a href="#mastery" class="nav-item" onclick="switchTab(event, 'mastery')">4. Mastery: BaseController</a></li>
+                </ul>
+            </aside>
+
+            <div class="content">
+                
+                <!-- Section 1 -->
+                <section id="intro" class="section active">
+                    <div class="card">
+                        <span class="card-tag tag-beginner">Beginner Refresh</span>
+                        <h2>1. The API Developer Mindset</h2>
+                        <p>Laravel mein normal web development (Blade templates) aur API development mein ek fundamental difference hota hai: <strong>State</strong>.</p>
+                        <p>Web applications <code>Session</code> aur <code>Cookies</code> par rely karte hain. APIs <strong>Stateless</strong> hoti hain. Har request independent honi chahiye aur apne aap mein complete information carry karni chahiye (via Headers ya Tokens).</p>
+                        
+                        <div class="alert alert-warning">
+                            <h4>⚠️ The Biggest Mistake</h4>
+                            <p>Naye developers aksar API routes ko bhi <code>routes/web.php</code> mein daal dete hain, jis se unnecessarily <code>VerifyCsrfToken</code> aur <code>StartSession</code> middleware execute hote hain. API routes hamesha <code>routes/api.php</code> mein hone chahiye.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="routing" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-beginner">Intermediate</span>
+                        <h2>2. Route Grouping & Versioning</h2>
+                        <p>Apne <code>routes/api.php</code> ko clean rakhna ek experienced developer ki pehchan hai. Ek flat list of routes maintain karna nightmare ban jata hai jab aapke paas 50+ endpoints hon.</p>
+                        
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">routes/api.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="comment">// ❌ Junior Developer Approach (Messy)</span>
+<span class="function">Route::get</span>(<span class="string">'/v1/users'</span>, [UserController::class, <span class="string">'index'</span>]);
+<span class="function">Route::post</span>(<span class="string">'/v1/users'</span>, [UserController::class, <span class="string">'store'</span>]);
+<span class="function">Route::get</span>(<span class="string">'/v1/posts'</span>, [PostController::class, <span class="string">'index'</span>]);
+
+<span class="comment">// ✅ Senior Developer Approach (Grouped & Versioned)</span>
+<span class="function">Route::prefix</span>(<span class="string">'v1'</span>)-&gt;<span class="function">middleware</span>([<span class="string">'auth:sanctum'</span>])-&gt;<span class="function">group</span>(<span class="keyword">function</span> () {
+    
+    <span class="comment">// Users domain</span>
+    <span class="function">Route::apiResource</span>(<span class="string">'users'</span>, UserController::class);
+    
+    <span class="comment">// Posts domain</span>
+    <span class="function">Route::apiResource</span>(<span class="string">'posts'</span>, PostController::class);
+    
+});</code></pre>
+                        </div>
+                        <p><code>Route::apiResource()</code> use karne se <code>create</code> aur <code>edit</code> routes (jo HTML forms ke liye hote hain) automatically exclude ho jate hain, aur sirf API-relevant methods (index, store, show, update, destroy) register hote hain.</p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="responses" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery</span>
+                        <h2>3. Standardizing API Responses</h2>
+                        <p>Sabse badi problem backend teams face karti hain frontend teams ke sath integration ke waqt: <strong>Inconsistent JSON structure</strong>.</p>
+                        
+                        <div class="vs-grid">
+                            <div class="vs-card bad">
+                                <h4 style="color:var(--accent-primary)">❌ Inconsistent Responses</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">User fetch kiya toh response aise aya:</p>
+                                <code style="display:block; margin-top:5px; background:transparent;">{ "id": 1, "name": "Pankaj" }</code>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">Post create kiya toh aise aya:</p>
+                                <code style="display:block; margin-top:5px; background:transparent;">{ "success": true, "data": {...} }</code>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">Frontend dev pagal ho jayega common parser likhne mein.</p>
+                            </div>
+                            <div class="vs-card good">
+                                <h4 style="color:var(--success)">✅ Standardized Envelope</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">Har API response ek hi 'envelope' follow karega:</p>
+<pre style="font-size:0.8rem; color:#a1a1aa; margin-top:5px;">{
+  "success": true,
+  "message": "User fetched successfully.",
+  "data": { "id": 1, "name": "Pankaj" },
+  "meta": null
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="mastery" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Mastery Implementation</span>
+                        <h2>4. The ApiResponse Trait</h2>
+                        <p>Inconsistent responses ko solve karne ke liye, hum ek <code>ApiResponse</code> trait banayenge jise humara base Controller use karega. Is-se aapke saare controllers ek centralized logic use karke JSON return karenge.</p>
+                        
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Traits/ApiResponse.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Traits;
+
+<span class="keyword">trait</span> ApiResponse 
+{
+    <span class="keyword">protected function</span> <span class="function">successResponse</span>(<span class="keyword">mixed</span> $data, <span class="keyword">string</span> $message = <span class="string">'Success'</span>, <span class="keyword">int</span> $statusCode = 200)
+    {
+        <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>([
+            <span class="string">'success'</span> =&gt; <span class="keyword">true</span>,
+            <span class="string">'message'</span> =&gt; $message,
+            <span class="string">'data'</span>    =&gt; $data,
+        ], $statusCode);
+    }
+
+    <span class="keyword">protected function</span> <span class="function">errorResponse</span>(<span class="keyword">string</span> $message, <span class="keyword">int</span> $statusCode = 400, <span class="keyword">mixed</span> $errors = <span class="keyword">null</span>)
+    {
+        <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>([
+            <span class="string">'success'</span> =&gt; <span class="keyword">false</span>,
+            <span class="string">'message'</span> =&gt; $message,
+            <span class="string">'errors'</span>  =&gt; $errors,
+        ], $statusCode);
+    }
+}</code></pre>
+                        </div>
+
+                        <p>Ab apne <code>Controller.php</code> mein is trait ko use karein:</p>
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Http/Controllers/Controller.php</span></div>
+                            <pre class="code-body"><code><span class="keyword">use</span> App\Traits\ApiResponse;
+
+<span class="keyword">abstract class</span> Controller
+{
+    <span class="keyword">use</span> ApiResponse;
+}</code></pre>
+                        </div>
+
+                        <p>Ab aapke specific controllers kitne clean ho jayenge dekhiye:</p>
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">UserController.php</span></div>
+                            <pre class="code-body"><code><span class="keyword">public function</span> <span class="function">show</span>(User $user)
+{
+    <span class="comment">// No more returning hardcoded JSON structure here!</span>
+    <span class="keyword">return</span> $this-&gt;<span class="function">successResponse</span>(
+        data: $user, 
+        message: <span class="string">'User details retrieved successfully.'</span>
+    );
+}</code></pre>
+                        </div>
+                        <div class="alert alert-success">
+                            <h4>🔥 Pro Tip for 4+ YOE</h4>
+                            <p>Agar aap API Resources (Module 3) use kar rahe hain, toh aap trait mein logic add kar sakte hain jo check karega ki passed data koi <code>JsonResource</code> hai ya normal Eloquent collection, aur automatically uski metadata handle kar lega.</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Progress Bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+
+        // Tab Switching
+        function switchTab(e, sectionId) {
+            e.preventDefault();
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            e.currentTarget.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Copy Code
+        function copyCode(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code);
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
+</body>
+</html>

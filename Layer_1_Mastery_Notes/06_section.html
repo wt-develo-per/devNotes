@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PILLAR 6: Algorithmic Thinking | Engineering Mastery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #3b82f6; /* Blue accent */
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.2rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.7rem; color: var(--accent); border-color: rgba(59, 130, 246, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code, #content-area li code { background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 280px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            display: none;
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 340px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .toc-list a:hover { color: var(--accent); }
+        .toc-list a.active { color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">ENG</span>
+            Engineering Mastery
+        </div>
+        <div class="nav-links">
+            <a href="05_section.html" class="nav-btn">⬅️ Previous</a>
+            <a href="07_section.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Curriculum</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_section.html">00. Introduction</a></li>
+            <li><a href="01_section.html">01. How Computers Work at the...</a></li>
+            <li><a href="02_section.html">02. How Networks and Data Tra...</a></li>
+            <li><a href="03_section.html">03. How Operating Systems Man...</a></li>
+            <li><a href="04_section.html">04. How Data Is Stored and Re...</a></li>
+            <li><a href="05_section.html">05. How Programs Fail and Why...</a></li>
+            <li><a href="06_section.html" class="active">06. Algorithmic Thinking...</a></li>
+            <li><a href="07_section.html">07. Application Architecture ...</a></li>
+            <li><a href="08_section.html">08. Data Patterns...</a></li>
+            <li><a href="09_section.html">09. Integration Patterns...</a></li>
+            <li><a href="10_section.html">10. Resilience Patterns...</a></li>
+            <li><a href="11_section.html">11. Scalability Patterns...</a></li>
+            <li><a href="12_section.html">12. Security Patterns...</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 6: Algorithmic Thinking
+
+### This Is Not LeetCode. This Is How You Think.
+
+```
+Algorithmic thinking is not about knowing sorting algorithms.
+It is about asking the right questions before writing code.
+
+The 5 questions senior engineers ask before coding:
+
+1. What is the input? What is the output?
+   Be precise. "User data" is not precise.
+   "An array of up to 100,000 user objects, each with id, email, 
+   and createdAt timestamp" is precise.
+
+2. What are the constraints?
+   How large can the input be?
+   How fast must this run?
+   How much memory can I use?
+   These constraints dictate your approach.
+
+3. What are the edge cases?
+   What if input is empty?
+   What if input has one item?
+   What if input is at maximum size?
+   What if two items are equal?
+   What if a value is null?
+
+4. What is the simplest solution?
+   Always start here.
+   Simple solution working > complex solution not working.
+   Then optimize ONLY if profiling shows it's needed.
+
+5. What can go wrong in production?
+   What if this runs with 100x expected input?
+   What if it's called 1000 times simultaneously?
+   What if the external dependency it calls is slow?
+```
+
+### Time Complexity — The Practical Understanding
+
+```
+You don't need to calculate Big O for interviews.
+You need to FEEL when your code will be slow.
+
+The practical mental model:
+
+O(1) — Constant: Same speed regardless of input size.
+  Examples: Array index access (arr[5]), HashMap lookup, Stack push/pop
+  Feel: "I know exactly where this data is."
+
+O(log n) — Logarithmic: Doubles input, adds one step.
+  Examples: Binary search, B-tree index lookup
+  Feel: "I'm eliminating half the possibilities each time."
+  
+  10 items       → 3 steps
+  1,000 items    → 10 steps
+  1,000,000 items → 20 steps
+  Safe at any scale.
+
+O(n) — Linear: Steps = input size.
+  Examples: Loop through array once, sequential scan of table
+  Feel: "I must look at each item once."
+  
+  1,000 items    → 1,000 steps
+  1,000,000 items → 1,000,000 steps
+  Acceptable for most cases. Monitor at large scale.
+
+O(n²) — Quadratic: Steps = input size squared.
+  Examples: Nested loops, comparing every item to every other item
+  Feel: "I'm checking every combination."
+  
+  1,000 items    → 1,000,000 steps
+  10,000 items   → 100,000,000 steps (too slow)
+  AVOID for anything that scales.
+
+// Spotting O(n²) in your code:
+// Nested loops over the same data:
+for (const user of users) {           // O(n)
+  for (const order of orders) {       // O(n) inside O(n) = O(n²)
+    if (order.userId === user.id) {
+      // match
+    }
+  }
+}
+
+// Fix: Use a HashMap for O(n) total:
+const ordersByUserId = new Map();
+for (const order of orders) {                     // O(n)
+  if (!ordersByUserId.has(order.userId)) {
+    ordersByUserId.set(order.userId, []);
+  }
+  ordersByUserId.get(order.userId).push(order);
+}
+
+for (const user of users) {                       // O(n)
+  const userOrders = ordersByUserId.get(user.id) || []; // O(1) lookup
+}
+// Total: O(n) instead of O(n²)
+// For 10,000 users: 10,000 steps vs 100,000,000 steps
+```
+
+---
+
+## The Single Most Important Layer 1 Truth
+
+```
+Every problem you will ever face as a backend engineer
+is one of these six things:
+
+  1. Not enough memory (or too much memory used)
+  2. Not enough CPU (or CPU blocked by wrong code)
+  3. Network is slow or unreliable
+  4. Data is too large or retrieved inefficiently
+  5. Code has a logic error or race condition
+  6. Thinking about the problem incorrectly
+
+That's it. That's the complete list.
+
+When production breaks at 3 AM and you're panicking:
+Stop. Breathe. Ask:
+  Is this a memory problem?    → Check process.memoryUsage()
+  Is this a CPU problem?       → Check CPU metrics
+  Is this a network problem?   → Check external service health
+  Is this a database problem?  → Check slow query logs
+  Is this a code logic problem? → Check recent deployments
+  Am I thinking about this wrong? → Talk to someone
+
+Engineers who deeply understand Layer 1
+never truly panic in a production incident.
+They have a systematic map of every possible failure.
+They walk through it calmly.
+That calm, systematic competence
+is what makes someone irreplaceable.
+```
+
+---
+
+## How to Build Layer 1 Understanding
+
+```
+Books (read in this order):
+  1. "Computer Networks" by Tanenbaum (Chapters 1-6 only)
+     Best network fundamentals book ever written.
+  
+  2. "Operating Systems: Three Easy Pieces" (free online: ostep.org)
+     Processes, memory, concurrency explained beautifully.
+     Free. Online. No excuse not to read it.
+  
+  3. "Designing Data-Intensive Applications" by Kleppmann
+     Storage engines, replication, consistency.
+     The most important backend engineering book of the decade.
+
+Daily practice:
+  When something breaks → don't just fix it.
+                          Understand WHY it broke at Layer 1.
+  
+  When you learn a new tool → ask "what Layer 1 problem does this solve?"
+  
+  When you write code → ask "what happens to memory/CPU/network/disk
+                          when this runs with 1 million users?"
+
+The goal:
+  In 12 months, when a junior developer asks you
+  "why is this slow?" or "why did this crash?"
+  
+  You should be able to trace it back to Layer 1.
+  Every time. Without googling.
+  
+  That is the irreplaceable engineer.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Layer 2: Concepts — The Things That Stay Relevant for 10+ Years
+What Layer 2 Really Means
+text
+
+Layer 1 = how computers and systems fundamentally work.
+Layer 2 = the reusable engineering concepts built on top of those fundamentals.
+
+Layer 2 survives framework changes.
+Layer 2 survives language changes.
+Layer 2 survives cloud vendor changes.
+
+If you understand Layer 2 well, you can move from PHP → Node.js → Java → Python
+without feeling like you restarted your career from zero.
+Layer 2 is where you stop being “someone who writes code” and start becoming someone who designs, ships, and maintains systems.
+
+The Core Layer 2 Concepts
+I’ll break them into 10 concepts that matter across backend roles.
+
+1) API Design and Contracts
+What it means
+An API is a contract between the backend and its consumers.
+
+If you break that contract, mobile apps fail, frontend breaks, partner systems fail, and production incidents happen.
+
+What you must understand
+Resource-based design
+Request/response shape consistency
+Versioning
+Pagination
+Filtering and sorting
+Error response format
+Backward compatibility
+Example
+Bad:
+
+http
+
+POST /getUserData
+Better:
+
+http
+
+GET /users/{id}
+Why it lasts 10+ years
+The syntax changes, but the idea of stable contracts never changes.
+
+Common mistakes
+Random endpoint names like /createUserData
+No standard error format
+Breaking old clients without versioning
+Returning inconsistent payloads
+Using 200 OK for every response
+What “good” looks like
+JSON
+
+{
+  "data": {
+    "id": 101,
+    "name": "Ravi"
+  },
+  "meta": {
+    "request_id": "abc123"
+  },
+  "error": null
+}
+2) Authentication vs Authorization
+What it means
+Authentication = who are you?
+Authorization = what are you allowed to do?
+This is one of the most important backend concepts in every company.
+
+Must-know topics
+Sessions vs JWT
+Refresh tokens
+Role-based access control
+Permission checks on the server
+Token expiry
+Password hashing
+Example
+A logged-in user may be authenticated, but not authorized to delete another user’s account.
+
+Why it lasts
+Security models change in implementation, but the underlying separation never changes.
+
+Common mistakes
+Checking permissions only in frontend
+Storing JWT in insecure places
+Using one role for everything
+Trusting client-provided user_id
+Not handling token expiry properly
+Good backend thinking
+text
+
+Login proves identity.
+Permission checks prove access.
+Frontend is just UX. Backend is the authority.
+3) Data Modeling and Relational Thinking
+What it means
+This is the ability to structure data in a way that is:
+
+correct
+scalable
+maintainable
+queryable
+Must-know topics
+One-to-one, one-to-many, many-to-many
+Normalization vs denormalization
+Foreign keys
+Unique constraints
+Soft delete vs hard delete
+Nullable vs required fields
+Schema evolution
+Why it lasts
+Data is the longest-lived part of most systems. Code changes; data remains.
+
+Common mistakes
+Storing everything in one giant table
+Not enforcing constraints
+Putting business logic only in code and not in schema
+Using JSON for everything
+Ignoring future query patterns
+Practical rule
+If your data model is bad, every feature becomes harder.
+
+4) Transactions and Consistency
+What it means
+A transaction ensures multiple database actions succeed or fail together.
+
+This matters whenever you do:
+
+money transfer
+stock update
+order creation
+multi-step writes
+Must-know topics
+ACID
+commit vs rollback
+isolation levels
+locking
+race conditions
+partial failure
+Example
+If you create an order but fail to reduce inventory, your system becomes inconsistent.
+
+Why it lasts
+Any serious backend system needs correctness under concurrency.
+
+Common mistakes
+Writing multiple related DB updates without a transaction
+Assuming “single request = safe”
+Ignoring concurrent requests
+Using no locks when needed
+The concept in one line
+text
+
+If the operation must be all-or-nothing, it belongs in a transaction.
+5) Caching
+What it means
+Caching is storing data closer to where it’s needed so you don’t recompute or refetch it repeatedly.
+
+Must-know topics
+Cache-aside pattern
+TTL
+Invalidation
+Read-through vs write-through
+Cache stampede
+What to cache and what not to cache
+Why it lasts
+Performance problems never go away. Caching remains one of the main solutions.
+
+Common mistakes
+Caching everything blindly
+Never invalidating stale cache
+Caching sensitive data carelessly
+Using cache as source of truth
+No strategy for cache misses
+Example
+If the same dashboard data is requested 1,000 times a minute and changes only every 5 minutes, cache it.
+
+Good mental model
+text
+
+Database = source of truth
+Cache = temporary speed layer
+6) Async Processing and Queues
+What it means
+Some work should happen after the user gets a response.
+
+Instead of making the user wait, you put the work in a queue.
+
+Must-know topics
+producer/consumer
+background jobs
+retries
+dead-letter queues
+job idempotency
+job prioritization
+delayed jobs
+Why it lasts
+Any system with notifications, emails, reports, uploads, webhooks, or processing needs queues.
+
+Common mistakes
+Doing heavy tasks inside request-response flow
+No retry policy
+Duplicate jobs causing duplicate effects
+No visibility into failed jobs
+Example use cases
+Send email after signup
+Generate invoice in background
+Process uploaded images
+Sync data to third-party APIs
+Key idea
+text
+
+API should respond fast.
+Heavy work should be asynchronous when possible.
+7) Concurrency and Idempotency
+What it means
+Concurrency means many things happen at once.
+
+Idempotency means doing the same operation multiple times has the same effect as doing it once.
+
+Must-know topics
+race conditions
+locks
+repeated requests
+retry-safe APIs
+distributed systems consistency
+Why it lasts
+The moment you work with queues, retries, webhooks, payments, or multiple servers, this becomes critical.
+
+Common mistakes
+Assuming request happens only once
+Duplicate charge / duplicate order creation
+Double email sends
+Stock going negative
+Example
+If payment API times out and client retries, your backend must not charge twice.
+
+Real backend mindset
+text
+
+Every network call can happen twice.
+Every queue job can retry.
+Every request can be duplicated.
+Design for it.
+8) Error Handling and Resilience
+What it means
+Systems fail. Good backend engineering is about failing gracefully.
+
+Must-know topics
+retry logic
+exponential backoff
+circuit breakers
+graceful degradation
+fallback behavior
+proper status codes
+operational vs unexpected errors
+Why it lasts
+No system is perfectly reliable. This never becomes irrelevant.
+
+Common mistakes
+swallowing errors
+returning null for everything
+exposing internal stack traces
+retrying blindly
+crashing on third-party failures
+Example
+If email service is down, user registration can still succeed, and email can be sent later.
+
+Good rule
+text
+
+The system should degrade gracefully, not collapse completely.
+9) Observability
+What it means
+Observability is the ability to understand what your system is doing in production.
+
+Must-know topics
+logs
+metrics
+traces
+latency percentiles
+alerting
+correlation IDs
+dashboards
+Why it lasts
+As systems grow, you cannot rely on guesswork.
+
+Common mistakes
+using only console logs
+no request IDs
+no metrics for slow endpoints
+no visibility into queue depth
+no alert thresholds
+Good production questions
+What is failing?
+Where is it failing?
+How often?
+For which users?
+Since when?
+Conceptual rule
+text
+
+If you cannot observe it, you cannot operate it confidently.
+10) Scalability and Performance Thinking
+What it means
+This is the ability to think about how a system behaves as traffic, data, and users grow.
+
+Must-know topics
+horizontal vs vertical scaling
+load balancing
+stateless applications
+read replicas
+sharding
+batching
+rate limiting
+bottlenecks
+Why it lasts
+Even if you don’t work at big tech, every product eventually grows.
+
+Common mistakes
+putting sessions in memory
+assuming one server is enough forever
+not thinking about DB bottlenecks
+ignoring read/write differences
+scaling the wrong layer first
+Key idea
+text
+
+Performance is not just about faster code.
+It is about avoiding unnecessary work.
+Additional Layer 2 Concepts That Matter a Lot
+These are also very important.
+
+11) Testing Strategy
+Not just “write tests,” but knowing what to test:
+
+unit tests
+integration tests
+contract tests
+end-to-end tests
+Concept:
+
+Test business logic thoroughly
+Don’t over-test trivial framework behavior
+12) Security Basics
+These are long-lived concepts:
+
+validation
+input sanitization
+SQL injection prevention
+XSS and CSRF basics
+secrets management
+least privilege
+secure file uploads
+Backend engineers who ignore security stay replaceable.
+
+13) Deployment and Release Thinking
+Understand:
+
+rollback
+feature flags
+blue-green deployment
+canary release
+backward compatibility
+database migration safety
+This matters because shipping safely is part of backend engineering.
+
+14) Separation of Concerns
+This is a timeless concept:
+
+controller handles HTTP
+service handles business logic
+repository handles data access
+worker handles background jobs
+If you violate this, code becomes messy and hard to change.
+
+How Layer 2 Differs from Layer 1 and Layer 3
+text
+
+Layer 1 = physics of computing
+Layer 2 = reusable engineering concepts
+Layer 3 = tools, frameworks, libraries, syntax
+Example:
+
+Authentication
+Layer 1: how cryptographic signatures work, what memory/storage does
+Layer 2: sessions, JWT, authorization, refresh tokens, RBAC
+Layer 3: Laravel Sanctum, Passport, JWT libraries, Fastify plugins
+Caching
+Layer 1: memory and latency
+Layer 2: cache-aside, TTL, invalidation
+Layer 3: Redis package, Memcached client, CloudFront config
+That’s why Layer 2 lasts longer than tools.
+
+The Best Way to Learn Layer 2
+Don’t study it as theory only. Learn it through projects.
+
+Learn in this order:
+API design
+auth/authz
+database design
+transactions
+caching
+queues
+resilience
+observability
+testing
+scaling
+The One-Sentence Summary of Layer 2
+text
+
+Layer 2 is the set of timeless backend concepts that let you
+design correct, secure, scalable, and maintainable systems
+no matter what framework or language you use.
+If you want, I can now do the next one:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Layer 3: Patterns (Expire in 5–7 Years)
+
+## The Core Idea First
+
+```
+Layer 1: How machines work.        (Physics of computing — never changes)
+Layer 2: How systems think.        (Mental models — change very slowly)
+Layer 3: How solutions are shaped. (Patterns — change with the industry)
+
+Patterns are proven, named solutions to recurring problems.
+They are not algorithms. They are not frameworks.
+They are blueprints that someone smarter than us
+discovered by solving the same problem 100 times
+and noticing a shape that always worked.
+
+Why "5-7 years"?
+  Repository Pattern:       Still relevant (10+ years, counting)
+  Microservices:            Dominant now, but monolith revival is real
+  REST:                     Being supplemented by GraphQL and gRPC
+  Event Sourcing:           Growing but still not mainstream
+  MVC:                      Transforming into different shapes
+  
+The patterns below will still be directly relevant
+in 2030. After that, their shape may change
+but their core ideas will survive in new forms.
+
+The most important truth about patterns:
+  A pattern applied in the wrong context
+  is worse than no pattern at all.
+  
+  The goal is not to know patterns.
+  The goal is to know WHEN to apply which pattern
+  and WHY it solves the specific problem you have.
+```
+
+---
+
+## What Layer 3 Contains
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Application Architecture Patterns                            │
+│     (How you structure the code in your service)                 │
+│                                                                   │
+│  2. Data Patterns                                                 │
+│     (How you model, store, and access data)                       │
+│                                                                   │
+│  3. Integration Patterns                                          │
+│     (How services talk to each other)                             │
+│                                                                   │
+│  4. Resilience Patterns                                           │
+│     (How your system survives failures)                           │
+│                                                                   │
+│  5. Scalability Patterns                                          │
+│     (How your system grows without breaking)                      │
+│                                                                   │
+│  6. Security Patterns                                             │
+│     (How you protect data and access by design)                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 05: Advanced Architecture | Laravel API Mastery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-card: #27272a;
+            --accent-primary: #ef4444;
+            --accent-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border: #3f3f46;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --font-sans: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; overflow-x: hidden; }
+
+        #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--accent-primary), var(--purple)); width: 0%; z-index: 1000; transition: width 0.1s; }
+
+        .navbar { background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.2rem; font-weight: 700; color: white; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-brand span { background: var(--accent-primary); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); transition: 0.2s; font-size: 0.9rem; }
+        .nav-links a:hover { color: white; border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
+        .nav-links a.primary { background: var(--accent-primary); color: white; border: none; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+
+        .hero { background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 50%), var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 3rem 2rem; margin-bottom: 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero-label { display: inline-block; color: var(--purple); background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 1px;}
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+        .layout-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; align-items: start; }
+        @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        .sidebar { position: sticky; top: 5.5rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        .sidebar h3 { font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { display: block; padding: 0.6rem 0.8rem; color: var(--text-muted); text-decoration: none; border-radius: 6px; font-size: 0.95rem; transition: 0.2s; border: 1px solid transparent; }
+        .sidebar a:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar a.active { background: rgba(139, 92, 246, 0.1); color: var(--purple); border-color: rgba(139, 92, 246, 0.2); font-weight: 500; }
+
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-bottom: 2rem; }
+        .card-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; margin-bottom: 1rem; }
+        .tag-mastery { background: rgba(139, 92, 246, 0.1); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.2); }
+        .tag-expert { background: rgba(239, 68, 68, 0.1); color: var(--accent-primary); border: 1px solid rgba(239, 68, 68, 0.2); }
+        
+        .card h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .card p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+
+        .alert { padding: 1.2rem; border-radius: 12px; margin: 1.5rem 0; border-left: 4px solid; background: rgba(255,255,255,0.03); }
+        .alert-warning { border-left-color: var(--warning); }
+        .alert-warning h4 { color: var(--warning); margin-bottom: 0.5rem; }
+        .alert-info { border-left-color: var(--info); }
+        .alert-info h4 { color: var(--info); margin-bottom: 0.5rem; }
+
+        .code-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { background: rgba(0,0,0,0.2); padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .code-lang { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: var(--bg-surface); color: white; }
+        .code-body { padding: 1.5rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; }
+        .code-body .keyword { color: #f472b6; }
+        .code-body .function { color: #60a5fa; }
+        .code-body .string { color: #a7f3d0; }
+        .code-body .comment { color: #6b7280; font-style: italic; }
+        .code-body .class { color: #fcd34d; }
+
+        code:not(pre code) { background: rgba(139, 92, 246, 0.1); color: #c4b5fd; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+
+    <nav class="navbar">
+        <a href="API_Mastery_04_Authentication_Sanctum_Passport.html" class="nav-brand"><span>API Mastery</span> Laravel Module 05</a>
+        <div class="nav-links">
+            <a href="API_Mastery_04_Authentication_Sanctum_Passport.html">⬅️ Prev Module</a>
+            <a href="#" class="primary">Next Module ➡️</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <span class="hero-label">MODULE 05</span>
+            <h1>Advanced Architecture Patterns</h1>
+            <p>4 YOE developer ki asli pehchan hoti hai unka code structure. Controllers mein business logic likhna band karein. Enter: DTOs, Actions, aur Service Classes.</p>
+        </header>
+
+        <div class="layout-grid">
+            <aside class="sidebar">
+                <h3>Curriculum</h3>
+                <ul>
+                    <li><a href="#fat-controllers" class="nav-item active" onclick="switchTab(event, 'fat-controllers')">1. The Fat Controller Anti-Pattern</a></li>
+                    <li><a href="#dtos" class="nav-item" onclick="switchTab(event, 'dtos')">2. Data Transfer Objects (DTOs)</a></li>
+                    <li><a href="#action-classes" class="nav-item" onclick="switchTab(event, 'action-classes')">3. Action Classes Pattern</a></li>
+                    <li><a href="#bringing-it-together" class="nav-item" onclick="switchTab(event, 'bringing-it-together')">4. Bringing It All Together</a></li>
+                </ul>
+            </aside>
+
+            <div class="content">
+                
+                <section id="fat-controllers" class="section active">
+                    <div class="card">
+                        <span class="card-tag tag-mastery">Architecture Review</span>
+                        <h2>1. The "Fat Controller" Anti-Pattern</h2>
+                        <p>Junior level par, e-commerce checkout ka API method aesa dikhta hai:</p>
+                        
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">CheckoutController.php (Bad)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">public function</span> <span class="function">store</span>(Request $request)
+{
+    <span class="comment">// 1. Validation mixed in controller</span>
+    $request-&gt;<span class="function">validate</span>([...]);
+    
+    <span class="comment">// 2. Business logic mixed in controller</span>
+    $cart = Cart::<span class="function">where</span>(<span class="string">'user_id'</span>, $request-&gt;<span class="function">user</span>()-&gt;id)-&gt;<span class="function">first</span>();
+    <span class="keyword">if</span> (!$cart) { <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>([<span class="string">'error'</span>=&gt;<span class="string">'Empty'</span>]); }
+    
+    <span class="comment">// 3. External API calls</span>
+    $payment = Stripe::<span class="function">charge</span>($request-&gt;token, $cart-&gt;total);
+    
+    <span class="comment">// 4. DB Operations</span>
+    $order = Order::<span class="function">create</span>([...]);
+    
+    <span class="comment">// 5. Sending Emails</span>
+    Mail::<span class="function">to</span>($request-&gt;<span class="function">user</span>())-&gt;<span class="function">send</span>(<span class="keyword">new</span> <span class="class">OrderConfirmation</span>($order));
+    
+    <span class="keyword">return</span> <span class="function">response</span>()-&gt;<span class="function">json</span>($order);
+}</code></pre>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h4>⚠️ Why is this bad?</h4>
+                            <p>Testability zero hai. Code reusability nahi hai. Agar same logic CLI artisan command ya background job se call karni ho, toh aapko pura logic copy-paste karna padega.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="dtos" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-expert">Expert Pattern</span>
+                        <h2>2. Data Transfer Objects (DTOs)</h2>
+                        <p>Arrays pass karna (e.g. <code>$data = $request->validated()</code>) PHP mein safe nahi hai. Array mein keys typo ho sakti hain aur IDE auto-completion kaam nahi karta.</p>
+                        <p><strong>Solution:</strong> DTOs. Ek simple class jo sirf strongly typed data hold karti hai.</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/DTOs/Order/CreateOrderDTO.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\DTOs\Order;
+
+<span class="keyword">use</span> Illuminate\Http\Request;
+
+<span class="keyword">readonly class</span> <span class="class">CreateOrderDTO</span>
+{
+    <span class="keyword">public function</span> <span class="function">__construct</span>(
+        <span class="keyword">public int</span> $userId,
+        <span class="keyword">public string</span> $stripeToken,
+        <span class="keyword">public string</span> $shippingAddress,
+        <span class="keyword">public ?string</span> $discountCode = <span class="keyword">null</span>
+    ) {}
+
+    <span class="comment">// Factory method to build DTO from Request</span>
+    <span class="keyword">public static function</span> <span class="function">fromRequest</span>(Request $request): self
+    {
+        <span class="keyword">return new</span> <span class="function">self</span>(
+            userId: $request-&gt;<span class="function">user</span>()-&gt;id,
+            stripeToken: $request-&gt;<span class="function">validated</span>(<span class="string">'stripe_token'</span>),
+            shippingAddress: $request-&gt;<span class="function">validated</span>(<span class="string">'shipping_address'</span>),
+            discountCode: $request-&gt;<span class="function">validated</span>(<span class="string">'discount_code'</span>)
+        );
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="action-classes" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-expert">Expert Pattern</span>
+                        <h2>3. Action Classes</h2>
+                        <p>Ek Controller method ek "Action" hai. Is logic ko ek dedicated single-responsibility class mein move karein jisse hum <strong>Action Class</strong> kehte hain. (Some call it Service layer, but Action classes are more granular).</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Actions/Order/ProcessCheckoutAction.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Actions\Order;
+
+<span class="keyword">use</span> App\DTOs\Order\CreateOrderDTO;
+<span class="keyword">use</span> App\Models\Order;
+<span class="keyword">use</span> Illuminate\Support\Facades\DB;
+
+<span class="keyword">class</span> <span class="class">ProcessCheckoutAction</span>
+{
+    <span class="keyword">public function</span> <span class="function">execute</span>(CreateOrderDTO $dto): Order
+    {
+        <span class="comment">// Use DB transaction so if payment fails, order isn't saved</span>
+        <span class="keyword">return</span> DB::<span class="function">transaction</span>(<span class="keyword">function</span> () <span class="keyword">use</span> ($dto) {
+            
+            <span class="comment">// 1. Calculate total from DB</span>
+            $total = $this-&gt;<span class="function">calculateCartTotal</span>($dto-&gt;userId, $dto-&gt;discountCode);
+            
+            <span class="comment">// 2. Charge via Stripe </span>
+            $paymentId = <span class="class">StripeService</span>::<span class="function">charge</span>($dto-&gt;stripeToken, $total);
+            
+            <span class="comment">// 3. Create Order Model</span>
+            $order = Order::<span class="function">create</span>([
+                <span class="string">'user_id'</span> =&gt; $dto-&gt;userId,
+                <span class="string">'total'</span> =&gt; $total,
+                <span class="string">'transaction_id'</span> =&gt; $paymentId,
+                <span class="string">'address'</span> =&gt; $dto-&gt;shippingAddress
+            ]);
+            
+            <span class="comment">// 4. Dispatch async job for emails (Don't delay the API!)</span>
+            <span class="function">dispatch</span>(<span class="keyword">new</span> <span class="class">SendOrderConfirmationJob</span>($order));
+            
+            <span class="keyword">return</span> $order;
+        });
+    }
+}</code></pre>
+                        </div>
+                        <div class="alert alert-info">
+                            <h4>💡 Key Takeaway</h4>
+                            <p>Ye Action class API se bilkul anjaan hai. Isay nahi pata HTTP request kya hai. Ye class ab CLI command se, WebSocket se, ya Background job se independently call ki ja sakti hai!</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="bringing-it-together" class="section">
+                    <div class="card">
+                        <span class="card-tag tag-expert">The Final Result</span>
+                        <h2>4. Bringing It All Together</h2>
+                        <p>Ab dekhte hain aapka Controller kaisa dikhta hai jab usme se Form Request, DTO, aur Action class nikal di gayi ho.</p>
+
+                        <div class="code-window">
+                            <div class="code-header"><span class="code-lang">app/Http/Controllers/Api/CheckoutController.php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                            <pre class="code-body"><code><span class="keyword">namespace</span> App\Http\Controllers\Api;
+
+<span class="keyword">use</span> App\Http\Controllers\Controller;
+<span class="keyword">use</span> App\Http\Requests\Api\CheckoutRequest;
+<span class="keyword">use</span> App\DTOs\Order\CreateOrderDTO;
+<span class="keyword">use</span> App\Actions\Order\ProcessCheckoutAction;
+<span class="keyword">use</span> App\Http\Resources\OrderResource;
+
+<span class="keyword">class</span> <span class="class">CheckoutController</span> <span class="keyword">extends</span> Controller
+{
+    <span class="comment">// Dependency injection of the Action class</span>
+    <span class="keyword">public function</span> <span class="function">store</span>(CheckoutRequest $request, ProcessCheckoutAction $action)
+    {
+        <span class="comment">// 1. Build DTO from validated Request</span>
+        $dto = CreateOrderDTO::<span class="function">fromRequest</span>($request);
+        
+        <span class="comment">// 2. Execute business logic</span>
+        $order = $action-&gt;<span class="function">execute</span>($dto);
+        
+        <span class="comment">// 3. Return standardized API response</span>
+        <span class="keyword">return</span> $this-&gt;<span class="function">successResponse</span>(
+            data: <span class="keyword">new</span> <span class="class">OrderResource</span>($order),
+            message: <span class="string">'Order processed successfully.'</span>,
+            statusCode: 201
+        );
+    }
+}</code></pre>
+                        </div>
+                        <p><strong>Mastery Level Unlocked:</strong> Ab aapka controller bas ek "Traffic Cop" ban gaya hai. Wo Request leta hai, DTO banata hai, Action ko deta hai, aur Resource return karta hai. That's beautiful API architecture.</p>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+
+        function switchTab(e, sectionId) {
+            e.preventDefault();
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            e.currentTarget.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function copyCode(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code);
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+    </script>
+</body>
+</html>

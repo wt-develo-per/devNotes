@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pillar 4: Data Storage | Layer 1 Mastery</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Highlight.js for code blocks -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-card: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #10b981;
+            --border: #30363d;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.7;
+        }
+
+        .top-nav {
+            background: rgba(15, 17, 21, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: var(--accent); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 6rem;
+        }
+
+        /* Markdown Styles */
+        #content-area h1, #content-area h2, #content-area h3 {
+            color: var(--text-primary);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        #content-area h1 { font-size: 2.5rem; border-bottom: none; margin-top: 0; background: linear-gradient(90deg, #fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        #content-area h2 { font-size: 1.8rem; color: var(--accent); border-color: rgba(16, 185, 129, 0.2); }
+        #content-area h3 { font-size: 1.3rem; margin-top: 2rem; }
+        
+        #content-area p { margin-bottom: 1.2rem; color: var(--text-secondary); }
+        
+        #content-area pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        #content-area code { font-family: var(--font-mono); }
+        #content-area p code { background: rgba(16, 185, 129, 0.15); color: var(--accent); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;}
+        
+        #content-area ul, #content-area ol { margin-bottom: 1.2rem; padding-left: 2rem; color: var(--text-secondary); }
+        #content-area li { margin-bottom: 0.5rem; }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+        
+        /* Floating table of contents */
+        .toc {
+            position: fixed;
+            left: 2rem;
+            top: 6rem;
+            width: 250px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: none; /* hidden on small screens */
+        }
+        @media (min-width: 1400px) {
+            .toc { display: block; }
+            .container { margin-left: 320px; }
+        }
+        .toc h4 { margin-bottom: 1rem; color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .toc-list { list-style: none; padding: 0; }
+        .toc-list li { margin-bottom: 0.5rem; }
+        .toc-list a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: 0.2s; display: block; }
+        .toc-list a:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <div class="brand">
+            <span class="brand-badge">L1</span>
+            Layer 1 Mastery
+        </div>
+        <div class="nav-links">
+            <a href="03_Pillar_3.html" class="nav-btn">⬅️ Previous</a>
+            <a href="05_Pillar_5.html" class="nav-btn">Next ➡️</a>
+        </div>
+    </nav>
+
+    <div class="toc" id="toc-container">
+        <h4>Navigation</h4>
+        <ul class="toc-list" id="toc-list">
+            <li><a href="00_Introduction.html">00. Introduction</a></li>
+            <li><a href="01_Pillar_1.html">01. Computers & Memory</a></li>
+            <li><a href="02_Pillar_2.html">02. Networks & Data</a></li>
+            <li><a href="03_Pillar_3.html">03. Operating Systems</a></li>
+            <li><a href="04_Pillar_4.html">04. Data Storage</a></li>
+            <li><a href="05_Pillar_5.html">05. Program Failures</a></li>
+            <li><a href="06_Pillar_6.html">06. Algorithmic Thinking</a></li>
+        </ul>
+    </div>
+
+    <main class="container" id="content-area">
+        <!-- Rendered markdown will go here -->
+    </main>
+
+    <!-- UNTOUCHED RAW CONTENT -->
+    <script type="text/markdown" id="raw-markdown">
+## PILLAR 4: How Data Is Stored and Retrieved
+
+### How a Database Actually Reads Your Data
+
+```
+Most developers think: "Database has data. I query it. It returns."
+
+Reality:
+
+Your table users has 10 million rows.
+Data stored on disk in pages (usually 8KB each).
+With ~100 bytes per row: ~80 rows per page.
+10 million rows = ~125,000 pages on disk.
+
+When you run:
+SELECT * FROM users WHERE email = 'ravi@example.com';
+
+WITHOUT index:
+  Database reads ALL 125,000 pages from disk.
+  Scans every single row.
+  "Sequential Scan" or "Full Table Scan"
+  At 100MB/s disk speed: ~1.25GB of data read = ~12 seconds
+  
+WITH index on email column:
+  B-tree index structure on disk.
+  3-4 page reads to find the exact location.
+  1 page read to get the actual row.
+  Total: 4-5 page reads = milliseconds.
+
+This is why indexes exist.
+This is why EXPLAIN ANALYZE is the most important command.
+This is why "just add an index" is sometimes the right answer.
+```
+
+### B-Tree Index — What It Actually Is
+
+```
+B-Tree (Balanced Tree) stores your indexed values in sorted order:
+
+                    [50]
+                   /    \
+              [25]        [75]
+             /    \      /    \
+          [10]  [35]  [60]  [90]
+          / \   / \   / \   / \
+        [5][15][30][40][55][65][80][95]
+
+Each node contains: index value + pointer to actual row on disk.
+
+When you search for email = 'ravi@example.com':
+  1. Start at root
+  2. Is 'ravi' < or > root value? Go left or right.
+  3. Repeat until leaf node
+  4. Found: follow pointer to actual row
+
+Result: O(log n) search time
+  10 million rows = ~23 comparisons maximum
+  Instead of 10,000,000 comparisons without index
+
+Composite index column order MATTERS:
+  
+  Index on (user_id, status, created_at)
+  
+  The leftmost prefix rule:
+  ┌────────────────────────────────────────────────────┐
+  │ Query                              Uses Index?      │
+  ├────────────────────────────────────────────────────┤
+  │ WHERE user_id = 1                  ✓ YES            │
+  │ WHERE user_id = 1 AND status = 'a' ✓ YES            │
+  │ WHERE user_id = 1 AND status = 'a' ✓ YES            │
+  │       AND created_at > '2024-01-01'                 │
+  │ WHERE status = 'active'            ✗ NO             │
+  │ WHERE created_at > '2024-01-01'    ✗ NO             │
+  └────────────────────────────────────────────────────┘
+  
+  First column (user_id) MUST be in the query.
+  Then subsequent columns can be used in order.
+```
+
+### WAL — Why Databases Don't Lose Data on Crash
+
+```
+WAL = Write-Ahead Log
+
+The problem without WAL:
+  You write a transaction.
+  Data is in memory (buffer pool), waiting to be written to disk.
+  Power goes out.
+  Data is lost. Database is corrupted.
+
+WAL solution:
+  BEFORE changing actual data pages:
+    Write the INTENT to a log file (WAL)
+    WAL write is sequential → very fast (disk sequential write >> random write)
+  
+  Then: Change data pages in memory (buffer pool)
+  Later: Actually write changed pages to disk (checkpoint)
+  
+  On crash and restart:
+    Database reads WAL
+    Replays all committed transactions
+    Rolls back incomplete transactions
+    Database is consistent again
+
+Why you need to know this:
+  1. PostgreSQL replication works by streaming WAL to replica
+  2. Logical replication reads WAL to stream changes to other systems
+  3. Tools like Debezium read WAL for change data capture
+  4. "WAL level" setting affects replication capability
+  5. WAL accumulates if not consumed → disk fills up
+  
+  Real incident: Replication slot not consumed for 3 days.
+                 WAL accumulated. Disk filled. Database crashed.
+                 Primary database down = full outage.
+```
+
+---
+
+
+    </script>
+
+    <script>
+        // Parse markdown and inject
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawMarkdown = document.getElementById('raw-markdown').textContent;
+            
+            // Configure marked.js to not sanitize so code blocks render properly
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            
+            document.getElementById('content-area').innerHTML = marked.parse(rawMarkdown);
+            
+            // Apply syntax highlighting
+            hljs.highlightAll();
+        });
+    </script>
+</body>
+</html>
