@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 06: Serverless Backend (Lambda) | AWS Masterclass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-code: #0d1117;
+      --accent: #ff9900; /* AWS Orange */
+      --accent-glow: rgba(255, 153, 0, 0.25);
+      --accent-aws: #ff9900;
+      --accent-purple: #8c52ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #0073bb;
+      --accent-pink: #d946ef;
+      --accent-lambda: #ff9900;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border: #30363d;
+      --border-focus: #ff9900;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ff9900, #ff9900);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease;
+    }
+
+    .top-nav {
+      background: rgba(15, 17, 21, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-brand-badge {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #ff9900, #e68a00);
+      color: white;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+      opacity: 0.95;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.1) 0%, rgba(15, 17, 21, 0) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-lambda);
+      filter: blur(100px);
+      opacity: 0.15;
+      border-radius: 50%;
+    }
+
+    .hero-label {
+      display: inline-block;
+      background: rgba(255, 153, 0, 0.1);
+      color: var(--accent-lambda);
+      border: 1px solid rgba(255, 153, 0, 0.3);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      background: linear-gradient(to right, #ffffff, #8b949e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 5.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: rgba(255, 153, 0, 0.15);
+      color: var(--accent-lambda);
+      border-color: rgba(255, 153, 0, 0.3);
+      font-weight: 500;
+    }
+
+    .sidebar-icon {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    .main-content {
+      min-width: 0;
+    }
+
+    .panel-section {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .panel-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-badge {
+      display: inline-block;
+      background: rgba(255, 153, 0, 0.15);
+      color: var(--accent-lambda);
+      border: 1px solid rgba(255, 153, 0, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .panel-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .concept-card {
+      background: rgba(22, 27, 34, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .concept-card:hover {
+      border-color: var(--border-focus);
+      background: rgba(22, 27, 34, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .concept-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      background: var(--bg-code);
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .concept-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .code-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-emerald);
+    }
+
+    .code-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      tab-size: 4;
+    }
+
+    .code-body code {
+      white-space: pre;
+    }
+
+    .diagram-container {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .diagram-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      text-align: left;
+    }
+
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .diagram-card.danger-card { border-top: 3px solid var(--accent-rose); }
+    .diagram-card.success-card { border-top: 3px solid var(--accent-emerald); }
+    .diagram-card.warning-card { border-top: 3px solid var(--accent-amber); }
+    .diagram-card.info-card { border-top: 3px solid var(--accent-lambda); }
+
+    .callout-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    code:not(pre code) {
+      background: rgba(255, 153, 0, 0.15);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent-lambda);
+    }
+
+    .ts-type { color: #4ec9b0; }
+    .ts-class { color: #4ec9b0; font-weight: bold; }
+    .ts-keyword { color: #569cd6; }
+    .ts-string { color: #ce9178; }
+    .ts-comment { color: #6a9955; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="reading-progress"></div>
+
+  <nav class="top-nav">
+    <a href="../index.html" class="nav-brand">
+      <span class="nav-brand-badge">AWS</span>
+      AWS Masterclass for Backend Devs
+    </a>
+    <div class="nav-links">
+      <a href="05_Decoupling_and_Event_Driven.html" class="nav-btn">⬅️ Previous: Decoupling</a>
+      <a href="../index.html" class="nav-btn primary">🏠 Finish Curriculum</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="hero">
+      <span class="hero-label">Module 06</span>
+      <h1 class="hero-title">Serverless Backend (AWS Lambda &amp; API Gateway)</h1>
+      <p class="hero-desc">
+        Monoliths (EC2 + ALB + Auto Scaling) ko manage karna complex ho sakta hai. Kya ho agar aapko servers ka sochna hi na pade? Backend engineering ka future "Serverless" hai. 
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <h3>Contents</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#" class="sidebar-link active" onclick="switchSection('sec-intro', this)"><span class="sidebar-icon">☁️</span> 1. What is Serverless?</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-apigw', this)"><span class="sidebar-icon">🚪</span> 2. API Gateway</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-code', this)"><span class="sidebar-icon">💻</span> 3. The Lambda Function</a></li>
+          <li><a href="#" class="sidebar-link" onclick="switchSection('sec-coldstart', this)"><span class="sidebar-icon">❄️</span> 4. The Cold Start Problem</a></li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+
+        <!-- SECTION 1: Intro -->
+        <section id="sec-intro" class="panel-section active">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">☁️ Fundamentals • Part 1</div>
+              <h2 class="panel-title">What is Serverless?</h2>
+              <p class="panel-subtitle">
+                "Serverless" ka matlab yeh nahi ki servers nahi hain. Iska matlab hai <em>"Aapko"</em> servers manage nahi karne hain.
+              </p>
+            </div>
+
+            <div class="diagram-grid">
+              <div class="diagram-card danger-card">
+                <h4 style="color:var(--accent-rose); margin-bottom:10px;">❌ Traditional EC2</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Aap EC2 instance chalu karte hain aur uspar Node.js server chalate hain (listening on port 3000). Aap har ghante ka paisa dete hain, chahe koi user website par aaye ya na aaye (idle cost).
+                </p>
+              </div>
+              <div class="diagram-card success-card">
+                <h4 style="color:var(--accent-emerald); margin-bottom:10px;">✅ AWS Lambda (Serverless)</h4>
+                <p style="font-size:0.875rem; color:#8b949e; line-height:1.6;">
+                  Aap sirf apna JavaScript code AWS ko de dete hain. Jab koi request aati hai, AWS automatically ek naya mini-container banata hai, aapka code run karta hai, aur phir container destroy kar deta hai. <strong>Aap sirf Execution Time (in milliseconds) ka paisa dete hain. Zero users = Zero bill!</strong>
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 2: API Gateway -->
+        <section id="sec-apigw" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">🚪 Routing • Part 2</div>
+              <h2 class="panel-title">Amazon API Gateway (The Entry Point)</h2>
+              <p class="panel-subtitle">
+                Lambda functions khud internet se URL par listen nahi kar sakte (jaise <code>app.listen(3000)</code> in Express). Unhe trigger karna padta hai.
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;">Yahan <strong>API Gateway</strong> ka role aata hai:</p>
+
+            <ul style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li>Yeh ek managed service hai jo HTTP Requests (GET, POST) accept karti hai.</li>
+              <li>Aap API Gateway ko batate ho: <em>"Agar <code>POST /users</code> par request aaye, toh 'CreateUserLambda' ko trigger karo."</em></li>
+              <li>Yeh scaling bhi handle karta hai (Agar 100,000 log ek sath hit karein, API Gateway AWS ko bolega 100,000 Lambda functions spawn kar do!)</li>
+              <li>Aap isme Rate Limiting, API Keys, aur IAM/Cognito Authorization bhi directly set kar sakte hain bina code likhe.</li>
+            </ul>
+            
+            <div class="callout-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <h4 style="color: #10b981; margin-bottom: 8px;">💡 The Serverless Monolith (Serverless Express)</h4>
+              <p style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+                Naye developers ek-ek endpoint ke liye alag Lambda banate hain (Microservices). Isse manage karna mushkil ho jata hai. <br>
+                <strong>Pro Pattern:</strong> Aap apni poori Express.js app ko ek hi Lambda mein wrap kar sakte hain (using packages like <code>serverless-http</code>). API Gateway saari requests ko ek hi Lambda par bhejta hai, aur Express khud decide karta hai ki kaunsa router chalana hai.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 3: Code -->
+        <section id="sec-code" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">💻 Implementation • Part 3</div>
+              <h2 class="panel-title">The Node.js Lambda Handler</h2>
+              <p class="panel-subtitle">
+                Express.js me <code>req</code> aur <code>res</code> hote hain. Lambda me <code>event</code> aur <code>context</code> hote hain.
+              </p>
+            </div>
+
+            <div class="code-container">
+              <div class="code-header">
+                <span class="code-lang">JavaScript • Simple Lambda Handler</span>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy Code</button>
+              </div>
+<pre class="code-body"><code><span class="ts-keyword">export</span> <span class="ts-keyword">const</span> handler = <span class="ts-keyword">async</span> (event, context) =&gt; {
+    <span class="ts-comment">// 'event' me API Gateway se aayi hui request details hoti hain</span>
+    <span class="ts-keyword">const</span> httpMethod = event.httpMethod;
+    <span class="ts-keyword">const</span> body = JSON.parse(event.body || <span class="ts-string">"{}"</span>);
+
+    <span class="ts-keyword">try</span> {
+        <span class="ts-comment">// DB logic here (e.g. DynamoDB call)</span>
+        
+        <span class="ts-comment">// Response wapas API Gateway ko bhejna (Must be this exact format)</span>
+        <span class="ts-keyword">return</span> {
+            statusCode: <span class="ts-type">200</span>,
+            headers: {
+                <span class="ts-string">"Content-Type"</span>: <span class="ts-string">"application/json"</span>,
+                <span class="ts-string">"Access-Control-Allow-Origin"</span>: <span class="ts-string">"*"</span> <span class="ts-comment">// CORS</span>
+            },
+            body: JSON.stringify({
+                message: <span class="ts-string">"Hello from Serverless Node.js!"</span>,
+                receivedData: body
+            })
+        };
+    } <span class="ts-keyword">catch</span> (error) {
+        <span class="ts-keyword">return</span> {
+            statusCode: <span class="ts-type">500</span>,
+            body: JSON.stringify({ error: <span class="ts-string">"Internal Server Error"</span> })
+        };
+    }
+};
+</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: Cold Starts -->
+        <section id="sec-coldstart" class="panel-section">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-badge">❄️ Performance • Part 4</div>
+              <h2 class="panel-title">The "Cold Start" Problem</h2>
+              <p class="panel-subtitle">
+                Serverless ka sabse bada dushman. Agar Lambda kafa der tak use nahi hua, toh AWS container ko destroy kar deta hai.
+              </p>
+            </div>
+
+            <p style="margin-bottom: 15px; color:#8b949e;">Jab agli request aati hai, AWS ko:</p>
+            <ol style="color: #8b949e; line-height: 1.8; margin-left: 20px; margin-bottom: 20px;">
+              <li>Naya container banana padta hai.</li>
+              <li>Node.js environment initialize karna padta hai.</li>
+              <li>Aapka code (aur saari dependencies) load karni padti hain.</li>
+              <li>Database connections open karne padte hain.</li>
+            </ol>
+            
+            <p style="margin-bottom: 15px; color:#8b949e;">Is process me 1-3 seconds lag sakte hain. Isko <strong>"Cold Start"</strong> kehte hain. Iske baad aane wali requests microseconds me serve hoti hain (Warm Start).</p>
+
+            <div class="callout-card" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+              <h4 style="color: #f59e0b; margin-bottom: 8px;">🛠️ How to fix Cold Starts in Node.js</h4>
+              <ul style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6; margin-left: 20px;">
+                <li><strong>Keep dependencies small:</strong> Lambda ka size jitna bada hoga (e.g., heavily packed `node_modules`), cold start utna zyada hoga. Sirf zaroori packages use karein.</li>
+                <li><strong>Initialize connections outside the handler:</strong> DB connections <code>handler</code> function ke <em>bahar</em> (global scope me) banayein, taaki wo warm starts me reuse ho sakein.</li>
+                <li><strong>Provisioned Concurrency:</strong> Agar app production me hai aur cold starts acceptable nahi hain, toh aap AWS ko extra paise de kar kuch containers hamesha "Warm" rakhne ke liye bol sakte hain.</li>
+              </ul>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Reading Progress Indicator
+    window.addEventListener('scroll', () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPos = window.scrollY;
+      const progress = (scrollPos / docHeight) * 100;
+      document.getElementById('reading-progress').style.width = progress + '%';
+    });
+
+    // Section Switcher
+    function switchSection(sectionId, element) {
+      event.preventDefault();
+      document.querySelectorAll('.panel-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      document.getElementById(sectionId).classList.add('active');
+      element.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Code Copy Function
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✅ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
